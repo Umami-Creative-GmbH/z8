@@ -15,7 +15,8 @@ import { loadStatutorySettingsOverview } from "./settings-overview";
 
 describe("organization statutory preferences (PostgreSQL)", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
-	const fx = statutoryFixture(integrationAdminPool(), "t1988-prefs");
+	const pool = integrationAdminPool();
+	const fx = statutoryFixture(pool, "t1988-prefs");
 
 	beforeEach(fx.cleanup);
 	afterAll(fx.cleanup);
@@ -27,6 +28,9 @@ describe("organization statutory preferences (PostgreSQL)", () => {
 			warningThresholdPercent: 80,
 			criticalThresholdPercent: 95,
 			blockJarbschgShiftPublish: false,
+			applyJarbschgToMinorContractors: false,
+			workingStudentDaytimeStartMinute: 360,
+			workingStudentDaytimeEndMinute: 1080,
 			isDefault: true,
 		});
 	});
@@ -42,25 +46,113 @@ describe("organization statutory preferences (PostgreSQL)", () => {
 			warningThresholdPercent: 70,
 			criticalThresholdPercent: 90,
 			blockJarbschgShiftPublish: true,
+			applyJarbschgToMinorContractors: false,
+			workingStudentDaytimeStartMinute: 360,
+			workingStudentDaytimeEndMinute: 1080,
 		});
-		await saveOrganizationStatutoryPreferences(db, {
+		const saved = await saveOrganizationStatutoryPreferences(db, {
 			organizationId: orgA.id,
 			actorUserId: adminA.userId,
 			warningThresholdPercent: 75,
 			criticalThresholdPercent: 90,
 			blockJarbschgShiftPublish: true,
+			applyJarbschgToMinorContractors: false,
+			workingStudentDaytimeStartMinute: 420,
+			workingStudentDaytimeEndMinute: 1140,
 		});
 
+		// The audit log records what the save replaced.
+		expect(saved.previous).toMatchObject({
+			warningThresholdPercent: 70,
+			workingStudentDaytimeStartMinute: 360,
+			workingStudentDaytimeEndMinute: 1080,
+			isDefault: false,
+		});
 		expect(await loadOrganizationStatutoryPreferences(db, orgA.id)).toEqual({
 			warningThresholdPercent: 75,
 			criticalThresholdPercent: 90,
 			blockJarbschgShiftPublish: true,
+			applyJarbschgToMinorContractors: false,
+			workingStudentDaytimeStartMinute: 420,
+			workingStudentDaytimeEndMinute: 1140,
 			isDefault: false,
 		});
 		expect(await loadOrganizationStatutoryPreferences(db, orgB.id)).toMatchObject({
 			warningThresholdPercent: 80,
 			blockJarbschgShiftPublish: false,
+			applyJarbschgToMinorContractors: false,
+			workingStudentDaytimeStartMinute: 360,
+			workingStudentDaytimeEndMinute: 1080,
 			isDefault: true,
+		});
+	});
+
+	it("stores whether minor contractors are judged under JArbSchG, per organization (#2022)", async () => {
+		const orgA = await fx.organization("a");
+		const orgB = await fx.organization("b");
+		const admin = await fx.user("admin");
+
+		const saved = await saveOrganizationStatutoryPreferences(db, {
+			organizationId: orgA.id,
+			actorUserId: admin.userId,
+			warningThresholdPercent: 80,
+			criticalThresholdPercent: 95,
+			blockJarbschgShiftPublish: false,
+			applyJarbschgToMinorContractors: true,
+			workingStudentDaytimeStartMinute: 360,
+			workingStudentDaytimeEndMinute: 1080,
+		});
+
+		expect(saved.previous).toMatchObject({ applyJarbschgToMinorContractors: false });
+		expect(await loadOrganizationStatutoryPreferences(db, orgA.id)).toMatchObject({
+			applyJarbschgToMinorContractors: true,
+			isDefault: false,
+		});
+		expect(await loadOrganizationStatutoryPreferences(db, orgB.id)).toMatchObject({
+			applyJarbschgToMinorContractors: false,
+			isDefault: true,
+		});
+	});
+
+	it("refuses a daytime band the database would not hold, keeping the stored one", async () => {
+		const org = await fx.organization("a");
+		const admin = await fx.user("admin");
+		const base = {
+			organizationId: org.id,
+			actorUserId: admin.userId,
+			warningThresholdPercent: 80,
+			criticalThresholdPercent: 95,
+			blockJarbschgShiftPublish: false,
+			applyJarbschgToMinorContractors: false,
+		};
+		await saveOrganizationStatutoryPreferences(db, {
+			...base,
+			workingStudentDaytimeStartMinute: 420,
+			workingStudentDaytimeEndMinute: 1140,
+		});
+
+		for (const [start, end, refusal] of [
+			[1140, 420, "statutory_daytime_band_start_not_before_end"],
+			[425, 1140, "statutory_daytime_band_out_of_range"],
+			[420, 1455, "statutory_daytime_band_out_of_range"],
+		] as const) {
+			const attempt = saveOrganizationStatutoryPreferences(db, {
+				...base,
+				workingStudentDaytimeStartMinute: start,
+				workingStudentDaytimeEndMinute: end,
+			});
+			await expect(attempt).rejects.toMatchObject({ refusal });
+		}
+		// The table's own check holds the same rule for writes that bypass the module.
+		await expect(
+			pool.query(
+				`UPDATE organization_statutory_preference SET working_student_daytime_end_minute = 1081 WHERE organization_id = $1`,
+				[org.id],
+			),
+		).rejects.toThrow(/organization_statutory_preference_daytime_band_check/);
+		expect(await loadOrganizationStatutoryPreferences(db, org.id)).toMatchObject({
+			workingStudentDaytimeStartMinute: 420,
+			workingStudentDaytimeEndMinute: 1140,
 		});
 	});
 
@@ -105,6 +197,9 @@ describe("organization statutory preferences (PostgreSQL)", () => {
 			warningThresholdPercent: warning,
 			criticalThresholdPercent: critical,
 			blockJarbschgShiftPublish: false,
+			applyJarbschgToMinorContractors: false,
+			workingStudentDaytimeStartMinute: 360,
+			workingStudentDaytimeEndMinute: 1080,
 		});
 
 		await expect(attempt).rejects.toBeInstanceOf(ValidationError);

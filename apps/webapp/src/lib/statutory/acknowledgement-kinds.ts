@@ -16,6 +16,8 @@ export const statutoryAcknowledgementKindDomains = {
 	on_call_short_notice_agreement: "on_call",
 	/** #1993: a configured JArbSchG statutory sector exception (night, weekend, holiday work). */
 	jarbschg_sector_exception: "youth_protection",
+	/** #2022: a reviewed minor contractor engagement (§ 1 Abs. 1 Nr. 3 JArbSchG). */
+	jarbschg_minor_contractor_review: "youth_protection",
 } as const satisfies Record<string, StatutoryDomain>;
 
 export type StatutoryAcknowledgementKind = keyof typeof statutoryAcknowledgementKindDomains;

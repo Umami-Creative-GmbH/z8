@@ -602,3 +602,203 @@ describe("working student week boundaries", () => {
 		});
 	});
 });
+
+describe("working student weekday daytime band (#2017)", () => {
+	/** Judges one week with the organization's band, in `timezone`. */
+	function evaluateWithBand(
+		band: { start: number; end: number },
+		intervals: WorkingStudentWorkInterval[],
+		monday: string,
+		timezone = TZ,
+	) {
+		return evaluateWorkingStudentEmployee({
+			organizationId: "org",
+			timezone,
+			judgedWeeks: {
+				from: monday,
+				toExclusive: Temporal.PlainDate.from(monday).add({ weeks: 1 }).toString(),
+			},
+			thresholds,
+			preferences: {
+				...DEFAULT_STATUTORY_PREFERENCES,
+				workingStudentDaytimeStartMinute: band.start,
+				workingStudentDaytimeEndMinute: band.end,
+			},
+			facts: facts({ intervals }),
+		});
+	}
+
+	/** Work from a local date and time to a later one, in `timezone`. */
+	function workIn(timezone: string, from: string, to: string): WorkingStudentWorkInterval {
+		const start = Temporal.PlainDateTime.from(from).toZonedDateTime(timezone).toInstant();
+		const end = Temporal.PlainDateTime.from(to).toZonedDateTime(timezone).toInstant();
+		return {
+			source: "work",
+			ref: `r${++refs}`,
+			start,
+			end,
+			netMinutes: start.until(end).total("minutes"),
+		};
+	}
+
+	const DEFAULT_BAND = { start: 6 * 60, end: 18 * 60 };
+	const LATE_BAND = { start: 7 * 60, end: 19 * 60 };
+
+	it.each([
+		["the default band's start", DEFAULT_BAND, "05:45", "06:15"],
+		["the default band's end", DEFAULT_BAND, "17:45", "18:15"],
+		["a 07:00–19:00 band's start", LATE_BAND, "06:45", "07:15"],
+		["a 07:00–19:00 band's end", LATE_BAND, "18:45", "19:15"],
+	])("counts only the quarter hour inside %s as lecture daytime", (_, band, start, end) => {
+		const { weeks } = evaluateWithBand(band, [work(W10, start, end)], W10);
+
+		expect(weeks.at(-1)).toMatchObject({
+			totalMinutes: 30,
+			coreMinutes: 15,
+			eveningWeekendMinutes: 15,
+		});
+	});
+
+	it("leaves work outside a custom band out of the lecture-week limit", () => {
+		// 4.5 h a weekday from 06:30: 22.5 h of 06:00–18:00 daytime, 20 h of 07:00–19:00 daytime.
+		const intervals = weekdays(W10, "06:30", "11:00");
+
+		const byDefault = evaluateWithBand(DEFAULT_BAND, intervals, W10);
+		const byLateBand = evaluateWithBand(LATE_BAND, intervals, W10);
+
+		expect(byDefault.weeks.at(-1)).toMatchObject({ coreMinutes: 1350, lectureBreach: true });
+		expect(byDefault.findings.map((finding) => finding.kind)).toContain(
+			"working_student_lecture_week",
+		);
+		expect(byLateBand.weeks.at(-1)).toMatchObject({
+			coreMinutes: 1200,
+			eveningWeekendMinutes: 150,
+			lectureBreach: false,
+		});
+		expect(byLateBand.findings.map((finding) => finding.kind)).not.toContain(
+			"working_student_lecture_week",
+		);
+	});
+
+	it("keeps the band's boundaries on the weekdays after the Europe/Berlin DST changes", () => {
+		// Clocks change on Sundays 2026-03-29 and 2026-10-25; the Mondays after keep 06:00 and 18:00.
+		const spring = evaluateWithBand(
+			DEFAULT_BAND,
+			[work("2026-03-30", "05:45", "06:15"), work("2026-03-30", "17:45", "18:15")],
+			"2026-03-30",
+		);
+		const autumn = evaluateWithBand(
+			DEFAULT_BAND,
+			[work("2026-10-26", "05:45", "06:15"), work("2026-10-26", "17:45", "18:15")],
+			"2026-10-26",
+		);
+
+		for (const evaluation of [spring, autumn]) {
+			expect(evaluation.weeks.at(-1)).toMatchObject({ coreMinutes: 30, eveningWeekendMinutes: 30 });
+		}
+	});
+
+	it("starts a 00:00 band when a weekday starts on the day clocks go forward", () => {
+		// Africa/Cairo skips Friday 2026-04-24 00:00–01:00: the day has 23 hours.
+		const { weeks } = evaluateWithBand(
+			{ start: 0, end: 12 * 60 },
+			[workIn("Africa/Cairo", "2026-04-23T22:00", "2026-04-24T03:00")],
+			"2026-04-20",
+			"Africa/Cairo",
+		);
+
+		expect(weeks.at(-1)).toMatchObject({
+			totalMinutes: 240,
+			coreMinutes: 120,
+			eveningWeekendMinutes: 120,
+		});
+	});
+
+	it("ends a 24:00 band at the next day's start when a weekday has 25 hours", () => {
+		// Africa/Cairo repeats Thursday 2026-10-29 23:00–24:00: the day has 25 hours.
+		const { weeks } = evaluateWithBand(
+			{ start: 12 * 60, end: 24 * 60 },
+			[workIn("Africa/Cairo", "2026-10-29T22:00", "2026-10-30T01:00")],
+			"2026-10-26",
+			"Africa/Cairo",
+		);
+
+		expect(weeks.at(-1)).toMatchObject({
+			totalMinutes: 240,
+			coreMinutes: 180,
+			eveningWeekendMinutes: 60,
+		});
+	});
+
+	it("counts no minute twice when the whole band falls in the hour clocks skip", () => {
+		// Europe/Berlin skips Sunday 2026-03-29 02:00–03:00: a 02:15–03:00 band has no daytime.
+		const berlin = evaluateWithBand(
+			{ start: 2 * 60 + 15, end: 3 * 60 },
+			[work("2026-03-29", "01:00", "05:00")],
+			"2026-03-23",
+		);
+		expect(berlin.weeks.at(-1)).toMatchObject({
+			totalMinutes: 180,
+			coreMinutes: 0,
+			eveningWeekendMinutes: 180,
+		});
+
+		// Africa/Cairo skips Friday 2026-04-24 00:00–01:00: a 00:15–01:00 band has no daytime.
+		const cairo = evaluateWithBand(
+			{ start: 15, end: 60 },
+			[workIn("Africa/Cairo", "2026-04-23T22:00", "2026-04-24T03:00")],
+			"2026-04-20",
+			"Africa/Cairo",
+		);
+		expect(cairo.weeks.at(-1)).toMatchObject({
+			totalMinutes: 240,
+			coreMinutes: 0,
+			eveningWeekendMinutes: 240,
+		});
+	});
+
+	it("starts a band whose start clocks skip at the first minute after the gap", () => {
+		// Africa/Cairo skips Friday 2026-04-24 00:00–01:00: a 00:15–08:00 band starts at 01:00.
+		const { weeks } = evaluateWithBand(
+			{ start: 15, end: 8 * 60 },
+			[workIn("Africa/Cairo", "2026-04-24T01:00", "2026-04-24T02:00")],
+			"2026-04-20",
+			"Africa/Cairo",
+		);
+
+		expect(weeks.at(-1)).toMatchObject({
+			totalMinutes: 60,
+			coreMinutes: 60,
+			eveningWeekendMinutes: 0,
+		});
+	});
+
+	it("starts a band at the gap's first minute at the first minute after the gap", () => {
+		// Asia/Jerusalem skips Friday 2026-03-27 02:00–03:00: a 02:00–08:00 band starts at 03:00.
+		// Thursday 20:00 to Friday 04:00 is 7 real hours: 4 Thursday evening, 2 before the band, 1 in it.
+		const { weeks } = evaluateWithBand(
+			{ start: 2 * 60, end: 8 * 60 },
+			[workIn("Asia/Jerusalem", "2026-03-26T20:00", "2026-03-27T04:00")],
+			"2026-03-23",
+			"Asia/Jerusalem",
+		);
+
+		expect(weeks.at(-1)).toMatchObject({
+			totalMinutes: 420,
+			coreMinutes: 60,
+			eveningWeekendMinutes: 360,
+		});
+	});
+
+	it("makes the lecture-week fingerprint depend on the band", () => {
+		const intervals = weekdays(W10, "09:00", "14:00");
+		const fingerprint = (band: { start: number; end: number }) =>
+			evaluateWithBand(band, intervals, W10).findings.find(
+				(finding) => finding.kind === "working_student_lecture_week",
+			)?.inputFingerprint;
+
+		expect(fingerprint(DEFAULT_BAND)).toBeDefined();
+		expect(fingerprint(LATE_BAND)).toBeDefined();
+		expect(fingerprint(LATE_BAND)).not.toBe(fingerprint(DEFAULT_BAND));
+	});
+});

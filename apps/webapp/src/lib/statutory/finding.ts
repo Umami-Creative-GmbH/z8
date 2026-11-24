@@ -112,6 +112,12 @@ export interface StatutoryFinding<Kind extends string = string> {
 	 */
 	readonly coveredMinutes?: number;
 	/**
+	 * JArbSchG night work (#1993): the night minutes outside the hours § 14 Abs. 2, 3, 5, 6 allow
+	 * for the minor's age, which no sector exception covers. Set only when above zero. Minutes of
+	 * work, never money: restricted readers may see it.
+	 */
+	readonly beyondSectorHours?: number;
+	/**
 	 * Where that covered work lies, as ISO instants, when other findings of its scope may cover the
 	 * same time (an apprentice release conflict: overlapping shifts in one exam): the scope's
 	 * covered minutes count it once. Dropped for restricted audiences.

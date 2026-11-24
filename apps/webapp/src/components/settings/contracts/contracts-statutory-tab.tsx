@@ -1,6 +1,13 @@
 "use client";
 
-import { IconAlertTriangle, IconInfoCircle, IconLoader2, IconScale } from "@tabler/icons-react";
+import {
+	IconAlertTriangle,
+	IconInfoCircle,
+	IconLoader2,
+	IconScale,
+	IconSchool,
+	IconUserShield,
+} from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTolgee, useTranslate } from "@tolgee/react";
@@ -17,6 +24,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import {
 	Table,
@@ -40,7 +54,13 @@ import {
 	actionErrorMessage,
 	type RefusalMessages,
 } from "@/lib/organization-action/action-error-message";
+import {
+	formatMinuteOfDay,
+	MINUTES_PER_DAY,
+	WORKING_STUDENT_DAYTIME_STEP_MINUTES,
+} from "@/lib/statutory/daytime-band";
 import type { StatutoryPreferenceRefusal } from "@/lib/statutory/preferences";
+import { invalidateOrganizationStatutoryFindings } from "./working-student-queries";
 import type { StatutoryBaselineView } from "@/lib/statutory/settings-overview";
 import type {
 	StatutoryDomain,
@@ -59,7 +79,23 @@ const PREFERENCE_REFUSALS = {
 		"settings.contracts.statutory.preferences.warningBelowCritical",
 		"The warning percentage must be below the critical percentage.",
 	],
+	statutory_daytime_band_out_of_range: [
+		"settings.contracts.statutory.preferences.daytimeBandRange",
+		"Choose whole quarter hours from 00:00 to 24:00.",
+	],
+	statutory_daytime_band_start_not_before_end: [
+		"settings.contracts.statutory.preferences.daytimeBandOrder",
+		"The daytime band must start before it ends.",
+	],
 } satisfies RefusalMessages<StatutoryPreferenceRefusal>;
+
+/** Quarter hours from 00:00 to 24:00. */
+const QUARTER_HOURS = Array.from(
+	{ length: MINUTES_PER_DAY / WORKING_STUDENT_DAYTIME_STEP_MINUTES + 1 },
+	(_, index) => index * WORKING_STUDENT_DAYTIME_STEP_MINUTES,
+);
+const BAND_STARTS = QUARTER_HOURS.slice(0, -1);
+const BAND_ENDS = QUARTER_HOURS.slice(1);
 
 function domainLabel(domain: StatutoryDomain, t: Translate): string {
 	switch (domain) {
@@ -214,7 +250,7 @@ function formatValue(
 				value: number(row.value),
 			});
 		case "minute_of_day":
-			return `${String(Math.floor(row.value / 60)).padStart(2, "0")}:${String(row.value % 60).padStart(2, "0")}`;
+			return formatMinuteOfDay(row.value);
 	}
 }
 
@@ -331,6 +367,9 @@ interface PreferencesFormValues {
 	warningThresholdPercent: number;
 	criticalThresholdPercent: number;
 	blockJarbschgShiftPublish: boolean;
+	applyJarbschgToMinorContractors: boolean;
+	workingStudentDaytimeStartMinute: number;
+	workingStudentDaytimeEndMinute: number;
 }
 
 function PreferencesCard({
@@ -356,6 +395,9 @@ function PreferencesCard({
 			void queryClient.invalidateQueries({
 				queryKey: ["contracts", "statutory", organizationId],
 			});
+			// The tiers, the publish block and the daytime band change findings and warnings: the
+			// views that show them judge anew.
+			void invalidateOrganizationStatutoryFindings(queryClient, organizationId);
 		},
 		onError: (error) => {
 			toast.error(
@@ -382,6 +424,14 @@ function PreferencesCard({
 			: t(
 					"settings.contracts.statutory.preferences.percentRange",
 					"Enter whole percentages from 1 to 100.",
+				);
+
+	const bandOrderError = (startMinute: number, endMinute: number) =>
+		startMinute < endMinute
+			? undefined
+			: t(
+					"settings.contracts.statutory.preferences.daytimeBandOrder",
+					"The daytime band must start before it ends.",
 				);
 
 	return (
@@ -527,6 +577,137 @@ function PreferencesCard({
 						)}
 					</form.Field>
 
+					<form.Field name="applyJarbschgToMinorContractors">
+						{(field) => (
+							<div className="flex items-start justify-between gap-4 rounded-lg border p-4">
+								<div className="space-y-1">
+									<Label
+										htmlFor="statutory-jarbschg-minor-contractors"
+										className="flex items-center gap-2 font-medium"
+									>
+										<IconUserShield className="size-4 text-primary" aria-hidden="true" />
+										{t(
+											"settings.contracts.statutory.preferences.minorContractors",
+											"Apply youth protection (JArbSchG) to minor contractors",
+										)}
+									</Label>
+									<p className="text-muted-foreground text-sm">
+										{t(
+											"settings.contracts.statutory.preferences.minorContractorsHelp",
+											"JArbSchG also covers minors whose services resemble an employee's work (§ 1 Abs. 1 Nr. 3 JArbSchG). Off: each engagement of an External Contractor under 18 is flagged in Reviews & Conflicts so you can check whether it does. On: their working time is judged like an employee's under 18 in Scheduling, Staffing, the publish block and recorded working time.",
+										)}
+									</p>
+								</div>
+								<Switch
+									id="statutory-jarbschg-minor-contractors"
+									checked={field.state.value}
+									onCheckedChange={(checked) => field.handleChange(checked)}
+								/>
+							</div>
+						)}
+					</form.Field>
+
+					<fieldset className="space-y-4 rounded-lg border p-4">
+						<legend className="sr-only">
+							{t(
+								"settings.contracts.statutory.preferences.daytimeBand",
+								"Working-student daytime band",
+							)}
+						</legend>
+						<div className="space-y-1">
+							<p className="flex items-center gap-2 font-medium text-sm" aria-hidden="true">
+								<IconSchool className="size-4 text-primary" />
+								{t(
+									"settings.contracts.statutory.preferences.daytimeBand",
+									"Working-student daytime band",
+								)}
+							</p>
+							<p className="text-muted-foreground text-sm">
+								{t(
+									"settings.contracts.statutory.preferences.daytimeBandHelp",
+									"Weekday work inside this band during lecture periods counts against the 20-hour rule for working students (§ 6 Abs. 1 Nr. 3 SGB V). Evening and night work outside it, weekends and lecture-free periods do not count.",
+								)}
+							</p>
+							<p className="text-muted-foreground text-sm">
+								{t(
+									"settings.contracts.statutory.preferences.daytimeBandInsurer",
+									"The law names no hours. Use the band your health insurer and payroll advisor accept.",
+								)}
+							</p>
+						</div>
+						<div className="grid gap-4 sm:grid-cols-2">
+							<form.Field
+								name="workingStudentDaytimeStartMinute"
+								validators={{
+									// Changing either end re-judges the pair, so a fixed band clears the error.
+									onChange: ({ value, fieldApi }) =>
+										bandOrderError(
+											value,
+											fieldApi.form.getFieldValue("workingStudentDaytimeEndMinute"),
+										),
+									onChangeListenTo: ["workingStudentDaytimeEndMinute"],
+									onSubmit: ({ value, fieldApi }) =>
+										bandOrderError(
+											value,
+											fieldApi.form.getFieldValue("workingStudentDaytimeEndMinute"),
+										),
+								}}
+							>
+								{(field) => (
+									<TFormItem>
+										<TFormLabel hasError={fieldHasError(field)}>
+											{t("settings.contracts.statutory.preferences.daytimeStart", "Counts from")}
+										</TFormLabel>
+										<Select
+											value={field.state.value}
+											onValueChange={(value) => value !== null && field.handleChange(value)}
+										>
+											<TFormControl hasError={fieldHasError(field)}>
+												<SelectTrigger className="w-28 tabular-nums">
+													<SelectValue />
+												</SelectTrigger>
+											</TFormControl>
+											<SelectContent>
+												{BAND_STARTS.map((minute) => (
+													<SelectItem key={minute} value={minute} className="tabular-nums">
+														{formatMinuteOfDay(minute)}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+										<TFormMessage>{field.state.meta.errors[0]}</TFormMessage>
+									</TFormItem>
+								)}
+							</form.Field>
+							<form.Field name="workingStudentDaytimeEndMinute">
+								{(field) => (
+									<TFormItem>
+										<TFormLabel>
+											{t("settings.contracts.statutory.preferences.daytimeEnd", "Counts until")}
+										</TFormLabel>
+										<Select
+											value={field.state.value}
+											onValueChange={(value) => value !== null && field.handleChange(value)}
+										>
+											<TFormControl>
+												<SelectTrigger className="w-28 tabular-nums">
+													<SelectValue />
+												</SelectTrigger>
+											</TFormControl>
+											<SelectContent>
+												{BAND_ENDS.map((minute) => (
+													<SelectItem key={minute} value={minute} className="tabular-nums">
+														{formatMinuteOfDay(minute)}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</TFormItem>
+								)}
+							</form.Field>
+						</div>
+					</fieldset>
+
 					<div className="flex justify-end">
 						<form.Subscribe selector={(state) => state.isDirty}>
 							{(isDirty) => (
@@ -595,12 +776,15 @@ export function ContractsStatutoryTab({ organizationId }: ContractsStatutoryTabP
 		<div className="space-y-6">
 			<PreferencesCard
 				// Remount after a save so the form starts from the stored values.
-				key={`${preferences.warningThresholdPercent}:${preferences.criticalThresholdPercent}:${preferences.blockJarbschgShiftPublish}`}
+				key={`${preferences.warningThresholdPercent}:${preferences.criticalThresholdPercent}:${preferences.blockJarbschgShiftPublish}:${preferences.applyJarbschgToMinorContractors}:${preferences.workingStudentDaytimeStartMinute}:${preferences.workingStudentDaytimeEndMinute}`}
 				organizationId={organizationId}
 				initial={{
 					warningThresholdPercent: preferences.warningThresholdPercent,
 					criticalThresholdPercent: preferences.criticalThresholdPercent,
 					blockJarbschgShiftPublish: preferences.blockJarbschgShiftPublish,
+					applyJarbschgToMinorContractors: preferences.applyJarbschgToMinorContractors,
+					workingStudentDaytimeStartMinute: preferences.workingStudentDaytimeStartMinute,
+					workingStudentDaytimeEndMinute: preferences.workingStudentDaytimeEndMinute,
 				}}
 			/>
 			{baselines.length === 0 ? (

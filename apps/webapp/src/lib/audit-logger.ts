@@ -114,6 +114,10 @@ export enum AuditAction {
 	// #853: a payroll run confirmed as paid recorded the report's reimbursement.
 	TRAVEL_EXPENSE_PAYROLL_RUN_REPORT_CONFIRMED = "travel_expense.payroll_run_report_confirmed",
 
+	// German statutory compliance (#2017): an org admin changed the organization's statutory
+	// preferences (warning tiers, JArbSchG publish block, working-student daytime band).
+	STATUTORY_PREFERENCES_UPDATED = "statutory.preferences_updated",
+
 	// Approval Escalation Management
 	APPROVAL_ESCALATION_POLICY_UPDATED = "approval_escalation.policy_updated",
 	APPROVAL_ESCALATION_CONFLICTS_REVIEWED = "approval_escalation.conflicts_reviewed",

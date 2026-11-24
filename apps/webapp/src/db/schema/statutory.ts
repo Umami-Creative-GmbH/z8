@@ -56,6 +56,23 @@ export const organizationStatutoryPreference = pgTable(
 		warningThresholdPercent: integer("warning_threshold_percent").default(80).notNull(),
 		criticalThresholdPercent: integer("critical_threshold_percent").default(95).notNull(),
 		blockJarbschgShiftPublish: boolean("block_jarbschg_shift_publish").default(false).notNull(),
+		/**
+		 * #2022, migration 0337: judge External Contractor days of minors under JArbSchG like
+		 * employee days. Off: each minor contractor engagement is flagged for review instead.
+		 */
+		applyJarbschgToMinorContractors: boolean("apply_jarbschg_to_minor_contractors")
+			.default(false)
+			.notNull(),
+		/**
+		 * Working-student weekday daytime band (#2017, migration 0336), minutes after local midnight:
+		 * `[start, end)`, whole quarter hours, 0 ≤ start < end ≤ 1440. Default 06:00–18:00.
+		 */
+		workingStudentDaytimeStartMinute: integer("working_student_daytime_start_minute")
+			.default(360)
+			.notNull(),
+		workingStudentDaytimeEndMinute: integer("working_student_daytime_end_minute")
+			.default(1080)
+			.notNull(),
 		updatedBy: text("updated_by"),
 		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
@@ -74,6 +91,10 @@ export const organizationStatutoryPreference = pgTable(
 		check(
 			"organization_statutory_preference_percent_check",
 			sql`"warning_threshold_percent" BETWEEN 1 AND 100 AND "critical_threshold_percent" BETWEEN 1 AND 100 AND "warning_threshold_percent" < "critical_threshold_percent"`,
+		),
+		check(
+			"organization_statutory_preference_daytime_band_check",
+			sql`"working_student_daytime_start_minute" >= 0 AND "working_student_daytime_end_minute" <= 1440 AND "working_student_daytime_start_minute" < "working_student_daytime_end_minute" AND "working_student_daytime_start_minute" % 15 = 0 AND "working_student_daytime_end_minute" % 15 = 0`,
 		),
 	],
 );

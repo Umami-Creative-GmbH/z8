@@ -240,7 +240,7 @@
         "break": "Under 18: {used} min of breaks taken, {limit} min required",
         "uninterrupted": "Under 18: {used} min worked without a break, at most {limit} min allowed",
         "nightWork": "Under 18: {used} min of night work between 20:00 and 06:00",
-        "nightWorkBeyondSector": "Under 18: {used} min of night work between 20:00 and 06:00, outside the hours a sector exception allows (from 16: 05:00 to 23:00; from 17 in bakeries: from 04:00); no exception allows it",
+        "nightWorkBeyondSector": "Under 18: {minutes} min of night work outside the hours a sector exception allows (from 15: 05:00 to 21:00; from 16 until 23:30; from 17 in bakeries from 04:00; none under 15); no exception allows it",
         "saturdayWork": "Under 18: Saturday work needs a statutory sector exception",
         "sundayWork": "Under 18: Sunday work needs a statutory sector exception",
         "holidayWork": "Under 18: work on a public holiday needs a statutory sector exception",
@@ -250,6 +250,7 @@
       "apprenticeship": {
         "releaseDayShiftOn": "Apprentice release day on {date}: school, block-release or exam day",
         "blockWeekTrainingWeek": "Block-release week: {used} min of work on this week's school days, {limit} min of in-company training allowed; past the allowance on {date}",
+        "blockWeekTrainingNote": "The allowed training (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG) comes on top of the block week, which counts with the average weekly working time (§ 9 Abs. 2 Nr. 2 JArbSchG), and does not count towards an under-18's § 8 daily and weekly limits",
         "workplaceReturnOn": "Under 18: no work on {date}, the week's full vocational school day"
       },
       "shortTerm": {

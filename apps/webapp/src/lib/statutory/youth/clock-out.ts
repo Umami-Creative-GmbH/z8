@@ -11,10 +11,10 @@ import { workPolicyViolation } from "@/db/schema";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import { dateFromInstant, type Instant, plainDateAt } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
-import { loadEmployeeTime } from "@/lib/engagement/engagement-stints";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { attachAcknowledgementStates } from "../acknowledgements";
 import type { StatutoryFinding } from "../finding";
+import { loadOrganizationStatutoryPreferences } from "../preferences";
 import { deepensBreachedLimit } from "../scheduling/evaluate";
 import { isMinorOn } from "./age";
 import type { JarbschgRule } from "./jarbschg-rules";
@@ -23,6 +23,7 @@ import {
 	loadEmployeeBirthdays,
 	loadJarbschgLimits,
 	loadYouthShifts,
+	loadYouthJudgedTime,
 	loadYouthWork,
 } from "./youth-facts";
 import { loadHolidayDateKeys } from "../holiday-days";
@@ -63,8 +64,17 @@ export async function recordJarbschgViolationsAfterClockOut(
 	};
 	const scope = { organizationId: input.organizationId, employeeIds: [input.employeeId] };
 	// Contractor work records no `work_policy_violation` (#1996), youth limits included; on a
-	// conversion day only its employee part is judged (#2010).
-	const employeeTime = await loadEmployeeTime(db, input.organizationId, [input.employeeId]);
+	// conversion day only its employee part is judged (#2010). Unless the organization judges
+	// minor contractors under JArbSchG (#2022): then all of their time is judged.
+	const { applyJarbschgToMinorContractors } = await loadOrganizationStatutoryPreferences(
+		db,
+		input.organizationId,
+	);
+	const employeeTime = await loadYouthJudgedTime(db, {
+		...scope,
+		timezone: input.timezone,
+		applyJarbschgToMinorContractors,
+	});
 	const contractorDays = daysWithoutEmployeeTime(employeeTime, input.employeeId, {
 		timezone: input.timezone,
 		...range,

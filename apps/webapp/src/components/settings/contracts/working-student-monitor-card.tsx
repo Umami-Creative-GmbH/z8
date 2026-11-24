@@ -40,6 +40,7 @@ import {
 	actionErrorMessage,
 	type RefusalMessages,
 } from "@/lib/organization-action/action-error-message";
+import { formatMinuteOfDay } from "@/lib/statutory/daytime-band";
 import type { EmployeeContextRefusal } from "@/lib/statutory/employee-context";
 import type {
 	WorkingStudentFindingView,
@@ -832,10 +833,19 @@ export function WorkingStudentMonitorCard({
 					{t("settings.contracts.workingStudent.title", "Working student (§ 6 SGB V)")}
 				</CardTitle>
 				<CardDescription>
-					{t(
-						"settings.contracts.workingStudent.description",
-						"In lecture periods, weekday daytime work (06:00–18:00) may not exceed 20 hours a week; evening, night, weekend and lecture-free work may. Every week above 20 hours counts toward 26 weeks in 12 months, including weeks under another employment profile. Warnings never block clocking.",
-					)}
+					{query.data?.daytimeBand
+						? t(
+								"settings.contracts.workingStudent.description",
+								"In lecture periods, weekday daytime work ({start}–{end}) may not exceed 20 hours a week; evening, night, weekend and lecture-free work may. Every week above 20 hours counts toward 26 weeks in 12 months, including weeks under another employment profile. Warnings never block clocking.",
+								{
+									start: formatMinuteOfDay(query.data.daytimeBand.startMinute),
+									end: formatMinuteOfDay(query.data.daytimeBand.endMinute),
+								},
+							)
+						: t(
+								"settings.contracts.workingStudent.descriptionWithoutBand",
+								"In lecture periods, weekday daytime work may not exceed 20 hours a week; evening, night, weekend and lecture-free work may. Every week above 20 hours counts toward 26 weeks in 12 months, including weeks under another employment profile. Warnings never block clocking.",
+							)}
 				</CardDescription>
 			</CardHeader>
 			<CardContent>

@@ -16,6 +16,22 @@ _Avoid_: hardcoded limit, setting
 An organization's warning and critical percentages of a statutory limit (default 80 % / 95 %).
 _Avoid_: thresholds (ambiguous with baselines)
 
+**Daytime band** (working student):
+The local wall-clock hours of a lecture-period weekday whose work counts against the 20-hour rule
+(§ 6 Abs. 1 Nr. 3 SGB V); work outside it (evenings, nights), weekends and lecture-free days do
+not. An organization statutory preference beside the warning tiers and the JArbSchG publish
+block, not a statutory baseline: the law names no hour and health insurers read "evening and
+night" differently, so each organization sets the band its insurer and payroll advisor accept
+(Settings → Contracts → statutory limits, org admins only, audited with what it replaced).
+Default 06:00–18:00; whole quarter hours, start before end, 00:00 to 24:00 (24:00 is the next
+day's start, also across a DST change). An edge in the hour clocks skip starts or ends at the first
+minute after the gap, and a band wholly inside the gap leaves that day without daytime; the rest of
+the day is evening/night, so no minute counts twice. Every working-student evaluation reads it with the other
+preferences, loaded once per evaluation. It is part of the lecture-week input fingerprint, so
+changing it makes that week's acknowledgement stale (changing it back makes it current again), and
+it decides the week's core minutes, the finding's breach depth.
+_Avoid_: core hours, hardcoding 06:00–18:00
+
 **Statutory context**:
 Per-employee facts a monitor needs beyond Z8's own records: external or prior-employment offsets,
 lecture-free periods, apprentice school and exam releases. Voided, never edited.
@@ -73,6 +89,38 @@ reads no names; an acknowledgement's history (who, when, reason, legal note, cur
 invalidated / no longer applies / earlier) is read per subject and never carries fingerprints.
 _Avoid_: queue (the migration & departure reviews), dismissed
 
+**Minor contractor** (youth protection):
+An External Contractor (`engagementKind = contractor` employment period, #1996) who is under 18 on
+a contractor day. Contractor days are no employee's, so no Milestone 2 monitor judges them, the
+JArbSchG monitor included. A contractor day is what the contract resolver says
+(`engagementKindOnDay`, `contractorDaysByEngagement`): a day in a contractor stint, and outside every stint
+a day whose deciding stint (`engagementPeriodDecidingDay`: the one that ended last before it, or
+before the first stint the one the resolver picks on the first day a stint starts, which after a
+first-day conversion is the later stint) is a contractor's. But § 1 Abs. 1 Nr. 3
+JArbSchG also covers minors whose services resemble an employee's work, so by default every
+contractor engagement that decides a contractor day of a minor in the review horizon
+(`review-window.ts`, current roster) is one **review item** (`jarbschg_minor_contractor`, subject
+`engagement:<period id>`; `engagement:unrecorded` for a contractor with no recorded stint, judged by
+`employee.engagement_kind`), so no day the monitor skips goes unreviewed. An ended stint whose
+person is still on the roster as a contractor, or the stint deciding the days before the first
+start, keeps its own item, which says so. It is a warning in the Youth & Apprentice review domain and the Compliance
+Command Center, never a publish block. An org admin documents their assessment with a reason
+(`jarbschg_minor_contractor_review`); the fingerprint covers the stint's recorded start and end,
+the birthday, whether the window holds contractor days after the stint ended on which the
+person is still under 18, and whether the stint decides the days before the first start while the
+person is under 18 (only changed data changes that, e.g. removing the stint that decided them). So a corrected birthday or a changed period re-opens it, and so does the
+window first reaching such a day after the end of a stint with no later one (that turns true once
+and only changed data turns it back). The window otherwise moving does not: not past the start of
+a first stint, and not onto days after the end that fall on or after the 18th birthday. The
+organization statutory preference **Apply youth protection (JArbSchG) to minor contractors**
+(`applyJarbschgToMinorContractors`, default off, migration 0337, org admins only, audited with
+the other preferences) judges contractor days of minors exactly like employee days instead,
+everywhere the monitor runs (Scheduling, Staffing, the publish block, clock-out recording, review
+lists), and raises no review item. Minijob,
+short-term, working-student, on-call and apprentice release monitors keep excluding contractors
+either way.
+_Avoid_: judging every minor contractor as an employee by default, silently skipping them
+
 **Restricted audience**:
 Everyone below org admin (scoped managers, planners, the employee). Sees summaries only, never EUR
 amounts, wages, external earnings or EUR baselines.
@@ -107,10 +155,10 @@ _Avoid_: bucketing on-call band work by its start day alone
 **Block-week training allowance**:
 In a full block-release week (at least 25 hours of lessons on at least five days), additional
 in-company training events of up to two hours a week are allowed (§ 9 Abs. 1 Nr. 3 JArbSchG,
-§ 15 Abs. 1 Satz 2 Nr. 3 BBiG). Up to 120 minutes of planned work on the week's block days,
+§ 15 Abs. 1 Satz 3 BBiG). Up to 120 minutes of planned work on the week's block days,
 earliest first and work that overlapping shifts share counted once, are no release conflict;
-for a minor they also stay outside the § 8 JArbSchG day and week totals, which the block week
-already fills with its credited 40 hours. Only the work past them conflicts, on the block day it
+for a minor they also stay outside the § 8 JArbSchG day and week totals: they come on top of the
+block week, which § 9 Abs. 2 Nr. 2 JArbSchG credits with the average weekly working time. Only the work past them conflicts, on the block day it
 falls on.
 
 **Shift span** (*Schichtzeit*, § 12 JArbSchG):
@@ -123,23 +171,34 @@ planned shifts and stays current while the day is worked roughly as planned (clo
 minutes early, out a few minutes late); other shifts, or a span 15 minutes or more past the
 planned shifts' span, make it stale.
 
-**Night-work sector hours** (§ 14 Abs. 2, 3 JArbSchG):
+**Night-work sector hours** (§ 14 Abs. 2, 3, 5, 6 JArbSchG):
 Minors may work only from 06:00 to 20:00 (§ 14 Abs. 1). An org admin's sector exception covers
-night work only inside the widest hours § 14 Abs. 2, 3 allows for the minor's age on that day:
-from their 16th birthday 05:00 to 23:00 (hospitality and fairgrounds until 22:00, multi-shift
-operations until 23:00, agriculture from 05:00 or until 21:00, bakeries from 05:00), from their
-17th birthday also from 04:00 (bakeries). The evening is judged by the age that day, the early
-morning by the age that morning. Night work outside them, or by anyone under 16, cannot be
-acknowledged, as a span over 11 hours cannot: the finding stays and blocks publication like a
-hard limit. Extensions after notice to or by permit of the supervisory authority (§ 14 Abs. 5,
-7) are not employer acknowledgements and are not modelled.
+night work only inside the union of the hours § 14 lets the employer use for the minor's age
+without the supervisory authority's approval: from 15 05:00 to 21:00 (a minor still in full-time compulsory schooling gets none, § 2 Abs. 3, except in a school-holiday job of at most four weeks per calendar year, § 5 Abs. 4: the admin confirms it; a child under 15 gets none here: § 7 S. 2 would extend § 14 to a child past full-time schooling, which Z8 deliberately does not support, so that case stays blocked) (Abs. 5 S. 1: until 21:00
+where the usual working time ends after 20:00 for transport reasons, after notice to the
+authority; Abs. 6: from 05:00 in the warm season in workplaces with extraordinary heat); from the
+16th birthday 05:00 to 23:30 (Abs. 2: hospitality and fairgrounds until 22:00, multi-shift
+operations until 23:00, agriculture from 05:00 or until 21:00, bakeries from 05:00; Abs. 5 S. 2:
+multi-shift operations from 05:30 or until 23:30 after notice); from the 17th birthday also from
+04:00 (Abs. 3, bakeries). The evening is judged by the age that day, the early morning by the age
+that morning. Night work outside them cannot be acknowledged, as a span over 11 hours cannot:
+the finding stays and blocks publication like a hard limit, and the planner names only its
+minutes outside the hours (`beyondSectorHours`). Abs. 5 needs only a notice to the authority,
+which the admin confirms; Abs. 7 (performances until 23:00) needs the authority's approval and is
+out of scope. Which permission applies, and that § 14 Abs. 4 does not exclude it (no Abs. 2
+Nr. 1–3 work after 20:00 on the day before a vocational school day whose lessons start before
+09:00), is what the acknowledgement confirms: lesson start times of school days are optional, block
+weeks carry none and minors at school need not be recorded as apprentices, so Abs. 4 is not
+judged automatically.
 _Avoid_: one acknowledgement lifting night work at any hour or age
 
 ## Relationships
 
 - **Engagement → Statutory Compliance**: monitors judge **employee time** only (#2010). An External
-  Contractor stint is no employment under any monitor here, whatever its terms rows, agreements,
-  profile or the person's age: every monitor reads work and shifts through `employee-time.ts`
+  Contractor stint is no employment under any monitor here, whatever its terms rows, agreements
+  or profile, and whatever the person's age unless the organization applies JArbSchG to minor
+  contractors (see **Minor contractor**; youth limits then read all time, `loadYouthJudgedTime`):
+  every monitor reads work and shifts through `employee-time.ts`
   (over `loadEmployeeTime`), which drops contractor time and, on a conversion day, splits at the
   exact instant as payroll does. Short-term reads no terms row of a contractor stint, so a
   contractor stint never forms, joins or bridges a short-term employment. Staffing's proposals
@@ -195,6 +254,33 @@ _Avoid_: one acknowledgement lifting night work at any hour or age
   refused, shortening it to 9 h on Tuesday saves
 - **Statutory Compliance → Contracts reviews**: acknowledgements live in
   `contract_review_acknowledgement` beside Milestone 1's contract review notices
+
+## Decisions
+
+Confirmed as intended in the final review of PR #2007 and made visible in the product (#2023).
+
+**Executive exemption switches off all adult ArbZG handling.** `arbzg_scope = 'executive_exempt'`
+marks leitende Angestellte as defined in § 5 Abs. 3 BetrVG, whom § 18 Abs. 1 Nr. 1 ArbZG takes out of the ArbZG entirely. So it
+suppresses adult ArbZG findings and also the automatic ArbZG break deductions and break
+reminders: none of them has a legal basis for these employees. JArbSchG is a separate law that
+§ 18 ArbZG does not touch, so a minor marked exempt keeps every youth-protection check. Explained
+beside the ArbZG scope wherever an admin sets or sees it (effective contract terms, the change form,
+contract templates).
+
+**The on-call sick-pay line is guidance, not a payroll calculation.** The payroll reference card
+states whether § 3 EFZG continued pay is owed for an own illness (owed, waiting time of § 3 Abs. 3,
+six weeks of § 3 Abs. 1 exhausted, not owed). Z8 does not see everything that decides the claim
+(a new illness or a continuation of an earlier one, § 3 Abs. 1 Satz 2; fault), so the line is labelled
+"Guidance for payroll" and the card says the payroll system decides. It changes no figure.
+
+**The block-week training allowance stays out of a minor's § 8 totals.** In a full block-release
+week, § 9 Abs. 1 Nr. 3 JArbSchG and § 15 Abs. 1 Satz 3 BBiG allow in-company training of up to
+two hours a week, in addition to the block week, which § 9 Abs. 2 Nr. 2 JArbSchG credits with the
+average weekly working time (Z8 uses 40 hours when the terms give none). For a full-time minor that
+already reaches the § 8 weekly maximum, so counting the allowed minutes as well would breach § 8 and
+the allowance could never be used. They are therefore left out of a minor's day and week totals (see
+**Block-week training allowance**). Said where the allowance shows: the apprentice's block-week
+release credit and the release-conflict warning in Staffing and Reviews & Conflicts.
 
 ## Short-term employment
 

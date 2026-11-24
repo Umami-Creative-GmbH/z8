@@ -24,6 +24,7 @@ import {
 } from "../acknowledgements";
 import { listEmployeeStatutoryOffsets, listEmployeeStudyPeriods } from "../employee-context";
 import { loadEmployeeInOrganization } from "../employee-scope";
+import { loadOrganizationStatutoryPreferences } from "../preferences";
 import {
 	type RedactedStatutoryFinding,
 	redactStatutoryFinding,
@@ -32,7 +33,9 @@ import {
 import { evaluateWorkingStudents, loadWorkingStudentCandidates } from "./monitor";
 import {
 	mondayOf,
+	type WorkingStudentDaytimeBand,
 	type WorkingStudentFinding,
+	workingStudentDaytimeBandOf,
 	type WorkingStudentFindingKind,
 	type WorkingStudentWeek,
 	workingStudentFindingKinds,
@@ -96,6 +99,8 @@ export interface WorkingStudentMonitorView {
 	/** Whether the employee is a working student in the current compliance week. */
 	readonly currentlyWorkingStudent: boolean;
 	readonly audience: StatutoryAudience;
+	/** The organization's weekday daytime band the weeks were judged by (not sensitive); null when nothing applies. */
+	readonly daytimeBand: WorkingStudentDaytimeBand | null;
 	readonly rolling: WorkingStudentRollingStatus | null;
 	readonly weeks: readonly WorkingStudentWeekView[];
 	readonly findings: readonly WorkingStudentFindingView[];
@@ -154,6 +159,7 @@ export async function loadWorkingStudentMonitor(
 		applies: false,
 		currentlyWorkingStudent: false,
 		audience: input.audience,
+		daytimeBand: null,
 		rolling: null,
 		weeks: [],
 		findings: [],
@@ -168,6 +174,8 @@ export async function loadWorkingStudentMonitor(
 
 	const { timezone, monday } = await currentWeek(db, input.organizationId, input.now);
 	const windowStart = monday.subtract({ weeks: CARD_PAST_WEEKS });
+	// Loaded once: the evaluation judges by it and the card names it.
+	const preferences = await loadOrganizationStatutoryPreferences(db, input.organizationId);
 	const [evaluation] = await evaluateWorkingStudents(db, {
 		organizationId: input.organizationId,
 		timezone,
@@ -177,6 +185,7 @@ export async function loadWorkingStudentMonitor(
 		},
 		employeeIds: [input.employeeId],
 		now: input.now,
+		preferences,
 	});
 	const findings = evaluation
 		? await attachAcknowledgementStates(db, input.organizationId, evaluation.findings)
@@ -207,6 +216,7 @@ export async function loadWorkingStudentMonitor(
 		applies: true,
 		currentlyWorkingStudent: current?.isWorkingStudentWeek ?? false,
 		audience: input.audience,
+		daytimeBand: workingStudentDaytimeBandOf(preferences),
 		rolling: current?.isWorkingStudentWeek ? rollingOf(current) : null,
 		weeks: shown.filter((week) => week.isWorkingStudentWeek).map(weekView),
 		findings: findings.map((finding) => redactStatutoryFinding(finding, input.audience)),

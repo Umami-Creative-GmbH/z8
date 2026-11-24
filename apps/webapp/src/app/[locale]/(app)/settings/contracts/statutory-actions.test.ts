@@ -5,6 +5,12 @@ const mocks = vi.hoisted(() => ({
 	caller: null as StubCaller | null,
 	loadStatutorySettingsOverview: vi.fn(),
 	saveOrganizationStatutoryPreferences: vi.fn(),
+	logAudit: vi.fn(async () => {}),
+}));
+
+vi.mock("@/lib/audit-logger", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/audit-logger")>()),
+	logAudit: mocks.logAudit,
 }));
 
 vi.mock("@/lib/statutory/settings-overview", () => ({
@@ -46,6 +52,9 @@ const validPreferences = {
 	warningThresholdPercent: 75,
 	criticalThresholdPercent: 90,
 	blockJarbschgShiftPublish: true,
+	applyJarbschgToMinorContractors: true,
+	workingStudentDaytimeStartMinute: 420,
+	workingStudentDaytimeEndMinute: 1140,
 };
 
 describe("statutory settings actions (#1988)", () => {
@@ -55,6 +64,12 @@ describe("statutory settings actions (#1988)", () => {
 		mocks.saveOrganizationStatutoryPreferences.mockImplementation(async (_db, input) => ({
 			...input,
 			isDefault: false,
+			previous: {
+				...input,
+				applyJarbschgToMinorContractors: false,
+				workingStudentDaytimeStartMinute: 360,
+				isDefault: true,
+			},
 		}));
 	});
 
@@ -105,5 +120,59 @@ describe("statutory settings actions (#1988)", () => {
 			}),
 		).toMatchObject({ success: false, code: "ValidationError" });
 		expect(mocks.saveOrganizationStatutoryPreferences).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		[
+			"a band that starts after it ends",
+			{ workingStudentDaytimeStartMinute: 1140, workingStudentDaytimeEndMinute: 420 },
+		],
+		["a band off the quarter hour", { workingStudentDaytimeEndMinute: 1145 }],
+		["a band past 24:00", { workingStudentDaytimeEndMinute: 1455 }],
+	])("refuses %s", async (_name, band) => {
+		mocks.caller = orgAdmin;
+
+		expect(
+			await actions.updateStatutoryPreferencesAction({ ...validPreferences, ...band }),
+		).toMatchObject({ success: false, code: "ValidationError" });
+		expect(mocks.saveOrganizationStatutoryPreferences).not.toHaveBeenCalled();
+		expect(mocks.logAudit).not.toHaveBeenCalled();
+	});
+
+	it("refuses a save without the minor-contractor setting (#2022)", async () => {
+		mocks.caller = orgAdmin;
+		const withoutSetting: Partial<typeof validPreferences> = { ...validPreferences };
+		delete withoutSetting.applyJarbschgToMinorContractors;
+
+		expect(
+			await actions.updateStatutoryPreferencesAction(
+				withoutSetting as unknown as typeof validPreferences,
+			),
+		).toMatchObject({ success: false, code: "ValidationError" });
+		expect(mocks.saveOrganizationStatutoryPreferences).not.toHaveBeenCalled();
+	});
+
+	it("audits a saved change with what it replaced", async () => {
+		mocks.caller = orgAdmin;
+
+		await actions.updateStatutoryPreferencesAction(validPreferences);
+
+		expect(mocks.logAudit).toHaveBeenCalledWith(
+			expect.objectContaining({
+				action: "statutory.preferences_updated",
+				actorId: "u-admin",
+				organizationId: "org-1",
+				changes: {
+					before: expect.objectContaining({
+						workingStudentDaytimeStartMinute: 360,
+						applyJarbschgToMinorContractors: false,
+					}),
+					after: expect.objectContaining({
+						workingStudentDaytimeStartMinute: 420,
+						applyJarbschgToMinorContractors: true,
+					}),
+				},
+			}),
+		);
 	});
 });

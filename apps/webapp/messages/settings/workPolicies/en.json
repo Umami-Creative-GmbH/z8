@@ -28,6 +28,7 @@
       },
       "arbzgScope": {
         "executiveExempt": "Executive exempt (§ 18 ArbZG)",
+        "executiveExemptNote": "Executive exempt (leitende Angestellte as defined in § 5 Abs. 3 BetrVG, § 18 Abs. 1 Nr. 1 ArbZG): no adult ArbZG checks, automatic break deductions or break reminders. Use it only for employees who meet that definition; team leads and other managers usually do not. Youth protection (JArbSchG) still applies while the employee is under 18.",
         "standard": "Standard (ArbZG applies)"
       },
       "balanceMode": {
@@ -429,6 +430,7 @@
           },
           "legalNote": "Legal basis (optional), e.g. § 14 Abs. 2 Nr. 1 JArbSchG",
           "loadFailed": "Could not load youth protection findings.",
+          "nightConfirms": "Recording this confirms that one of these § 14 JArbSchG permissions applies to this work: hospitality or fairgrounds until 22:00 (from 16, Abs. 2 Nr. 1); multi-shift operations until 23:00 (from 16, Abs. 2 Nr. 2), or from 05:30 or until 23:30 after notifying the supervisory authority (Abs. 5 S. 2); agriculture from 05:00 or until 21:00 (from 16, Abs. 2 Nr. 3); bakeries and pastry shops from 05:00 (from 16, Abs. 2 Nr. 4), or bakeries from 04:00 (from 17, Abs. 3); until 21:00 from 15 where the usual working time ends after 20:00 for transport reasons, after notifying the supervisory authority (Abs. 5 S. 1); from 05:00 from 15 in a workplace with extraordinary heat in the warm season (Abs. 6). It also confirms that § 14 Abs. 4 does not exclude it: no work after 20:00 under Abs. 2 Nr. 1–3 on the day before a vocational school day whose lessons start before 09:00; and that the minor is no longer subject to full-time compulsory schooling (§ 2 Abs. 3) or works during school holidays, at most four weeks per calendar year (§ 5 Abs. 4); otherwise the rules for children apply and no exception does.",
           "nightMinutes": "{minutes} min at night",
           "reason": "Why does a sector exception apply?",
           "reasonRequired": "Explain which sector exception applies.",
@@ -443,6 +445,35 @@
           "title": "Youth protection: sector exceptions",
           "empty": "No youth protection finding needs a sector exception.",
           "documented": "Sector exception recorded"
+        },
+        "minorContractors": {
+          "acknowledge": "Record assessment…",
+          "acknowledged": "Assessment recorded",
+          "afterEnd": "After the engagement ends on {date}, the person stays on the roster as a contractor. Their shifts and work after that day are not judged under youth protection either.",
+          "beforeStart": "Before the engagement starts on {date}, the person is on the roster as a contractor. Their shifts and work before that day are not judged under youth protection either.",
+          "confirm": "Record assessment",
+          "description": "Z8 does not judge External Contractors by the youth protection limits. JArbSchG still covers minors whose services resemble an employee's work (§ 1 Abs. 1 Nr. 3 JArbSchG). Check each engagement and record your assessment. It opens again when the person's engagements or the birthday change, or once the person is on the roster as a contractor after the engagement ends.",
+          "documented": "Assessment recorded",
+          "empty": "No contractor under 18 needs a review.",
+          "hint": "If the work resembles an employee's (bound by instructions, integrated into your organization, no own clients or business risk), youth protection applies: switch on “Apply youth protection (JArbSchG) to minor contractors” in the statutory limits, or employ the minor instead.",
+          "kind": "Contractor under 18: check whether the work falls under § 1 Abs. 1 Nr. 3 JArbSchG",
+          "legalNote": "Legal note (optional)",
+          "loadFailed": "Could not load contractors under 18.",
+          "onDay": "Engaged on {date}",
+          "period": "Engaged {from} – {until}",
+          "reason": "Your assessment of the engagement",
+          "reasonRequired": "Explain why the work does or does not fall under youth protection.",
+          "refusal": {
+            "changed": "The person's engagements or the birthday changed since this list was loaded, or the person is now on the roster as a contractor after the engagement ends. Review it again.",
+            "notFound": "This engagement no longer needs a review. The list shows the current ones.",
+            "reasonRequired": "Explain why the work does or does not fall under youth protection.",
+            "subjectRequired": "This engagement cannot be documented. Reload the list and try again."
+          },
+          "since": "Engaged since {from}",
+          "stale": "Changed since last assessed",
+          "startUnrecorded": "Engagement start not recorded",
+          "title": "Youth protection: contractors under 18",
+          "untilStartUnrecorded": "Engaged until {until} (start not recorded)"
         },
         "migrationTitle": "Contract migration and departure reviews",
         "invalidated": "Acknowledgement invalidated: the work, shifts or figures changed after it was recorded. Review the current figures and acknowledge again if it still holds.",
@@ -673,7 +704,16 @@
           "saved": "Warning settings saved",
           "saveFailed": "Could not save the settings.",
           "percentRange": "Enter whole percentages from 1 to 100.",
-          "warningBelowCritical": "The warning percentage must be below the critical percentage."
+          "warningBelowCritical": "The warning percentage must be below the critical percentage.",
+          "daytimeBand": "Working-student daytime band",
+          "daytimeBandHelp": "Weekday work inside this band during lecture periods counts against the 20-hour rule for working students (§ 6 Abs. 1 Nr. 3 SGB V). Evening and night work outside it, weekends and lecture-free periods do not count.",
+          "daytimeBandInsurer": "The law names no hours. Use the band your health insurer and payroll advisor accept.",
+          "daytimeStart": "Counts from",
+          "daytimeEnd": "Counts until",
+          "daytimeBandRange": "Choose whole quarter hours from 00:00 to 24:00.",
+          "daytimeBandOrder": "The daytime band must start before it ends.",
+          "minorContractors": "Apply youth protection (JArbSchG) to minor contractors",
+          "minorContractorsHelp": "JArbSchG also covers minors whose services resemble an employee's work (§ 1 Abs. 1 Nr. 3 JArbSchG). Off: each engagement of an External Contractor under 18 is flagged in Reviews & Conflicts so you can check whether it does. On: their working time is judged like an employee's under 18 in Scheduling, Staffing, the publish block and recorded working time."
         }
       },
       "shortTerm": {
@@ -902,7 +942,8 @@
           "status": "Status"
         },
         "title": "Working student (§ 6 SGB V)",
-        "description": "In lecture periods, weekday daytime work (06:00–18:00) may not exceed 20 hours a week; evening, night, weekend and lecture-free work may. Every week above 20 hours counts toward 26 weeks in 12 months, including weeks under another employment profile. Warnings never block clocking.",
+        "description": "In lecture periods, weekday daytime work ({start}–{end}) may not exceed 20 hours a week; evening, night, weekend and lecture-free work may. Every week above 20 hours counts toward 26 weeks in 12 months, including weeks under another employment profile. Warnings never block clocking.",
+        "descriptionWithoutBand": "In lecture periods, weekday daytime work may not exceed 20 hours a week; evening, night, weekend and lecture-free work may. Every week above 20 hours counts toward 26 weeks in 12 months, including weeks under another employment profile. Warnings never block clocking.",
         "loadFailed": "Could not load the working-student monitor.",
         "reviews": {
           "acknowledged": "Week acknowledged",

@@ -1,5 +1,7 @@
 import { DateTime } from "luxon";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { StatutoryReviewInboxItem } from "@/lib/statutory/review-inbox";
+import { summarizeStatutoryReviewDomain } from "@/lib/statutory/review-summary";
 
 const mockState = vi.hoisted(() => {
 	const violationGroupBy = vi.fn();
@@ -106,30 +108,46 @@ describe("deriveWorkforceComplianceSection", () => {
 		latestPendingExceptionAt: null,
 		evaluatedAt: "2026-11-18T10:00:00Z",
 	};
+	type ReviewDomain = StatutoryReviewInboxItem["reviewDomain"];
+	let itemCount = 0;
+	/** A review inbox item as the domains' loaders give it. */
+	const item = (
+		reviewDomain: ReviewDomain,
+		severity: StatutoryReviewInboxItem["severity"],
+		acknowledgementStatus: StatutoryReviewInboxItem["acknowledgementStatus"],
+	): StatutoryReviewInboxItem => {
+		itemCount += 1;
+		return {
+			id: `finding-${itemCount}`,
+			reviewDomain,
+			domain: reviewDomain === "youth_apprentice" ? "youth_protection" : reviewDomain,
+			employeeId: "e1",
+			employeeName: "",
+			kind: "kind",
+			severity,
+			subjectKey: `subject-${itemCount}`,
+			periodStart: "2026-11-02",
+			periodEnd: "2026-11-09",
+			legalReference: "§",
+			acknowledgementKind:
+				acknowledgementStatus === null ? null : "minijob_unforeseeable_exceedance",
+			acknowledgementStatus,
+			acknowledgeable: acknowledgementStatus !== null,
+			source: acknowledgementStatus === null ? "monitor" : "review",
+		};
+	};
+	/** A domain's summary, as the review inbox derives it from the domain's items. */
 	const domain = (
-		name: "minijob" | "short_term" | "working_student" | "on_call" | "youth_apprentice",
-		counts: Partial<{
-			critical: number;
-			warning: number;
-			pendingAcknowledgements: number;
-			staleAcknowledgements: number;
-		}> = {},
+		name: ReviewDomain,
+		items: readonly StatutoryReviewInboxItem[] = [],
 		status: "loaded" | "unavailable" = "loaded",
-	) => ({
-		domain: name,
-		status,
-		critical: 0,
-		warning: 0,
-		pendingAcknowledgements: 0,
-		staleAcknowledgements: 0,
-		...counts,
-	});
+	) => ({ ...summarizeStatutoryReviewDomain(name, items), status });
 
 	it("turns critical for a critical statutory finding and links its domain's reviews", () => {
 		const result = deriveWorkforceComplianceSection({
 			...quietPolicy,
 			statutory: [
-				domain("minijob", { critical: 2, pendingAcknowledgements: 1 }),
+				domain("minijob", [item("minijob", "critical", "none"), item("minijob", "critical", null)]),
 				domain("on_call"),
 			],
 		});
@@ -148,10 +166,10 @@ describe("deriveWorkforceComplianceSection", () => {
 		expect(result.recentCriticalEvents).toEqual([]);
 	});
 
-	it("warns about an acknowledgement invalidated by newer work even without an open warning", () => {
+	it("warns about an acknowledgement invalidated by newer work and counts it", () => {
 		const result = deriveWorkforceComplianceSection({
 			...quietPolicy,
-			statutory: [domain("working_student", { staleAcknowledgements: 1 })],
+			statutory: [domain("working_student", [item("working_student", "warning", "stale")])],
 		});
 
 		expect(result.card.status).toBe("warning");
@@ -161,14 +179,19 @@ describe("deriveWorkforceComplianceSection", () => {
 		});
 	});
 
-	it("links every domain an org admin has to act on, acknowledgements alone included", () => {
+	it("links every domain with open findings, those awaiting an acknowledgement included", () => {
 		const result = deriveWorkforceComplianceSection({
 			...quietPolicy,
 			statutory: [
-				domain("minijob", { pendingAcknowledgements: 2 }),
-				domain("working_student", { staleAcknowledgements: 1 }),
-				domain("short_term"),
-				domain("on_call", {}, "unavailable"),
+				domain("minijob", [
+					item("minijob", "warning", "none"),
+					item("minijob", "warning", "none"),
+					// Documented by a current acknowledgement: nothing to act on.
+					item("minijob", "warning", "current"),
+				]),
+				domain("working_student", [item("working_student", "warning", "stale")]),
+				domain("short_term", [item("short_term", "info", null)]),
+				domain("on_call", [], "unavailable"),
 			],
 		});
 
@@ -199,7 +222,7 @@ describe("deriveWorkforceComplianceSection", () => {
 		const unreadable = deriveWorkforceComplianceSection({ ...quietPolicy, statutory: null });
 		const partly = deriveWorkforceComplianceSection({
 			...quietPolicy,
-			statutory: [domain("minijob"), domain("on_call", {}, "unavailable")],
+			statutory: [domain("minijob"), domain("on_call", [], "unavailable")],
 		});
 
 		for (const result of [unreadable, partly]) {

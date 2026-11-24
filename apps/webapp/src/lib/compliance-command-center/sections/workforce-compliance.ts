@@ -43,16 +43,12 @@ export function statutoryReviewsHref(domain: StatutoryReviewDomainSummary["domai
 }
 
 /**
- * What in a domain needs an org admin: its open findings, or its pending and stale
- * acknowledgements when they are all the domain reports. An unreadable domain needs nothing
- * openable; it is reported as a fact.
+ * What in a domain needs an org admin: its open findings. Pending and stale acknowledgements are
+ * among them (`summarizeStatutoryReviewDomain` counts them from the open critical and warning
+ * findings). An unreadable domain needs nothing openable; it is reported as a fact.
  */
 function needingAction(summary: StatutoryReviewDomainSummary): number {
-	if (summary.status === "unavailable") return 0;
-	return Math.max(
-		summary.critical + summary.warning,
-		summary.pendingAcknowledgements + summary.staleAcknowledgements,
-	);
+	return summary.status === "unavailable" ? 0 : summary.critical + summary.warning;
 }
 
 function statutoryParts(snapshot: WorkforceComplianceSnapshot) {
@@ -93,7 +89,7 @@ function statutoryParts(snapshot: WorkforceComplianceSnapshot) {
 
 	// Open findings are a standing backlog, not events: the card lists them per domain and they stay
 	// out of "Recent critical events", where they would crowd out what actually just happened.
-	// Every domain an org admin has to act on is linked, also one with acknowledgements alone.
+	// Every domain with open findings is linked, those awaiting an acknowledgement included.
 	const links: CompliancePrimaryLink[] = statutory
 		.filter((summary) => needingAction(summary) > 0)
 		.map((summary) => ({

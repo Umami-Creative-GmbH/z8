@@ -13,7 +13,12 @@ import {
 	parsePlainDate,
 } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
-import type { EmployeeTime } from "@/lib/engagement/engagement-stints";
+import {
+	type EmployeeTime,
+	employeeTime,
+	loadEmployeeTime,
+} from "@/lib/engagement/engagement-stints";
+import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 import { birthdayCalendarDate } from "@/lib/organization/employee-birthday";
 import { shiftCalendarDate, shiftDateRangeBounds } from "@/lib/scheduling/shift-date";
 import { shiftInterval } from "@/lib/scheduling/shift-occasion";
@@ -64,6 +69,12 @@ export async function loadJarbschgLimits(
 	};
 }
 
+/**
+ * `employeeIds` once each, in one order: callers passing the same employees in different orders
+ * then run the same statement, which a request-scoped `memoizedReader` reads once.
+ */
+const canonicalIds = (employeeIds: readonly string[]) => [...new Set(employeeIds)].sort();
+
 /** Recorded birthdays (calendar dates) of the organization's employees; null when unknown. */
 export async function loadEmployeeBirthdays(
 	db: Reader,
@@ -76,12 +87,50 @@ export async function loadEmployeeBirthdays(
 		.where(
 			and(
 				eq(employee.organizationId, input.organizationId),
-				inArray(employee.id, [...new Set(input.employeeIds)]),
+				inArray(employee.id, canonicalIds(input.employeeIds)),
 			),
 		);
 	return new Map(
 		rows.map((row) => [row.id, row.birthday ? birthdayCalendarDate(row.birthday) : null]),
 	);
+}
+
+/** The organization's employees' engagement kind (`employee.engagement_kind`). */
+export async function loadEmployeeEngagementKinds(
+	db: Reader,
+	input: { readonly organizationId: string; readonly employeeIds: readonly string[] },
+): Promise<Map<string, EngagementKind>> {
+	if (input.employeeIds.length === 0) return new Map();
+	const rows = await db
+		.select({ id: employee.id, engagementKind: employee.engagementKind })
+		.from(employee)
+		.where(
+			and(
+				eq(employee.organizationId, input.organizationId),
+				inArray(employee.id, canonicalIds(input.employeeIds)),
+			),
+		);
+	return new Map(rows.map((row) => [row.id, row.engagementKind]));
+}
+
+/**
+ * The time youth limits judge: the employees' employee time only (#2010), or, when the
+ * organization applies JArbSchG to minor contractors (#2022), all of it, contractor stints
+ * included, so their contractor days are judged exactly like employee days.
+ */
+export async function loadYouthJudgedTime(
+	db: Reader,
+	input: {
+		readonly organizationId: string;
+		readonly employeeIds: readonly string[];
+		readonly timezone: string;
+		readonly applyJarbschgToMinorContractors: boolean;
+	},
+): Promise<EmployeeTime> {
+	if (input.applyJarbschgToMinorContractors) {
+		return employeeTime(new Map(), new Map(), input.timezone);
+	}
+	return loadEmployeeTime(db, input.organizationId, input.employeeIds);
 }
 
 /**

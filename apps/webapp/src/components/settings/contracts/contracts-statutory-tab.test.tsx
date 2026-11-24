@@ -2,6 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -78,6 +79,9 @@ describe("ContractsStatutoryTab (#1988)", () => {
 					warningThresholdPercent: 80,
 					criticalThresholdPercent: 95,
 					blockJarbschgShiftPublish: false,
+					applyJarbschgToMinorContractors: false,
+					workingStudentDaytimeStartMinute: 360,
+					workingStudentDaytimeEndMinute: 1080,
 					isDefault: true,
 				},
 				baselines: [
@@ -114,6 +118,9 @@ describe("ContractsStatutoryTab (#1988)", () => {
 				warningThresholdPercent: 70,
 				criticalThresholdPercent: 95,
 				blockJarbschgShiftPublish: true,
+				applyJarbschgToMinorContractors: false,
+				workingStudentDaytimeStartMinute: 360,
+				workingStudentDaytimeEndMinute: 1080,
 				isDefault: false,
 			},
 		});
@@ -137,7 +144,7 @@ describe("ContractsStatutoryTab (#1988)", () => {
 		const warning = await screen.findByLabelText("Warning at");
 
 		fireEvent.change(warning, { target: { value: "70" } });
-		fireEvent.click(screen.getByRole("switch"));
+		fireEvent.click(screen.getByRole("switch", { name: /Block publishing/ }));
 		fireEvent.click(screen.getByRole("button", { name: "Save warning settings" }));
 
 		await waitFor(() =>
@@ -145,9 +152,90 @@ describe("ContractsStatutoryTab (#1988)", () => {
 				warningThresholdPercent: 70,
 				criticalThresholdPercent: 95,
 				blockJarbschgShiftPublish: true,
+				applyJarbschgToMinorContractors: false,
+				workingStudentDaytimeStartMinute: 360,
+				workingStudentDaytimeEndMinute: 1080,
 			}),
 		);
 		await waitFor(() => expect(mocks.toastSuccess).toHaveBeenCalled());
+	});
+
+	it("applies youth protection to minor contractors only when switched on (#2022)", async () => {
+		renderTab();
+		const minorContractors = await screen.findByRole("switch", {
+			name: "Apply youth protection (JArbSchG) to minor contractors",
+		});
+
+		expect(minorContractors.getAttribute("aria-checked")).toBe("false");
+		expect(screen.getByText(/§ 1 Abs. 1 Nr. 3 JArbSchG/)).toBeTruthy();
+
+		fireEvent.click(minorContractors);
+		fireEvent.click(screen.getByRole("button", { name: "Save warning settings" }));
+
+		await waitFor(() =>
+			expect(mocks.updateStatutoryPreferencesAction).toHaveBeenCalledWith(
+				expect.objectContaining({
+					blockJarbschgShiftPublish: false,
+					applyJarbschgToMinorContractors: true,
+				}),
+			),
+		);
+	});
+
+	it("shows the working-student daytime band and saves a changed one (#2017)", async () => {
+		const user = userEvent.setup();
+		renderTab();
+		const from = await screen.findByRole("combobox", { name: "Counts from" });
+		const until = screen.getByRole("combobox", { name: "Counts until" });
+
+		expect(from.textContent).toContain("06:00");
+		expect(until.textContent).toContain("18:00");
+		expect(screen.getByText(/20-hour rule/)).toBeTruthy();
+		expect(screen.getByText(/health insurer/)).toBeTruthy();
+
+		await user.click(from);
+		await user.click(await screen.findByRole("option", { name: "07:00" }));
+		await user.click(until);
+		await user.click(await screen.findByRole("option", { name: "24:00" }));
+		await user.click(screen.getByRole("button", { name: "Save warning settings" }));
+
+		await waitFor(() =>
+			expect(mocks.updateStatutoryPreferencesAction).toHaveBeenCalledWith(
+				expect.objectContaining({
+					workingStudentDaytimeStartMinute: 420,
+					workingStudentDaytimeEndMinute: 1440,
+				}),
+			),
+		);
+	});
+
+	it("keeps a daytime band that does not start before it ends from being saved", async () => {
+		const user = userEvent.setup();
+		renderTab();
+
+		await user.click(await screen.findByRole("combobox", { name: "Counts from" }));
+		await user.click(await screen.findByRole("option", { name: "18:00" }));
+		await user.click(screen.getByRole("button", { name: "Save warning settings" }));
+
+		expect(await screen.findByText("The daytime band must start before it ends.")).toBeTruthy();
+		expect(mocks.updateStatutoryPreferencesAction).not.toHaveBeenCalled();
+	});
+
+	it("clears the daytime band's order error once the end moves after the start", async () => {
+		const user = userEvent.setup();
+		renderTab();
+
+		await user.click(await screen.findByRole("combobox", { name: "Counts from" }));
+		await user.click(await screen.findByRole("option", { name: "18:00" }));
+		await user.click(screen.getByRole("button", { name: "Save warning settings" }));
+		expect(await screen.findByText("The daytime band must start before it ends.")).toBeTruthy();
+
+		await user.click(screen.getByRole("combobox", { name: "Counts until" }));
+		await user.click(await screen.findByRole("option", { name: "22:00" }));
+
+		await waitFor(() =>
+			expect(screen.queryByText("The daytime band must start before it ends.")).toBeNull(),
+		);
 	});
 
 	it("keeps a warning tier at or above the critical tier from being saved", async () => {

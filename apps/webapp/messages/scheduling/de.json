@@ -240,7 +240,7 @@
         "break": "Unter 18: {used} Min. Pause genommen, {limit} Min. erforderlich",
         "uninterrupted": "Unter 18: {used} Min. ohne Pause gearbeitet, höchstens {limit} Min. erlaubt",
         "nightWork": "Unter 18: {used} Min. Nachtarbeit zwischen 20:00 und 06:00 Uhr",
-        "nightWorkBeyondSector": "Unter 18: {used} Min. Nachtarbeit zwischen 20:00 und 06:00 Uhr, außerhalb der Zeiten, die eine Branchenausnahme erlaubt (ab 16: 05:00 bis 23:00 Uhr; ab 17 in Bäckereien: ab 04:00 Uhr); keine Ausnahme erlaubt sie",
+        "nightWorkBeyondSector": "Unter 18: {minutes} Min. Nachtarbeit außerhalb der Zeiten, die eine Branchenausnahme erlaubt (ab 15: 05:00 bis 21:00 Uhr; ab 16 bis 23:30 Uhr; ab 17 in Bäckereien ab 04:00 Uhr; unter 15 keine); keine Ausnahme erlaubt sie",
         "saturdayWork": "Unter 18: Samstagsarbeit braucht eine gesetzliche Branchenausnahme",
         "sundayWork": "Unter 18: Sonntagsarbeit braucht eine gesetzliche Branchenausnahme",
         "holidayWork": "Unter 18: Arbeit an Feiertagen braucht eine gesetzliche Branchenausnahme",
@@ -250,6 +250,7 @@
       "apprenticeship": {
         "releaseDayShiftOn": "Freistellungstag für Auszubildende am {date}: Berufsschul-, Blockunterrichts- oder Prüfungstag",
         "blockWeekTrainingWeek": "Blockunterrichtswoche: {used} Min. Arbeit an den Schultagen dieser Woche, {limit} Min. betriebliche Ausbildungsveranstaltungen erlaubt; überschritten am {date}",
+        "blockWeekTrainingNote": "Die erlaubten Ausbildungsveranstaltungen (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG) kommen zur Blockwoche hinzu, die mit der durchschnittlichen wöchentlichen Arbeitszeit angerechnet wird (§ 9 Abs. 2 Nr. 2 JArbSchG), und zählen bei Beschäftigten unter 18 nicht zu den Tages- und Wochenhöchstgrenzen nach § 8",
         "workplaceReturnOn": "Unter 18: keine Arbeit am {date}, dem vollen Berufsschultag der Woche"
       },
       "shortTerm": {

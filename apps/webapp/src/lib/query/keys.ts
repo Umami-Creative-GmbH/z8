@@ -594,6 +594,8 @@ export const queryKeys = {
 		// Under "shifts" so saving any shift refreshes them.
 		staffingSuggestions: (orgId: string, input: StaffingShiftInput) =>
 			["shifts", "staffing-suggestions", orgId, input] as const,
+		// Every proposed shift's suggestions in the organization.
+		staffingSuggestionsScope: (orgId: string) => ["shifts", "staffing-suggestions", orgId] as const,
 	},
 
 	// Shift requests (swaps, pickups)
@@ -849,6 +851,8 @@ export const queryKeys = {
 		// Schedule compliance warnings for scheduler publish flow
 		scheduleWarnings: (orgId: string, dateRange: { startDate: string; endDateExclusive: string }) =>
 			["compliance", "schedule-warnings", orgId, dateRange] as const,
+		// Every date range's schedule warnings in the organization.
+		scheduleWarningsScope: (orgId: string) => ["compliance", "schedule-warnings", orgId] as const,
 		// Rest period check for clock-in
 		restPeriod: (employeeId: string) => ["compliance", "rest-period", employeeId] as const,
 		// Proactive alerts during active session

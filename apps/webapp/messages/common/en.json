@@ -676,6 +676,8 @@
         "sickPayExhausted": "No sick pay in this period: the six weeks of continued pay ended on {date} (§ 3 Abs. 1 EFZG)",
         "sickPayWaiting": "No sick pay in this period: the claim arises on {date}, after four weeks of employment (§ 3 Abs. 3 EFZG)",
         "sickPayNotOwed": "No sick pay is owed for this illness: it ended within the first four weeks of employment (§ 3 Abs. 3 EFZG)",
+        "sickPayGuidanceLabel": "Guidance for payroll",
+        "sickPayGuidanceNote": "Sick-pay lines are guidance under § 3 EFZG; the payroll system decides whether and how much continued pay is paid.",
         "holidaysPaidAsHolidays": "Public holidays during the illness are paid as their own rows, not as sick days: {dates}",
         "hide": "Hide breakdown",
         "show": "Show breakdown"

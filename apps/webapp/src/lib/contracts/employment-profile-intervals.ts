@@ -35,14 +35,15 @@ function push<K, V>(map: Map<K, V[]>, key: K, value: V) {
 
 /**
  * The employment periods of the organization's `employeeIds`, as the contract resolver reads them,
- * per employee. One query.
+ * per employee. One query; the same set of employees in any order gives the same statement, so a
+ * request-scoped `memoizedReader` runs it once for every caller.
  */
 export async function loadEmploymentPeriodSnapshots(
 	db: ReadOnlyContractDb,
 	input: { readonly organizationId: string; readonly employeeIds: readonly string[] },
 ): Promise<Map<string, EmploymentPeriodSnapshot[]>> {
 	const periodsByEmployee = new Map<string, EmploymentPeriodSnapshot[]>();
-	const employeeIds = [...new Set(input.employeeIds)];
+	const employeeIds = [...new Set(input.employeeIds)].sort();
 	if (employeeIds.length === 0) return periodsByEmployee;
 	const periodRows = await db
 		.select({
@@ -61,7 +62,9 @@ export async function loadEmploymentPeriodSnapshots(
 				eq(employeeEmploymentPeriod.organizationId, input.organizationId),
 				inArray(employeeEmploymentPeriod.employeeId, employeeIds),
 			),
-		);
+		)
+		// A stable order for every caller; the resolver's tie-breaks do not depend on it.
+		.orderBy(asc(employeeEmploymentPeriod.createdAt), asc(employeeEmploymentPeriod.id));
 	for (const row of periodRows) {
 		push(periodsByEmployee, row.employeeId, employmentPeriodSnapshotOf(row));
 	}

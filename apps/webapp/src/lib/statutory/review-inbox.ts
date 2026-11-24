@@ -42,6 +42,7 @@ import {
 	statutoryReviewDomainOf,
 	statutoryReviewDomains,
 } from "./review-domains";
+import { isOpenStatutoryReviewItem, summarizeStatutoryReviewDomain } from "./review-summary";
 import { statutoryReviewWindow } from "./review-window";
 import type { StatutoryScheduleContributor } from "./scheduling/contributor";
 import { evaluateStatutoryFindings, toStatutoryComplianceFinding } from "./scheduling/evaluate";
@@ -51,6 +52,7 @@ import { listShortTermBerufsmaessigkeitReviews } from "./short-term/monitor";
 import type { StatutoryDomain } from "./threshold-catalog";
 import { listWorkingStudentReviewItems } from "./working-student/views";
 import { jarbschgScheduleContributor } from "./youth/jarbschg-contributor";
+import { evaluateMinorContractorReviewFindings } from "./youth/minor-contractor-review";
 import { isYouthSectorExceptionFinding } from "./youth/sector-exception-review";
 
 type Reader = Pick<DatabaseClient, "select" | "query">;
@@ -61,7 +63,6 @@ export {
 	type StatutoryReviewDomain,
 } from "./review-domains";
 export { STATUTORY_MONITOR_LOOKAHEAD_DAYS, STATUTORY_MONITOR_LOOKBACK_DAYS } from "./review-window";
-
 /** The monitors whose horizon findings the inbox reads beside their review lists. */
 const youthContributors: readonly StatutoryScheduleContributor[] = [
 	jarbschgScheduleContributor,
@@ -335,11 +336,24 @@ const domainLoaders: Record<
 	},
 	async youth_apprentice(db, context) {
 		// One evaluation: the sector-exception list covers the same horizon.
-		const findings = await horizonFindings(db, context, youthContributors);
+		const [findings, minorContractors] = await Promise.all([
+			horizonFindings(db, context, youthContributors),
+			// #2022: minor contractor engagements over the same horizon and roster, from the birthdays
+			// and engagement periods the youth protection monitor reads (once, through `db`'s memo).
+			context.roster().then((currentRoster) =>
+				evaluateMinorContractorReviewFindings(db, {
+					organizationId: context.organizationId,
+					timezone: context.timezone,
+					now: context.now,
+					currentRoster,
+				}),
+			),
+		]);
 		return [
 			...findings
 				.filter(isYouthSectorExceptionFinding)
 				.map((finding) => itemOf(finding, "", "review")),
+			...minorContractors.map((finding) => itemOf(finding, "", "review")),
 			...findings.filter(isMonitorOnlyFinding).map(monitorItemOf),
 		];
 	},
@@ -378,30 +392,6 @@ export async function loadStatutoryMonitorFindings(
 		input.organizationId,
 		uniqueItems(findings.filter(isMonitorOnlyFinding).map(monitorItemOf)),
 	);
-}
-
-/** Whether an item still needs an org admin: not documented by an acknowledgement. */
-export function isOpenStatutoryReviewItem(item: StatutoryReviewInboxItem): boolean {
-	return item.severity !== "info" && item.acknowledgementStatus !== "current";
-}
-
-export function summarizeStatutoryReviewDomain(
-	domain: StatutoryReviewDomain,
-	items: readonly StatutoryReviewInboxItem[],
-): StatutoryReviewDomainSummary {
-	const open = items.filter(
-		(item) => item.reviewDomain === domain && isOpenStatutoryReviewItem(item),
-	);
-	return {
-		domain,
-		status: "loaded",
-		critical: open.filter((item) => item.severity === "critical").length,
-		warning: open.filter((item) => item.severity === "warning").length,
-		pendingAcknowledgements: open.filter(
-			(item) => item.acknowledgeable && item.acknowledgementStatus === "none",
-		).length,
-		staleAcknowledgements: open.filter((item) => item.acknowledgementStatus === "stale").length,
-	};
 }
 
 /**

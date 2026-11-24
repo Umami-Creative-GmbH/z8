@@ -3,7 +3,9 @@
  * a judged day is held to the youth limits, whatever their employment profile, ArbZG scope or
  * work policy; from the 18th birthday on, adult rules apply alone. Time spent as an External
  * Contractor (#1996, #2010) is no employee's and is not judged: neither its days nor, on a
- * conversion day, its work and shifts before (or after) the conversion instant.
+ * conversion day, its work and shifts before (or after) the conversion instant. Unless the
+ * organization applies JArbSchG to minor contractors (#2022): then their contractor time is
+ * judged like employee time.
  *
  * The work judged is recorded work, open clock-ins and the planned shifts (draft and published)
  * not yet worked, plus Staffing's proposal (`youthIntervalsOf`), with an apprentice's school and
@@ -17,7 +19,6 @@
  * publication until it is resolved or, for those four, acknowledged.
  */
 import { type PlainDate, parsePlainDate } from "@/lib/datetime/temporal-core";
-import { loadEmployeeTime } from "@/lib/engagement/engagement-stints";
 import { shiftInterval } from "@/lib/scheduling/shift-occasion";
 import type { StatutoryFinding } from "../finding";
 import type {
@@ -30,6 +31,7 @@ import {
 	daysWithoutEmployeeTime,
 	loadEmployeeBirthdays,
 	loadJarbschgLimits,
+	loadYouthJudgedTime,
 	loadYouthShifts,
 	loadYouthWork,
 } from "./youth-facts";
@@ -74,8 +76,14 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 	const until = mondayOf(windowEnd.subtract({ days: 1 })).add({ days: 8 });
 	const range = { from: from.toString(), until: until.toString() };
 	// External Contractor time is no employee's (#1996, #2010): youth limits judge none of it,
-	// to the instant on a conversion day.
-	const employeeTime = await loadEmployeeTime(context.db, context.organizationId, underage);
+	// to the instant on a conversion day, unless the organization judges minor contractors under
+	// JArbSchG (#2022).
+	const employeeTime = await loadYouthJudgedTime(context.db, {
+		organizationId: context.organizationId,
+		employeeIds: underage,
+		timezone: context.timezone,
+		applyJarbschgToMinorContractors: context.preferences.applyJarbschgToMinorContractors,
+	});
 	const contractorDays = new Map(
 		underage.map((employeeId) => [
 			employeeId,

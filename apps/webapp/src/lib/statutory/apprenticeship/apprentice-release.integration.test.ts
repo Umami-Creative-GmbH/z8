@@ -1491,7 +1491,7 @@ describe("apprentice release crediting (PostgreSQL)", () => {
 		]);
 	});
 
-	describe("in-company training in a full block week (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 2 Nr. 3 BBiG)", () => {
+	describe("in-company training in a full block week (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG)", () => {
 		let subareaId = "";
 		beforeEach(async () => {
 			subareaId = await seed.subarea(org, owner);

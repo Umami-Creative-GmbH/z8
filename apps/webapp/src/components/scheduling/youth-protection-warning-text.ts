@@ -78,12 +78,13 @@ export function youthProtectionWarningText(
 				{ used, limit },
 			);
 		case "jarbschg_night_work":
-			// Outside the hours § 14 Abs. 2, 3 allows for the minor's age, or under 16: no exception.
+			// Outside the hours § 14 Abs. 2, 3, 5, 6 allow for the minor's age: no exception. Only the
+			// minutes outside them are named, not the night work an exception could cover.
 			if (finding.acknowledgementStatus === null) {
 				return t(
 					"scheduling:scheduling.statutory.jarbschg.nightWorkBeyondSector",
-					"Under 18: {used} min of night work between 20:00 and 06:00, outside the hours a sector exception allows (from 16: 05:00 to 23:00; from 17 in bakeries: from 04:00); no exception allows it",
-					{ used },
+					"Under 18: {minutes} min of night work outside the hours a sector exception allows (from 15: 05:00 to 21:00; from 16 until 23:30; from 17 in bakeries from 04:00; none under 15); no exception allows it",
+					{ minutes: finding.beyondSectorHours ?? used },
 				);
 			}
 			return t(
@@ -123,11 +124,17 @@ export function youthProtectionWarningText(
 			// Work past a full block week's 2 h of in-company training: the week's total work on its
 			// block days (every finding of the week holds the same total), the limit, and the day.
 			if (finding.summary.limit) {
-				return t(
+				const week = t(
 					"scheduling:scheduling.statutory.apprenticeship.blockWeekTrainingWeek",
 					"Block-release week: {used} min of work on this week's school days, {limit} min of in-company training allowed; past the allowance on {date}",
 					{ used, limit, date: releaseDateText(finding, locale) },
 				);
+				// #2023: the allowed minutes stay out of a minor's § 8 totals; say why.
+				const note = t(
+					"scheduling:scheduling.statutory.apprenticeship.blockWeekTrainingNote",
+					"The allowed training (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG) comes on top of the block week, which counts with the average weekly working time (§ 9 Abs. 2 Nr. 2 JArbSchG), and does not count towards an under-18's § 8 daily and weekly limits",
+				);
+				return `${week}. ${note}`;
 			}
 			return t(
 				"scheduling:scheduling.statutory.apprenticeship.releaseDayShiftOn",
