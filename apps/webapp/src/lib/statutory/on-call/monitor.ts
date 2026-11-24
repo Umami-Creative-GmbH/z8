@@ -395,12 +395,14 @@ function fullWeekBand(
  * shift count on that shift's day, as its still-planned rest does: worked plus still planned is the
  * shift, on its own day and week, whichever day the work started (a Sunday clock-in running into
  * Monday's shift). Minutes outside every shift (clocked in early, between shifts, past the end)
- * count on the work's start day. Only shifts up to the day after the start day take work (the
- * loaded shifts reach one day past the loaded days, for every employee alike): a clock-in left
- * running for days counts on its start day, whichever range it is judged in. A running clock-in's
- * minutes outside shifts grow: every further
- * minute adds one, whether or not the clock has reached a shift yet, so the figure does not jump
- * when it does. The planner's publish acknowledgement counts each week without the growing
+ * count on the work's start day. Only shifts up to the day after the start day take work
+ * (`shiftTakesWorkOf`; the loaded shifts reach one day past the loaded days, for every employee
+ * alike): a clock-in left running for days counts on its start day, whichever range it is judged
+ * in. A running clock-in's minutes outside shifts grow: every further minute adds one, whether or
+ * not the clock has reached a shift yet, so the figure does not jump when it does. Its minutes
+ * inside a later shift that does not take them grow too while that shift runs (the shift's rest
+ * stays planned, as nobody works it), and stop growing once it has ended, as minutes inside a shift
+ * count to its end. The planner's publish acknowledgement counts each week without the growing
  * minutes (`stableDepth`), so it holds while the clock runs.
  */
 function workAttribution(
@@ -433,22 +435,33 @@ function workAttribution(
 	const add = (map: Map<string, number>, day: string, minutes: number) =>
 		map.set(day, (map.get(day) ?? 0) + minutes);
 	for (const piece of pieces) {
-		const startDate = plainDateAt(piece.start, timezone);
-		const startDay = startDate.toString();
-		const lastShiftDay = startDate.add({ days: 1 }).toString();
+		const startDay = plainDateAt(piece.start, timezone).toString();
+		const lastShiftDay = lastShiftDayOf(piece, timezone);
 		let inShifts = 0;
+		let inEndedLaterShifts = 0;
 		for (const segment of segments) {
-			if (segment.day > lastShiftDay) continue;
 			const minutes = overlapMinutes([piece], segment);
 			if (minutes <= 0) continue;
+			if (segment.day > lastShiftDay) {
+				if (compareInstants(piece.end, segment.end) >= 0) inEndedLaterShifts += minutes;
+				continue;
+			}
 			inShifts += minutes;
 			add(workedByDay, segment.day, minutes);
 		}
 		const outside = Math.max(0, piece.minutes - inShifts);
 		add(workedByDay, startDay, outside);
-		if (piece.running) add(growingByDay, startDay, outside);
+		if (piece.running) add(growingByDay, startDay, Math.max(0, outside - inEndedLaterShifts));
 	}
 	return { workedByDay, growingByDay };
+}
+
+/**
+ * The last shift date (`YYYY-MM-DD`) that takes the minutes `piece` works inside it: the day after
+ * its start day (`workAttribution`). A later shift the piece runs through is not worked by it.
+ */
+function lastShiftDayOf(piece: OnCallWorkPiece, timezone: string): string {
+	return plainDateAt(piece.start, timezone).add({ days: 1 }).toString();
 }
 
 function bandFindings(
@@ -469,7 +482,16 @@ function bandFindings(
 	const onCallDays = week.filter((day) => terms.has(day.toString()));
 	const pieces = input.facts.workPiecesByEmployee.get(base.employeeId) ?? [];
 	const released = input.facts.releasedDaysByEmployee.get(base.employeeId);
-	const running = pieces.filter((piece) => piece.running);
+	// The pieces that may work a shift: finished work, and running clock-ins the shift takes the
+	// minutes of (`lastShiftDayOf`). A clock-in left running for days through a later shift does not
+	// work it: that shift's rest stays planned until it ends, as for a shift nobody clocked into.
+	const lastShiftDayByPiece = new Map(
+		pieces.map((piece) => [piece, lastShiftDayOf(piece, input.timezone)]),
+	);
+	const piecesOn = (shift: OnCallShift) =>
+		pieces.filter(
+			(piece) => !piece.running || shift.date.toString() <= (lastShiftDayByPiece.get(piece) ?? ""),
+		);
 	// Each day counts what was worked plus what is still planned: the part of each of its shifts
 	// not yet worked (an unplanned call adds to a later shift; work on a shift counts once, on the
 	// shift's day: `workAttribution`). A shift that has ended adds nothing; one still running adds its rest whatever day it
@@ -481,8 +503,9 @@ function bandFindings(
 	// steady until the shift ends or the clock-in that resumes it, not shrinking by the minute.
 	const stillPlannedRest = (shift: OnCallShift) => {
 		const interval = shiftInterval(shift, input.timezone);
-		const runningOnShift = running.filter(
-			(piece) => compareInstants(piece.start, interval.end) < 0,
+		const onShift = piecesOn(shift);
+		const runningOnShift = onShift.filter(
+			(piece) => piece.running && compareInstants(piece.start, interval.end) < 0,
 		);
 		const latest = (ends: Instant[]) =>
 			ends.reduce((a, b) => (compareInstants(a, b) >= 0 ? a : b), interval.start);
@@ -492,7 +515,7 @@ function bandFindings(
 		} else {
 			if (compareInstants(input.now, interval.end) >= 0) return null;
 			cut = latest(
-				pieces
+				onShift
 					.filter(
 						(piece) =>
 							compareInstants(piece.start, interval.end) < 0 &&
@@ -519,7 +542,7 @@ function bandFindings(
 		const minutes = Math.max(
 			0,
 			Math.round(start.until(rest.end).total("minutes")) -
-				overlapMinutes(pieces, { start, end: rest.end }),
+				overlapMinutes(piecesOn(rest.shift), { start, end: rest.end }),
 		);
 		const day = rest.shift.date.toString();
 		stillPlannedByDay.set(day, (stillPlannedByDay.get(day) ?? 0) + minutes);

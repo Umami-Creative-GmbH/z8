@@ -79,7 +79,9 @@ day the work started. One rule for running and finished work, so clocking out mo
 between weeks: a clock-in at Sunday 23:45 for Monday's 00:00–06:00 shift counts 15 minutes on Sunday
 and the shift on Monday, before and after it clocks out. Only shifts dated up to the day after the
 work's start day take its minutes, so a clock-in left running for days counts on its start day in
-any window. The § 12 Abs. 4–5 TzBfG reference period that pays released days
+any window. It does not work a later shift it runs through: that shift's rest stays planned until
+the shift ends, as for a shift nobody clocked into, and the clock-in's minutes inside it stop
+growing once it has ended. The § 12 Abs. 4–5 TzBfG reference period that pays released days
 (`reference-period.ts`) is a different figure: continued pay averages the hours worked per calendar
 day, so it splits work at local midnight (`allocateTrackedDailyWorkMinutes`) and ignores shifts.
 _Avoid_: bucketing on-call band work by its start day alone

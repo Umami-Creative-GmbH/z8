@@ -1028,6 +1028,105 @@ describe("§ 12 TzBfG on-call in Scheduling and Staffing (PostgreSQL)", () => {
 		},
 	);
 
+	describe("a clock-in left running for days into a later shift", () => {
+		// An exact 20 h week; Monday 2026-03-09 08:00–12:00 planned, clocked in at 08:00 and never
+		// clocked out. Only shifts up to the day after the clock-in's start day take its minutes: a
+		// later shift's minutes count outside every shift, on Monday, and nobody works that shift.
+		async function forgottenClockIn(laterShift: string) {
+			const org = await onCall.organization("a");
+			const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+			await onCall.onCallTerms(org, worker, { kind: "exact", weeklyMinutes: 1_200 });
+			for (const date of ["2026-03-09", laterShift]) {
+				await onCall.shift(org, {
+					employeeId: worker.employeeId,
+					date,
+					startTime: "08:00",
+					endTime: "12:00",
+					publishedAt: localInstant("2026-03-01", "10:00", org.timezone),
+				});
+			}
+			await onCall.openWork(org, worker, { date: "2026-03-09", startTime: "08:00" });
+			const window = { start: "2026-03-09", endExclusive: "2026-03-23" };
+			/** Each week's band finding as [kind, severity, stable used], and the publish fingerprint. */
+			const stateAt = async (time: string) => {
+				const now = localInstant(laterShift, time, org.timezone);
+				const bands = Object.fromEntries(
+					(
+						await evaluateOnCallFindings(db, {
+							organizationId: org.id,
+							timezone: org.timezone,
+							window,
+							employeeIds: [worker.employeeId],
+							now,
+						})
+					)
+						.filter((f) => f.kind.startsWith("on_call_weekly_"))
+						.map((f) => [
+							f.subjectKey,
+							[f.kind, f.severity, f.stableDepth?.used ?? f.summary.used?.value],
+						]),
+				);
+				const clock = vi.spyOn(Temporal.Now, "instant").mockReturnValue(now);
+				try {
+					const { fingerprint } = await Effect.runPromise(
+						Effect.gen(function* () {
+							const service = yield* ScheduleComplianceService;
+							return yield* service.evaluateScheduleWindow({
+								organizationId: org.id,
+								startDate: shiftStoredDate(window.start, org.timezone),
+								endDateExclusive: shiftStoredDate(window.endExclusive, org.timezone),
+								timezone: org.timezone,
+							});
+						}).pipe(Effect.provide(complianceLayer)),
+					);
+					return { bands, fingerprint };
+				} finally {
+					clock.mockRestore();
+				}
+			};
+			return { org, worker, stateAt };
+		}
+
+		it("holds the week's figures and the publish fingerprint through a later shift of the same week", async () => {
+			const { org, worker, stateAt } = await forgottenClockIn("2026-03-11");
+
+			const first = await stateAt("08:00:10");
+			// Monday's shift and Wednesday's planned four hours, without the minutes the clock grows by.
+			expect(first.bands).toEqual({
+				"2026-W11": ["on_call_weekly_over_band", "warning", 480],
+				"2026-W12": ["on_call_weekly_under_band", "info", 0],
+			});
+			for (const time of ["09:00:10", "11:59:10", "12:30:10"]) {
+				expect(await stateAt(time)).toEqual(first);
+			}
+
+			// Another planned shift in the week deepens the breach.
+			await onCall.shift(org, {
+				employeeId: worker.employeeId,
+				date: "2026-03-12",
+				startTime: "08:00",
+				endTime: "12:00",
+				publishedAt: localInstant("2026-03-01", "10:00", org.timezone),
+			});
+			const deeper = await stateAt("09:00:10");
+			expect(deeper.bands["2026-W11"]).toEqual(["on_call_weekly_over_band", "warning", 720]);
+			expect(deeper.fingerprint).not.toBe(first.fingerprint);
+		});
+
+		it("holds the later shift's week while the shift runs", async () => {
+			const { stateAt } = await forgottenClockIn("2026-03-16");
+
+			const first = await stateAt("08:00:10");
+			expect(first.bands).toEqual({
+				"2026-W11": ["on_call_weekly_over_band", "warning", 240],
+				"2026-W12": ["on_call_weekly_under_band", "info", 240],
+			});
+			for (const time of ["09:00:10", "11:59:10"]) {
+				expect(await stateAt(time)).toEqual(first);
+			}
+		});
+	});
+
 	describe("a minimum breached further makes the publish acknowledgement stale", () => {
 		/** The publish key of the employee's `kind` finding, as the publish fingerprint hashes it. */
 		async function publishKeyOf(
