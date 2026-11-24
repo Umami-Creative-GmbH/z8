@@ -89,6 +89,26 @@ reads no names; an acknowledgement's history (who, when, reason, legal note, cur
 invalidated / no longer applies / earlier) is read per subject and never carries fingerprints.
 _Avoid_: queue (the migration & departure reviews), dismissed
 
+**Minor contractor** (youth protection):
+An External Contractor (`engagementKind = contractor` employment period, #1996) who is under 18 on
+a day of the engagement. Contractor days are no employee's, so no Milestone 2 monitor judges them,
+the JArbSchG monitor included. But § 1 Abs. 1 Nr. 3 JArbSchG also covers minors whose services
+resemble an employee's work, so by default each contractor engagement period of a minor that
+overlaps the review horizon (`review-window.ts`, current roster) is one **review item**
+(`jarbschg_minor_contractor`, subject `engagement:<period id>`; `engagement:employee` for an employee
+with no recorded stint, judged by `employee.engagement_kind`): a warning in the Youth & Apprentice
+review domain and the Compliance Command Center, never a publish block. An org admin documents
+their assessment with a reason (`jarbschg_minor_contractor_review`); the fingerprint covers the
+period's recorded start and end and the birthday, so a corrected birthday or a changed period
+re-opens it, the window moving does not. The organization statutory preference **Apply youth
+protection (JArbSchG) to minor contractors** (`applyJarbschgToMinorContractors`, default off,
+migration 0337, org admins only, audited with the other preferences) judges contractor days of
+minors exactly like employee days instead, everywhere the monitor runs (Scheduling, Staffing, the
+publish block, clock-out recording, review lists), and raises no review item. Minijob,
+short-term, working-student, on-call and apprentice release monitors keep excluding contractors
+either way.
+_Avoid_: judging every minor contractor as an employee by default, silently skipping them
+
 **Restricted audience**:
 Everyone below org admin (scoped managers, planners, the employee). Sees summaries only, never EUR
 amounts, wages, external earnings or EUR baselines.
