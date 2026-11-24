@@ -4,10 +4,12 @@ import { IconChevronRight, IconClock, IconMapPin } from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { type TouchEvent, useEffect, useRef } from "react";
 import type { ShiftWithRelations } from "@/app/[locale]/(app)/scheduling/types";
+import { useTimeFormat } from "@/components/providers/user-preferences-provider";
 import { Badge } from "@/components/ui/badge";
 import type { PlainDate } from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { shiftEndsNextDay, shiftPlaceLabel } from "@/lib/scheduling/shift-labels";
+import { formatTimeStringForPreference } from "@/lib/user-preferences/time-format";
 import { cn } from "@/lib/utils";
 import { groupShiftsByDay } from "./employee-schedule-utils";
 
@@ -134,6 +136,7 @@ function AgendaShift({
 	onSelect: (shift: ShiftWithRelations) => void;
 }) {
 	const { t } = useTranslate();
+	const timeFormat = useTimeFormat();
 	const place = shiftPlaceLabel(shift.subarea?.location.name, shift.subarea?.name);
 
 	return (
@@ -146,7 +149,8 @@ function AgendaShift({
 				<div className="flex items-center gap-1.5 text-sm">
 					<IconClock className="size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
 					<span className="font-medium tabular-nums">
-						{shift.startTime} – {shift.endTime}
+						{formatTimeStringForPreference(shift.startTime, timeFormat)} –{" "}
+						{formatTimeStringForPreference(shift.endTime, timeFormat)}
 					</span>
 					{shiftEndsNextDay(shift) && (
 						<span className="text-muted-foreground text-xs">

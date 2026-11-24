@@ -3,7 +3,9 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { ComponentProps } from "react";
 import { describe, expect, it, vi } from "vitest";
+import type { ShiftTemplate } from "@/app/[locale]/(app)/scheduling/types";
 import { AppLocaleProvider } from "@/components/providers/app-locale-provider";
+import { UserPreferencesProvider } from "@/components/providers/user-preferences-provider";
 import type { SkillValidationResult } from "@/lib/scheduling/skill-validation";
 import type { StaffingSuggestion } from "@/lib/scheduling/staffing/types";
 import { ShiftDialogSections } from "./shift-dialog-sections";
@@ -43,6 +45,7 @@ function Sections({
 	skillValidation = null,
 	skillOverrideReasonRequested = false,
 	onSubmit = vi.fn(),
+	templates = [],
 }: {
 	defaultDate: string;
 	isManager?: boolean;
@@ -50,11 +53,12 @@ function Sections({
 	skillValidation?: SkillValidationResult | null;
 	skillOverrideReasonRequested?: boolean;
 	onSubmit?: () => void;
+	templates?: ShiftTemplate[];
 }) {
 	const { form, formValues } = useShiftDialogForm({
 		open: true,
 		shift: null,
-		templates: [],
+		templates,
 		defaultDate,
 		organizationTimezone: "Europe/Berlin",
 		onSubmit,
@@ -66,7 +70,7 @@ function Sections({
 				form={form}
 				formValues={formValues}
 				isManager={isManager}
-				templates={[]}
+				templates={templates}
 				locations={[]}
 				employees={[]}
 				skillValidation={skillValidation ?? undefined}
@@ -174,6 +178,42 @@ describe("ShiftDialogSections date", () => {
 		render(<Sections defaultDate="2026-10-23" isManager={false} />);
 
 		expect(screen.getByLabelText("Date")).toHaveProperty("disabled", true);
+	});
+});
+
+describe("ShiftDialogSections template times (#2018)", () => {
+	const late: ShiftTemplate = {
+		id: "late",
+		organizationId: "org-1",
+		name: "Late",
+		startTime: "14:00",
+		endTime: "22:00",
+		color: null,
+		subareaId: null,
+		isActive: true,
+		createdAt: new Date("2026-10-01T00:00:00Z"),
+		updatedAt: new Date("2026-10-01T00:00:00Z"),
+		createdBy: "planner",
+	};
+
+	function openTemplates(timeFormat: "12h" | "24h") {
+		render(
+			<UserPreferencesProvider timeFormat={timeFormat}>
+				<Sections defaultDate="2026-10-23" templates={[late]} />
+			</UserPreferencesProvider>,
+		);
+		fireEvent.click(screen.getByLabelText("Template (Optional)"));
+		return screen.getByRole("option", { name: /Late/ }).textContent;
+	}
+
+	it("writes a template's times in the planner's 24-hour format", () => {
+		const option = openTemplates("24h");
+		expect(option).toContain("14:00 – 22:00");
+		expect(option).not.toMatch(/PM/);
+	});
+
+	it("writes a template's times in the planner's 12-hour format", () => {
+		expect(openTemplates("12h")).toContain("2:00 PM – 10:00 PM");
 	});
 });
 

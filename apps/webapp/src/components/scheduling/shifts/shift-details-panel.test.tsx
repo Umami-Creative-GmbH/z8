@@ -4,6 +4,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ShiftWithRelations } from "@/app/[locale]/(app)/scheduling/types";
+import { UserPreferencesProvider } from "@/components/providers/user-preferences-provider";
 
 vi.mock("@tolgee/react", () => ({
 	useTolgee: () => ({ getLanguage: () => "en" }),
@@ -72,6 +73,21 @@ describe("ShiftDetailsPanel", () => {
 		);
 		expect(screen.getByText("Store · Floor")).toBeTruthy();
 		expect(screen.getByText("Bring the delivery keys")).toBeTruthy();
+	});
+
+	it("writes the times in the viewer's 12-hour format (#2018)", () => {
+		render(
+			<UserPreferencesProvider timeFormat="12h">
+				<ShiftDetailsPanel
+					open
+					onOpenChange={vi.fn()}
+					shift={nightShift}
+					organizationTimezone="Europe/Berlin"
+				/>
+			</UserPreferencesProvider>,
+		);
+
+		expect(screen.getByText(/10:00 PM – 6:00 AM/)).toBeTruthy();
 	});
 
 	it("leaves out notes and place when the shift has none", () => {
