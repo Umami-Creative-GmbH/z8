@@ -21,6 +21,7 @@ import {
 	plainDateAt,
 } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
+import { loadEmployeeTime } from "@/lib/engagement/engagement-stints";
 import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import { shiftCalendarDate, shiftDateRangeBounds } from "@/lib/scheduling/shift-date";
 import {
@@ -28,6 +29,12 @@ import {
 	type ShiftInterval,
 	shiftInterval,
 } from "@/lib/scheduling/shift-occasion";
+import {
+	employeeProposedShifts,
+	employeeShiftRows,
+	employeeTermRows,
+	employeeWorkRows,
+} from "../employee-time";
 import type { StatutoryProposedShift } from "../scheduling/contributor";
 import { loadStatutoryThresholds, type StatutoryThresholdTable } from "../thresholds";
 import { matchWorkToShifts, splitWorkAtShiftStarts } from "./work-shift-matching";
@@ -564,7 +571,17 @@ export async function loadShortTermInputs(
 				),
 			),
 		);
-	const termRows = confirmedTermRows.filter((row) => row.employmentProfile === "short_term");
+	// Employee time only (#2010): the terms of an External Contractor stint are no short-term
+	// employment, whatever their profile, and its work and shifts count no short-term day.
+	const employeeTime = await loadEmployeeTime(db, input.organizationId, [
+		...new Set(
+			confirmedTermRows
+				.filter((row) => row.employmentProfile === "short_term")
+				.map((row) => row.employeeId),
+		),
+	]);
+	const employeeTerms = employeeTermRows(employeeTime, confirmedTermRows);
+	const termRows = employeeTerms.filter((row) => row.employmentProfile === "short_term");
 	let candidates = [...new Set(termRows.map((row) => row.employeeId))];
 	if (candidates.length === 0) return { employees: [], thresholds };
 
@@ -637,7 +654,7 @@ export async function loadShortTermInputs(
 					);
 	const allTermRowsByEmployee = groupBy(
 		[
-			...confirmedTermRows.filter(
+			...employeeTerms.filter(
 				(row) =>
 					candidateSet.has(row.employeeId) &&
 					!fixedTermEndsOnByPeriod.has(row.employmentPeriodId ?? ""),
@@ -735,7 +752,7 @@ export async function loadShortTermInputs(
 			),
 		),
 	);
-	const workRows = await db
+	const storedWorkRows = await db
 		.select({
 			id: workPeriod.id,
 			employeeId: workPeriod.employeeId,
@@ -757,6 +774,8 @@ export async function loadShortTermInputs(
 			),
 		);
 
+	const workRows = employeeWorkRows(employeeTime, storedWorkRows);
+
 	// Shifts a day further out than the work on both sides: work from the evening before the range
 	// can belong to a shift of the day before (one clock-in over shifts on both days is split at the
 	// later shift's start), and work on the day after the range to a shift of the day after that.
@@ -776,16 +795,20 @@ export async function loadShortTermInputs(
 		}),
 	];
 	if (input.replacesShiftId) shiftConditions.push(ne(shift.id, input.replacesShiftId));
-	const shiftRows = await db
-		.select({
-			id: shift.id,
-			employeeId: shift.employeeId,
-			date: shift.date,
-			startTime: shift.startTime,
-			endTime: shift.endTime,
-		})
-		.from(shift)
-		.where(and(...shiftConditions));
+	const shiftRows = employeeShiftRows(
+		employeeTime,
+		await db
+			.select({
+				id: shift.id,
+				employeeId: shift.employeeId,
+				date: shift.date,
+				startTime: shift.startTime,
+				endTime: shift.endTime,
+			})
+			.from(shift)
+			.where(and(...shiftConditions)),
+		input.timezone,
+	);
 
 	const offsetRows = await db
 		.select({
@@ -1034,7 +1057,11 @@ export async function loadShortTermInputs(
 		else plannedByEmployee.set(employeeId, [item]);
 	};
 	const inScope = new Set(candidates);
-	for (const proposed of input.proposedShifts) {
+	for (const proposed of employeeProposedShifts(
+		employeeTime,
+		input.proposedShifts,
+		input.timezone,
+	)) {
 		if (!inScope.has(proposed.employeeId) || !inLoadedSpan(proposed.employeeId, proposed.date)) {
 			continue;
 		}

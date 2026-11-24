@@ -1,9 +1,11 @@
 /**
  * JArbSchG youth protection in Scheduling and Staffing (#1993). Every employee who is under 18 on
  * a judged day is held to the youth limits, whatever their employment profile, ArbZG scope or
- * work policy; from the 18th birthday on, adult rules apply alone. Days spent as an External
- * Contractor (#1996) are no employee's and are not judged, unless the organization applies
- * JArbSchG to minor contractors (#2022): then they are judged like employee days.
+ * work policy; from the 18th birthday on, adult rules apply alone. Time spent as an External
+ * Contractor (#1996, #2010) is no employee's and is not judged: neither its days nor, on a
+ * conversion day, its work and shifts before (or after) the conversion instant. Unless the
+ * organization applies JArbSchG to minor contractors (#2022): then their contractor time is
+ * judged like employee time.
  *
  * The work judged is recorded work, open clock-ins and the planned shifts (draft and published)
  * not yet worked, plus Staffing's proposal (`youthIntervalsOf`), with an apprentice's school and
@@ -26,12 +28,14 @@ import type {
 import { isMinorOn } from "./age";
 import type { YouthWorkInterval } from "./jarbschg-rules";
 import {
-	loadContractorDays,
+	daysWithoutEmployeeTime,
 	loadEmployeeBirthdays,
 	loadJarbschgLimits,
+	loadYouthJudgedTime,
 	loadYouthShifts,
 	loadYouthWork,
 } from "./youth-facts";
+import { employeeIntervalOf } from "../employee-time";
 import { loadHolidayDateKeys } from "../holiday-days";
 import { loadYouthSchoolCredits } from "./school-credits";
 import { youthBreachScopeOf, youthFindingsOf } from "./youth-findings";
@@ -71,16 +75,21 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 	const from = mondayOf(windowStart).subtract({ days: 1 });
 	const until = mondayOf(windowEnd.subtract({ days: 1 })).add({ days: 8 });
 	const range = { from: from.toString(), until: until.toString() };
-	// External Contractor days are no employee's (#1996): youth limits judge none of them, unless the
-	// organization judges minor contractors under JArbSchG (#2022).
-	const contractorDays = context.preferences.applyJarbschgToMinorContractors
-		? new Map<string, Set<string>>()
-		: await loadContractorDays(context.db, {
-				organizationId: context.organizationId,
-				employeeIds: underage,
-				timezone: context.timezone,
-				...range,
-			});
+	// External Contractor time is no employee's (#1996, #2010): youth limits judge none of it,
+	// to the instant on a conversion day, unless the organization judges minor contractors under
+	// JArbSchG (#2022).
+	const employeeTime = await loadYouthJudgedTime(context.db, {
+		organizationId: context.organizationId,
+		employeeIds: underage,
+		timezone: context.timezone,
+		applyJarbschgToMinorContractors: context.preferences.applyJarbschgToMinorContractors,
+	});
+	const contractorDays = new Map(
+		underage.map((employeeId) => [
+			employeeId,
+			daysWithoutEmployeeTime(employeeTime, employeeId, { timezone: context.timezone, ...range }),
+		]),
+	);
 	const minors = underage.filter((employeeId) =>
 		judgedDays.some(
 			(day) =>
@@ -98,12 +107,14 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 		...range,
 		excludeShiftId: context.replacesShiftId,
 		excludeShiftIds: context.excludedShiftIds,
+		employeeTime,
 	});
 	const work = await loadYouthWork(context.db, {
 		organizationId: context.organizationId,
 		employeeIds: minors,
 		timezone: context.timezone,
 		...range,
+		employeeTime,
 	});
 	const holidays = await loadHolidayDateKeys(context.db, {
 		organizationId: context.organizationId,
@@ -126,16 +137,17 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 	for (const employeeId of minors) {
 		const proposals: YouthWorkInterval[] = context.proposedShifts
 			.filter((proposal) => proposal.employeeId === employeeId)
-			.map((proposal) => {
+			.flatMap((proposal) => {
 				const date = parsePlainDate(proposal.date);
-				return plannedYouthInterval(
-					proposedShiftSubjectKey(proposal),
-					shiftInterval(
-						{ date, startTime: proposal.startTime, endTime: proposal.endTime },
-						context.timezone,
-					),
-					limitsOn(date),
+				const planned = shiftInterval(
+					{ date, startTime: proposal.startTime, endTime: proposal.endTime },
+					context.timezone,
 				);
+				// Only its employee time, as for persisted shifts; it keeps its subject.
+				const interval = employeeIntervalOf(employeeTime, employeeId, planned);
+				return interval
+					? [plannedYouthInterval(proposedShiftSubjectKey(proposal), interval, limitsOn(date))]
+					: [];
 			});
 		const findingsOf = (withoutRunningGrowth: boolean) =>
 			youthFindingsOf({

@@ -173,7 +173,9 @@ export async function loadEmployeeTime(
 	organizationId: string,
 	employeeIds: readonly string[],
 ): Promise<EmployeeTime> {
-	const ids = [...new Set(employeeIds)];
+	// Once each, in one order: callers passing the same employees in any order run the same
+	// statements, which a request-scoped `memoizedReader` reads once.
+	const ids = [...new Set(employeeIds)].sort();
 	const organizationTimezone = await loadOrganizationTimezone(db, organizationId);
 	const stints = new Map<string, EngagementStints>();
 	const timezones = new Map<string, string>();

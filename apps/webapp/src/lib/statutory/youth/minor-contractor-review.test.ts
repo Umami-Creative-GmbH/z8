@@ -336,9 +336,9 @@ describe("minorContractorEngagementFindings (#2022)", () => {
 		});
 	});
 
-	// The review and the youth protection monitor must agree: the monitor skips exactly the days
-	// `loadContractorDays` gives (`engagementKindOnDay` over the window), and every such day of a
-	// minor needs a review item, one per stint that decides it.
+	// The review and the youth protection monitor must agree: the monitor skips the contractor days
+	// `engagementKindOnDay` gives over the window (on a conversion day, only its contractor part),
+	// and every such day of a minor needs a review item, one per stint that decides it.
 	describe("agrees with the days the youth protection monitor skips", () => {
 		/** A review item, worked out by hand. */
 		interface Item {
@@ -515,7 +515,7 @@ describe("minorContractorEngagementFindings (#2022)", () => {
 				return days;
 			});
 
-		/** The window's days the monitor skips as contractor days, as `loadContractorDays` does. */
+		/** The window's contractor days, as `engagementKindOnDay` decides them. */
 		function monitorContractorDays(c: Case): PlainDate[] {
 			const days: PlainDate[] = [];
 			const until = parsePlainDate(window.endExclusive);

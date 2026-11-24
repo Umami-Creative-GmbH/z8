@@ -12,7 +12,6 @@
  */
 import { and, inArray } from "drizzle-orm";
 import { employee } from "@/db/schema";
-import { loadEmploymentPeriodSnapshots } from "@/lib/contracts/employment-profile-intervals";
 import {
 	type EmploymentPeriodSnapshot,
 	engagementPeriodDecidingDay,
@@ -29,6 +28,7 @@ import { ValidationError } from "@/lib/effect/errors";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
 import type { EngagementKind } from "@/lib/engagement/engagement-kind";
+import { loadEmploymentPeriodSnapshots } from "@/lib/engagement/engagement-stints";
 import {
 	attachAcknowledgementStates,
 	recordStatutoryAcknowledgement,
@@ -110,8 +110,9 @@ interface ContractorDays {
 }
 
 /**
- * The window's contractor days, grouped by the engagement that decides each one, exactly as the
- * youth protection monitor skips them (`loadContractorDays` → `engagementKindOnDay`): days in a
+ * The window's contractor days, grouped by the engagement that decides each one, as the contract
+ * resolver decides them (`engagementKindOnDay`); the youth protection monitor judges none of their
+ * contractor time (`loadYouthJudgedTime`, exact to the instant on a conversion day): days in a
  * contractor stint, days after a contractor stint ended with no later one, days before a first
  * contractor stint, and every day of a contractor with no recorded stint.
  */
@@ -307,12 +308,14 @@ export async function evaluateMinorContractorReviewFindings(
 	if (minors.length === 0) return [];
 	const scope = {
 		organizationId: input.organizationId,
-		employeeIds: minors.map((minor) => minor.employeeId),
+		employeeIds: [...new Set(minors.map((minor) => minor.employeeId))].sort(),
 	};
-	const [engagementKinds, periodsOf] = await Promise.all([
+	// The stints as `loadEmployeeTime` reads them for the monitor (ids in its canonical order).
+	const [engagementKinds, periods] = await Promise.all([
 		loadEmployeeEngagementKinds(db, scope),
-		loadEmploymentPeriodSnapshots(db, scope),
+		loadEmploymentPeriodSnapshots(db, scope.organizationId, scope.employeeIds),
 	]);
+	const periodsOf = Map.groupBy(periods, (period) => period.employeeId);
 	const findings = minors.flatMap(({ employeeId, birthday }) => {
 		const employeeEngagementKind = engagementKinds.get(employeeId);
 		if (!employeeEngagementKind) return [];

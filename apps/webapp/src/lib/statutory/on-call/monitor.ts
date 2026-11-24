@@ -36,6 +36,7 @@ import {
 	type StatutoryUsageTier,
 	statutoryFindingId,
 } from "../finding";
+import { employeeProposedShifts } from "../employee-time";
 import { statutoryInputFingerprint } from "../fingerprint";
 import { DEFAULT_STATUTORY_PREFERENCES, type StatutoryPreferences } from "../preferences";
 import type { StatutoryProposedShift } from "../scheduling/contributor";
@@ -710,26 +711,28 @@ export async function evaluateOnCallFindings(
 
 	for (const [employeeId, terms] of facts.termsByEmployee) {
 		const base = { organizationId: request.organizationId, employeeId };
-		const proposed = (request.proposedShifts ?? [])
-			.filter((s) => s.employeeId === employeeId)
-			.map((s): OnCallShift => {
-				const date = parsePlainDate(s.date);
-				const shift: OnCallShift = {
-					id: null,
-					employeeId,
-					date,
-					startTime: s.startTime,
-					endTime: s.endTime,
-					minutes: shiftMinutes(
-						{ date, startTime: s.startTime, endTime: s.endTime },
-						request.timezone,
-					),
-					status: "draft",
-					publishedAt: null,
-					assignmentChangedAt: null,
-				};
-				return keptByAssignee(facts.replacedShift, shift, request.timezone, request.now);
-			});
+		const proposed = employeeProposedShifts(
+			facts.employeeTime,
+			(request.proposedShifts ?? []).filter((s) => s.employeeId === employeeId),
+			request.timezone,
+		).map((s): OnCallShift => {
+			const date = parsePlainDate(s.date);
+			const shift: OnCallShift = {
+				id: null,
+				employeeId,
+				date,
+				startTime: s.startTime,
+				endTime: s.endTime,
+				minutes: shiftMinutes(
+					{ date, startTime: s.startTime, endTime: s.endTime },
+					request.timezone,
+				),
+				status: "draft",
+				publishedAt: null,
+				assignmentChangedAt: null,
+			};
+			return keptByAssignee(facts.replacedShift, shift, request.timezone, request.now);
+		});
 		const shifts = [...(facts.shiftsByEmployee.get(employeeId) ?? []), ...proposed];
 
 		for (const shift of shifts) {

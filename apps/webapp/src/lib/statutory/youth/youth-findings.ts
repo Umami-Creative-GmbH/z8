@@ -285,7 +285,10 @@ export function youthFindingsOf(input: {
 	 * (the fingerprint, and so the acknowledgement state, still covers the whole shift).
 	 */
 	readonly sectorMinutes?: "whole_subject" | "judged_days";
-	/** Local days spent as an External Contractor: no youth limit judges them (#1996). */
+	/**
+	 * Local days with none of the employee's employee time (`daysWithoutEmployeeTime`): no youth limit
+	 * judges them (#1996, #2010).
+	 */
 	readonly contractorDays?: ReadonlySet<string>;
 }): StatutoryFinding<JarbschgRule>[] {
 	const byRef = new Map(input.intervals.map((interval) => [interval.ref, interval]));

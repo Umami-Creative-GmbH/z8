@@ -5,8 +5,6 @@
  */
 import { and, asc, eq, gte, inArray, isNull, lt, ne, notInArray } from "drizzle-orm";
 import { employee, shift, workPeriod } from "@/db/schema";
-import { loadEmploymentPeriodSnapshots } from "@/lib/contracts/employment-profile-intervals";
-import { engagementKindOnDay } from "@/lib/contracts/resolve-contract";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import {
 	dateFromInstant,
@@ -15,10 +13,16 @@ import {
 	parsePlainDate,
 } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
+import {
+	type EmployeeTime,
+	employeeTime,
+	loadEmployeeTime,
+} from "@/lib/engagement/engagement-stints";
 import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 import { birthdayCalendarDate } from "@/lib/organization/employee-birthday";
 import { shiftCalendarDate, shiftDateRangeBounds } from "@/lib/scheduling/shift-date";
 import { shiftInterval } from "@/lib/scheduling/shift-occasion";
+import { employeeShiftRows, employeeWorkRows, hasEmployeeTimeOnDay } from "../employee-time";
 import { loadStatutoryThresholds } from "../thresholds";
 import type { StatutoryThresholdKey } from "../threshold-catalog";
 import type { JarbschgLimits } from "./jarbschg-rules";
@@ -110,57 +114,53 @@ export async function loadEmployeeEngagementKinds(
 }
 
 /**
- * The local days of `[from, until)` each employee spends as an External Contractor, as the contract
- * resolver decides them (`engagementKindOnDay`, #1996). A contractor is no employee: youth limits
- * judge no contractor day, and contractor work records no violation. Employees with no contractor
- * day are left out.
+ * The time youth limits judge: the employees' employee time only (#2010), or, when the
+ * organization applies JArbSchG to minor contractors (#2022), all of it, contractor stints
+ * included, so their contractor days are judged exactly like employee days.
  */
-export async function loadContractorDays(
+export async function loadYouthJudgedTime(
 	db: Reader,
 	input: {
 		readonly organizationId: string;
 		readonly employeeIds: readonly string[];
 		readonly timezone: string;
-		readonly from: string;
-		readonly until: string;
+		readonly applyJarbschgToMinorContractors: boolean;
 	},
-): Promise<Map<string, Set<string>>> {
-	const result = new Map<string, Set<string>>();
-	const employeeIds = canonicalIds(input.employeeIds);
-	if (employeeIds.length === 0) return result;
-	const scope = { organizationId: input.organizationId, employeeIds };
-	const [kinds, periodsOf] = await Promise.all([
-		loadEmployeeEngagementKinds(db, scope),
-		loadEmploymentPeriodSnapshots(db, scope),
-	]);
-	const until = parsePlainDate(input.until);
-	for (const [id, engagementKind] of kinds) {
-		const periods = periodsOf.get(id) ?? [];
-		const everContractor =
-			periods.length === 0
-				? engagementKind === "contractor"
-				: periods.some((period) => period.engagementKind === "contractor");
-		if (!everContractor) continue;
-		const days = new Set<string>();
-		for (
-			let day = parsePlainDate(input.from);
-			day.until(until).sign > 0;
-			day = day.add({ days: 1 })
-		) {
-			const kind = engagementKindOnDay({
-				periods,
-				day,
-				employeeCalendarTimezone: input.timezone,
-				employeeEngagementKind: engagementKind,
-			});
-			if (kind === "contractor") days.add(day.toString());
-		}
-		if (days.size > 0) result.set(id, days);
+): Promise<EmployeeTime> {
+	if (input.applyJarbschgToMinorContractors) {
+		return employeeTime(new Map(), new Map(), input.timezone);
 	}
-	return result;
+	return loadEmployeeTime(db, input.organizationId, input.employeeIds);
 }
 
-/** Assigned shifts (draft and published) of the employees on organization-local days `[from, until)`. */
+/**
+ * The local days of `[from, until)` in `timezone` with none of the employee's employee time: days
+ * spent wholly as an External Contractor (#1996, #2010), or outside any employment. A contractor is
+ * no employee: youth limits judge none of these days. A conversion day is judged for its employee part; the work and shifts
+ * of its contractor part are left out by `loadYouthWork` and `loadYouthShifts`.
+ */
+export function daysWithoutEmployeeTime(
+	employeeTime: EmployeeTime,
+	employeeId: string,
+	range: { readonly timezone: string; readonly from: string; readonly until: string },
+): Set<string> {
+	const days = new Set<string>();
+	const until = parsePlainDate(range.until);
+	for (
+		let day = parsePlainDate(range.from);
+		day.until(until).sign > 0;
+		day = day.add({ days: 1 })
+	) {
+		const date = day.toString();
+		if (!hasEmployeeTimeOnDay(employeeTime, employeeId, date, range.timezone)) days.add(date);
+	}
+	return days;
+}
+
+/**
+ * Assigned shifts (draft and published) of the employees on organization-local days
+ * `[from, until)`, in their employee time only (`employeeShiftRows`).
+ */
 export async function loadYouthShifts(
 	db: Reader,
 	input: {
@@ -171,6 +171,7 @@ export async function loadYouthShifts(
 		readonly until: string;
 		readonly excludeShiftId?: string | null;
 		readonly excludeShiftIds?: readonly string[];
+		readonly employeeTime: EmployeeTime;
 	},
 ): Promise<YouthShiftRecord[]> {
 	if (input.employeeIds.length === 0) return [];
@@ -185,19 +186,23 @@ export async function loadYouthShifts(
 	if (input.excludeShiftIds?.length) {
 		conditions.push(notInArray(shift.id, [...input.excludeShiftIds]));
 	}
-	const rows = await db
-		.select({
-			id: shift.id,
-			employeeId: shift.employeeId,
-			date: shift.date,
-			startTime: shift.startTime,
-			endTime: shift.endTime,
-		})
-		.from(shift)
-		.where(and(...conditions))
-		// Deterministic order: the findings built from these shifts come out in it, and physical
-		// row order changes once Postgres reuses free space.
-		.orderBy(asc(shift.date), asc(shift.startTime), asc(shift.id));
+	const rows = employeeShiftRows(
+		input.employeeTime,
+		await db
+			.select({
+				id: shift.id,
+				employeeId: shift.employeeId,
+				date: shift.date,
+				startTime: shift.startTime,
+				endTime: shift.endTime,
+			})
+			.from(shift)
+			.where(and(...conditions))
+			// Deterministic order: the findings built from these shifts come out in it, and physical
+			// row order changes once Postgres reuses free space.
+			.orderBy(asc(shift.date), asc(shift.startTime), asc(shift.id)),
+		input.organizationTimezone,
+	);
 	return rows.flatMap((row) => {
 		if (!row.employeeId) return [];
 		const date = shiftCalendarDate(row.date, input.organizationTimezone);
@@ -211,7 +216,7 @@ export async function loadYouthShifts(
 
 /**
  * Not deleted work of the employees starting within `[from, until)` local to `timezone`: completed
- * work and open clock-ins (`end` null).
+ * work and open clock-ins (`end` null), in their employee time only (`employeeWorkRows`).
  */
 export async function loadYouthWork(
 	db: Reader,
@@ -221,11 +226,12 @@ export async function loadYouthWork(
 		readonly timezone: string;
 		readonly from: string;
 		readonly until: string;
+		readonly employeeTime: EmployeeTime;
 	},
 ): Promise<Map<string, YouthWorkRecord[]>> {
 	const result = new Map<string, YouthWorkRecord[]>();
 	if (input.employeeIds.length === 0) return result;
-	const rows = await db
+	const stored = await db
 		.select({
 			id: workPeriod.id,
 			employeeId: workPeriod.employeeId,
@@ -244,9 +250,15 @@ export async function loadYouthWork(
 				lt(workPeriod.startTime, dateFromInstant(localDayRange(input.until, input.timezone).start)),
 			),
 		);
+	const rows = employeeWorkRows(
+		input.employeeTime,
+		stored.flatMap((row) => {
+			if (row.isActive) return [{ ...row, endTime: null }];
+			return row.endTime ? [row] : [];
+		}),
+	);
 	for (const row of rows) {
-		const end = row.isActive ? null : row.endTime;
-		if (!row.isActive && !end) continue;
+		const end = row.endTime;
 		const records = result.get(row.employeeId) ?? [];
 		records.push({
 			id: row.id,

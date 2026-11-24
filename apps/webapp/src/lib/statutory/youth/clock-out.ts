@@ -19,10 +19,11 @@ import { deepensBreachedLimit } from "../scheduling/evaluate";
 import { isMinorOn } from "./age";
 import type { JarbschgRule } from "./jarbschg-rules";
 import {
-	loadContractorDays,
+	daysWithoutEmployeeTime,
 	loadEmployeeBirthdays,
 	loadJarbschgLimits,
 	loadYouthShifts,
+	loadYouthJudgedTime,
 	loadYouthWork,
 } from "./youth-facts";
 import { loadHolidayDateKeys } from "../holiday-days";
@@ -62,21 +63,40 @@ export async function recordJarbschgViolationsAfterClockOut(
 		until: monday.add({ days: 8 }).toString(),
 	};
 	const scope = { organizationId: input.organizationId, employeeIds: [input.employeeId] };
-	// Contractor work records no `work_policy_violation` (#1996), youth limits included, unless the
-	// organization judges minor contractors under JArbSchG (#2022).
+	// Contractor work records no `work_policy_violation` (#1996), youth limits included; on a
+	// conversion day only its employee part is judged (#2010). Unless the organization judges
+	// minor contractors under JArbSchG (#2022): then all of their time is judged.
 	const { applyJarbschgToMinorContractors } = await loadOrganizationStatutoryPreferences(
 		db,
 		input.organizationId,
 	);
-	const contractorDays = applyJarbschgToMinorContractors
-		? undefined
-		: (await loadContractorDays(db, { ...scope, timezone: input.timezone, ...range })).get(
-				input.employeeId,
-			);
-	if (contractorDays?.has(day.toString())) return [];
+	const employeeTime = await loadYouthJudgedTime(db, {
+		...scope,
+		timezone: input.timezone,
+		applyJarbschgToMinorContractors,
+	});
+	const contractorDays = daysWithoutEmployeeTime(employeeTime, input.employeeId, {
+		timezone: input.timezone,
+		...range,
+	});
+	if (contractorDays.has(day.toString())) return [];
 	const organizationTimezone = await loadOrganizationTimezone(db, input.organizationId);
-	const work = await loadYouthWork(db, { ...scope, timezone: input.timezone, ...range });
-	const shifts = await loadYouthShifts(db, { ...scope, organizationTimezone, ...range });
+	const work = await loadYouthWork(db, {
+		...scope,
+		timezone: input.timezone,
+		...range,
+		employeeTime,
+	});
+	// Work wholly in a contractor stint records nothing; a clock-in across the conversion
+	// instant is judged for its employee part (`loadYouthWork`).
+	const closed = work.get(input.employeeId)?.some((record) => record.id === input.workPeriodId);
+	if (!closed) return [];
+	const shifts = await loadYouthShifts(db, {
+		...scope,
+		organizationTimezone,
+		...range,
+		employeeTime,
+	});
 	const holidays = await loadHolidayDateKeys(db, { ...scope, ...range });
 	const limitsOn = await loadJarbschgLimits(db, range);
 	const credits = await loadYouthSchoolCredits(db, { ...scope, ...range });

@@ -93,7 +93,7 @@ _Avoid_: queue (the migration & departure reviews), dismissed
 An External Contractor (`engagementKind = contractor` employment period, #1996) who is under 18 on
 a contractor day. Contractor days are no employee's, so no Milestone 2 monitor judges them, the
 JArbSchG monitor included. A contractor day is what the contract resolver says
-(`engagementKindOnDay`, `loadContractorDays`): a day in a contractor stint, and outside every stint
+(`engagementKindOnDay`, `contractorDaysByEngagement`): a day in a contractor stint, and outside every stint
 a day whose deciding stint (`engagementPeriodDecidingDay`: the one that ended last before it, or
 before the first stint the one the resolver picks on the first day a stint starts, which after a
 first-day conversion is the later stint) is a contractor's. But § 1 Abs. 1 Nr. 3
@@ -194,6 +194,20 @@ _Avoid_: one acknowledgement lifting night work at any hour or age
 
 ## Relationships
 
+- **Engagement → Statutory Compliance**: monitors judge **employee time** only (#2010). An External
+  Contractor stint is no employment under any monitor here, whatever its terms rows, agreements
+  or profile, and whatever the person's age unless the organization applies JArbSchG to minor
+  contractors (see **Minor contractor**; youth limits then read all time, `loadYouthJudgedTime`):
+  every monitor reads work and shifts through `employee-time.ts`
+  (over `loadEmployeeTime`), which drops contractor time and, on a conversion day, splits at the
+  exact instant as payroll does. Short-term reads no terms row of a contractor stint, so a
+  contractor stint never forms, joins or bridges a short-term employment. Staffing's proposals
+  are clipped like shifts. Youth limits judge the days with any employee time; apprentice
+  releases are credited on days the resolver gives apprentice terms, never a contractor day.
+  Monitors that pick their days by the resolver's profile (Minijob, short-term, working student,
+  on-call, releases) give a same-day employee → contractor conversion the contractor kind, as the
+  resolver does: its employee morning is not judged.
+  _Avoid_: a per-monitor "is contractor" check
 - **Contracts → Statutory Compliance**: a monitor applies to an employee through the effective
   contract's employment profile, ArbZG scope and on-call terms; Statutory Compliance never changes them
 - **Statutory Compliance → Scheduling**: monitors contribute wage-free `statutory` findings to the

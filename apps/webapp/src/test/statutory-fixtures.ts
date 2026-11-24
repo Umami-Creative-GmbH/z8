@@ -98,6 +98,44 @@ export function statutoryFixture(admin: Pool, prefix: string) {
 			return { userId, employeeId: row.id, organizationId: org.id };
 		},
 
+		/**
+		 * One employment stint of `kind` (spec #1935) from `startedAt` (an ISO instant) until
+		 * `endedAt` (null: open), with a recorded start. Seed stints in order and before any terms:
+		 * contract changes attach to the open stint. The employee's own engagement kind follows the
+		 * open stint, as a rehire leaves it.
+		 */
+		async stint(
+			who: FixtureEmployee,
+			kind: "employee" | "contractor",
+			startedAt: string,
+			endedAt: string | null = null,
+		): Promise<string> {
+			const {
+				rows: [row],
+			} = await admin.query<{ id: string }>(
+				`INSERT INTO employee_employment_period
+				 (organization_id, employee_id, status, started_at, ended_at, start_provenance, engagement_kind)
+				 VALUES ($1, $2, $3, $4, $5, 'recorded', $6)
+				 RETURNING id`,
+				[who.organizationId, who.employeeId, endedAt ? "closed" : "open", startedAt, endedAt, kind],
+			);
+			if (!endedAt) {
+				await admin.query(`UPDATE employee SET engagement_kind = $2 WHERE id = $1`, [
+					who.employeeId,
+					kind,
+				]);
+			}
+			return row.id;
+		},
+
+		/** Ends an open stint at `endedAt` (an ISO instant), as a departure before a conversion does. */
+		async endStint(stintId: string, endedAt: string): Promise<void> {
+			await admin.query(
+				`UPDATE employee_employment_period SET status = 'closed', ended_at = $2 WHERE id = $1`,
+				[stintId, endedAt],
+			);
+		},
+
 		/** An approved membership; `owner`/`admin` are org admins, `member` needs a manager employee to manage. */
 		async membership(
 			org: FixtureOrganization,
