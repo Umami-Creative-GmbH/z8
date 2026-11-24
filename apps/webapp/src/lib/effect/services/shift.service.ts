@@ -881,7 +881,7 @@ export const ShiftServiceLive = Layer.effect(
 								drafts,
 							);
 							const refusal = statutoryPublicationRefusal(blocking);
-							if (refusal) return { kind: "statutory_blocked", refusal } as const;
+							if (refusal) return { kind: "statutory_blocked", refusal, blocking } as const;
 
 							await tx
 								.update(shift)
@@ -911,6 +911,8 @@ export const ShiftServiceLive = Layer.effect(
 							new ValidationError({
 								message: outcome.refusal,
 								field: "shifts",
+								// The Scheduling action lists them for its viewer (#2026).
+								value: { blockingFindings: outcome.blocking },
 								refusal: STATUTORY_PUBLICATION_BLOCKED,
 							}),
 						);

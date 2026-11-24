@@ -17,7 +17,10 @@ import {
 	ShiftService,
 	type ShiftWithRelations,
 } from "@/lib/effect/services/shift.service";
-import type { ScheduleComplianceSummary } from "@/lib/scheduling/compliance/types";
+import type {
+	ScheduleComplianceSummary,
+	StatutoryComplianceFinding,
+} from "@/lib/scheduling/compliance/types";
 import {
 	resolveScheduleDateRange,
 	resolveScheduleWallTime,
@@ -28,6 +31,17 @@ import {
 	statutoryPublicationRefusal,
 } from "@/lib/statutory/scheduling/publication-block";
 import { findingsBlockingPublication } from "@/lib/statutory/scheduling/publish-blocking";
+import type {
+	DatedStatutoryFinding,
+	ScheduleStatutoryFindings,
+} from "@/lib/statutory/scheduling/findings-list";
+import {
+	type ScheduleStatutoryFindingsViewer,
+	scheduleStatutoryFindingsFor,
+} from "@/lib/statutory/scheduling/findings-list-view";
+import { statutoryAudienceOf } from "@/lib/statutory/redaction";
+import { loadManagedScope } from "@/lib/organization-action/managed-scope";
+import { resolveCallerSettingsAccess } from "@/lib/organization-action/settings-access";
 import {
 	loadUpcomingShifts,
 	UPCOMING_SHIFTS_LIMIT,
@@ -107,6 +121,98 @@ function getEffectiveShiftQuery(
 		...effectiveQuery,
 		employeeId: currentEmployee.id,
 		status: "published" as const,
+	});
+}
+
+/**
+ * Who reads Scheduling's statutory findings list (#2026): an org admin or a workforce admin
+ * reaches every employee, a scoped manager only those they manage; only org admins see the way to
+ * Reviews & Conflicts.
+ */
+function loadStatutoryFindingsViewer(
+	currentEmployee: Pick<CurrentEmployee, "organizationId">,
+) {
+	return Effect.gen(function* () {
+		const caller = yield* resolveCallerSettingsAccess();
+		if (
+			caller.settingsAccess === null ||
+			caller.organizationId !== currentEmployee.organizationId
+		) {
+			return {
+				scope: {
+					organizationWide: false,
+					employeeIds: new Set<string>(),
+					teamIds: new Set<string>(),
+				},
+				audience: "restricted",
+			} satisfies ScheduleStatutoryFindingsViewer;
+		}
+		const scope = yield* loadManagedScope({
+			organizationId: caller.organizationId,
+			settingsAccess: caller.settingsAccess,
+			employee: caller.employee,
+		});
+		return {
+			scope,
+			audience: statutoryAudienceOf(caller.settingsAccess),
+		} satisfies ScheduleStatutoryFindingsViewer;
+	});
+}
+
+/** The statutory findings list `findings` makes for the current viewer. */
+function statutoryFindingsForViewer(
+	currentEmployee: Pick<CurrentEmployee, "organizationId">,
+	findings: readonly DatedStatutoryFinding[],
+	dated?: readonly DatedStatutoryFinding[],
+) {
+	return Effect.gen(function* () {
+		const dbService = yield* DatabaseService;
+		const viewer = yield* loadStatutoryFindingsViewer(currentEmployee);
+		return yield* dbService.query("scheduling.statutoryFindingsList", () =>
+			scheduleStatutoryFindingsFor(dbService.db, {
+				organizationId: currentEmployee.organizationId,
+				viewer,
+				findings,
+				dated,
+			}),
+		);
+	});
+}
+
+/** The blocking findings `ShiftService.publishShifts` refused its locked drafts for. */
+function blockingFindingsOf(
+	error: ValidationError,
+): StatutoryComplianceFinding[] {
+	const value = error.value;
+	return value &&
+		typeof value === "object" &&
+		"blockingFindings" in value &&
+		Array.isArray(value.blockingFindings)
+		? (value.blockingFindings as StatutoryComplianceFinding[])
+		: [];
+}
+
+/** The publish-block refusal, listing its blocking findings for the current viewer (#2026). */
+function statutoryPublicationBlocked(
+	currentEmployee: Pick<CurrentEmployee, "organizationId">,
+	message: string,
+	blocking: readonly StatutoryComplianceFinding[],
+	dated: readonly DatedStatutoryFinding[],
+) {
+	return Effect.gen(function* () {
+		const statutoryFindings = yield* statutoryFindingsForViewer(
+			currentEmployee,
+			blocking.map((finding) => ({ finding, period: null })),
+			dated,
+		);
+		return yield* Effect.fail(
+			new ValidationError({
+				message,
+				field: "shifts",
+				value: { statutoryFindings },
+				refusal: STATUTORY_PUBLICATION_BLOCKED,
+			}),
+		);
 	});
 }
 
@@ -317,12 +423,11 @@ export async function publishShifts(
 		);
 		const statutoryRefusal = statutoryPublicationRefusal(blocking);
 		if (statutoryRefusal) {
-			return yield* Effect.fail(
-				new ValidationError({
-					message: statutoryRefusal,
-					field: "shifts",
-					refusal: STATUTORY_PUBLICATION_BLOCKED,
-				}),
+			return yield* statutoryPublicationBlocked(
+				currentEmployee,
+				statutoryRefusal,
+				blocking,
+				evaluation.datedStatutoryFindings,
 			);
 		}
 		const publishDecision = buildPublishDecision({
@@ -335,15 +440,38 @@ export async function publishShifts(
 		});
 
 		if (!publishDecision.published) {
-			return publishDecision;
+			// The planner acknowledges these: list who, which limit and which day (#2026).
+			return {
+				...publishDecision,
+				statutoryFindings: yield* statutoryFindingsForViewer(
+					currentEmployee,
+					evaluation.datedStatutoryFindings,
+				),
+			};
 		}
 
-		const result = yield* shiftService.publishShifts(
-			currentEmployee.organizationId,
-			serviceDateRange,
-			session.user.id,
-			statutoryScope,
-		);
+		const result = yield* shiftService
+			.publishShifts(
+				currentEmployee.organizationId,
+				serviceDateRange,
+				session.user.id,
+				statutoryScope,
+			)
+			.pipe(
+				// The publication judges its locked drafts again: a refusal there lists them too.
+				Effect.catchIf(
+					(error): error is ValidationError =>
+						error._tag === "ValidationError" &&
+						error.refusal === STATUTORY_PUBLICATION_BLOCKED,
+					(error) =>
+						statutoryPublicationBlocked(
+							currentEmployee,
+							error.message,
+							blockingFindingsOf(error),
+							evaluation.datedStatutoryFindings,
+						),
+				),
+			);
 
 		if (evaluation.summary.totalFindings > 0) {
 			yield* scheduleComplianceService.recordPublishAcknowledgment({
@@ -403,6 +531,8 @@ export async function getScheduleComplianceSummary(
 	SchedulingActionResult<{
 		summary: ScheduleComplianceSummary;
 		evaluationFingerprint: string;
+		/** The statutory findings behind `summary.byType.statutory`, for this viewer (#2026). */
+		statutoryFindings: ScheduleStatutoryFindings;
 	}>
 > {
 	const effect = Effect.gen(function* () {
@@ -420,6 +550,10 @@ export async function getScheduleComplianceSummary(
 		return {
 			summary: evaluation.summary,
 			evaluationFingerprint: evaluation.fingerprint,
+			statutoryFindings: yield* statutoryFindingsForViewer(
+				currentEmployee,
+				evaluation.datedStatutoryFindings,
+			),
 		};
 	}).pipe(Effect.provide(ScheduleComplianceServiceLive));
 
