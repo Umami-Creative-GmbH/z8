@@ -42,6 +42,7 @@ import {
 	statutoryReviewDomainOf,
 	statutoryReviewDomains,
 } from "./review-domains";
+import { isOpenStatutoryReviewItem, summarizeStatutoryReviewDomain } from "./review-summary";
 import { statutoryReviewWindow } from "./review-window";
 import type { StatutoryScheduleContributor } from "./scheduling/contributor";
 import { evaluateStatutoryFindings, toStatutoryComplianceFinding } from "./scheduling/evaluate";
@@ -61,7 +62,6 @@ export {
 	type StatutoryReviewDomain,
 } from "./review-domains";
 export { STATUTORY_MONITOR_LOOKAHEAD_DAYS, STATUTORY_MONITOR_LOOKBACK_DAYS } from "./review-window";
-
 /** The monitors whose horizon findings the inbox reads beside their review lists. */
 const youthContributors: readonly StatutoryScheduleContributor[] = [
 	jarbschgScheduleContributor,
@@ -378,30 +378,6 @@ export async function loadStatutoryMonitorFindings(
 		input.organizationId,
 		uniqueItems(findings.filter(isMonitorOnlyFinding).map(monitorItemOf)),
 	);
-}
-
-/** Whether an item still needs an org admin: not documented by an acknowledgement. */
-export function isOpenStatutoryReviewItem(item: StatutoryReviewInboxItem): boolean {
-	return item.severity !== "info" && item.acknowledgementStatus !== "current";
-}
-
-export function summarizeStatutoryReviewDomain(
-	domain: StatutoryReviewDomain,
-	items: readonly StatutoryReviewInboxItem[],
-): StatutoryReviewDomainSummary {
-	const open = items.filter(
-		(item) => item.reviewDomain === domain && isOpenStatutoryReviewItem(item),
-	);
-	return {
-		domain,
-		status: "loaded",
-		critical: open.filter((item) => item.severity === "critical").length,
-		warning: open.filter((item) => item.severity === "warning").length,
-		pendingAcknowledgements: open.filter(
-			(item) => item.acknowledgeable && item.acknowledgementStatus === "none",
-		).length,
-		staleAcknowledgements: open.filter((item) => item.acknowledgementStatus === "stale").length,
-	};
 }
 
 /**
