@@ -29,8 +29,9 @@
  *
  * It refuses a non-local host and a database other than the confirmed one. Every run first
  * removes what an earlier run created (ids start with `stv-`) and seeds afresh; `--remove` only
- * removes it. The password for every login is `STATUTORY_SEED_PASSWORD` or a generated one
- * printed at the end. Keep it out of `src/db/seed`: those seeders run in production.
+ * removes it. The password for every login is `STATUTORY_SEED_PASSWORD`, which is never printed,
+ * or else a generated one printed at the end. Keep it out of `src/db/seed`: those seeders run in
+ * production.
  */
 import { randomBytes } from "node:crypto";
 import { Pool } from "pg";
@@ -39,6 +40,7 @@ import {
 	removeStatutoryVerificationSeed,
 	seedStatutoryVerification,
 } from "@/lib/statutory/__tests__/verification-seed";
+import { verificationSeedPassword } from "@/lib/statutory/__tests__/verification-seed-password";
 
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
 
@@ -84,14 +86,16 @@ async function main(): Promise<void> {
 			console.log("Removed the statutory verification seed.");
 			return;
 		}
-		const password = process.env.STATUTORY_SEED_PASSWORD || randomBytes(12).toString("hex");
+		const { password, notice } = verificationSeedPassword(process.env.STATUTORY_SEED_PASSWORD, () =>
+			randomBytes(12).toString("hex"),
+		);
 		const people = await seedStatutoryVerification(pool, {
 			password,
 			now: Temporal.Instant.fromEpochMilliseconds(Date.now()),
 		});
 		console.log("\nSeeded organization 'Statutory Verification' (Europe/Berlin).\n");
 		for (const who of people) console.log(`  ${who.email.padEnd(32)} ${who.name}`);
-		console.log(`\nPassword for every login: ${password}\n`);
+		console.log(`\n${notice}\n`);
 	} finally {
 		await pool.end();
 	}
