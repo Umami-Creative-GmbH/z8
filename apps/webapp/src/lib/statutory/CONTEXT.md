@@ -16,6 +16,20 @@ _Avoid_: hardcoded limit, setting
 An organization's warning and critical percentages of a statutory limit (default 80 % / 95 %).
 _Avoid_: thresholds (ambiguous with baselines)
 
+**Daytime band** (working student):
+The local wall-clock hours of a lecture-period weekday whose work counts against the 20-hour rule
+(§ 6 Abs. 1 Nr. 3 SGB V); work outside it (evenings, nights), weekends and lecture-free days do
+not. An organization statutory preference beside the warning tiers and the JArbSchG publish
+block, not a statutory baseline: the law names no hour and health insurers read "evening and
+night" differently, so each organization sets the band its insurer and payroll advisor accept
+(Settings → Contracts → statutory limits, org admins only, audited with what it replaced).
+Default 06:00–18:00; whole quarter hours, start before end, 00:00 to 24:00 (24:00 is the next
+day's start, also across a DST change). Every working-student evaluation reads it with the other
+preferences, loaded once per evaluation. It is part of the lecture-week input fingerprint, so
+changing it makes that week's acknowledgement stale (changing it back makes it current again), and
+it decides the week's core minutes, the finding's breach depth.
+_Avoid_: core hours, hardcoding 06:00–18:00
+
 **Statutory context**:
 Per-employee facts a monitor needs beyond Z8's own records: external or prior-employment offsets,
 lecture-free periods, apprentice school and exam releases. Voided, never edited.
