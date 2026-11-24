@@ -6,8 +6,9 @@
  * under JArbSchG (`applyJarbschgToMinorContractors`), each contractor engagement that decides a
  * contractor day of a minor (the days the monitor skips, `engagementKindOnDay`) is one warning an
  * org admin reviews and documents with a reason. Its fingerprint covers the engagement period, the
- * birthday and whether the window holds contractor days of the minor after the stint ended, so the
- * documentation re-opens when either period or birthday changes, or once such days appear.
+ * birthday, whether the window holds contractor days of the minor after the stint ended, and whether
+ * the engagement decides the days before the first start, so the documentation re-opens when the
+ * person's engagements or the birthday change, or once such days after the end appear.
  */
 import { and, eq, inArray } from "drizzle-orm";
 import { user } from "@/db/auth-schema";
@@ -19,6 +20,7 @@ import {
 	engagementPeriodDecidingDay,
 } from "@/lib/contracts/resolve-contract";
 import {
+	compareInstants,
 	comparePlainDates,
 	type Instant,
 	type PlainDate,
@@ -101,7 +103,10 @@ interface ContractorDays {
 	readonly firstDay: PlainDate;
 	/** A day after the stint ended, on which the person is a minor, counts as its contractor day. */
 	afterEnd: boolean;
-	/** A day before the first stint started, on which the person is a minor, counts as its contractor day. */
+	/**
+	 * A day before the first stint started, on which the person is a minor, counts as its contractor
+	 * day: it decides those days when the resolver picks it on the first day a stint starts.
+	 */
 	beforeStart: boolean;
 }
 
@@ -151,6 +156,35 @@ function contractorDaysByEngagement(input: {
 		if (decided.position === "before_start") days.beforeStart = true;
 	}
 	return [...byKey.values()];
+}
+
+/**
+ * Whether the stint decides the days before the employee's first stint starts, and the person is a
+ * minor on the last of them. Independent of the review window: only the stints and the birthday
+ * change it, e.g. a stint that decided those days being removed.
+ */
+function decidesDaysBeforeFirstStart(input: {
+	readonly birthday: PlainDate;
+	readonly engagementKey: string;
+	readonly periods: readonly EmploymentPeriodSnapshot[];
+	readonly timezone: string;
+}): boolean {
+	let firstStart: Instant | null = null;
+	for (const period of input.periods) {
+		// A stint without a recorded start reaches back indefinitely: no day comes before it.
+		if (period.startProvenance !== "recorded" || !period.startedAt) return false;
+		if (!firstStart || compareInstants(period.startedAt, firstStart) < 0) {
+			firstStart = period.startedAt;
+		}
+	}
+	if (!firstStart) return false;
+	const dayBefore = plainDateAt(firstStart, input.timezone).subtract({ days: 1 });
+	const decided = engagementPeriodDecidingDay(input.periods, dayBefore, input.timezone);
+	return (
+		decided?.position === "before_start" &&
+		decided.period.id === input.engagementKey &&
+		isMinorOn(input.birthday, dayBefore)
+	);
 }
 
 /**
@@ -210,10 +244,19 @@ export function minorContractorEngagementFindings(input: {
 				// Days after the stint ended that it decides were not documented while the window
 				// ended inside it. With no later stint this turns true once as the window moves, and
 				// only changed data turns it back. Only days on which the person is still a minor
-				// count: an adult's day after the end needs no review. Days before a first stint stay
-				// out: the window
-				// passing that stint's start must not re-open a documentation.
+				// count: an adult's day after the end needs no review. The window's own before-start
+				// days stay out (passing the stint's start must not re-open a documentation); whether
+				// the stint decides the days before the first start at all goes in instead, since only
+				// changed data, such as another stint removed, changes that.
 				contractorAfterEnd: afterEnd,
+				...(decidesDaysBeforeFirstStart({
+					birthday,
+					engagementKey: engagement.key,
+					periods: input.periods,
+					timezone: input.timezone,
+				})
+					? { contractorBeforeFirstStart: true }
+					: {}),
 			}),
 			acknowledgementKind: "jarbschg_minor_contractor_review",
 			blocksPublication: false,
@@ -360,8 +403,9 @@ async function employeeNames(
 }
 
 /**
- * Open minor contractor engagements (not documented, or documented before the period or birthday
- * changed or contractor days of the minor after the stint's end appeared), earliest first; with
+ * Open minor contractor engagements (not documented, or documented before the person's engagements
+ * or birthday changed or contractor days of the minor after the stint's end appeared), earliest
+ * first; with
  * `includeAcknowledged` also documented ones ("Show resolved").
  */
 export async function listMinorContractorReviews(
@@ -441,7 +485,7 @@ export async function acknowledgeMinorContractorReview(
 	if (finding.inputFingerprint !== input.expectedFingerprint) {
 		throw new ValidationError({
 			message:
-				"The engagement or the birthday changed since you reviewed it, or the person is now on the roster as a contractor after the engagement ends. Review it again.",
+				"The person's engagements or the birthday changed since you reviewed it, or the person is now on the roster as a contractor after the engagement ends. Review it again.",
 			refusal: "statutory_finding_changed" satisfies MinorContractorReviewRefusal,
 		});
 	}

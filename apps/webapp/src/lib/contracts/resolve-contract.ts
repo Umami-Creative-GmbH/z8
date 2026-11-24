@@ -334,7 +334,8 @@ export function engagementKindOnDay(input: {
 /**
  * The stint whose engagement kind `engagementKindOnDay` gives an employee-local day (#1996): the
  * one in force that day (`in_force`); outside every stint, the one that ended last before the day
- * (`after_end`), or, before the first stint, the one that starts first after it (`before_start`).
+ * (`after_end`), or, before the first stint, the one the resolver picks on the first day a stint
+ * starts (`before_start`).
  * Null when no stint decides it (none recorded, or none with a known position).
  */
 export function engagementPeriodDecidingDay(
@@ -364,9 +365,11 @@ export function engagementPeriodDecidingDay(
  * later that day takes over. Only when the resolver covers none of the stints starting that day
  * (all zero-length at its midnight) does the earliest start decide, ties by record and id.
  *
- * Known difference: payroll (`engagement/employee-time.ts`, `kindAt`) lets the contractor win
- * overlapping stints instead. The schema allows overlapping stints, but normal conversions
- * (which end one stint where the next starts) never create them.
+ * Known differences from payroll (`engagement/employee-time.ts`, `kindAt`), which works per
+ * instant: it lets the contractor win overlapping stints (the schema allows them, but normal
+ * conversions, which end one stint where the next starts, never create them), and it gives the
+ * days before a first-day conversion the stint that starts first, while this gives them the one
+ * in force at the end of that first day. Neither touches a day a stint covers without overlap.
  */
 function periodOutsideEmployment(
 	periods: readonly EmploymentPeriodSnapshot[],
