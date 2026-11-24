@@ -276,10 +276,11 @@ export async function loadProratedVacationAllowances(
 			: input.policy;
 		if (!policy) continue;
 		if (!input.policies && workingWeeks.has(employeeId)) {
+			// Days without employment have no rate and are no configuration error (#2009).
 			const weeks = workingWeeksWithin(workingWeeks.get(employeeId) ?? [], {
 				startDate,
 				endDate,
-			});
+			}).filter((week) => !week.notEmployed);
 			if (weeks.some((week) => week.workingDaysPerWeek === 0)) continue;
 			const { defaultAnnualDays, statutoryMinimumDays } = policy;
 			policy = {

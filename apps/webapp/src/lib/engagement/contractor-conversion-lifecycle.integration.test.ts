@@ -274,8 +274,7 @@ describe("an External Contractor hired as an employee, across every module (#200
 		seats.departed = await seatCount();
 
 		// Period 2: hired as an employee the next morning, under the Office policy, cost 40.00 an
-		// hour. (No calendar day between the stints: a whole day without employment would, for
-		// employees too, make the year's vacation configuration a zero-working-days conflict.)
+		// hour.
 		now = parseInstant("2026-04-01T06:00:00Z");
 		const rehired = await commands().rehireEmployee(owner(), {
 			employeeId: kim.employeeId,
