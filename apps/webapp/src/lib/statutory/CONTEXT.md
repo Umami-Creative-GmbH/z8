@@ -137,6 +137,14 @@ _Avoid_: one acknowledgement lifting night work at any hour or age
 
 ## Relationships
 
+- **Engagement → Statutory Compliance**: monitors judge **employee time** only (#2010). An External
+  Contractor stint is no employment under any monitor here, whatever its terms rows, agreements,
+  profile or the person's age: every monitor reads work and shifts through `employee-time.ts`
+  (over `loadEmployeeTime`), which drops contractor time and, on a conversion day, splits at the
+  exact instant as payroll does. Short-term reads no terms row of a contractor stint, so a
+  contractor stint never forms, joins or bridges a short-term employment. Day-based records
+  (youth judged days, apprentice releases) apply on days with any employee time.
+  _Avoid_: a per-monitor "is contractor" check
 - **Contracts → Statutory Compliance**: a monitor applies to an employee through the effective
   contract's employment profile, ArbZG scope and on-call terms; Statutory Compliance never changes them
 - **Statutory Compliance → Scheduling**: monitors contribute wage-free `statutory` findings to the

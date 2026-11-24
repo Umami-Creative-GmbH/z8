@@ -31,6 +31,7 @@
 import { and, eq, gt, gte, inArray, isNotNull, isNull, lt, min, ne, or } from "drizzle-orm";
 import { absenceCategory, absenceEntry, workPeriod } from "@/db/schema";
 import { loadEffectiveContractsBatch } from "@/lib/contracts/resolve-contract";
+import { loadEmployeeTime } from "@/lib/engagement/engagement-stints";
 import type { EffectiveContractOnDay } from "@/lib/contracts/types";
 import {
 	compareInstants,
@@ -44,6 +45,7 @@ import { employeePayrollWindow } from "@/lib/payroll-allocation/protected-minute
 import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import { allocateTrackedDailyWorkMinutes } from "@/lib/work-balance/tracked-work";
 import { loadEmployeeInOrganization } from "../employee-scope";
+import { employeeWorkRows } from "../employee-time";
 import { daysOf } from "./facts";
 import { loadOnCallReleasedDays, type OnCallReleaseReason } from "./released-days";
 
@@ -336,7 +338,9 @@ async function loadReferenceFactsBatch(
 	const windowEnd = windows
 		.map((w) => w.endExclusive)
 		.reduce((a, b) => (compareInstants(a, b) >= 0 ? a : b));
-	const periods = await db
+	// Employee time only (#2010): work of an External Contractor stint pays no on-call reference.
+	const employeeTime = await loadEmployeeTime(db, input.organizationId, input.employeeIds);
+	const storedPeriods = await db
 		.select({
 			employeeId: workPeriod.employeeId,
 			startTime: workPeriod.startTime,
@@ -355,6 +359,7 @@ async function loadReferenceFactsBatch(
 				gt(workPeriod.endTime, dateFromInstant(windowStart)),
 			),
 		);
+	const periods = employeeWorkRows(employeeTime, storedPeriods);
 	const periodsByEmployee = Map.groupBy(periods, (row) => row.employeeId);
 
 	for (const employeeId of input.employeeIds) {

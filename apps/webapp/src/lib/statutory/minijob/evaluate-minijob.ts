@@ -29,10 +29,12 @@ import {
 	plainDateAt,
 } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
+import { loadEmployeeTime } from "@/lib/engagement/engagement-stints";
 import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import { shiftCalendarDate, shiftDateRangeBounds } from "@/lib/scheduling/shift-date";
 import { type ShiftInterval, shiftInterval } from "@/lib/scheduling/shift-occasion";
 import { loadStatutoryAcknowledgementStates } from "../acknowledgements";
+import { employeeShiftRows, employeeWorkRows } from "../employee-time";
 import type { StatutoryFinding, StatutoryFindingAcknowledgement } from "../finding";
 import type { StatutoryPreferences } from "../preferences";
 import type { StatutoryProposedShift } from "../scheduling/contributor";
@@ -145,7 +147,10 @@ export async function evaluateMinijobEarnings(
 	const matchUntil = parsePlainDate(rangeUntil).add({ days: MATCH_MARGIN_DAYS }).toString();
 	const matchStart = localDayRange(matchFrom, timezone).start;
 	const matchEnd = localDayRange(matchUntil, timezone).start;
-	const workRows = await db
+	// Employee time only (#2010): an External Contractor stint earns no Minijob pay, to the instant
+	// on a conversion day.
+	const employeeTime = await loadEmployeeTime(db, input.organizationId, employeeIds);
+	const storedWorkRows = await db
 		.select({
 			id: workPeriod.id,
 			employeeId: workPeriod.employeeId,
@@ -169,6 +174,8 @@ export async function evaluateMinijobEarnings(
 			),
 		);
 
+	const workRows = employeeWorkRows(employeeTime, storedWorkRows);
+
 	const shiftBounds = shiftDateRangeBounds(matchFrom, matchUntil, timezone);
 	const shiftConditions = [
 		eq(shift.organizationId, input.organizationId),
@@ -177,16 +184,20 @@ export async function evaluateMinijobEarnings(
 		lt(shift.date, shiftBounds.endExclusive),
 	];
 	if (input.replacesShiftId) shiftConditions.push(ne(shift.id, input.replacesShiftId));
-	const shiftRows = await db
-		.select({
-			id: shift.id,
-			employeeId: shift.employeeId,
-			date: shift.date,
-			startTime: shift.startTime,
-			endTime: shift.endTime,
-		})
-		.from(shift)
-		.where(and(...shiftConditions));
+	const shiftRows = employeeShiftRows(
+		employeeTime,
+		await db
+			.select({
+				id: shift.id,
+				employeeId: shift.employeeId,
+				date: shift.date,
+				startTime: shift.startTime,
+				endTime: shift.endTime,
+			})
+			.from(shift)
+			.where(and(...shiftConditions)),
+		timezone,
+	);
 
 	const offsetRows = await db
 		.select({

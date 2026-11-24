@@ -26,6 +26,7 @@ import type {
 	StatutoryScheduleContributor,
 } from "../scheduling/contributor";
 import { isMinorOn } from "../youth/age";
+import { loadEmployeeTime } from "@/lib/engagement/engagement-stints";
 import { shiftInterval } from "@/lib/scheduling/shift-occasion";
 import { proposedShiftSubjectKey } from "../youth/jarbschg-contributor";
 import { loadEmployeeBirthdays, loadYouthShifts } from "../youth/youth-facts";
@@ -373,6 +374,10 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 		organizationId: context.organizationId,
 		employeeIds,
 	});
+	// Only employee time conflicts with a release (#2010): a release day is credited on employee
+	// days alone (`loadApprenticeReleaseDays`), and on a conversion day the shifts of its contractor
+	// part are left out.
+	const employeeTime = await loadEmployeeTime(context.db, context.organizationId, employeeIds);
 	const shifts = await loadYouthShifts(context.db, {
 		organizationId: context.organizationId,
 		organizationTimezone: context.timezone,
@@ -381,6 +386,7 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 		until: weeksEnd.add({ days: 7 }).toString(),
 		excludeShiftId: context.replacesShiftId,
 		excludeShiftIds: context.excludedShiftIds,
+		employeeTime,
 	});
 	const planned: PlannedWork[] = [
 		...shifts.map((shift) => ({ ...shift, ref: `shift:${shift.id}` })),

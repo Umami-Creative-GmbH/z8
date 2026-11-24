@@ -30,9 +30,11 @@ import {
 	plainDateAt,
 } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
+import { loadEmployeeTime } from "@/lib/engagement/engagement-stints";
 import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import { shiftCalendarDate, shiftDateRangeBounds } from "@/lib/scheduling/shift-date";
 import { shiftInterval, workMatchesShift } from "@/lib/scheduling/shift-occasion";
+import { employeeShiftRows, employeeWorkRows } from "../employee-time";
 import type { StatutoryProposedShift } from "../scheduling/contributor";
 import { loadOrganizationStatutoryPreferences, type StatutoryPreferences } from "../preferences";
 import { loadStatutoryThresholds } from "../thresholds";
@@ -297,7 +299,10 @@ export async function evaluateWorkingStudents(
 	const rangeStart = from.toZonedDateTime(timezone).toInstant();
 	const rangeEnd = until.toZonedDateTime(timezone).toInstant();
 
-	const workRows = await db
+	// Employee time only (#2010): an External Contractor stint is no working-student work, to the
+	// instant on a conversion day, and no other profile's work either.
+	const employeeTime = await loadEmployeeTime(db, request.organizationId, inScope);
+	const storedWorkRows = await db
 		.select({
 			id: workPeriod.id,
 			employeeId: workPeriod.employeeId,
@@ -316,8 +321,9 @@ export async function evaluateWorkingStudents(
 				gt(workPeriod.endTime, dateFromInstant(rangeStart)),
 			),
 		);
+	const workRows = employeeWorkRows(employeeTime, storedWorkRows);
 	// Running clock-ins count up to `now`.
-	const openRows =
+	const storedOpenRows =
 		compareInstants(request.now, rangeStart) > 0
 			? await db
 					.select({
@@ -338,6 +344,10 @@ export async function evaluateWorkingStudents(
 						),
 					)
 			: [];
+	const openRows = employeeWorkRows(
+		employeeTime,
+		storedOpenRows.map((row) => ({ ...row, endTime: null, durationMinutes: null })),
+	);
 
 	// Only shifts still running at `now` count, and a shift ends within a day of its date: one
 	// starting the day before the range (or before today) may still run into it.
@@ -380,16 +390,20 @@ export async function evaluateWorkingStudents(
 			lt(shift.date, shiftBounds.endExclusive),
 		];
 		if (request.replacesShiftId) shiftConditions.push(ne(shift.id, request.replacesShiftId));
-		return db
-			.select({
-				id: shift.id,
-				employeeId: shift.employeeId,
-				date: shift.date,
-				startTime: shift.startTime,
-				endTime: shift.endTime,
-			})
-			.from(shift)
-			.where(and(...shiftConditions));
+		return employeeShiftRows(
+			employeeTime,
+			await db
+				.select({
+					id: shift.id,
+					employeeId: shift.employeeId,
+					date: shift.date,
+					startTime: shift.startTime,
+					endTime: shift.endTime,
+				})
+				.from(shift)
+				.where(and(...shiftConditions)),
+			timezone,
+		);
 	};
 	// Once the whole range is over, no shift in it can still count.
 	const shiftRows = comparePlainDates(earliestShiftsFrom, until) < 0 ? await loadShifts() : [];

@@ -8,6 +8,7 @@
 import { and, eq, gt, gte, inArray, isNotNull, isNull, lt, or } from "drizzle-orm";
 import { employeeEmploymentHistory, shift, workPeriod } from "@/db/schema";
 import { loadEffectiveContractsBatch } from "@/lib/contracts/resolve-contract";
+import { loadEmployeeTime } from "@/lib/engagement/engagement-stints";
 import type { ResolvedOnCallTerms } from "@/lib/contracts/types";
 import {
 	compareInstants,
@@ -21,6 +22,7 @@ import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import { shiftCalendarDate, shiftDateRangeBounds } from "@/lib/scheduling/shift-date";
 import { shiftInterval } from "@/lib/scheduling/shift-occasion";
+import { employeeShiftRows, employeeWorkRows } from "../employee-time";
 import { loadStatutoryThresholds, type StatutoryThresholdTable } from "../thresholds";
 import { loadOnCallReleasedDays, type OnCallReleaseReason } from "./released-days";
 
@@ -245,7 +247,13 @@ export async function loadOnCallFacts(
 		.select(workColumns)
 		.from(workPeriod)
 		.where(and(ofOnCallEmployees, eq(workPeriod.isActive, true), isNull(workPeriod.deletedAt)));
-	const workRows = [...(await finishedRows), ...(await runningRows)];
+	// Employee time only (#2010): an External Contractor stint's calls are no on-call work, to the
+	// instant on a conversion day.
+	const employeeTime = await loadEmployeeTime(db, input.organizationId, onCallIds);
+	const workRows = employeeWorkRows(employeeTime, [
+		...(await finishedRows),
+		...(await runningRows),
+	]);
 	const piecesByEmployee = new Map<string, OnCallWorkPiece[]>();
 	for (const row of workRows) {
 		const start = instantFromDate(row.startTime);
@@ -265,27 +273,31 @@ export async function loadOnCallFacts(
 		push(piecesByEmployee, row.employeeId, { start, end, minutes, running: false });
 	}
 
-	const shiftRows = await db
-		.select({
-			id: shift.id,
-			employeeId: shift.employeeId,
-			date: shift.date,
-			startTime: shift.startTime,
-			endTime: shift.endTime,
-			status: shift.status,
-			publishedAt: shift.publishedAt,
-			assignmentChangedAt: shift.assignmentChangedAt,
-		})
-		.from(shift)
-		.where(
-			and(
-				eq(shift.organizationId, input.organizationId),
-				inArray(shift.employeeId, onCallIds),
-				gte(shift.date, bounds.start),
-				lt(shift.date, bounds.endExclusive),
-				input.publishedShiftsOnly ? eq(shift.status, "published") : undefined,
+	const shiftRows = employeeShiftRows(
+		employeeTime,
+		await db
+			.select({
+				id: shift.id,
+				employeeId: shift.employeeId,
+				date: shift.date,
+				startTime: shift.startTime,
+				endTime: shift.endTime,
+				status: shift.status,
+				publishedAt: shift.publishedAt,
+				assignmentChangedAt: shift.assignmentChangedAt,
+			})
+			.from(shift)
+			.where(
+				and(
+					eq(shift.organizationId, input.organizationId),
+					inArray(shift.employeeId, onCallIds),
+					gte(shift.date, bounds.start),
+					lt(shift.date, bounds.endExclusive),
+					input.publishedShiftsOnly ? eq(shift.status, "published") : undefined,
+				),
 			),
-		);
+		input.timezone,
+	);
 	const shiftsByEmployee = new Map<string, OnCallShift[]>();
 	let replacedShift: OnCallShift | null = null;
 	for (const row of shiftRows) {

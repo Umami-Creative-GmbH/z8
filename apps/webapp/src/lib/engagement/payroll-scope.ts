@@ -76,7 +76,7 @@ export function payrollScope(
 		isPayrollDay: (employeeId, date) => employeeTime.hasEmployeeTimeOn(employeeId, date, date),
 		engagementOfDays: (employeeId, dates) =>
 			employeeTime.engagementOfDays(employeeId, dates.startDate, dates.endDate),
-		clipRecord: (employeeId, record) => clipToEmployeeTime(employeeTime, employeeId, record),
+		clipRecord: (employeeId, record) => clipRecordToEmployeeTime(employeeTime, employeeId, record),
 		blockingClockRepairs: (repairs) =>
 			repairs.filter(
 				(repair) =>
@@ -111,7 +111,14 @@ function endsInEmployeeTime(employeeTime: EmployeeTime, employeeId: string, at: 
 	);
 }
 
-function clipToEmployeeTime<T extends PayrollScopeRecord>(
+/**
+ * A work or break record clipped to the employee's employee time (`PayrollScope.clipRecord`):
+ * the record itself when all of it is employee time; the part from its first to its last employee
+ * instant, with the minutes the payroll credit rule gives that part, when only some of it is;
+ * null when none of it is. A running record belongs to the stint it started in. The statutory
+ * monitors read work through it too (#2010).
+ */
+export function clipRecordToEmployeeTime<T extends PayrollScopeRecord>(
 	employeeTime: EmployeeTime,
 	employeeId: string,
 	record: T,
