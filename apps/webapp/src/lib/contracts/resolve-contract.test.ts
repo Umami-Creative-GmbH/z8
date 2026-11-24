@@ -611,6 +611,53 @@ describe("contracts pure helpers & resolver", () => {
 			expect(decide("2026-03-15", rows)).toBe("after_end:employee");
 		}
 
+		// A zero-length contractor stint at the employee stint's end was never in force: the
+		// employee stint decides the last day in force and keeps deciding after it, although the
+		// contractor stint starts later and was recorded later.
+		const zeroLengthAtEnd = [
+			period(
+				"employee",
+				"employee",
+				"2026-01-01T00:00:00Z",
+				"2026-03-01T00:00:00Z",
+				"2026-01-01T00:00:00Z",
+			),
+			period(
+				"contractor",
+				"contractor",
+				"2026-03-01T00:00:00Z",
+				"2026-03-01T00:00:00Z",
+				"2026-02-01T00:00:00Z",
+			),
+		];
+		for (const rows of [zeroLengthAtEnd, [...zeroLengthAtEnd].reverse()]) {
+			expect(decide("2026-02-28", rows)).toBe("in_force:employee");
+			expect(decide("2026-03-01", rows)).toBe("after_end:employee");
+			expect(decide("2026-03-15", rows)).toBe("after_end:employee");
+		}
+
+		// Both end together during a day, so neither is active at its end: the later start still
+		// decides that last day and the days after.
+		const sameMidDayEnd = sameEnd.map((row) => ({
+			...row,
+			endedAt: parseInstant("2026-03-01T12:00:00Z"),
+		}));
+		for (const rows of [sameMidDayEnd, [...sameMidDayEnd].reverse()]) {
+			expect(decide("2026-03-01", rows)).toBe("in_force:employee");
+			expect(decide("2026-03-02", rows)).toBe("after_end:employee");
+		}
+
+		// A stint without a start counts as starting earliest, as on a day in force, even though it
+		// was recorded later.
+		const unrecordedStart = [
+			{ ...sameEnd[0], id: "unrecorded", startedAt: null, startProvenance: "unknown" },
+			{ ...sameEnd[1], id: "recorded" },
+		];
+		for (const rows of [unrecordedStart, [...unrecordedStart].reverse()]) {
+			expect(decide("2026-02-28", rows)).toBe("in_force:recorded");
+			expect(decide("2026-03-01", rows)).toBe("after_end:recorded");
+		}
+
 		// Both start together: the stint still in force at the end of the start day decides that
 		// day and every day before, although the short contractor stint was recorded later.
 		const sameStart = [

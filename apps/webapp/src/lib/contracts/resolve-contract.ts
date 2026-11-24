@@ -356,11 +356,12 @@ export function engagementPeriodDecidingDay(
  * before the day, or, before the first stint, the stint that starts first after it. Only
  * callers that found no period on the day use this.
  *
- * Stints ending (or starting) at the same instant tie. The tie goes to the stint
- * `resolveEmploymentPeriodForDay` picks on the last day in force (or the first), so the
- * engagement kind does not flip at the boundary: after the end, the later start, then the later
- * record, then the greater id; before the start, the stint still active at the end of its start
- * day first, then the later record, then the greater id.
+ * Stints ending (or starting) at the same instant tie. Among the tied stints, the tie goes to the
+ * one `resolveEmploymentPeriodForDay` picks on the last day in force (or the first), so the
+ * engagement kind does not flip at the boundary: after the end, a stint that had a day in force
+ * before one that started at its end (zero length), then the later start, then the later record,
+ * then the greater id; before the start, the stint still active at the end of its start day
+ * first, then the later record, then the greater id.
  *
  * Known difference: payroll (`engagement/employee-time.ts`, `kindAt`) lets the contractor win
  * overlapping stints instead. The schema allows overlapping stints, but normal conversions
@@ -380,12 +381,9 @@ function periodOutsideEmployment(
 	for (const period of periods) {
 		if (period.endedAt !== null && compareInstants(period.endedAt, dayStart) <= 0) {
 			const order = preceding ? compareInstants(period.endedAt, preceding.endedAt) : 1;
-			// Same end: both are active at the end of every day before it, so the start decides.
 			if (
 				order > 0 ||
-				(order === 0 &&
-					preceding &&
-					compareStintsForDay(period, preceding.period, period.endedAt) < 0)
+				(order === 0 && preceding && endsTieBefore(period, preceding.period, period.endedAt))
 			) {
 				preceding = { period, endedAt: period.endedAt };
 			}
@@ -395,14 +393,19 @@ function periodOutsideEmployment(
 			period.startProvenance === "recorded" && period.startedAt ? period.startedAt : null;
 		if (start === null) continue;
 		const order = following ? compareInstants(start, following.startedAt) : -1;
-		// Same start: the comparator judges the start day, the first day either is in force.
-		const startDayEnd = plainDateAt(start, employeeCalendarTimezone)
-			.add({ days: 1 })
-			.toZonedDateTime(employeeCalendarTimezone)
-			.toInstant();
 		if (
 			order < 0 ||
-			(order === 0 && following && compareStintsForDay(period, following.period, startDayEnd) < 0)
+			(order === 0 &&
+				following &&
+				compareStintsForDay(
+					period,
+					following.period,
+					// Same start: the comparator judges the start day, the first day either is in force.
+					plainDateAt(start, employeeCalendarTimezone)
+						.add({ days: 1 })
+						.toZonedDateTime(employeeCalendarTimezone)
+						.toInstant(),
+				) < 0)
 		) {
 			following = { period, startedAt: start };
 		}
@@ -410,6 +413,27 @@ function periodOutsideEmployment(
 	if (preceding) return { period: preceding.period, position: "after_end" };
 	if (following) return { period: following.period, position: "before_start" };
 	return null;
+}
+
+/**
+ * Whether `left` decides the days after an end it shares with `right`. A zero-length stint (it
+ * starts at that end) was never in force, so the other decides the last day in force and keeps
+ * deciding after it. Otherwise both are in force on the last day, alike at its end, and the
+ * comparator settles it by start, record and id.
+ */
+function endsTieBefore(
+	left: EmploymentPeriodSnapshot,
+	right: EmploymentPeriodSnapshot,
+	sharedEnd: Instant,
+): boolean {
+	const leftInForce = hadDayInForce(left);
+	if (leftInForce !== hadDayInForce(right)) return leftInForce;
+	return compareStintsForDay(left, right, sharedEnd) < 0;
+}
+
+function hadDayInForce(period: EmploymentPeriodSnapshot): boolean {
+	const start = period.startProvenance === "recorded" && period.startedAt ? period.startedAt : null;
+	return start === null || period.endedAt === null || compareInstants(start, period.endedAt) < 0;
 }
 
 /**
