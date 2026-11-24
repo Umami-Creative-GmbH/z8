@@ -116,6 +116,7 @@ vi.mock("@/db/schema", () => ({
 	},
 	employee: { id: "employee", organizationId: "organization_id" },
 	employeeEmploymentHistory: {},
+	organizationStatutoryPreference: {},
 }));
 
 vi.mock("@/lib/logger", () => ({
