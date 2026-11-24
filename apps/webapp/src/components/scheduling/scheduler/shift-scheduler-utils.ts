@@ -15,12 +15,24 @@ function formatWallTime(dateTime: { hour: number; minute: number }): string {
 	return `${String(dateTime.hour).padStart(2, "0")}:${String(dateTime.minute).padStart(2, "0")}`;
 }
 
+/** The planner's words for an unassigned shift and a draft, in their language. */
+export interface ShiftEventLabels {
+	readonly openShift: string;
+	readonly draft: string;
+}
+
+const ENGLISH_EVENT_LABELS: ShiftEventLabels = { openShift: "Open Shift", draft: "Draft" };
+
 /**
  * A Schedule-X event for the planner. Schedule-X 4 takes timed events only as `ZonedDateTime`, so
  * the shift's wall times are placed on its calendar date in the organization's zone. A shift
  * ending at or before its start ends on the next day.
  */
-export function shiftToEvent(shift: ShiftWithRelations, organizationTimezone: string) {
+export function shiftToEvent(
+	shift: ShiftWithRelations,
+	organizationTimezone: string,
+	labels: ShiftEventLabels = ENGLISH_EVENT_LABELS,
+) {
 	const timeZone = parseIanaTimeZone(organizationTimezone);
 	const date = shiftCalendarDate(shift.date, timeZone);
 	const endDate = shift.endTime <= shift.startTime ? date.add({ days: 1 }) : date;
@@ -34,11 +46,11 @@ export function shiftToEvent(shift: ShiftWithRelations, organizationTimezone: st
 	const isDraft = shift.status === "draft";
 
 	let title = isOpenShift
-		? "Open Shift"
+		? labels.openShift
 		: `${shift.employee?.firstName || ""} ${shift.employee?.lastName || ""}`.trim() || "Assigned";
 
 	if (isDraft) {
-		title = `[Draft] ${title}`;
+		title = `[${labels.draft}] ${title}`;
 	}
 
 	return {
