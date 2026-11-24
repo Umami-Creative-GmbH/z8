@@ -73,13 +73,14 @@ export interface JarbschgSectorWorkHours {
  *   working time ends after 20:00 for transport reasons; Abs. 5 S. 2 (from the 16th birthday,
  *   after notice): multi-shift operations from 05:30 or until 23:30;
  * - Abs. 6 (any age): in workplaces with extraordinary heat, from 05:00 in the warm season.
- * So 05:00–21:00 under 16, 05:00–23:30 at 16 and 04:00–23:30 from 17. Night work outside it cannot
- * be acknowledged. Abs. 7 (performances until 23:00) needs the authority's approval and is not an
+ * So 05:00–21:00 at 15, 05:00–23:30 at 16 and 04:00–23:30 from 17. § 14 covers Jugendliche (15 to
+ * 17, § 2 Abs. 2); a child under 15 (§ 5) may not be extended at all, so null. Night work outside
+ * it cannot be acknowledged. Abs. 7 (performances until 23:00) needs the authority's approval and is not an
  * employer's acknowledgement. Abs. 4 (no Abs. 2 Nr. 1–3 extension past 20:00 before a vocational
  * school day with lessons before 09:00) is not judged here: the acknowledging admin confirms it.
  */
 export function jarbschgSectorWorkHours(ageYears: number | null): JarbschgSectorWorkHours | null {
-	if (ageYears === null) return null;
+	if (ageYears === null || ageYears < 15) return null;
 	if (ageYears < 16) return { fromMinuteOfDay: 5 * 60, untilMinuteOfDay: 21 * 60 };
 	return {
 		fromMinuteOfDay: ageYears >= 17 ? 4 * 60 : 5 * 60,
