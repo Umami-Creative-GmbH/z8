@@ -338,13 +338,14 @@ const domainLoaders: Record<
 		// One evaluation: the sector-exception list covers the same horizon.
 		const [findings, minorContractors] = await Promise.all([
 			horizonFindings(db, context, youthContributors),
-			// #2022: minor contractor engagements over the same horizon and roster.
-			context.roster().then((employeeIds) =>
+			// #2022: minor contractor engagements over the same horizon and roster, from the birthdays
+			// and engagement periods the youth protection monitor reads (once, through `db`'s memo).
+			context.roster().then((currentRoster) =>
 				evaluateMinorContractorReviewFindings(db, {
 					organizationId: context.organizationId,
 					timezone: context.timezone,
 					now: context.now,
-					employeeIds,
+					currentRoster,
 				}),
 			),
 		]);

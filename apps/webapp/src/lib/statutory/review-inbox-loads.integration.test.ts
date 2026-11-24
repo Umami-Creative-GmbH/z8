@@ -16,6 +16,7 @@ import { loadMinijobExceedanceReviews } from "./minijob/minijob-reviews";
 import { loadStatutoryReviewInbox } from "./review-inbox";
 import { jarbschgScheduleContributor } from "./youth/jarbschg-contributor";
 import { listOpenYouthSectorExceptions } from "./youth/sector-exception-review";
+import { youthSeed } from "./youth/testing/youth-seed";
 
 vi.mock("./minijob/evaluate-minijob", async (importOriginal) => {
 	const actual = await importOriginal<typeof import("./minijob/evaluate-minijob")>();
@@ -48,6 +49,10 @@ async function statementsOf<T>(
 		spy.mockRestore();
 	}
 }
+
+/** The SQL text of each statement (`statementsOf` keeps them JSON-encoded with their parameters). */
+const sqlTexts = (statements: readonly string[]) =>
+	statements.map((statement) => (JSON.parse(statement) as [string, unknown[]])[0]);
 
 describe("statutory review inbox loads (PostgreSQL)", () => {
 	vi.setConfig({ testTimeout: 180_000, hookTimeout: 60_000 });
@@ -121,6 +126,43 @@ describe("statutory review inbox loads (PostgreSQL)", () => {
 		);
 	});
 
+	it("reads minors' birthdays and engagement periods once, with minor contractors on the roster (#2022)", async () => {
+		const seed = await domains.seed("a");
+		const organizationId = seed.org.id;
+		const youth = youthSeed(admin);
+		const contractors: string[] = [];
+		for (const name of ["a-tutor", "a-helper"]) {
+			const contractor = await fx.employee(seed.org, name, { birthday: "2011-05-01" });
+			contractors.push(contractor.employeeId);
+			await youth.engagement(seed.org, contractor, {
+				kind: "contractor",
+				from: "2026-09-01",
+				until: null,
+			});
+		}
+
+		const { result: inbox, statements } = await statementsOf(() =>
+			loadStatutoryReviewInbox(db, { organizationId, now, includeResolved: true }),
+		);
+
+		expect(inbox.items.filter((item) => item.kind === "jarbschg_minor_contractor")).toHaveLength(2);
+		expect(
+			statements.filter((statement, index) => statements.indexOf(statement) !== index),
+		).toEqual([]);
+		// The minor contractor list reuses what the youth protection monitor read: one read each of
+		// the minors' birthdays, engagement kinds and engagement periods.
+		const reads = (contractorId: string, what: string) =>
+			statements.filter((statement) => {
+				const [text, params] = JSON.parse(statement) as [string, unknown[]];
+				return text.includes(what) && params.includes(contractorId);
+			});
+		for (const contractorId of contractors) {
+			expect(reads(contractorId, '"birthday"')).toHaveLength(1);
+			expect(reads(contractorId, '"engagement_kind" from "employee"')).toHaveLength(1);
+			expect(reads(contractorId, 'from "employee_employment_period"')).toHaveLength(1);
+		}
+	});
+
 	it("counts the same without reading any employee's name", async () => {
 		const seed = await domains.seed("a");
 		const organizationId = seed.org.id;
@@ -136,6 +178,6 @@ describe("statutory review inbox loads (PostgreSQL)", () => {
 		);
 		expect(counts.items.every((item) => item.employeeName === "")).toBe(true);
 		// Names come from the user's first and last name: no statement reads them.
-		expect(statements.filter((statement) => statement.includes('"first_name"'))).toEqual([]);
+		expect(sqlTexts(statements).filter((text) => text.includes('"first_name"'))).toEqual([]);
 	});
 });
