@@ -12,6 +12,7 @@ import type {
 } from "./contributor";
 import { statutoryScheduleContributors } from "./contributors";
 import { isPastVisibleLimit, statutoryFindingChangeKey, statutoryPublishKey } from "./finding-key";
+import type { StatutoryFindingPeriod } from "./findings-list";
 import { memoizedReader } from "./read-memo";
 
 type Reader = Pick<DatabaseClient, "select" | "query">;
@@ -116,20 +117,27 @@ export async function evaluateStatutoryScheduleFindings(
 /**
  * The judged window for the publish handshake: the findings projected for Scheduling, and the
  * server-side publish key of each (`statutoryPublishKey`), which the publish fingerprint hashes.
+ * `periods[i]` is the period `findings[i]` judges, for Scheduling's findings list (#2026).
  */
 export async function evaluateStatutoryScheduleWindow(
 	db: Reader,
 	request: StatutoryScheduleRequest,
 	contributors: readonly StatutoryScheduleContributor[] = statutoryScheduleContributors,
-): Promise<{ findings: StatutoryComplianceFinding[]; publishKeys: string[] }> {
+): Promise<{
+	findings: StatutoryComplianceFinding[];
+	publishKeys: string[];
+	periods: StatutoryFindingPeriod[];
+}> {
 	const findings: StatutoryComplianceFinding[] = [];
 	const publishKeys: string[] = [];
+	const periods: StatutoryFindingPeriod[] = [];
 	for (const finding of await evaluateStatutoryFindings(db, request, contributors)) {
 		const projected = toStatutoryComplianceFinding(finding);
 		findings.push(projected);
 		publishKeys.push(statutoryPublishKey(projected, finding));
+		periods.push({ start: finding.periodStart, endExclusive: finding.periodEnd });
 	}
-	return { findings, publishKeys };
+	return { findings, publishKeys, periods };
 }
 
 /**

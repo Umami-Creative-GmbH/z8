@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { queryKeys } from "@/lib/query/keys";
 
 const { publishShiftsMock, toastSuccessMock, toastErrorMock } = vi.hoisted(() => ({
 	publishShiftsMock: vi.fn(),
@@ -147,7 +148,12 @@ describe("useShiftPublishFlow", () => {
 		});
 
 		expect(result.current.pendingAcknowledgment?.evaluationFingerprint).toBe("fp-123");
-		expect(invalidateQueriesSpy).not.toHaveBeenCalled();
+		// Nothing was published, but the calendar catches up with what the server judged (#2026),
+		// so the dialog's shift links reach shifts it had not loaded yet.
+		expect(invalidateQueriesSpy.mock.calls.map(([filters]) => filters?.queryKey)).toEqual([
+			queryKeys.shifts.all,
+			queryKeys.compliance.scheduleWarnings("org-1", dateRange),
+		]);
 		expect(toastSuccessMock).not.toHaveBeenCalled();
 
 		act(() => {

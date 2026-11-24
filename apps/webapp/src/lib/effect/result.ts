@@ -38,7 +38,17 @@ export function toServerActionResult<T>(exit: Exit.Exit<T, AnyAppError>): Server
 			const suppressExpectedAuthErrorLog =
 				taggedError?._tag === "AuthenticationError" && (isBuildPhase || isCi);
 
-			if (!suppressExpectedAuthErrorLog) {
+			const refusal =
+				taggedError?._tag === "ValidationError" && taggedError.refusal ? taggedError.refusal : null;
+			if (refusal) {
+				// An expected refusal: what it carries (e.g. the findings a publish block lists, with
+				// employee names) stays out of the server log.
+				console.warn("[ServerAction Refusal]", {
+					_tag: taggedError?._tag,
+					refusal,
+					message: taggedError?.message,
+				});
+			} else if (!suppressExpectedAuthErrorLog) {
 				console.error("[ServerAction Error]", error);
 			}
 

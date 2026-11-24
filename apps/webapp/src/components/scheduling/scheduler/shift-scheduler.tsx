@@ -25,6 +25,7 @@ import { ShiftRequestsReview } from "../shift-requests/shift-requests-panel";
 import { ShiftDialog } from "../shifts/shift-dialog";
 import { CoverageHeatmapOverlay } from "./coverage-heatmap-overlay";
 import { EmployeeShiftSchedule } from "./employee-shift-schedule";
+import { PublishBlockedDialog } from "./publish-blocked-dialog";
 import { PublishComplianceDialog } from "./publish-compliance-dialog";
 import { PublishFab } from "./publish-fab";
 import { ScheduleComplianceBanner } from "./schedule-compliance-banner";
@@ -114,6 +115,8 @@ function PlannerShiftScheduler({
 		supportingDataRetryPending,
 		retrySupportingData,
 		complianceSummary,
+		statutoryFindings,
+		shiftEmployeeIds,
 		draftCount,
 		complianceFindingsCount,
 		hasComplianceWarnings,
@@ -130,6 +133,9 @@ function PlannerShiftScheduler({
 		pendingAcknowledgment,
 		isComplianceDialogOpen,
 		setIsComplianceDialogOpen,
+		blockedFindings,
+		isBlockedDialogOpen,
+		setIsBlockedDialogOpen,
 		publish,
 		confirmPublish,
 		isPublishing,
@@ -203,7 +209,12 @@ function PlannerShiftScheduler({
 					)}
 				</ScheduleReadFailure>
 			)}
-			<ScheduleComplianceBanner summary={complianceSummary} />
+			<ScheduleComplianceBanner
+				summary={complianceSummary}
+				statutoryFindings={statutoryFindings}
+				dateRange={dateRange}
+				shiftEmployeeIds={shiftEmployeeIds}
+			/>
 
 			{/* Coverage summary bar and toggle for managers */}
 			<div className="flex flex-wrap items-center gap-4">
@@ -292,8 +303,18 @@ function PlannerShiftScheduler({
 				open={isComplianceDialogOpen}
 				onOpenChange={setIsComplianceDialogOpen}
 				summary={pendingAcknowledgment?.complianceSummary ?? null}
+				statutoryFindings={pendingAcknowledgment?.statutoryFindings ?? null}
+				dateRange={dateRange}
+				shiftEmployeeIds={shiftEmployeeIds}
 				onConfirm={confirmPublish}
 				isConfirming={isPublishing}
+			/>
+
+			<PublishBlockedDialog
+				open={isBlockedDialogOpen}
+				onOpenChange={setIsBlockedDialogOpen}
+				statutoryFindings={blockedFindings}
+				dateRange={dateRange}
 			/>
 		</div>
 	);
