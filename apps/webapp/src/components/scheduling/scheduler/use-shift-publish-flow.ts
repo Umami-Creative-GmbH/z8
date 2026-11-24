@@ -33,10 +33,16 @@ class PublishRefusal extends Error {
 	}
 }
 
-/** The blocking findings a publish-block refusal carries (#2026), or null. */
+/**
+ * The blocking findings a publish-block refusal carries (#2026), or null when it carries nothing to
+ * show: no listed finding and none outside the viewer's scope. The refusal toast covers that case.
+ */
 function blockingFindingsOfRefusal(details: Record<string, unknown> | undefined) {
 	const listed = details?.statutoryFindings as ScheduleStatutoryFindings | undefined;
-	return listed && Array.isArray(listed.items) ? listed : null;
+	if (!listed || !Array.isArray(listed.items)) return null;
+	const outsideScopeCount =
+		typeof listed.outsideScopeCount === "number" ? listed.outsideScopeCount : 0;
+	return listed.items.length > 0 || outsideScopeCount > 0 ? listed : null;
 }
 
 interface UseShiftPublishFlowOptions {
