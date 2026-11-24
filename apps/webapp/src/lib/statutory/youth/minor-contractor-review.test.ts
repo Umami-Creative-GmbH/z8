@@ -237,6 +237,27 @@ describe("minorContractorEngagementFindings (#2022)", () => {
 			expect(later?.inputFingerprint).toBe(afterEnd?.inputFingerprint);
 		});
 
+		it("keeps the documentation when the only days after the stint ended are an adult's", () => {
+			// Turns 18 on 2026-12-20; contractor 2026-09-01 – 2027-01-31, no later stint. Documented on
+			// 2026-11-24. On 2026-12-07 the window reaches 2027-02-01, after the 18th birthday.
+			const periods = [stint("p1", "contractor", "2026-09-01", "2027-02-01")];
+			const judgeWindow = (start: string, endExclusive: string) =>
+				minorContractorEngagementFindings({
+					organizationId: "org",
+					employeeId: "e1",
+					birthday: parsePlainDate("2008-12-20"),
+					employeeEngagementKind: "employee",
+					periods,
+					timezone,
+					window: { start, endExclusive },
+				})[0];
+			const documented = judgeWindow("2026-11-17", "2027-01-20");
+			const later = judgeWindow("2026-11-30", "2027-02-02");
+
+			expect(later?.adminDetail?.facts).toMatchObject({ contractorAfterEnd: false });
+			expect(later?.inputFingerprint).toBe(documented?.inputFingerprint);
+		});
+
 		it("keeps the fingerprint as the window passes the start of a first stint", () => {
 			const periods = [stint("p1", "contractor", "2027-02-01", null)];
 			const fingerprintIn = (start: string, endExclusive: string) =>
@@ -268,15 +289,32 @@ describe("minorContractorEngagementFindings (#2022)", () => {
 	// `loadContractorDays` gives (`engagementKindOnDay` over the window), and every such day of a
 	// minor needs a review item, one per stint that decides it.
 	describe("agrees with the days the youth protection monitor skips", () => {
+		/** A review item, worked out by hand. */
+		interface Item {
+			readonly subject: string;
+			/** A day of a minor after the stint ended is its contractor day. */
+			readonly afterEnd: boolean;
+			/** A day of a minor before the first stint started is its contractor day. */
+			readonly beforeStart: boolean;
+		}
 		interface Case {
 			readonly name: string;
 			readonly birthday: string;
 			readonly periods: EmploymentPeriodSnapshot[];
 			readonly employeeEngagementKind?: "contractor" | "employee";
-			/** The subjects the review raises, worked out by hand. */
-			readonly subjects: readonly string[];
+			readonly items: readonly Item[];
+			/**
+			 * The window's contractor days of a minor by the subject that decides them, listed by hand
+			 * as `[first day, day after the last]` ranges.
+			 */
+			readonly minorContractorDays?: Readonly<Record<string, readonly [string, string][]>>;
 		}
 		const minor = "2010-06-01";
+		const item = (subject: string, afterEnd = false, beforeStart = false): Item => ({
+			subject: `engagement:${subject}`,
+			afterEnd,
+			beforeStart,
+		});
 		const cases: Case[] = [
 			{
 				name: "an employee stint inside an open-ended contractor stint",
@@ -285,7 +323,13 @@ describe("minorContractorEngagementFindings (#2022)", () => {
 					stint("p1", "contractor", "2026-01-01", null),
 					stint("p2", "employee", "2026-03-10", "2026-04-01"),
 				],
-				subjects: ["engagement:p1"],
+				items: [item("p1")],
+				minorContractorDays: {
+					"engagement:p1": [
+						["2026-03-01", "2026-03-10"],
+						["2026-04-01", "2026-05-01"],
+					],
+				},
 			},
 			{
 				name: "a contractor stint ending the day an employee stint starts",
@@ -294,7 +338,8 @@ describe("minorContractorEngagementFindings (#2022)", () => {
 					stint("p1", "contractor", "2026-01-01", "2026-03-15"),
 					stint("p2", "employee", "2026-03-15", null),
 				],
-				subjects: ["engagement:p1"],
+				items: [item("p1")],
+				minorContractorDays: { "engagement:p1": [["2026-03-01", "2026-03-15"]] },
 			},
 			{
 				name: "the same rehire for someone turning 18 that day",
@@ -303,7 +348,7 @@ describe("minorContractorEngagementFindings (#2022)", () => {
 					stint("p1", "contractor", "2026-01-01", "2026-03-15"),
 					stint("p2", "employee", "2026-03-15", null),
 				],
-				subjects: ["engagement:p1"],
+				items: [item("p1")],
 			},
 			{
 				name: "an employee stint ending the day a contractor stint starts, turning 18 that day",
@@ -312,7 +357,8 @@ describe("minorContractorEngagementFindings (#2022)", () => {
 					stint("p1", "employee", "2026-01-01", "2026-03-15"),
 					stint("p2", "contractor", "2026-03-15", null),
 				],
-				subjects: [],
+				items: [],
+				minorContractorDays: {},
 			},
 			{
 				name: "a gap between two contractor stints",
@@ -321,7 +367,12 @@ describe("minorContractorEngagementFindings (#2022)", () => {
 					stint("p1", "contractor", "2026-01-01", "2026-03-10"),
 					stint("p2", "contractor", "2026-04-01", null),
 				],
-				subjects: ["engagement:p1", "engagement:p2"],
+				// The gap is the earlier stint's: the one that ended last before it.
+				items: [item("p1", true), item("p2")],
+				minorContractorDays: {
+					"engagement:p1": [["2026-03-01", "2026-04-01"]],
+					"engagement:p2": [["2026-04-01", "2026-05-01"]],
+				},
 			},
 			{
 				name: "a gap between two contractor stints, 18 during the gap",
@@ -330,7 +381,16 @@ describe("minorContractorEngagementFindings (#2022)", () => {
 					stint("p1", "contractor", "2026-01-01", "2026-03-10"),
 					stint("p2", "contractor", "2026-04-01", null),
 				],
-				subjects: ["engagement:p1"],
+				items: [item("p1", true)],
+				minorContractorDays: { "engagement:p1": [["2026-03-01", "2026-03-20"]] },
+			},
+			{
+				name: "a contractor stint ending on the 18th birthday, with no later stint",
+				birthday: "2008-03-10",
+				periods: [stint("p1", "contractor", "2025-01-01", "2026-03-10")],
+				// Its days after the end are an adult's: they need no review of their own.
+				items: [item("p1")],
+				minorContractorDays: { "engagement:p1": [["2026-03-01", "2026-03-10"]] },
 			},
 			{
 				name: "a contractor stint with no recorded start, then a recorded contractor stint",
@@ -339,7 +399,7 @@ describe("minorContractorEngagementFindings (#2022)", () => {
 					stint("p1", "contractor", null, "2026-03-20"),
 					stint("p2", "contractor", "2026-04-01", null),
 				],
-				subjects: ["engagement:p1", "engagement:p2"],
+				items: [item("p1", true), item("p2")],
 			},
 			{
 				name: "a contractor stint with no recorded start, then a recorded employee stint",
@@ -348,7 +408,7 @@ describe("minorContractorEngagementFindings (#2022)", () => {
 					stint("p1", "contractor", null, "2026-03-20"),
 					stint("p2", "employee", "2026-04-01", null),
 				],
-				subjects: ["engagement:p1"],
+				items: [item("p1", true)],
 			},
 			{
 				name: "an employee stint with no recorded start, then a recorded contractor stint",
@@ -357,35 +417,52 @@ describe("minorContractorEngagementFindings (#2022)", () => {
 					stint("p1", "employee", null, "2026-03-20"),
 					stint("p2", "contractor", "2026-04-01", null),
 				],
-				subjects: ["engagement:p2"],
+				items: [item("p2")],
+			},
+			{
+				name: "only days before a first contractor stint",
+				birthday: minor,
+				periods: [stint("p1", "contractor", "2026-06-01", null)],
+				items: [item("p1", false, true)],
+				minorContractorDays: { "engagement:p1": [["2026-03-01", "2026-05-01"]] },
 			},
 			{
 				name: "only days after a contractor stint ended, 18 inside the window",
 				birthday: "2008-04-15",
 				periods: [stint("p1", "contractor", "2025-01-01", "2026-03-01")],
-				subjects: ["engagement:p1"],
+				items: [item("p1", true)],
 			},
 			{
 				name: "only days after a contractor stint ended, 18 before the window",
 				birthday: "2008-02-15",
 				periods: [stint("p1", "contractor", "2025-01-01", "2026-03-01")],
-				subjects: [],
+				items: [],
 			},
 			{
 				name: "a contractor with no stint, 18 inside the window",
 				birthday: "2008-04-15",
 				periods: [],
 				employeeEngagementKind: "contractor",
-				subjects: ["engagement:unrecorded"],
+				items: [item("unrecorded")],
+				minorContractorDays: { "engagement:unrecorded": [["2026-03-01", "2026-04-15"]] },
 			},
 			{
 				name: "an employee with no stint, 18 inside the window",
 				birthday: "2008-04-15",
 				periods: [],
 				employeeEngagementKind: "employee",
-				subjects: [],
+				items: [],
 			},
 		];
+
+		const daysOf = (ranges: readonly [string, string][]) =>
+			ranges.flatMap(([from, until]) => {
+				const days: string[] = [];
+				for (let day = parsePlainDate(from); day.toString() < until; day = day.add({ days: 1 })) {
+					days.push(day.toString());
+				}
+				return days;
+			});
 
 		/** The window's days the monitor skips as contractor days, as `loadContractorDays` does. */
 		function monitorContractorDays(c: Case): PlainDate[] {
@@ -416,20 +493,37 @@ describe("minorContractorEngagementFindings (#2022)", () => {
 			const minorDays = monitorContractorDays(c).filter((day) =>
 				isMinorOn(parsePlainDate(c.birthday), day),
 			);
-			const decidingSubjects = new Set(
-				minorDays.map(
-					(day) =>
-						`engagement:${engagementPeriodDecidingDay(c.periods, day, timezone)?.period.id ?? "unrecorded"}`,
-				),
-			);
 			const raised = findings.map((finding) => finding.subjectKey);
 
-			// An item if and only if the monitor skips a day of a minor.
-			expect(findings.length > 0).toBe(minorDays.length > 0);
-			// Exactly one item per stint deciding such a day.
+			// Exactly the items worked out by hand, one per subject, with their facts.
 			expect(new Set(raised).size).toBe(raised.length);
-			expect([...raised].sort()).toEqual([...decidingSubjects].sort());
-			expect([...raised].sort()).toEqual([...c.subjects].sort());
+			expect(
+				findings
+					.map((finding) => ({
+						subject: finding.subjectKey,
+						afterEnd: finding.adminDetail?.facts?.contractorAfterEnd,
+						beforeStart: finding.adminDetail?.facts?.contractorBeforeStart,
+					}))
+					.sort((left, right) => left.subject.localeCompare(right.subject)),
+			).toEqual([...c.items].sort((left, right) => left.subject.localeCompare(right.subject)));
+
+			if (c.minorContractorDays) {
+				// The days the monitor skips for a minor, listed by hand, and one item per stint
+				// deciding them.
+				expect(minorDays.map(String)).toEqual(
+					daysOf(Object.values(c.minorContractorDays).flat()).sort(),
+				);
+				expect([...raised].sort()).toEqual(Object.keys(c.minorContractorDays).sort());
+			} else {
+				// One item per stint deciding a day the monitor skips for a minor.
+				const decidingSubjects = new Set(
+					minorDays.map(
+						(day) =>
+							`engagement:${engagementPeriodDecidingDay(c.periods, day, timezone)?.period.id ?? "unrecorded"}`,
+					),
+				);
+				expect([...raised].sort()).toEqual([...decidingSubjects].sort());
+			}
 		});
 	});
 

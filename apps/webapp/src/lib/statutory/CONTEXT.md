@@ -105,14 +105,16 @@ person is still on the roster as a contractor, or a first stint not yet started,
 item, which says so. It is a warning in the Youth & Apprentice review domain and the Compliance
 Command Center, never a publish block. An org admin documents their assessment with a reason
 (`jarbschg_minor_contractor_review`); the fingerprint covers the stint's recorded start and end,
-the birthday, and whether the window holds contractor days after the stint ended. So a corrected
-birthday or a changed period re-opens it, and so does the window first reaching days after the
-end of a stint with no later one (that turns true once and only changed data turns it back). The
-window otherwise moving, past the start of a first stint too, does not. The organization statutory preference **Apply youth
-protection (JArbSchG) to minor contractors** (`applyJarbschgToMinorContractors`, default off,
-migration 0337, org admins only, audited with the other preferences) judges contractor days of
-minors exactly like employee days instead, everywhere the monitor runs (Scheduling, Staffing, the
-publish block, clock-out recording, review lists), and raises no review item. Minijob,
+the birthday, and whether the window holds contractor days after the stint ended on which the
+person is still under 18. So a corrected birthday or a changed period re-opens it, and so does the
+window first reaching such a day after the end of a stint with no later one (that turns true once
+and only changed data turns it back). The window otherwise moving does not: not past the start of
+a first stint, and not onto days after the end that fall on or after the 18th birthday. The
+organization statutory preference **Apply youth protection (JArbSchG) to minor contractors**
+(`applyJarbschgToMinorContractors`, default off, migration 0337, org admins only, audited with
+the other preferences) judges contractor days of minors exactly like employee days instead,
+everywhere the monitor runs (Scheduling, Staffing, the publish block, clock-out recording, review
+lists), and raises no review item. Minijob,
 short-term, working-student, on-call and apprentice release monitors keep excluding contractors
 either way.
 _Avoid_: judging every minor contractor as an employee by default, silently skipping them

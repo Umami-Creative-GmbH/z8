@@ -6,7 +6,7 @@
  * under JArbSchG (`applyJarbschgToMinorContractors`), each contractor engagement that decides a
  * contractor day of a minor (the days the monitor skips, `engagementKindOnDay`) is one warning an
  * org admin reviews and documents with a reason. Its fingerprint covers the engagement period, the
- * birthday and whether the window holds contractor days after the stint ended, so the
+ * birthday and whether the window holds contractor days of the minor after the stint ended, so the
  * documentation re-opens when either period or birthday changes, or once such days appear.
  */
 import { and, eq, inArray } from "drizzle-orm";
@@ -93,9 +93,9 @@ interface ContractorDays {
 	readonly engagement: Engagement;
 	/** Its first contractor day in the window. */
 	readonly firstDay: PlainDate;
-	/** A day after the stint ended still counts as its contractor day. */
+	/** A day after the stint ended, on which the person is a minor, counts as its contractor day. */
 	afterEnd: boolean;
-	/** A day before the first stint started counts as its contractor day. */
+	/** A day before the first stint started, on which the person is a minor, counts as its contractor day. */
 	beforeStart: boolean;
 }
 
@@ -106,6 +106,7 @@ interface ContractorDays {
  * contractor stint, and every day of a contractor with no recorded stint.
  */
 function contractorDaysByEngagement(input: {
+	readonly birthday: PlainDate;
 	readonly employeeEngagementKind: EngagementKind;
 	readonly periods: readonly EmploymentPeriodSnapshot[];
 	readonly timezone: string;
@@ -138,6 +139,8 @@ function contractorDaysByEngagement(input: {
 			};
 			byKey.set(decided.period.id, days);
 		}
+		// Only a minor's day before or after the stint is one the review has to cover.
+		if (decided.position === "in_force" || !isMinorOn(input.birthday, day)) continue;
 		if (decided.position === "after_end") days.afterEnd = true;
 		if (decided.position === "before_start") days.beforeStart = true;
 	}
@@ -165,6 +168,7 @@ export function minorContractorEngagementFindings(input: {
 
 	const findings: MinorContractorFinding[] = [];
 	for (const { engagement, firstDay, afterEnd, beforeStart } of contractorDaysByEngagement({
+		birthday,
 		employeeEngagementKind: input.employeeEngagementKind,
 		periods: input.periods,
 		timezone: input.timezone,
@@ -199,7 +203,9 @@ export function minorContractorEngagementFindings(input: {
 				birthday: birthday.toString(),
 				// Days after the stint ended that it decides were not documented while the window
 				// ended inside it. With no later stint this turns true once as the window moves, and
-				// only changed data turns it back. Days before a first stint stay out: the window
+				// only changed data turns it back. Only days on which the person is still a minor
+				// count: an adult's day after the end needs no review. Days before a first stint stay
+				// out: the window
 				// passing that stint's start must not re-open a documentation.
 				contractorAfterEnd: afterEnd,
 			}),
@@ -349,7 +355,8 @@ async function employeeNames(
 
 /**
  * Open minor contractor engagements (not documented, or documented before the period or birthday
- * changed or contractor days after the stint's end appeared), earliest first; with `includeAcknowledged` also documented ones ("Show resolved").
+ * changed or contractor days of the minor after the stint's end appeared), earliest first; with
+ * `includeAcknowledged` also documented ones ("Show resolved").
  */
 export async function listMinorContractorReviews(
 	db: Reader,
@@ -427,7 +434,8 @@ export async function acknowledgeMinorContractorReview(
 	}
 	if (finding.inputFingerprint !== input.expectedFingerprint) {
 		throw new ValidationError({
-			message: "The engagement or the birthday changed since you reviewed it. Review it again.",
+			message:
+				"The engagement or the birthday changed since you reviewed it, or the person is now on the roster as a contractor after the engagement ends. Review it again.",
 			refusal: "statutory_finding_changed" satisfies MinorContractorReviewRefusal,
 		});
 	}
