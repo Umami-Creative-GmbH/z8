@@ -201,6 +201,56 @@ describe("minor contractors for youth-protection review (PostgreSQL)", () => {
 		expect(await listOn("2026-11-24")).toEqual([]);
 	});
 
+	it("re-opens a documentation once the window reaches contractor days after the stint ended", async () => {
+		// A 16-year-old contractor 2026-09-01 – 2027-02-28 with no later stint, kept on the roster.
+		const tutor = await fx.employee(org, "tutor", { birthday: "2010-06-01" });
+		const stint = await seed.engagement(org, tutor, {
+			kind: "contractor",
+			from: "2026-09-01",
+			until: "2027-03-01",
+		});
+		const listOn = (day: string) =>
+			listMinorContractorReviews(db, {
+				organizationId: org.id,
+				timezone: org.timezone,
+				now: localInstant(day, "12:00", org.timezone),
+				includeAcknowledged: true,
+			});
+		const documentOn = (day: string, review: { inputFingerprint: string }) =>
+			acknowledgeMinorContractorReview(db, {
+				organizationId: org.id,
+				actorUserId: owner.userId,
+				timezone: org.timezone,
+				now: localInstant(day, "12:00", org.timezone),
+				employeeId: tutor.employeeId,
+				subjectKey: `engagement:${stint}`,
+				expectedFingerprint: review.inputFingerprint,
+				reason: "Short tutoring engagement, ends in February",
+			});
+
+		// On 2026-11-24 the window ends inside the stint (2027-01-20).
+		const [shown] = await listOn("2026-11-24");
+		expect(shown).toMatchObject({ contractorAfterEnd: false, acknowledgementStatus: "none" });
+		await documentOn("2026-11-24", shown);
+		// On 2027-01-03 its last day is 2027-02-28: still documented.
+		expect(await listOn("2027-01-03")).toEqual([
+			expect.objectContaining({ contractorAfterEnd: false, acknowledgementStatus: "current" }),
+		]);
+
+		// From 2027-01-04 the window holds 2027-03-01, a contractor day after the stint ended.
+		const [reopened] = await listOn("2027-01-04");
+		expect(reopened).toMatchObject({ contractorAfterEnd: true, acknowledgementStatus: "stale" });
+
+		// Documented again, it holds as the window moves on.
+		await documentOn("2027-01-04", reopened);
+		expect(await listOn("2027-01-05")).toEqual([
+			expect.objectContaining({ contractorAfterEnd: true, acknowledgementStatus: "current" }),
+		]);
+		expect(await listOn("2027-02-20")).toEqual([
+			expect.objectContaining({ contractorAfterEnd: true, acknowledgementStatus: "current" }),
+		]);
+	});
+
 	it("shows an engagement whose start was not recorded the same on consecutive days", async () => {
 		// A legacy stint without a recorded start, and a contractor with no stint at all.
 		const legacy = await fx.employee(org, "legacy", { birthday: "2011-05-01" });
@@ -245,7 +295,7 @@ describe("minor contractors for youth-protection review (PostgreSQL)", () => {
 			}),
 			expect.objectContaining({
 				employeeId: unrecorded.employeeId,
-				subjectKey: "engagement:employee",
+				subjectKey: "engagement:unrecorded",
 				periodStart: null,
 				periodEnd: null,
 			}),
@@ -333,6 +383,27 @@ describe("minor contractors for youth-protection review (PostgreSQL)", () => {
 		await expect(acknowledge(minor, review)).rejects.toMatchObject({
 			refusal: "statutory_finding_not_found",
 		});
+	});
+
+	it("brings the items back with their documentation when the setting is turned off again", async () => {
+		const minor = await fx.employee(org, "minor", { birthday: "2011-05-01" });
+		await seed.engagement(org, minor, { kind: "contractor", from: "2027-01-01", until: null });
+		const [review] = await list();
+		await acknowledge(minor, review);
+
+		await seed.applyJarbschgToMinorContractors(org);
+		expect(await list(true)).toEqual([]);
+		await seed.applyJarbschgToMinorContractors(org, false);
+
+		expect(await list()).toEqual([]);
+		expect(await list(true)).toEqual([
+			expect.objectContaining({
+				subjectKey: review.subjectKey,
+				inputFingerprint: review.inputFingerprint,
+				acknowledgementStatus: "current",
+			}),
+		]);
+		expect(await youthDomain()).toMatchObject({ warning: 0, pendingAcknowledgements: 0 });
 	});
 
 	it("keeps each organization's minor contractors to itself", async () => {

@@ -5,8 +5,9 @@
  * may still fall under youth protection. Unless the organization judges minor contractors fully
  * under JArbSchG (`applyJarbschgToMinorContractors`), each contractor engagement that decides a
  * contractor day of a minor (the days the monitor skips, `engagementKindOnDay`) is one warning an
- * org admin reviews and documents with a reason. Its fingerprint covers the engagement period and
- * the birthday, so the documentation re-opens when either changes.
+ * org admin reviews and documents with a reason. Its fingerprint covers the engagement period, the
+ * birthday and whether the window holds contractor days after the stint ended, so the
+ * documentation re-opens when either period or birthday changes, or once such days appear.
  */
 import { and, eq, inArray } from "drizzle-orm";
 import { user } from "@/db/auth-schema";
@@ -47,8 +48,8 @@ export const MINOR_CONTRACTOR_FINDING_KIND = "jarbschg_minor_contractor";
 export type MinorContractorFindingKind = typeof MINOR_CONTRACTOR_FINDING_KIND;
 export const MINOR_CONTRACTOR_LEGAL_REFERENCE = "§ 1 Abs. 1 Nr. 3 JArbSchG";
 
-/** The subject of an employee with no recorded stint, judged by `employee.engagement_kind`. */
-const UNRECORDED_ENGAGEMENT = "employee";
+/** The subject of a contractor with no recorded stint, judged by `employee.engagement_kind`. */
+const UNRECORDED_ENGAGEMENT = "unrecorded";
 
 export type MinorContractorFinding = StatutoryFinding<MinorContractorFindingKind>;
 
@@ -189,7 +190,6 @@ export function minorContractorEngagementFindings(input: {
 				facts: {
 					openEnded: engagement.endExclusive === null,
 					startRecorded: engagement.start !== null,
-					// Not fingerprinted: the window moving past the end must not re-open a documentation.
 					contractorAfterEnd: afterEnd,
 					contractorBeforeStart: beforeStart,
 				},
@@ -197,6 +197,11 @@ export function minorContractorEngagementFindings(input: {
 			inputFingerprint: statutoryInputFingerprint({
 				...engagement.fingerprintInput,
 				birthday: birthday.toString(),
+				// Days after the stint ended that it decides were not documented while the window
+				// ended inside it. With no later stint this turns true once as the window moves, and
+				// only changed data turns it back. Days before a first stint stay out: the window
+				// passing that stint's start must not re-open a documentation.
+				contractorAfterEnd: afterEnd,
 			}),
 			acknowledgementKind: "jarbschg_minor_contractor_review",
 			blocksPublication: false,
@@ -344,7 +349,7 @@ async function employeeNames(
 
 /**
  * Open minor contractor engagements (not documented, or documented before the period or birthday
- * changed), earliest first; with `includeAcknowledged` also documented ones ("Show resolved").
+ * changed or contractor days after the stint's end appeared), earliest first; with `includeAcknowledged` also documented ones ("Show resolved").
  */
 export async function listMinorContractorReviews(
 	db: Reader,

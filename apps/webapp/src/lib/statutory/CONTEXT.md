@@ -99,14 +99,16 @@ before the first stint the one that starts first after it) is a contractor's. Bu
 JArbSchG also covers minors whose services resemble an employee's work, so by default every
 contractor engagement that decides a contractor day of a minor in the review horizon
 (`review-window.ts`, current roster) is one **review item** (`jarbschg_minor_contractor`, subject
-`engagement:<period id>`; `engagement:employee` for an employee with no recorded stint, judged by
+`engagement:<period id>`; `engagement:unrecorded` for a contractor with no recorded stint, judged by
 `employee.engagement_kind`), so no day the monitor skips goes unreviewed. An ended stint whose
 person is still on the roster as a contractor, or a first stint not yet started, keeps its own
 item, which says so. It is a warning in the Youth & Apprentice review domain and the Compliance
 Command Center, never a publish block. An org admin documents their assessment with a reason
-(`jarbschg_minor_contractor_review`); the fingerprint covers the stint's recorded start and end and
-the birthday, so a corrected birthday or a changed period re-opens it, the window moving (past the
-stint's end, too) does not. The organization statutory preference **Apply youth
+(`jarbschg_minor_contractor_review`); the fingerprint covers the stint's recorded start and end,
+the birthday, and whether the window holds contractor days after the stint ended. So a corrected
+birthday or a changed period re-opens it, and so does the window first reaching days after the
+end of a stint with no later one (that turns true once and only changed data turns it back). The
+window otherwise moving, past the start of a first stint too, does not. The organization statutory preference **Apply youth
 protection (JArbSchG) to minor contractors** (`applyJarbschgToMinorContractors`, default off,
 migration 0337, org admins only, audited with the other preferences) judges contractor days of
 minors exactly like employee days instead, everywhere the monitor runs (Scheduling, Staffing, the

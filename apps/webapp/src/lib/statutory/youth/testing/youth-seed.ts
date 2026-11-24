@@ -322,13 +322,16 @@ export function youthSeed(admin: Pool) {
 			);
 		},
 
-		/** #2022: judge External Contractor days of minors under JArbSchG like employee days. */
-		async applyJarbschgToMinorContractors(org: FixtureOrganization): Promise<void> {
+		/**
+		 * #2022: judge External Contractor days of minors under JArbSchG like employee days, or with
+		 * `apply` false review them again.
+		 */
+		async applyJarbschgToMinorContractors(org: FixtureOrganization, apply = true): Promise<void> {
 			await admin.query(
 				`insert into organization_statutory_preference (organization_id, apply_jarbschg_to_minor_contractors)
-				 values ($1, true)
-				 on conflict (organization_id) do update set apply_jarbschg_to_minor_contractors = true`,
-				[org.id],
+				 values ($1, $2)
+				 on conflict (organization_id) do update set apply_jarbschg_to_minor_contractors = $2`,
+				[org.id, apply],
 			);
 		},
 
