@@ -229,7 +229,8 @@ describe("EmployeeContractTab & ScopedManagerPolicyCard (#1930)", () => {
 	});
 
 	it("explains an effective executive exemption under the terms, and the scope field in the change form (#2023)", async () => {
-		const exemptNote = /^Executive exempt \(leitende Angestellte, § 18 Abs\. 1 Nr\. 1 ArbZG\)/;
+		const exemptNote =
+			/^Executive exempt \(leitende Angestellte as defined in § 5 Abs\. 3 BetrVG, § 18 Abs\. 1 Nr\. 1 ArbZG\)/;
 		mocks.getEmployeeEffectiveContractAction.mockResolvedValue({
 			success: true,
 			data: { ...sampleEffectiveContract, arbzgScope: "executive_exempt" },

@@ -34,7 +34,7 @@ describe("ExecutiveExemptNote (#2023)", () => {
 
 		expect(
 			screen.getByText(
-				"Executive exempt (leitende Angestellte, § 18 Abs. 1 Nr. 1 ArbZG): no adult ArbZG checks, automatic break deductions or break reminders. Youth protection (JArbSchG) still applies while the employee is under 18.",
+				"Executive exempt (leitende Angestellte as defined in § 5 Abs. 3 BetrVG, § 18 Abs. 1 Nr. 1 ArbZG): no adult ArbZG checks, automatic break deductions or break reminders. Use it only for employees who meet that definition; team leads and other managers usually do not. Youth protection (JArbSchG) still applies while the employee is under 18.",
 			),
 		).toBeTruthy();
 	});

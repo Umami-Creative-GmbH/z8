@@ -214,7 +214,7 @@ _Avoid_: one acknowledgement lifting night work at any hour or age
 Confirmed as intended in the final review of PR #2007 and made visible in the product (#2023).
 
 **Executive exemption switches off all adult ArbZG handling.** `arbzg_scope = 'executive_exempt'`
-marks leitende Angestellte, whom § 18 Abs. 1 Nr. 1 ArbZG takes out of the ArbZG entirely. So it
+marks leitende Angestellte as defined in § 5 Abs. 3 BetrVG, whom § 18 Abs. 1 Nr. 1 ArbZG takes out of the ArbZG entirely. So it
 suppresses adult ArbZG findings and also the automatic ArbZG break deductions and break
 reminders: none of them has a legal basis for these employees. JArbSchG is a separate law that
 § 18 ArbZG does not touch, so a minor marked exempt keeps every youth-protection check. Explained

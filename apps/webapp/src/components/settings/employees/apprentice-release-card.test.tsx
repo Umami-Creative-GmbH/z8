@@ -139,7 +139,7 @@ describe("ApprenticeReleaseCard (#1993)", () => {
 
 		expect(
 			await screen.findAllByText(
-				"Up to 2 h a week of in-company training are allowed on these block days (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 2 Nr. 3 BBiG). For an employee under 18 they do not count towards the 40-hour week, which the block week already fills with its credited 40 hours.",
+				"Up to 2 hours of in-company training a week are allowed on these block days (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 2 Nr. 3 BBiG). For an employee under 18, these hours do not count towards the 40-hour week, which the block week already fills with its credited 40 hours.",
 			),
 		).toHaveLength(1);
 	});
