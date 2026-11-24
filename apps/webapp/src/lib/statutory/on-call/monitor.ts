@@ -443,25 +443,38 @@ function bandFindings(
 	const released = input.facts.releasedDaysByEmployee.get(base.employeeId);
 	const running = pieces.filter((piece) => piece.running);
 	// Each day counts what was worked plus what is still planned: the part of each of its shifts
-	// after now that is not worked (an unplanned call adds to a later shift; a call running on its
-	// shift counts once; an unworked past part, as in a no-show or a break, is not planned any
-	// more). A shift that has ended adds nothing; one still running adds its rest whatever day it
+	// not yet worked (an unplanned call adds to a later shift; a call running on its shift counts
+	// once). A shift that has ended adds nothing; one still running adds its rest whatever day it
 	// started, such as last night's shift past midnight. A running clock-in on the shift ends on its
 	// whole-minute grid, so the rest of the shift is measured from there and the total stays
-	// constant within the minute.
+	// constant within the minute; its unworked past part (a late start, a break before it) is not
+	// planned any more. While nobody is clocked in the rest counts from the end of the shift's last
+	// recorded work, or from its start: a break, a late start or a missed shift holds the week
+	// steady until the shift ends or the clock-in that resumes it, not shrinking by the minute.
 	const stillPlannedRest = (shift: OnCallShift) => {
 		const interval = shiftInterval(shift, input.timezone);
 		const runningOnShift = running.filter(
 			(piece) => compareInstants(piece.start, interval.end) < 0,
 		);
-		const cut = runningOnShift.length
-			? runningOnShift
-					.map((piece) => piece.end)
-					.reduce((a, b) => (compareInstants(a, b) >= 0 ? a : b))
-			: input.now;
-		const from = compareInstants(cut, interval.start) > 0 ? cut : interval.start;
-		if (compareInstants(from, interval.end) >= 0) return null;
-		return { shift, start: from, end: interval.end };
+		const latest = (ends: Instant[]) =>
+			ends.reduce((a, b) => (compareInstants(a, b) >= 0 ? a : b), interval.start);
+		let cut: Instant;
+		if (runningOnShift.length) {
+			cut = latest(runningOnShift.map((piece) => piece.end));
+		} else {
+			if (compareInstants(input.now, interval.end) >= 0) return null;
+			cut = latest(
+				pieces
+					.filter(
+						(piece) =>
+							compareInstants(piece.start, interval.end) < 0 &&
+							compareInstants(piece.end, interval.start) > 0,
+					)
+					.map((piece) => piece.end),
+			);
+		}
+		if (compareInstants(cut, interval.end) >= 0) return null;
+		return { shift, start: cut, end: interval.end };
 	};
 	// Overlapping shifts count their shared time once, as in `plannedCalls`: in start order, each
 	// shift adds only the part of its rest after the rests before it, to its own day.

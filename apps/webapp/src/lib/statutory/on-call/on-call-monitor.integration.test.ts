@@ -782,7 +782,7 @@ describe("§ 12 TzBfG on-call monitor (PostgreSQL)", () => {
 					await onCall.work(org, worker, {
 						date: "2026-03-09",
 						startTime: "08:00",
-						endTime: "12:30",
+						endTime: "12:00",
 					});
 					await onCall.shift(org, {
 						employeeId: worker.employeeId,
@@ -791,7 +791,8 @@ describe("§ 12 TzBfG on-call monitor (PostgreSQL)", () => {
 						endTime: "14:00",
 						publishedAt: Temporal.Instant.from("2026-02-01T09:00:00Z"),
 					});
-					// Worked 08:00–10:00, on a break since: 270 + 120 + the 210 minutes still to come.
+					// Worked 08:00–10:00, on a break since: 240 + 120 + the 240 minutes from 10:00, still
+					// planned until the clock-in that resumes the shift.
 					await onCall.work(org, worker, {
 						date: "2026-03-10",
 						startTime: "08:00",
@@ -917,12 +918,16 @@ describe("§ 12 TzBfG on-call monitor (PostgreSQL)", () => {
 			}
 			await fx.cleanup();
 
-			// Not clocked in yet: the rest of the shift after now is still planned (120 + 240).
+			// Not clocked in yet: the whole shift is still planned until it ends (120 + 480), then it
+			// adds nothing.
 			const late = await exactWeek(
 				(timezone) => localInstant("2026-03-11", "02:00", timezone),
 				seedOvernight(null),
 			);
-			expect(await late()).toEqual([["on_call_weekly_under_band", "info", 360]]);
+			expect(await late()).toEqual([]);
+			expect(await late(localInstant("2026-03-11", "06:00:10", "Europe/Berlin"))).toEqual([
+				["on_call_weekly_under_band", "info", 120],
+			]);
 		});
 
 		it("judges a week whose terms change mid-week by each day's terms", async () => {

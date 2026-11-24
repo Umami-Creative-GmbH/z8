@@ -779,6 +779,104 @@ describe("§ 12 TzBfG on-call in Scheduling and Staffing (PostgreSQL)", () => {
 		expect(await fingerprintAt("10:00:10")).not.toBe(early);
 	});
 
+	describe.each([
+		// 24 h planned Wednesday to Friday plus Tuesday's 8 h: over the deemed 20 h week.
+		{ band: "over", kind: "on_call_weekly_over_band", otherDays: true, expected: 1_440 + 480 },
+		// Tuesday's 8 h alone: under an exact 20 h week.
+		{ band: "under", kind: "on_call_weekly_under_band", otherDays: false, expected: 480 },
+	] as const)(
+		"a week $band its band while nobody is clocked in on a started shift",
+		({ kind, otherDays, expected }) => {
+			/** The week with Tuesday 08:00–16:00 planned; returns the window's state at a Tuesday time. */
+			async function plannedWeek() {
+				const org = await onCall.organization("a");
+				const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+				await onCall.onCallTerms(
+					org,
+					worker,
+					otherDays ? { kind: "unspecified" } : { kind: "exact", weeklyMinutes: 1_200 },
+				);
+				const days: (readonly [string, string, string])[] = [["2026-03-10", "08:00", "16:00"]];
+				if (otherDays) {
+					for (const date of ["2026-03-11", "2026-03-12", "2026-03-13"]) {
+						days.push([date, "09:00", "17:00"]);
+					}
+				}
+				for (const [date, startTime, endTime] of days) {
+					await onCall.shift(org, {
+						employeeId: worker.employeeId,
+						date,
+						startTime,
+						endTime,
+						publishedAt: localInstant("2026-03-01", "10:00", org.timezone),
+					});
+				}
+				const stateAt = async (time: string) => {
+					const clock = vi
+						.spyOn(Temporal.Now, "instant")
+						.mockReturnValue(localInstant("2026-03-10", time, org.timezone));
+					try {
+						const result = await Effect.runPromise(
+							Effect.gen(function* () {
+								const service = yield* ScheduleComplianceService;
+								return yield* service.evaluateScheduleWindow({
+									organizationId: org.id,
+									startDate: shiftStoredDate("2026-03-09", org.timezone),
+									endDateExclusive: shiftStoredDate("2026-03-16", org.timezone),
+									timezone: org.timezone,
+								});
+							}).pipe(Effect.provide(complianceLayer)),
+						);
+						return {
+							fingerprint: result.fingerprint,
+							used: result.findings.flatMap((finding) =>
+								finding.type === "statutory" && finding.statutoryKind === kind
+									? [finding.summary.used?.value]
+									: [],
+							),
+						};
+					} finally {
+						clock.mockRestore();
+					}
+				};
+				return { org, worker, stateAt };
+			}
+
+			it("keeps the band figures and the publish fingerprint through a clocked-out lunch break", async () => {
+				const { org, worker, stateAt } = await plannedWeek();
+				await onCall.work(org, worker, {
+					date: "2026-03-10",
+					startTime: "08:00",
+					endTime: "12:00",
+				});
+
+				const first = await stateAt("12:01:10");
+				expect(first.used).toEqual([expected]);
+				for (const time of ["12:10:00", "12:29:50"]) {
+					expect(await stateAt(time)).toEqual(first);
+				}
+			});
+
+			it("keeps them while nobody has clocked in for a shift that has started", async () => {
+				const { stateAt } = await plannedWeek();
+
+				const first = await stateAt("08:05:00");
+				expect(first.used).toEqual([expected]);
+				expect(await stateAt("08:30:20")).toEqual(first);
+			});
+
+			it("keeps them through a shift nobody works", async () => {
+				const { stateAt } = await plannedWeek();
+
+				const first = await stateAt("07:59:00");
+				expect(first.used).toEqual([expected]);
+				for (const time of ["08:00:30", "12:00:00", "15:59:10"]) {
+					expect(await stateAt(time)).toEqual(first);
+				}
+			});
+		},
+	);
+
 	describe("a minimum breached further makes the publish acknowledgement stale", () => {
 		/** The publish key of the employee's `kind` finding, as the publish fingerprint hashes it. */
 		async function publishKeyOf(
