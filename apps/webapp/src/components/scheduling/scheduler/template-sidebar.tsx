@@ -3,8 +3,10 @@
 import { IconClock, IconGripVertical } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import type { ShiftTemplate } from "@/app/[locale]/(app)/scheduling/types";
+import { useTimeFormat } from "@/components/providers/user-preferences-provider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { formatTimeStringForPreference } from "@/lib/user-preferences/time-format";
 
 interface TemplateSidebarProps {
 	templates: ShiftTemplate[];
@@ -15,14 +17,6 @@ interface TemplateCardProps {
 	template: ShiftTemplate;
 	onDragStart: (e: React.DragEvent, template: ShiftTemplate) => void;
 	onSelect: (template: ShiftTemplate) => void;
-}
-
-function formatTime(time: string): string {
-	const [hours, minutes] = time.split(":");
-	const hour = parseInt(hours, 10);
-	const ampm = hour >= 12 ? "PM" : "AM";
-	const hour12 = hour % 12 || 12;
-	return `${hour12}:${minutes} ${ampm}`;
 }
 
 function calculateDuration(startTime: string, endTime: string): string {
@@ -53,6 +47,8 @@ function handleDragStart(e: React.DragEvent, template: ShiftTemplate) {
 }
 
 function TemplateCard({ template, onDragStart, onSelect }: TemplateCardProps) {
+	// The planner's chosen time format, as the shift list and dialog use it.
+	const timeFormat = useTimeFormat();
 	const duration = calculateDuration(template.startTime, template.endTime);
 
 	const backgroundColor = template.color || "#3b82f6";
@@ -78,7 +74,8 @@ function TemplateCard({ template, onDragStart, onSelect }: TemplateCardProps) {
 					<div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground tabular-nums">
 						<IconClock className="size-3" />
 						<span>
-							{formatTime(template.startTime)} - {formatTime(template.endTime)}
+							{formatTimeStringForPreference(template.startTime, timeFormat)} –{" "}
+							{formatTimeStringForPreference(template.endTime, timeFormat)}
 						</span>
 						<span className="text-muted-foreground/60">({duration})</span>
 					</div>
