@@ -7,9 +7,9 @@
  * Which row documents the finding is the monitor's decision (`StatutoryFinding.acknowledgement`),
  * judged against the finding's current input fingerprint: `current` marks the newest row recorded
  * for that fingerprint, `stale` the newest row once newer work, shifts or figures invalidated it,
- * `no_longer_applies` the row recorded for that fingerprint when the finding no longer qualifies
- * for an acknowledgement (a Minijob month that became a third exceedance), and every other row is
- * `superseded`. Fingerprints never leave the server in the result.
+ * `no_longer_applies` the row recorded for that fingerprint (or else the newest row) when the
+ * finding no longer qualifies for an acknowledgement (a Minijob month that became a third
+ * exceedance or went above twice the cap), and every other row is `superseded`. Fingerprints never leave the server in the result.
  */
 import { inArray } from "drizzle-orm";
 import { user } from "@/db/auth-schema";
@@ -86,14 +86,18 @@ export async function loadStatutoryAcknowledgementHistory(
 		.where(inArray(user.id, [...new Set(rows.map((row) => row.acknowledgedBy))]));
 	const nameOf = new Map(actors.map((actor) => [actor.id, buildAuthUserDisplayName(actor)]));
 
-	// Rows are newest first: the first match is the one the monitor's state refers to.
+	// Rows are newest first: the first match is the one the monitor's state refers to. A finding
+	// that no longer qualifies may also have changed since: then its newest row no longer applies.
 	const status = input.currentStatus;
+	const matching = rows.find((row) => row.inputFingerprint === input.currentInputFingerprint);
 	const documenting =
-		status === "current" || status === "no_longer_applies"
-			? rows.find((row) => row.inputFingerprint === input.currentInputFingerprint)
-			: status === "stale"
-				? rows[0]
-				: undefined;
+		status === "current"
+			? matching
+			: status === "no_longer_applies"
+				? (matching ?? rows[0])
+				: status === "stale"
+					? rows[0]
+					: undefined;
 	return rows.map((row) => ({
 		id: row.id,
 		acknowledgedAt: row.acknowledgedAt,

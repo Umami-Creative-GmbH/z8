@@ -78,6 +78,10 @@ export function statutoryDomainsFixture(admin: Pool, fx: StatutoryFixture) {
 		monthWork: (org: OnCallOrganization, who: FixtureEmployee, month: string, minutes: number) =>
 			minijob.monthWork(org, who, month, minutes),
 
+		/** Recorded work of `minutes` from 08:00 on `date` (the seeded months' work ends on the 6th). */
+		work: (org: OnCallOrganization, who: FixtureEmployee, date: string, minutes: number) =>
+			minijob.work(org, who, date, minutes),
+
 		async seed(key: string): Promise<StatutoryDomainsSeed> {
 			const org = await onCall.organization(key);
 			owner = await fx.employee(org, `${key}-owner`, { role: "admin" });

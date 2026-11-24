@@ -12,6 +12,10 @@ import {
 	STATUTORY_DOMAINS_NOW as now,
 	statutoryDomainsFixture,
 } from "@/lib/statutory/__tests__/statutory-domains-fixture";
+import {
+	acknowledgeMinijobShortTermAndYouth,
+	invalidateMinijobShortTermAndYouth,
+} from "@/lib/statutory/__tests__/statutory-domains-acknowledgements";
 import { integrationAdminPool } from "@/test/integration-database";
 import { statutoryFixture } from "@/test/statutory-fixtures";
 import { getWorkforceComplianceSection } from "./workforce-compliance";
@@ -141,6 +145,42 @@ describe("Compliance Command Center workforce compliance with statutory monitors
 				},
 			}),
 		);
+	});
+
+	it("counts invalidated acknowledgements as stale per domain", async () => {
+		const seed = await domains.seed("a");
+		await acknowledgeMinijobShortTermAndYouth(seed);
+		await invalidateMinijobShortTermAndYouth(admin, domains, seed);
+
+		const section = await getWorkforceComplianceSection(seed.org.id, { now });
+
+		// The working-student week and the on-call short notice are still pending.
+		expect(section.card.facts).toContainEqual({
+			key: "compliance.commandCenter.facts.workforce.statutoryAcknowledgements",
+			params: { pending: 2, stale: 3 },
+		});
+		for (const domain of ["minijob", "short_term", "youth_apprentice"] as const) {
+			expect(section.recentCriticalEvents).toContainEqual(
+				expect.objectContaining({
+					id: `statutory-${domain}`,
+					description: {
+						key: "compliance.commandCenter.events.statutory.description",
+						params: expect.objectContaining({ pending: 0, stale: 1 }),
+					},
+				}),
+			);
+		}
+		for (const domain of ["working_student", "on_call"] as const) {
+			expect(section.recentCriticalEvents).toContainEqual(
+				expect.objectContaining({
+					id: `statutory-${domain}`,
+					description: {
+						key: "compliance.commandCenter.events.statutory.description",
+						params: expect.objectContaining({ pending: 1, stale: 0 }),
+					},
+				}),
+			);
+		}
 	});
 
 	it("counts a Minijob exceedance planned in the last month of the planning horizon", async () => {

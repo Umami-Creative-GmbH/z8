@@ -45,9 +45,9 @@ export interface MinijobExceedanceReview {
 	readonly inputFingerprint: string;
 	readonly acknowledgement: {
 		/**
-		 * Whether the month's acknowledgement documents it. `no_longer_applies`: it still matches
-		 * the month's figures, but the month turned into a third exceedance or went above twice
-		 * the cap, which no acknowledgement documents.
+		 * Whether the month's acknowledgement documents it. `no_longer_applies`: the month turned
+		 * into a third exceedance or went above twice the cap, which no acknowledgement documents,
+		 * whether or not its figures changed since (never `stale`: it cannot be acknowledged again).
 		 */
 		readonly status: StatutoryAcknowledgementReviewStatus;
 		readonly acknowledgedAt: Date | null;
@@ -126,11 +126,16 @@ function isDocumented(finding: StatutoryFinding): boolean {
 /**
  * Whether the month's acknowledgement documents it: the evaluation judges each month's
  * acknowledgement by fingerprint and total, and only a month that still qualifies is documented.
+ * A month that can no longer be acknowledged (a third exceedance, or above twice the cap) reports
+ * any earlier acknowledgement as `no_longer_applies`, never `stale`: acknowledging it again is not
+ * possible, so it is not an acknowledgement to renew.
  */
 export function minijobAcknowledgementReviewStatus(
 	finding: StatutoryFinding,
 ): StatutoryAcknowledgementReviewStatus {
 	const status = finding.acknowledgement?.status ?? "none";
+	if (status === "none") return status;
+	if (finding.adminDetail?.facts?.acknowledgeable !== true) return "no_longer_applies";
 	return status === "current" && !isDocumented(finding) ? "no_longer_applies" : status;
 }
 

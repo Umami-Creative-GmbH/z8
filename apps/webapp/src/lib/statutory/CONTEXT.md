@@ -60,8 +60,10 @@ Settings → Contracts → Reviews & Conflicts and the Compliance Command Center
 (`review-inbox.ts`), org admins only. Per **review domain** (Minijob, short-term, working student,
 on-call, youth & apprentice: JArbSchG and BBiG share one) it holds the **open** findings (not
 documented by an acknowledgement, as the monitor judges it: a Minijob month acknowledged before it
-became a third exceedance stays open and critical), the **pending** acknowledgements
-(acknowledgeable, none recorded) and the **stale** ones. What needs review is each monitor's own
+became a third exceedance or went above twice the cap stays open and critical, its acknowledgement
+**no longer applies**), the **pending** acknowledgements (acknowledgeable, none recorded) and the
+**stale** ones (acknowledgeable again, but invalidated by newer work, shifts or figures; a finding
+that can no longer be acknowledged never counts as stale). What needs review is each monitor's own
 review list's decision; findings that cannot be acknowledged (Minijob tiers and rolling cap,
 short-term limits, JArbSchG hard limits, apprentice release conflicts) come from the monitors over
 the planning horizon (the last week to eight weeks ahead, `review-window.ts`). Every review list

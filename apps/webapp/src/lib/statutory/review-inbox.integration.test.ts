@@ -11,6 +11,10 @@ import {
 	STATUTORY_DOMAINS_NOW as now,
 	statutoryDomainsFixture,
 } from "./__tests__/statutory-domains-fixture";
+import {
+	acknowledgeMinijobShortTermAndYouth,
+	invalidateMinijobShortTermAndYouth,
+} from "./__tests__/statutory-domains-acknowledgements";
 import { loadStatutoryAcknowledgementHistory } from "./acknowledgement-history";
 import { acknowledgeMinijobExceedance } from "./minijob/acknowledge-minijob-exceedance";
 import { loadMinijobExceedanceReviews } from "./minijob/minijob-reviews";
@@ -200,6 +204,113 @@ describe("statutory review inbox (PostgreSQL)", () => {
 				expect.objectContaining({ domain: "on_call", staleAcknowledgements: 1 }),
 			]),
 		);
+	});
+
+	it("re-opens Minijob, short-term and JArbSchG acknowledgements as stale once newer work or a changed shift invalidates them", async () => {
+		const seed = await domains.seed("a");
+		const organizationId = seed.org.id;
+		const { saturdayFindingId } = await acknowledgeMinijobShortTermAndYouth(seed);
+		const itemOf = (inbox: Awaited<ReturnType<typeof loadStatutoryReviewInbox>>) => ({
+			minijob: inbox.items.find(
+				(item) => item.employeeId === seed.mini.employeeId && item.subjectKey === "2026-11",
+			),
+			shortTerm: inbox.items.find(
+				(item) =>
+					item.employeeId === seed.seasonal.employeeId &&
+					item.kind === "short_term_berufsmaessigkeit_check",
+			),
+			youth: inbox.items.find((item) => item.id === saturdayFindingId),
+		});
+
+		const documented = await loadStatutoryReviewInbox(db, { organizationId, now });
+		expect(itemOf(documented)).toEqual({
+			minijob: undefined,
+			shortTerm: undefined,
+			youth: undefined,
+		});
+		for (const domain of ["minijob", "short_term", "youth_apprentice"] as const) {
+			expect(documented.domains).toContainEqual(
+				expect.objectContaining({ domain, pendingAcknowledgements: 0, staleAcknowledgements: 0 }),
+			);
+		}
+
+		await invalidateMinijobShortTermAndYouth(admin, domains, seed);
+
+		const reopened = await loadStatutoryReviewInbox(db, { organizationId, now });
+		expect(itemOf(reopened)).toEqual({
+			minijob: expect.objectContaining({
+				reviewDomain: "minijob",
+				acknowledgeable: true,
+				acknowledgementStatus: "stale",
+			}),
+			shortTerm: expect.objectContaining({
+				reviewDomain: "short_term",
+				acknowledgementStatus: "stale",
+			}),
+			youth: expect.objectContaining({
+				reviewDomain: "youth_apprentice",
+				acknowledgementStatus: "stale",
+			}),
+		});
+		for (const domain of ["minijob", "short_term", "youth_apprentice"] as const) {
+			expect(reopened.domains).toContainEqual(
+				expect.objectContaining({ domain, pendingAcknowledgements: 0, staleAcknowledgements: 1 }),
+			);
+		}
+	});
+
+	it("reports a Minijob acknowledgement as no longer applying, not stale, once the month went above twice the limit", async () => {
+		const seed = await domains.seed("a");
+		const organizationId = seed.org.id;
+		const employeeId = seed.mini.employeeId;
+		await acknowledgeMinijobShortTermAndYouth(seed);
+		// 40 more hours: 85 h at 15 EUR/h is 1,275 EUR, above twice the 603 EUR limit.
+		for (const date of ["2026-11-09", "2026-11-10", "2026-11-11", "2026-11-12"]) {
+			await domains.work(seed.org, seed.mini, date, 600);
+		}
+
+		const [november] = (
+			await loadMinijobExceedanceReviews(db, { organizationId, now, includeAcknowledged: true })
+		).filter((review) => review.employeeId === employeeId && review.month === "2026-11");
+		expect(november).toMatchObject({
+			status: "over_double_cap",
+			acknowledgeable: false,
+			acknowledgement: { status: "no_longer_applies", reason: "Covered a sick colleague" },
+		});
+		const inbox = await loadStatutoryReviewInbox(db, { organizationId, now });
+		expect(inbox.items).toContainEqual(
+			expect.objectContaining({
+				reviewDomain: "minijob",
+				employeeId,
+				subjectKey: "2026-11",
+				severity: "critical",
+				acknowledgeable: false,
+				acknowledgementStatus: "no_longer_applies",
+			}),
+		);
+		expect(inbox.domains).toContainEqual(
+			expect.objectContaining({
+				domain: "minijob",
+				critical: 1,
+				pendingAcknowledgements: 0,
+				staleAcknowledgements: 0,
+			}),
+		);
+		// The history marks the recorded acknowledgement as no longer applying, not invalidated.
+		const history = await loadStatutoryAcknowledgementHistory(db, {
+			organizationId,
+			subject: {
+				employeeId,
+				kind: "minijob_unforeseeable_exceedance",
+				findingKind: "minijob_monthly_cap",
+				subjectKey: "2026-11",
+			},
+			currentInputFingerprint: november.inputFingerprint,
+			currentStatus: november.acknowledgement.status,
+		});
+		expect(history).toEqual([
+			expect.objectContaining({ reason: "Covered a sick colleague", state: "no_longer_applies" }),
+		]);
 	});
 
 	it("shows an acknowledgement's audited history: who, when, why, legal note, current or invalidated", async () => {
