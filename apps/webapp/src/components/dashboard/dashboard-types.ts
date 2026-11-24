@@ -2,6 +2,7 @@ import type { PresenceStatusSummary } from "@/app/[locale]/(app)/time-tracking/a
 import type { DashboardWidgetOrder } from "@/db/schema";
 import type { CoverDuties } from "@/lib/absences/cover-duties";
 import type { VacationBalanceConfiguration } from "@/lib/absences/types";
+import type { ApprovalInboxLocalizedText, ApprovalInboxType } from "@/lib/approvals/inbox/types";
 import type { UpcomingShifts } from "@/lib/scheduling/upcoming-shifts";
 import type {
 	ManagedEmployeesResult,
@@ -45,17 +46,37 @@ export type DashboardSubject = DashboardScope & {
 	} | null;
 };
 
+/** One pending approval of the widget's preview, as the Approval inbox lists it (#1978). */
+export type PendingApprovalPreviewItem = {
+	id: string;
+	type: ApprovalInboxType;
+	requesterName: string;
+	/** The inbox row's title and detail: localized when the source sends a localized form. */
+	title: string | ApprovalInboxLocalizedText;
+	detail: string | ApprovalInboxLocalizedText;
+	/** The absent approver this waits for when it is covered work, else null. */
+	coveringForName: string | null;
+	/** The viewer's own request, listed read-only: another approver decides it. */
+	ownRequest: boolean;
+};
+
+/** What waits in the viewer's Approval inbox, counted as its badge counts it (#1978). */
 export type PendingApprovalsData = {
-	absenceApprovals: {
-		id: string;
-		requester: { user: { name: string } };
-		absence: { startDate: string; endDate: string; category: { name: string } };
-	}[];
-	timeCorrectionApprovals: {
-		id: string;
-		requester: { user: { name: string } };
-		workPeriod: { startTime: string };
-	}[];
+	/** Every pending approval, covered ones included: the inbox badge's total. */
+	total: number;
+	/** The covered share of `total`: the "Covering for" rows the badge counts, never more. */
+	coveringCount: number;
+	/** Approval types whose list or "Covering for" rows could not be read: rows may be missing. */
+	notLoadedTypes: ApprovalInboxType[];
+	/** Approval types whose count alone could not be read: their rows list, the totals miss them. */
+	notCountedTypes: ApprovalInboxType[];
+	/**
+	 * The types with pending approvals, in inbox type order. A type whose count failed counts
+	 * its rows in hand, marked `atLeast`: more may wait.
+	 */
+	typeCounts: { type: ApprovalInboxType; count: number; atLeast?: true }[];
+	/** The five most urgent pending approvals, in inbox order. */
+	preview: PendingApprovalPreviewItem[];
 };
 
 export type RecentlyApprovedData = {
@@ -97,6 +118,8 @@ export type HydrationWidgetData = {
 export type VacationBalanceData = {
 	year: number;
 	configuration: VacationBalanceConfiguration | null;
+	/** An External Contractor that year (#1996): vacation does not apply. */
+	externalContractor?: boolean;
 	balance: {
 		totalDays: number;
 		usedDays: number;
@@ -121,7 +144,8 @@ export type DashboardWidgetData = {
 	"upcoming-time-off": UpcomingTimeOffData;
 	"managed-employees": ManagedEmployeesResult;
 	"team-overview": TeamOverviewStats;
-	"pending-approvals": PendingApprovalsData;
+	/** Null for a viewer who can't open the Approval inbox. */
+	"pending-approvals": PendingApprovalsData | null;
 	"recently-approved": RecentlyApprovedData;
 	"manager-today": ManagerTodaySummaryResult;
 	"quick-stats": QuickStats;

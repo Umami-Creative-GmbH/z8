@@ -833,6 +833,27 @@ describe("payroll PDF exporter", () => {
 		expect(summaryPage).toContain("Vacation: 0.5 d");
 	});
 
+	it("names a blocked person without a row in the period by the blocker's own name (#1997)", async () => {
+		const read = periodRead({
+			blockers: [
+				{
+					id: "blocker-identifier",
+					employeeId: "employee-without-row",
+					employeeName: "Carla Diaz",
+					type: "missing_identifier",
+					label: "Missing personnel identifier",
+				},
+			],
+		});
+		const summaryPage =
+			(await pdfText(await exportPayrollPeriodToPDF(read, { t: englishT, locale: "en" }))).split(
+				"\n",
+			)[0] ?? "";
+
+		expect(summaryPage).toMatch(/Carla Diaz/);
+		expect(summaryPage).not.toContain("Unknown employee");
+	});
+
 	it("exports same-source blockers of different types without duplicate keys or omission", async () => {
 		const sharedId = "11111111-1111-4111-8111-111111111111";
 		const blocker = {

@@ -158,6 +158,12 @@ vi.mock("@/components/settings/contracts/short-term-monitor-card", () => ({
 	ShortTermMonitorCard: () => null,
 }));
 
+vi.mock("@/components/settings/contracts/contractor-compensation-card", () => ({
+	ContractorCompensationCard: ({ employeeId }: { employeeId: string }) => (
+		<section aria-label="Contractor compensation">{employeeId}</section>
+	),
+}));
+
 const policyCardProps = vi.hoisted(() => ({
 	last: null as null | { onAssigned?: () => void },
 }));
@@ -582,6 +588,7 @@ describe("employee detail wage history merge note (#1176)", () => {
 			fireEvent.click(tab);
 		});
 		expect(await screen.findByText("Merge note for employee-2")).toBeTruthy();
+		expect(screen.getByRole("region", { name: "Contractor compensation" })).toBeTruthy();
 	});
 
 	it("shows no note to managers and isolates to wage-free policy assignment (A1)", async () => {
@@ -598,6 +605,8 @@ describe("employee detail wage history merge note (#1176)", () => {
 		);
 		expect(screen.queryByText(/Merge note/)).toBeNull();
 		expect(screen.queryByRole("region", { name: "Effective Contract" })).toBeNull();
+		// Contractor rates are org-admin-only (#1998).
+		expect(screen.queryByRole("region", { name: "Contractor compensation" })).toBeNull();
 		expect(screen.queryByRole("tab", { name: "Leaving Date" })).toBeNull();
 		expect(screen.queryByRole("region", { name: "Employment and departure" })).toBeNull();
 	});

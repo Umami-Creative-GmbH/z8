@@ -48,6 +48,10 @@ export type ManagerTodaySummaryResult = {
 	summary: {
 		criticalIssues: number;
 		openApprovals: number;
+		/** `openApprovals` is a lower bound (#1980); on the dashboard's counts-only read, a failed count. */
+		openApprovalsAtLeast?: true;
+		/** The approvals could not be read at all: shown as unavailable, not "0+". */
+		openApprovalsUnavailable?: true;
 		attendanceExceptions: number;
 		absencesToday: number;
 		coverageRisks: number;

@@ -6,6 +6,7 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { absenceCategory, absenceEntry, employee } from "@/db/schema";
+import { isContractorUnavailabilityType } from "@/lib/absences/category-rules";
 import { loadDeputyDisplays, loadDeputyViewer } from "@/lib/absences/deputy-display-store";
 import type { AbsenceEvent, CalendarEvent } from "./types";
 
@@ -59,7 +60,11 @@ export async function getAbsencesForMonth(
 					status: absenceEntry.status,
 					notes: absenceEntry.notes,
 				},
-				category: { name: absenceCategory.name, color: absenceCategory.color },
+				category: {
+					name: absenceCategory.name,
+					color: absenceCategory.color,
+					type: absenceCategory.type,
+				},
 				user: { name: user.name },
 				deputy: { id: deputyEmployee.id, name: deputyUser.name },
 			})
@@ -86,9 +91,11 @@ export async function getAbsencesForMonth(
 			endDate: new Date(absence.endDate), // For multi-day display in schedule-x
 			title: `${user.name} - ${category.name}`,
 			description: absence.notes || undefined,
-			color: getColorByStatus(absence.status, category.color),
+			color: getColorByStatus(absence.status, category.color, category.type),
 			metadata: {
 				categoryName: category.name,
+				// A calendar marker only: no vacation, leave or payroll meaning (#1996).
+				isContractorUnavailability: isContractorUnavailabilityType(category.type),
 				status: absence.status,
 				employeeName: user.name,
 				startDate: absence.startDate,
@@ -147,16 +154,24 @@ export async function linkAbsenceDeputyProfiles<Event extends CalendarEvent>(
 	});
 }
 
+/** An External Contractor's unavailability: one muted slate, unlike any vacation or leave (#1996). */
+export const CONTRACTOR_UNAVAILABILITY_CALENDAR_COLOR = "#94a3b8";
+
 /**
  * Get color based on absence status
+ * - Contractor unavailability: always slate, whatever its status or category colour
  * - Pending: Yellow/Amber
  * - Approved: Green (or category color if available)
  * - Rejected: Red
  */
-function getColorByStatus(
+export function getColorByStatus(
 	status: "pending" | "approved" | "rejected",
 	categoryColor: string | null,
+	categoryType?: string | null,
 ): string {
+	if (isContractorUnavailabilityType(categoryType) && status !== "rejected") {
+		return CONTRACTOR_UNAVAILABILITY_CALENDAR_COLOR;
+	}
 	switch (status) {
 		case "pending":
 			return "#fbbf24"; // Amber-400

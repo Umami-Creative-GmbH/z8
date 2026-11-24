@@ -1,6 +1,8 @@
 import type { EmployeeClockStatus } from "@/components/user-avatar";
 import type { invitation, member, user } from "@/db/auth-schema";
 import type { employee, employeeInvitationDraft, team } from "@/db/schema";
+import type { EngagementFilter } from "@/lib/engagement/engagement-filter";
+import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 import type { ContractType } from "@/lib/validations/employee";
 
 export type EmployeeRole = (typeof employee.$inferSelect)["role"];
@@ -43,10 +45,7 @@ export function normalizeEmployeeSelectStatus(status: string | undefined): Emplo
 	const normalized = normalizeEmployeeDirectoryStatus(status, "current");
 	return normalized === "draft" ? "current" : normalized;
 }
-export type EmployeeMembershipSummary = Pick<
-	typeof member.$inferSelect,
-	"id" | "role" | "status"
->;
+export type EmployeeMembershipSummary = Pick<typeof member.$inferSelect, "id" | "role" | "status">;
 
 export function encodeEmployeeInvitationDraftId(draftId: string) {
 	return `${EMPLOYEE_DRAFT_ID_PREFIX}${draftId}`;
@@ -101,10 +100,7 @@ export type EmployeeManagerRelation = {
 	manager: {
 		id: string;
 		userId: string;
-		user: Pick<
-			typeof user.$inferSelect,
-			"firstName" | "lastName" | "name" | "email" | "image"
-		>;
+		user: Pick<typeof user.$inferSelect, "firstName" | "lastName" | "name" | "email" | "image">;
 	};
 };
 export type EmployeeDetailRecord = EmployeeDirectoryRow & {
@@ -116,6 +112,8 @@ export interface EmployeeListParams {
 	role?: EmployeeRole | "all";
 	/** Every employee and draft when omitted. */
 	status?: EmployeeDirectoryStatus | LegacyEmployeeStatus;
+	/** Employees, External Contractors or both (#1995); both when omitted. */
+	engagement?: EngagementFilter;
 	limit?: number;
 	offset?: number;
 }
@@ -143,6 +141,8 @@ export interface SelectableEmployee {
 	 */
 	formerSince?: string | null;
 	clockStatus?: EmployeeClockStatus;
+	/** Pickers badge an External Contractor (#1995); absent reads as employee. */
+	engagementKind?: EngagementKind;
 	teamId: string | null;
 	user: {
 		id: string;
@@ -169,6 +169,8 @@ export interface EmployeeSelectParams {
 	status?: EmployeeRosterStatus | LegacyEmployeeStatus;
 	teamId?: string;
 	excludeIds?: string[];
+	/** Employees, External Contractors or both (#1995); both when omitted. */
+	engagement?: EngagementFilter;
 	limit?: number;
 	offset?: number;
 	managerId?: string;

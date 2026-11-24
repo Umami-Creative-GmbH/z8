@@ -406,6 +406,7 @@ export class AnalyticsService extends Context.Service<
 									teamId: true,
 									startDate: true,
 									contractType: true,
+									engagementKind: true,
 								},
 								with: {
 									user: { columns: { name: true, createdAt: true } },
@@ -775,6 +776,7 @@ export class AnalyticsService extends Context.Service<
 									teamId: true,
 									startDate: true,
 									contractType: true,
+									engagementKind: true,
 								},
 								with: {
 									user: { columns: { name: true, createdAt: true } },
@@ -1458,6 +1460,7 @@ export class AnalyticsService extends Context.Service<
 									teamId: true,
 									startDate: true,
 									contractType: true,
+									engagementKind: true,
 								},
 								with: {
 									user: { columns: { createdAt: true } },

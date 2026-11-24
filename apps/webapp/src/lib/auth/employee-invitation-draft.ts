@@ -9,15 +9,53 @@ import {
 	instantFromDate,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
+import type { StoredContractorCompensation } from "@/lib/contractor-compensation/kinds";
+import type { EngagementKind } from "@/lib/engagement/engagement-kind";
+import type { ContractorInvitation } from "@/lib/validations/invitation";
 import { acquireEmployeeIdentityLock } from "./employee-identity-lock";
 
-type InvitationDraftTransaction = Parameters<
-	Parameters<typeof appDb.transaction>[0]
->[0];
+type InvitationDraftTransaction = Parameters<Parameters<typeof appDb.transaction>[0]>[0];
 type InvitationDraftClient = typeof appDb | InvitationDraftTransaction;
 
 export function normalizeInvitationEmail(email: string): string {
 	return email.trim().toLowerCase();
+}
+
+/**
+ * Whom a new invitation brings in (#1995): an employee, or an External
+ * Contractor with the contracting details, projects, planned end and first
+ * compensation terms (#1935, parsed and stored as the terms table stores them)
+ * that joining applies. A resend carries none and keeps the draft's.
+ */
+export type InvitationEngagement = {
+	kind: EngagementKind;
+	contractor:
+		| (Omit<ContractorInvitation, "compensation"> & {
+				compensation: StoredContractorCompensation | null;
+		  })
+		| null;
+};
+
+/**
+ * The draft columns an invitation's engagement writes. A draft an invitation of
+ * the other kind replaces keeps nothing of its old kind: a contractor invitation
+ * clears the employee-only terms (contract type, wage), an employee invitation
+ * the contracting details, projects, planned end and compensation terms.
+ */
+function engagementDraftValues(engagement: InvitationEngagement) {
+	const contractor = engagement.kind === "contractor" ? engagement.contractor : null;
+	return {
+		engagementKind: engagement.kind,
+		...(engagement.kind === "contractor"
+			? { contractType: "fixed" as const, currentHourlyRate: null }
+			: {}),
+		contractorCompanyName: contractor?.companyName ?? null,
+		contractorVatId: contractor?.vatId ?? null,
+		contractorReferenceCode: contractor?.referenceCode ?? null,
+		plannedEndDate: contractor?.plannedEndDate ?? null,
+		projectIds: contractor?.projectIds ?? [],
+		contractorCompensation: contractor?.compensation ?? null,
+	};
 }
 
 export async function attachInvitationToEmployeeDraft(
@@ -30,8 +68,15 @@ export async function attachInvitationToEmployeeDraft(
 		initialTeamId: string | null;
 		initialRole: "admin" | "employee";
 		updatedBy: string;
+		engagement?: InvitationEngagement;
 	},
 ) {
+	// Joining acts as `updatedBy` when it applies the engagement (contractor profile,
+	// projects, planned end), so whoever sets the engagement becomes the draft's
+	// preparer; a resend that carries none leaves both untouched.
+	const engagementValues = input.engagement
+		? { ...engagementDraftValues(input.engagement), updatedBy: input.updatedBy }
+		: {};
 	const drafts = await dbClient
 		.insert(employeeInvitationDraft)
 		.values({
@@ -43,20 +88,49 @@ export async function attachInvitationToEmployeeDraft(
 			role: input.initialRole,
 			contractType: "fixed",
 			updatedBy: input.updatedBy,
+			...engagementValues,
 		})
 		.onConflictDoUpdate({
-			target: [
-				employeeInvitationDraft.organizationId,
-				employeeInvitationDraft.normalizedEmail,
-			],
+			target: [employeeInvitationDraft.organizationId, employeeInvitationDraft.normalizedEmail],
 			set: {
 				invitationId: input.invitationId,
 				canCreateOrganizations: input.canCreateOrganizations,
+				...engagementValues,
 			},
 		})
 		.returning();
 
 	return drafts[0];
+}
+
+/**
+ * Whether the email's draft already belongs to this invitation. Its engagement
+ * was then set when the invitation was sent, and inviting the same email again
+ * while it is pending (which only repairs the team and organization creation)
+ * keeps it: the second admin's kind, contracting details, projects and planned
+ * end never replace the first's (#1995). Only read when an engagement is given.
+ */
+async function isDraftAttachedTo(
+	tx: InvitationDraftTransaction,
+	input: {
+		organizationId: string;
+		normalizedEmail: string;
+		invitationId: string;
+		engagement?: InvitationEngagement;
+	},
+): Promise<boolean> {
+	if (!input.engagement) return false;
+	const [draft] = await tx
+		.select({ invitationId: employeeInvitationDraft.invitationId })
+		.from(employeeInvitationDraft)
+		.where(
+			and(
+				eq(employeeInvitationDraft.organizationId, input.organizationId),
+				eq(employeeInvitationDraft.normalizedEmail, input.normalizedEmail),
+			),
+		)
+		.limit(1);
+	return draft?.invitationId === input.invitationId;
 }
 
 export async function persistEmployeeInvitationDraft(
@@ -69,6 +143,7 @@ export async function persistEmployeeInvitationDraft(
 		targetTeamId: string | null;
 		initialRole: "admin" | "employee";
 		updatedBy: string;
+		engagement?: InvitationEngagement;
 	},
 ): Promise<{ outcome: "persisted" | "consumed" }> {
 	return await dbClient.transaction(async (tx) => {
@@ -85,8 +160,7 @@ export async function persistEmployeeInvitationDraft(
 		});
 		if (
 			!authoritativeInvitation ||
-			normalizeInvitationEmail(authoritativeInvitation.email) !==
-				input.normalizedEmail
+			normalizeInvitationEmail(authoritativeInvitation.email) !== input.normalizedEmail
 		) {
 			throw new Error("Invitation persistence conflict");
 		}
@@ -137,8 +211,7 @@ export async function persistEmployeeInvitationDraft(
 			});
 			if (
 				currentInvitation?.status === "accepted" &&
-				normalizeInvitationEmail(currentInvitation.email) ===
-					input.normalizedEmail
+				normalizeInvitationEmail(currentInvitation.email) === input.normalizedEmail
 			) {
 				return { outcome: "consumed" };
 			}
@@ -153,6 +226,7 @@ export async function persistEmployeeInvitationDraft(
 			initialTeamId: input.targetTeamId,
 			initialRole: input.initialRole,
 			updatedBy: input.updatedBy,
+			engagement: (await isDraftAttachedTo(tx, input)) ? undefined : input.engagement,
 		});
 		if (!draft) throw new Error("Invitation persistence conflict");
 
@@ -217,10 +291,7 @@ export async function syncInvitationTargetTeam(
 
 		if (input.targetTeamId) {
 			const selectedTeam = await tx.query.team.findFirst({
-				where: and(
-					eq(team.id, input.targetTeamId),
-					eq(team.organizationId, input.organizationId),
-				),
+				where: and(eq(team.id, input.targetTeamId), eq(team.organizationId, input.organizationId)),
 				columns: { id: true },
 			});
 			if (!selectedTeam) throw new Error("Invitation target team conflict");

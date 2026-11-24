@@ -97,6 +97,15 @@ export const COMPLIANCE_COMMAND_CENTER_I18N = {
 		key: "compliance.commandCenter.events.auditVerificationFailure.title",
 		default: "Audit verification failed",
 	},
+	eventPendingExceptionsDescription: {
+		key: "compliance.commandCenter.events.pendingExceptions.description",
+		default:
+			"{count, plural, one {# compliance exception awaits a decision} other {# compliance exceptions await a decision}}",
+	},
+	eventPendingExceptionsTitle: {
+		key: "compliance.commandCenter.events.pendingExceptions.title",
+		default: "Compliance exceptions pending",
+	},
 	eventSensitiveActionDescription: {
 		key: "compliance.commandCenter.events.sensitiveAction.description",
 		default: "{action} on {entityType}",
@@ -182,10 +191,6 @@ export const COMPLIANCE_COMMAND_CENTER_I18N = {
 		key: "compliance.commandCenter.facts.workforce.restPeriodViolations",
 		default: "Rest-period violations: {count}",
 	},
-	linkInspectCompliance: {
-		key: "compliance.commandCenter.links.inspectCompliance",
-		default: "Inspect compliance",
-	},
 	linkInspectInAuditLog: {
 		key: "compliance.commandCenter.links.inspectInAuditLog",
 		default: "Inspect in Audit Log",
@@ -198,9 +203,13 @@ export const COMPLIANCE_COMMAND_CENTER_I18N = {
 		key: "compliance.commandCenter.links.openAuditLog",
 		default: "Open Audit Log",
 	},
-	linkOpenComplianceSettings: {
-		key: "compliance.commandCenter.links.openComplianceSettings",
-		default: "Open Compliance Settings",
+	linkReviewComplianceExceptions: {
+		key: "compliance.commandCenter.links.reviewComplianceExceptions",
+		default: "Review compliance exceptions",
+	},
+	linkReviewPolicyViolations: {
+		key: "compliance.commandCenter.links.reviewPolicyViolations",
+		default: "Review policy violations",
 	},
 	linkReviewAuditExport: {
 		key: "compliance.commandCenter.links.reviewAuditExport",

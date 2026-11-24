@@ -22,6 +22,10 @@ import {
 	submitBulkContractActionAction,
 } from "@/app/[locale]/(app)/settings/contracts/bulk-actions";
 import { resolveDepartureReviewAction } from "@/app/[locale]/(app)/settings/employees/employee-offboarding.actions";
+import {
+	EngagementFilterToggle,
+	ExternalContractorBadge,
+} from "@/components/engagement/engagement-kind-ui";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -38,6 +42,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { PreviewBulkContractActionResult } from "@/lib/contracts/bulk-operations";
+import { type EngagementFilter, filterByEngagement } from "@/lib/engagement/engagement-filter";
 import { Link } from "@/navigation";
 import { todayIsoDateInTimezone } from "./contract-formatters";
 import { MinijobExceedanceReviews } from "./minijob-exceedance-reviews";
@@ -188,6 +193,8 @@ function MigrationAndDepartureReviews({
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [filterKind, setFilterKind] = useState<ReviewFilterKind>("all");
+	// All | Employees | External Contractors (#1995).
+	const [engagement, setEngagement] = useState<EngagementFilter>("all");
 	const [adoptDate, setAdoptDate] = useState(() => todayIsoDateInTimezone(organizationTimezone));
 	const [adoptPreview, setAdoptPreview] = useState<PreviewBulkContractActionResult | null>(null);
 	const [adoptRequestId, setAdoptRequestId] = useState<string | null>(null);
@@ -349,12 +356,17 @@ function MigrationAndDepartureReviews({
 	});
 
 	const queue = queueQuery.data;
-	const conflicts =
+	const conflicts = filterByEngagement(
 		filterKind === "all" || filterKind === "contract_migration_conflict"
 			? (queue?.migrationConflicts ?? [])
-			: [];
-	const departureReviews = (queue?.departureReviews ?? []).filter(
-		(review) => filterKind === "all" || filterKind === review.kind,
+			: [],
+		engagement,
+	);
+	const departureReviews = filterByEngagement(
+		(queue?.departureReviews ?? []).filter(
+			(review) => filterKind === "all" || filterKind === review.kind,
+		),
+		engagement,
 	);
 	const legacyCount = queue?.migratedLegacyTermsCount ?? 0;
 
@@ -481,6 +493,7 @@ function MigrationAndDepartureReviews({
 									</SelectItem>
 								</SelectContent>
 							</Select>
+							<EngagementFilterToggle value={engagement} onValueChange={setEngagement} />
 						</div>
 					</div>
 				</CardHeader>
@@ -508,6 +521,7 @@ function MigrationAndDepartureReviews({
 											>
 												{conflict.employeeName}
 											</Link>
+											<ExternalContractorBadge engagementKind={conflict.engagementKind} />
 											<Badge variant="outline">contract_migration_conflict</Badge>
 											<Badge variant={conflict.status === "open" ? "destructive" : "secondary"}>
 												{conflict.status}
@@ -581,6 +595,7 @@ function MigrationAndDepartureReviews({
 											>
 												{review.employeeName}
 											</Link>
+											<ExternalContractorBadge engagementKind={review.engagementKind} />
 											<Badge variant="outline">{review.kind}</Badge>
 											<Badge variant={review.status === "open" ? "destructive" : "secondary"}>
 												{review.status}

@@ -6,6 +6,7 @@ import type {
 	SickDetail,
 	VacationBalanceConfiguration,
 } from "@/lib/absences/types";
+import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 
 export type ManagerAbsenceRole = "admin" | "manager" | "employee";
 
@@ -59,6 +60,11 @@ export interface ManagerAbsenceEmployeeRow {
 	position: string | null;
 	role: ManagerAbsenceRole;
 	teamName: string | null;
+	/**
+	 * The kinds of their stints (#1996): the record dialog offers the categories any of them
+	 * allows; the server decides each absence by the stints its dates fall in. Absent = employee.
+	 */
+	engagementKinds?: EngagementKind[];
 	vacationAllowance: number | null;
 	usedVacationDays: number | null;
 	previouslyTakenVacationDays?: number;

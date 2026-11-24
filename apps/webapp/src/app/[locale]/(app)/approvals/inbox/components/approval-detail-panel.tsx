@@ -295,6 +295,9 @@ function TravelExpenseDetails({ item }: { item: ApprovalInboxItem }) {
 function ApprovalDetailHeader({ item }: { item: ApprovalInboxItem }) {
 	const { t } = useTranslate();
 	const text = useApprovalInboxText();
+	const badgeLabel = item.summary.badge
+		? text(item.summary.localized?.badge ?? item.summary.badge.label)
+		: null;
 	return (
 		<SheetHeader className="border-b px-5 py-5 pr-12 sm:px-6">
 			<div className="flex items-start gap-3">
@@ -310,14 +313,14 @@ function ApprovalDetailHeader({ item }: { item: ApprovalInboxItem }) {
 					<Badge
 						className="mt-0.5 max-w-[10rem] shrink-0 truncate sm:max-w-[13rem]"
 						variant="secondary"
-						title={item.summary.badge.label}
+						title={badgeLabel ?? undefined}
 						style={
 							item.summary.badge.color
 								? { backgroundColor: item.summary.badge.color }
 								: undefined
 						}
 					>
-						{item.summary.badge.label}
+						{badgeLabel}
 					</Badge>
 				)}
 			</div>

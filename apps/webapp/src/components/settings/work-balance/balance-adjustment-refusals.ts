@@ -29,6 +29,10 @@ export function balanceAdjustmentRefusals(locale: string) {
 			"settings.employees.workBalance.errors.futureDay",
 			"The day cannot be after today in the employee's timezone.",
 		],
+		external_contractor_day: [
+			"settings.employees.workBalance.errors.externalContractorDay",
+			"On this day the person works as an External Contractor, so payroll would never pay this payout. Date it on a day they were employed.",
+		],
 		exceeds_balance: [
 			"settings.employees.workBalance.errors.exceedsBalance",
 			"The payout is more than the employee's work balance at the end of that day.",

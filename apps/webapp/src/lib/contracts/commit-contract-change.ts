@@ -47,7 +47,12 @@ import {
 	replacePolicyAssignmentWindowInTx,
 } from "./policy-assignment-intervals";
 import { resolveEffectiveContractOnDay } from "./resolve-contract";
-import type { CustomWorkDay, EffectiveContractOnDay, WorkModel } from "./types";
+import {
+	type CustomWorkDay,
+	type EffectiveContractOnDay,
+	storedBalanceMode,
+	type WorkModel,
+} from "./types";
 
 export interface CommitContractChangeInput {
 	readonly organizationId: string;
@@ -786,7 +791,7 @@ export async function adoptContractDefaultInTx(
 		customDays: keptCustomDays,
 		workModel: keep.has("workModel") ? current.workModel : null,
 		presenceOverride: keep.has("presenceOverride") ? current.presenceOverride : null,
-		balanceMode: keep.has("balanceMode") ? current.balanceMode : null,
+		balanceMode: keep.has("balanceMode") ? storedBalanceMode(current.balanceMode) : null,
 		scheduleSource: keptScheduleSource,
 		onCallHoursKind: keepOnCall ? current.onCallTerms.hoursKind : null,
 		onCallWeeklyMinutes: keepOnCall ? current.onCallTerms.weeklyMinutes : null,

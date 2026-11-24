@@ -17,6 +17,7 @@ import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracki
 import { onCurrentRoster } from "../current-roster";
 import { reactivateOnReturn } from "../reactivation";
 import {
+	applyContractorDraft,
 	consumeInvitationDrafts,
 	type DraftCleanup,
 	type DroppedPersonnelNumber,
@@ -31,8 +32,15 @@ import {
 	writeDraftFirstTerms,
 	writeWithDraftPersonnelNumber,
 } from "./invitation-draft";
+import {
+	applyInvitationContractorTerms,
+	type InvitationContractorTerms,
+} from "./invitation-contractor-terms";
+import { type PlannedEngagementEnd, schedulePlannedEngagementEnd } from "./planned-engagement-end";
 
+export type { InvitationContractorTerms } from "./invitation-contractor-terms";
 export type { JoiningTransaction } from "./invitation-draft";
+export type { PlannedEngagementEnd } from "./planned-engagement-end";
 
 type Employee = typeof employee.$inferSelect;
 
@@ -115,6 +123,10 @@ export type AfterJoining = {
 	draftCleanup: DraftCleanup | null;
 	/** Only for a `membership_only` outcome with recipients named in the input. */
 	rehireNotice: RehireNotice | null;
+	/** A contractor invitation's planned engagement end, scheduled as a departure (#1995). */
+	plannedEngagementEnd: PlannedEngagementEnd | null;
+	/** A contractor invitation's first compensation terms, written from the engagement's start (#1935). */
+	contractorTerms: InvitationContractorTerms | null;
 	/** A repair of an older membership passes `seatSignal: false`: no seat changed now. */
 	run(options?: { seatSignal?: boolean }): Promise<void>;
 };
@@ -205,16 +217,24 @@ export async function joinOrganization(
 					recipients: input.rehireNotice,
 				}
 			: null;
+	const plannedEngagementEnd = plannedEngagementEndOf(outcome, draft, input);
+	const contractorTerms = invitationContractorTermsOf(outcome, draft, input);
 	return {
 		outcome,
 		afterCommit: {
 			seatSignal,
 			draftCleanup,
 			rehireNotice,
+			plannedEngagementEnd,
+			contractorTerms,
 			async run(options = {}) {
 				// The global `db` on purpose: this runs after the caller's transaction
 				// committed, and is shared with callers that are not Effect code.
 				audit.forwardCommitted();
+				// The engagement's first terms, then its planned end, both before the draft
+				// clean-up, whose id is the departure's request id.
+				if (contractorTerms) await applyInvitationContractorTerms(contractorTerms);
+				if (plannedEngagementEnd) await schedulePlannedEngagementEnd(plannedEngagementEnd);
 				if (draftCleanup) await consumeInvitationDrafts(db, draftCleanup);
 				if (rehireNotice) await sendRehireNotice(rehireNotice);
 				if (options.seatSignal !== false) await syncBillingSeatsAfterMemberChange(seatSignal);
@@ -365,11 +385,83 @@ async function settleArrivingEmployee(
 			outcome: personnelNumber.outcome,
 		});
 	}
-	if (draft) {
+	// Employment terms are employee-only; an External Contractor gets its contracting
+	// details and projects instead (#1995). Neither is written when the draft's kind
+	// is not the arriving employee's: a returning employee keeps its open period's
+	// kind, and the kind never changes in place.
+	if (draft && draft.engagementKind !== settled.engagementKind) {
+		await recordDraftNotApplied(tx, audit, {
+			organizationId,
+			actorUserId: input.actorUserId ?? userId,
+			employeeId: settled.id,
+			draft,
+			reason: "engagement_kind_differs",
+			details: {
+				draftEngagementKind: draft.engagementKind,
+				employeeEngagementKind: settled.engagementKind,
+			},
+		});
+	} else if (draft && settled.engagementKind === "employee") {
 		await writeDraftFirstTerms(tx, { organizationId, userId, employeeId: settled.id, draft });
+	} else if (draft && settled.engagementKind === "contractor") {
+		await applyContractorDraft(tx, {
+			organizationId,
+			employeeId: settled.id,
+			actorUserId: draft.updatedBy ?? input.actorUserId ?? userId,
+			draft,
+		});
 	}
 	if (isAdminMembership) await grantOrganizationWideTeamPermissions(tx, settled);
 	return settled;
+}
+
+/**
+ * The first compensation terms of a contractor invitation (#1935), written once
+ * the joining committed by the admin who prepared the invitation
+ * (`applyInvitationContractorTerms`). Only when the contractor draft applied:
+ * the person joined or came back as an External Contractor.
+ */
+function invitationContractorTermsOf(
+	outcome: JoiningOutcome,
+	draft: InvitationDraft | null,
+	input: JoiningInput,
+): InvitationContractorTerms | null {
+	if (outcome.kind !== "joined" && outcome.kind !== "reactivated") return null;
+	if (outcome.employee.engagementKind !== "contractor") return null;
+	if (draft?.engagementKind !== "contractor" || !draft.contractorCompensation) return null;
+	return {
+		organizationId: input.organizationId,
+		employeeId: outcome.employee.id,
+		userId: input.userId,
+		compensation: draft.contractorCompensation,
+		draftId: draft.id,
+		invitationId: draft.invitationId,
+		actorUserId: draft.updatedBy ?? input.actorUserId ?? null,
+	};
+}
+
+/**
+ * The planned engagement end of a contractor invitation (#1995), scheduled once
+ * the joining committed as a canonical departure by the admin who prepared the
+ * invitation (`schedulePlannedEngagementEnd`).
+ */
+function plannedEngagementEndOf(
+	outcome: JoiningOutcome,
+	draft: InvitationDraft | null,
+	input: JoiningInput,
+): PlannedEngagementEnd | null {
+	if (outcome.kind !== "joined" && outcome.kind !== "reactivated") return null;
+	if (outcome.employee.engagementKind !== "contractor") return null;
+	if (draft?.engagementKind !== "contractor" || !draft.plannedEndDate) return null;
+	return {
+		organizationId: input.organizationId,
+		employeeId: outcome.employee.id,
+		userId: input.userId,
+		lastWorkingDay: draft.plannedEndDate,
+		requestId: draft.id,
+		invitationId: draft.invitationId,
+		actorUserId: draft.updatedBy ?? input.actorUserId ?? null,
+	};
 }
 
 /**
@@ -424,7 +516,7 @@ async function joinAsReturningEmployee(
 	const isExisting = and(eq(employee.id, existing.id), eq(employee.organizationId, organizationId));
 	const draftPersonnelNumber = normalizePersonnelNumber(draft?.employeeNumber);
 	const returnValues = {
-		...draftReactivationValues(draft),
+		...draftReactivationValues(draft, existing),
 		...(!draft && isAdminMembership ? { role: "admin" as const } : {}),
 	};
 	const {

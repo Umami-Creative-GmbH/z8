@@ -3,7 +3,6 @@
 import { useTranslate } from "@tolgee/react";
 import type {
 	ArbzgScope,
-	BalanceMode,
 	EmploymentProfile,
 	OnCallHoursKind,
 	PresenceOverride,
@@ -13,6 +12,7 @@ import type {
 import type {
 	ContractFieldSource,
 	EffectivePresenceStatus,
+	ResolvedBalanceMode,
 	WorkModel,
 } from "@/lib/contracts/types";
 import { plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
@@ -131,12 +131,17 @@ export function useContractLabels() {
 		}
 	};
 
-	const balanceMode = (mode: BalanceMode | null | undefined): string => {
+	const balanceMode = (mode: ResolvedBalanceMode | null | undefined): string => {
 		switch (mode) {
 			case "tracked":
 				return t("settings.contracts.balanceMode.tracked", "Tracked balance");
 			case "trust_based":
 				return t("settings.contracts.balanceMode.trustBased", "Trust-based working time");
+			case "excluded":
+				return t(
+					"settings.contracts.balanceMode.excluded",
+					"Excluded (External Contractor, no work balance)",
+				);
 			default:
 				return t("settings.contracts.values.notSet", "Not set");
 		}
@@ -164,8 +169,10 @@ export function useContractLabels() {
 		}
 	};
 
-	const employmentProfile = (profile: EmploymentProfile): string => {
+	const employmentProfile = (profile: EmploymentProfile | null): string => {
 		switch (profile) {
+			case null:
+				return t("settings.contracts.employmentProfile.none", "None (External Contractor)");
 			case "regular":
 				return t("settings.contracts.employmentProfile.regular", "Regular employment");
 			case "minijob":

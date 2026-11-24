@@ -11,6 +11,11 @@ const state = vi.hoisted(() => ({
 	getApprovalInboxDetail: vi.fn(),
 	loadDeputyDetailAccess: vi.fn(async (): Promise<unknown> => null),
 	loadInboxCovers: vi.fn(async (): Promise<unknown[]> => []),
+	resolveComplianceExceptionInboxScope: vi.fn(async (): Promise<unknown> => null),
+}));
+
+vi.mock("./compliance-exception-inbox", () => ({
+	resolveComplianceExceptionInboxScope: state.resolveComplianceExceptionInboxScope,
 }));
 
 vi.mock("@/lib/auth-helpers", () => ({ getAbility: state.getAbility }));
@@ -82,6 +87,144 @@ describe("loadAuthorizedApprovalDetail", () => {
 			organizationId: "org-1",
 		});
 		state.getApprovalInboxDetail.mockResolvedValue(detail);
+		state.resolveComplianceExceptionInboxScope.mockResolvedValue(null);
+	});
+
+	it("opens a compliance exception to an employee who manages Compliance (#1977)", async () => {
+		state.getAbility.mockResolvedValue(
+			defineAbilityFor({
+				userId: "user-1",
+				isPlatformAdmin: false,
+				activeOrganizationId: "org-1",
+				orgMembership: { organizationId: "org-1", role: "admin", status: "active" },
+				employee: { id: "employee-1", organizationId: "org-1", role: "employee", teamId: null },
+				permissions: { orgWide: null, byTeamId: new Map() },
+				managedEmployeeIds: [],
+				customRoles: [],
+			}),
+		);
+		state.findEmployee.mockResolvedValue({ ...manager, role: "employee" });
+		state.findApprovalRequest.mockResolvedValue(undefined);
+		state.resolveComplianceExceptionInboxScope.mockResolvedValue({ kind: "organization" });
+
+		await expect(
+			loadAuthorizedApprovalDetail({
+				userId: "user-1",
+				organizationId: "org-1",
+				approvalId: "exception-1",
+			}),
+		).resolves.toEqual({ status: "found", detail });
+		expect(state.resolveComplianceExceptionInboxScope).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			canManageCompliance: true,
+		});
+		expect(state.getApprovalInboxDetail).toHaveBeenCalledWith(
+			expect.objectContaining({
+				approvalId: "exception-1",
+				complianceExceptionScope: { kind: "organization" },
+			}),
+		);
+	});
+
+	it("reads an approver-manager's eligibility once, for approvals and compliance exceptions (#1977)", async () => {
+		const eligibleApprovalScopes = [
+			{ requesterEmployeeId: "requester-1", eligibleApproverIds: ["employee-1"] },
+		];
+		state.getEligibleApprovalScopesForManager.mockResolvedValueOnce(
+			eligibleApprovalScopes as never,
+		);
+		state.findApprovalRequest.mockResolvedValue(undefined);
+
+		await loadAuthorizedApprovalDetail({
+			userId: "user-1",
+			organizationId: "org-1",
+			approvalId: "exception-1",
+		});
+
+		expect(state.getEligibleApprovalScopesForManager).toHaveBeenCalledTimes(1);
+		expect(state.resolveComplianceExceptionInboxScope).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			canManageCompliance: false,
+			eligibleApprovalScopes,
+		});
+		expect(state.getApprovalInboxDetail).toHaveBeenCalledWith(
+			expect.objectContaining({ eligibleApprovalScopes }),
+		);
+	});
+
+	describe("an employee who only manages Compliance (#1977)", () => {
+		beforeEach(() => {
+			state.getAbility.mockResolvedValue(
+				defineAbilityFor({
+					userId: "user-1",
+					isPlatformAdmin: false,
+					activeOrganizationId: "org-1",
+					orgMembership: { organizationId: "org-1", role: "admin", status: "active" },
+					employee: { id: "employee-1", organizationId: "org-1", role: "employee", teamId: null },
+					permissions: { orgWide: null, byTeamId: new Map() },
+					managedEmployeeIds: [],
+					customRoles: [],
+				}),
+			);
+			state.findEmployee.mockResolvedValue({ ...manager, role: "employee" });
+			state.resolveComplianceExceptionInboxScope.mockResolvedValue({ kind: "organization" });
+		});
+
+		it("never opens an approval request, even one still assigned to them", async () => {
+			await expect(
+				loadAuthorizedApprovalDetail({
+					userId: "user-1",
+					organizationId: "org-1",
+					approvalId: "approval-1",
+				}),
+			).resolves.toEqual({ status: "not_found" });
+			expect(state.getApprovalInboxDetail).not.toHaveBeenCalled();
+			expect(state.loadDeputyDetailAccess).not.toHaveBeenCalled();
+		});
+
+		it("answers an existing approval request exactly as an unknown id", async () => {
+			const open = (approvalId: string) =>
+				loadAuthorizedApprovalDetail({ userId: "user-1", organizationId: "org-1", approvalId });
+			const existing = await open("approval-1");
+			state.findApprovalRequest.mockResolvedValue(null);
+			state.getApprovalInboxDetail.mockRejectedValue(
+				new ApprovalInboxBadRequestError("Approval not found"),
+			);
+
+			await expect(open("unknown-1")).resolves.toEqual(existing);
+		});
+
+		it("never opens a canonical assignment", async () => {
+			state.findApprovalRequest.mockResolvedValue(null);
+			await expect(
+				loadAuthorizedApprovalDetail({
+					userId: "user-1",
+					organizationId: "org-1",
+					approvalId: "assignment-1",
+					kind: "canonical",
+				}),
+			).resolves.toEqual({ status: "not_found" });
+			expect(state.getApprovalInboxDetail).not.toHaveBeenCalled();
+		});
+
+		it("looks an unknown id up among compliance exceptions only", async () => {
+			state.findApprovalRequest.mockResolvedValue(null);
+			await loadAuthorizedApprovalDetail({
+				userId: "user-1",
+				organizationId: "org-1",
+				approvalId: "exception-1",
+			});
+			expect(state.getApprovalInboxDetail).toHaveBeenCalledWith({
+				approvalId: "exception-1",
+				organizationId: "org-1",
+				complianceExceptionsOnly: true,
+				complianceExceptionScope: { kind: "organization" },
+			});
+			expect(state.getEligibleApprovalScopesForManager).not.toHaveBeenCalled();
+			expect(state.loadInboxCovers).not.toHaveBeenCalled();
+		});
 	});
 
 	it("loads a compatibility request for its assigned approver", async () => {

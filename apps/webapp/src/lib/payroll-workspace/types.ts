@@ -80,6 +80,11 @@ export type PayrollBlockerType =
 export interface PayrollBlocker {
 	id: string;
 	employeeId: string;
+	/**
+	 * The employee's name when the read lists no row for them: a payroll run may carry expense
+	 * lines of someone without employee time in the period (#1997).
+	 */
+	employeeName?: string;
 	type: PayrollBlockerType;
 	/**
 	 * A plain-text note of the older blocker sources. Views show the translated label of

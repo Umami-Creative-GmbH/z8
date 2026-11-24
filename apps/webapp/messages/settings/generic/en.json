@@ -230,6 +230,7 @@
         "employeeDescription": "This employee's fully loaded internal cost per hour, used for margin. Separate from the wage.",
         "employeeTitle": "Cost rate",
         "empty": "No cost rate yet. Margin for this employee's work shows as cost unknown.",
+        "emptyContractor": "No cost rate yet. Margin uses this person's External Contractor rate for their contractor work; other work, and contractor work without a rate, shows as cost unknown.",
         "history": "History",
         "historyAction": "History of the cost rate for {name}",
         "hourly": "Hourly",
@@ -2118,6 +2119,7 @@
         "payrollSetup": {
           "fixEmployees": "Review employees",
           "fixPayrollExport": "Open payroll export settings",
+          "externalContractorsSkipped": "{count, plural, one {# External Contractor is skipped for employment terms and personnel identifiers: payroll exports never include External Contractors.} other {# External Contractors are skipped for employment terms and personnel identifiers: payroll exports never include External Contractors.}}",
           "inviteesSkipped": "{count, plural, one {# invited person is skipped for employment terms and personnel identifiers until they join.} other {# invited people are skipped for employment terms and personnel identifiers until they join.}}",
           "missingEmploymentTerms": "{count, plural, one {No confirmed employment terms covering today: # employee} other {No confirmed employment terms covering today: # employees}}",
           "noWageTypeMappings": "{count, plural, one {No active wage-type mappings, so payroll exports can't classify hours: # member} other {No active wage-type mappings, so payroll exports can't classify hours: # members}}",
@@ -2223,6 +2225,7 @@
           "mappingsMissing": "No active wage-type mappings",
           "mappingsPresent": "{count, plural, one {# export target, wage types mapped} other {# export targets, wage types mapped}}",
           "notExported": "The organization has no active payroll export target, so there are no payroll prerequisites.",
+          "notNeededExternalContractor": "Not needed: External Contractor",
           "notYetInvited": "Not yet: they're still invited",
           "personnelIdentifier": "Personnel number",
           "termsConfirmed": "Confirmed for today",
@@ -2258,6 +2261,7 @@
           "name": "Policy",
           "none": "No effective work policy today: none is assigned to them, their team or the organization.",
           "noSchedule": "No schedule",
+          "notApplicable": "No work policy applies: they work as an External Contractor.",
           "noWorkingDays": "No working days",
           "title": "Work policy",
           "workingDays": "Working days"

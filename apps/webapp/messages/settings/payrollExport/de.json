@@ -60,6 +60,8 @@
         "description": "Arbeitszeiträume und Abwesenheiten im DATEV Lohn & Gehalt-Format exportieren",
         "employees": "Mitarbeiter",
         "endDate": "Enddatum",
+        "contractorTimeExcluded": "Lohnexporte enthalten nur Arbeitszeit als Arbeitnehmer. Zeit als Externer Dienstleister bleibt immer außen vor, auch wenn Sie die Person auswählen.",
+        "engagementPickerHint": "Grenzt nur die Personenliste zur Auswahl ein. Ohne Auswahl enthält der Export alle Personen.",
         "error": "Export fehlgeschlagen",
         "exportButtonDatev": "Nach DATEV exportieren",
         "exportButtonLexware": "Nach Lexware exportieren",

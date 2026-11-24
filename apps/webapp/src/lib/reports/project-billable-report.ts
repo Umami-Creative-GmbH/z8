@@ -103,6 +103,7 @@ export async function prepareBillableReportPricing(
 	const pricedWork = input.work.filter((item) => accessFor(item.projectId) !== null);
 	const rates = await loadReportRates(reader, organizationId, pricedWork, {
 		includeCost: accesses.includes("full"),
+		billableCurrency: currency,
 	});
 	return {
 		context: {

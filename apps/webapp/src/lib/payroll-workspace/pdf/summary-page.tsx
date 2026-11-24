@@ -247,7 +247,9 @@ function blockerLine(
 		? [format.date(blocker.date), blocker.time].filter(Boolean).join(", ")
 		: null;
 	return [
+		// A blocked person without a row in the period names themselves (#1997).
 		employeeNames.get(blocker.employeeId) ??
+			blocker.employeeName ??
 			t("payroll.blockers.unknownEmployee", "Unknown employee"),
 		payrollBlockerTypeLabel(blocker, locale, t),
 		date,

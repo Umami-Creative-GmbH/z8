@@ -863,6 +863,8 @@ export interface FilterOptions {
 		firstName: string;
 		lastName: string;
 		employeeNumber?: string;
+		/** External Contractors are badged in the picker (#1995). */
+		engagementKind?: "employee" | "contractor";
 	}>;
 	teams: Array<{ id: string; name: string }>;
 	projects: Array<{ id: string; name: string }>;
@@ -882,6 +884,7 @@ export const getFilterOptionsAction = organizationAction(
 						firstName: user.firstName,
 						lastName: user.lastName,
 						employeeNumber: employee.employeeNumber,
+						engagementKind: employee.engagementKind,
 					})
 					.from(employee)
 					.innerJoin(user, eq(employee.userId, user.id))
@@ -911,6 +914,7 @@ export const getFilterOptionsAction = organizationAction(
 					firstName: employeeRow.firstName ?? "",
 					lastName: employeeRow.lastName ?? "",
 					employeeNumber: employeeRow.employeeNumber ?? undefined,
+					engagementKind: employeeRow.engagementKind,
 				})),
 				teams: teams.map((t) => ({ id: t.id, name: t.name })),
 				projects: projects.map((p) => ({ id: p.id, name: p.name })),

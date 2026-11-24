@@ -6,6 +6,7 @@ import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { requestComplianceException } from "@/app/[locale]/(app)/settings/compliance/actions";
+import { queryKeys } from "@/lib/query/keys";
 import { ExceptionRequestDialog } from "./exception-request-dialog";
 
 vi.mock("@tolgee/react", () => ({
@@ -68,7 +69,6 @@ describe("ExceptionRequestDialog", () => {
 				open
 				onOpenChange={onOpenChange}
 				defaultExceptionType="overtime_daily"
-				organizationId="org-1"
 				onSuccess={onSuccess}
 			/>,
 		);
@@ -106,5 +106,36 @@ describe("ExceptionRequestDialog", () => {
 			plannedDurationMinutes: 150,
 		});
 		expect(onOpenChange).toHaveBeenCalledWith(false);
+	});
+
+	it("refreshes the Approval inbox, where the request now waits (#1977)", async () => {
+		const user = userEvent.setup();
+		vi.mocked(requestComplianceException).mockResolvedValueOnce({
+			success: true,
+			data: { id: "exc-1" },
+		} as never);
+		const queryClient = new QueryClient();
+		const counts = queryKeys.approvals.inboxCounts();
+		const list = queryKeys.approvals.inbox({ types: ["compliance_exception"] });
+		queryClient.setQueryData(counts, { compliance_exception: 0 });
+		queryClient.setQueryData(list, { items: [] });
+		const onSuccess = vi.fn();
+		render(
+			<QueryClientProvider client={queryClient}>
+				<ExceptionRequestDialog
+					open
+					onOpenChange={vi.fn()}
+					defaultExceptionType="rest_period"
+					onSuccess={onSuccess}
+				/>
+			</QueryClientProvider>,
+		);
+
+		await user.type(screen.getByLabelText(/Reason for Exception/), "Night shift handover");
+		await user.click(screen.getByRole("button", { name: "Submit Request" }));
+		await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(1));
+
+		expect(queryClient.getQueryState(counts)?.isInvalidated).toBe(true);
+		expect(queryClient.getQueryState(list)?.isInvalidated).toBe(true);
 	});
 });

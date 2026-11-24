@@ -1,4 +1,5 @@
 import { pgEnum } from "drizzle-orm/pg-core";
+import { absenceTypes } from "@/lib/absences/absence-types";
 import {
 	APPROVAL_ACTOR_KINDS,
 	APPROVAL_ASSIGNMENT_STATUSES,
@@ -17,18 +18,7 @@ import {
 // ============================================
 
 export const roleEnum = pgEnum("role", ["admin", "manager", "employee"]);
-export const absenceTypeEnum = pgEnum("absence_type", [
-	"home_office",
-	"sick",
-	"vacation",
-	"personal",
-	"unpaid",
-	"parental",
-	"bereavement",
-	"custom",
-	// Built-in category drawing on the work balance (#1000)
-	"time_off_in_lieu",
-]);
+export const absenceTypeEnum = pgEnum("absence_type", absenceTypes);
 export const approvalStatusEnum = pgEnum("approval_status", [
 	"pending",
 	"approved",
@@ -410,7 +400,7 @@ export const timeRegulationViolationTypeEnum = pgEnum(
 		"overtime_daily", // ArbZG: Daily overtime threshold exceeded
 		"overtime_weekly", // ArbZG: Weekly overtime threshold exceeded
 		"overtime_monthly", // ArbZG: Monthly overtime threshold exceeded
-		// JArbSchG youth protection (#1993, migration 0331); kinds match `jarbschgRules`.
+		// JArbSchG youth protection (#1993, migration 0335); kinds match `jarbschgRules`.
 		"jarbschg_daily_max",
 		"jarbschg_weekly_max",
 		"jarbschg_days_per_week",

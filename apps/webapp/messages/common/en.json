@@ -682,6 +682,82 @@
       }
     }
   },
+  "contractorStatement": {
+    "basis": {
+      "daily": "Day rate",
+      "hourly": "Hourly rate"
+    },
+    "byProject": "By project",
+    "columns": {
+      "amount": "Amount",
+      "basis": "Paid by",
+      "currency": "Currency",
+      "date": "Date",
+      "dayUnitRule": "Day-unit rule",
+      "end": "End",
+      "project": "Project",
+      "rate": "Rate",
+      "rowType": "Row type",
+      "start": "Start",
+      "task": "Task",
+      "time": "Time (local)",
+      "unit": "Unit",
+      "units": "Units",
+      "workedMinutes": "Worked minutes"
+    },
+    "company": "Company",
+    "contractor": "Contractor",
+    "contractorNumber": "Contractor number",
+    "empty": "No completed work as External Contractor in this period.",
+    "errors": {
+      "failed": "The statement could not be created",
+      "invalidPeriod": "Choose a period of at most one year whose first day is not after its last.",
+      "notAllowed": "You can download only your own statements.",
+      "notContractor": "This person had no External Contractor engagement in this period.",
+      "notFound": "This person was not found in your organization."
+    },
+    "export": {
+      "adminDescription": "Download what this External Contractor worked and what their rates price it at, to check their invoice. A verification statement, not an invoice.",
+      "csv": "CSV for spreadsheets",
+      "download": "Download statement",
+      "downloaded": "Statement downloaded",
+      "format": "Format",
+      "from": "From",
+      "fromRequired": "Choose the first day",
+      "pdf": "PDF",
+      "selfDescription": "Download your recorded work and what your agreed rates price it at, to prepare or check your invoice. A verification statement, not an invoice.",
+      "title": "Time & fee statement",
+      "to": "To",
+      "toBeforeFrom": "The last day cannot be before the first day",
+      "toRequired": "Choose the last day"
+    },
+    "generated": "Generated (UTC)",
+    "noProject": "No project",
+    "noRate": "No rate applies",
+    "notice": "Verification statement only. Not an invoice or self-billing credit note (Gutschrift): Z8 never issues invoices. It lists the work recorded in Z8 and what the contractor's agreed rates price it at, so an invoice can be checked against it.",
+    "organization": "Organization",
+    "page": "Page",
+    "period": "Period",
+    "referenceCode": "PO or cost-center reference",
+    "rows": {
+      "day": "Day",
+      "total": "Total",
+      "unpriced": "Unpriced",
+      "work": "Work"
+    },
+    "times": "Days are the contractor's local calendar days; times are shown at the UTC offset recorded with the work.",
+    "title": "Contractor Time & Fee Verification Statement",
+    "totals": "Totals",
+    "units": {
+      "days": "Days",
+      "hours": "Hours"
+    },
+    "unpricedNotice": "Some work had no agreed rate on its day. It is listed without an amount and is not in the totals.",
+    "vatId": "VAT ID",
+    "workedHours": "Worked hours",
+    "approvedOnly": "Only approved work is listed. Work awaiting approval is added once it is approved.",
+    "awaitingApprovalExcluded": "Work periods awaiting approval, not included: {count}"
+  },
   "drivingLicence": {
     "applyingInterval": "Applying…",
     "applyInterval": "Apply interval change",
@@ -1103,6 +1179,20 @@
     "team": "Team",
     "totalEmployees": "{count} employees",
     "tryDifferentSearch": "Try adjusting your search or filters"
+  },
+  "engagement": {
+    "absenceRefusals": {
+      "contractorRecordsUnavailabilityOnly": "On these dates they work as an External Contractor: only unavailability can be recorded.",
+      "spansEngagementChange": "These dates span a change between employment and External Contractor work. Record each part separately.",
+      "unavailabilityIsForContractors": "On these dates they are employed: unavailability is only for External Contractors."
+    },
+    "externalContractor": "External Contractor",
+    "filter": {
+      "all": "All",
+      "contractors": "External Contractors",
+      "employees": "Employees",
+      "label": "Engagement"
+    }
   },
   "errors": {
     "failedToLoad": "Failed to load data",
@@ -1781,6 +1871,11 @@
         "message": "Your payslip for {payPeriod} was shared with you.",
         "title": "New payslip in your personnel file"
       },
+      "plannedEngagementEndNeedsReview": {
+        "notScheduled": "The planned engagement end of {name} ({plannedEndDate}) could not be scheduled as their leaving date. Schedule it on their employee page.",
+        "passed": "The planned engagement end of {name} ({plannedEndDate}) had passed when they joined, so their leaving date is today ({leavingDate}). Change it if the engagement continues.",
+        "title": "A planned engagement end needs review"
+      },
       "policyForgottenClockOutReminder": {
         "message": "You reached the required hours for {day} at {endTime} ({timezone}). Clock out if you have finished working."
       },
@@ -1976,6 +2071,11 @@
         "message": "Stay healthy - drink some water",
         "snooze": "Snooze today",
         "title": "Time to hydrate!"
+      },
+      "invitationContractorTermsNeedReview": {
+        "title": "An External Contractor's rate needs review",
+        "message": "The rate from the invitation of {name} could not be applied when they joined. Set it in their External Contractor compensation; their work stays unpriced until then.",
+        "termsExistMessage": "The rate from the invitation of {name} was not applied when they joined: their engagement already has compensation terms, which still apply. Review in their External Contractor compensation whether they should change."
       }
     },
     "countFailed": "Unread count unavailable",
@@ -2701,6 +2801,25 @@
             "project": "The project the rate applies to; empty for all your work.",
             "summary": "The rates the organization bills to customers for your work."
           },
+          "contractorCompensationTerms": {
+            "capAtOneDay": "Whether a day counts as at most one day, however long the work.",
+            "compensationBasis": "Whether you are paid by the hour (hourly) or by the day (daily).",
+            "currency": "The currency of the rate.",
+            "dayUnitRule": "How a day's work counts for a daily rate: any work as a full day (any_work_full_day), half or full days by a threshold (half_and_full_day), or in proportion to a standard day (prorated_by_standard_day). Empty for an hourly rate.",
+            "effectiveFrom": "The first day these terms apply (YYYY-MM-DD).",
+            "effectiveTo": "The first day these terms no longer apply (YYYY-MM-DD); empty while they apply.",
+            "employmentPeriodId": "The period these terms belong to (its id in employment_periods).",
+            "halfDayThresholdMinutes": "Up to this many minutes of work a day counts as a half day; more counts as a full day.",
+            "rate": "Your rate per hour or per day.",
+            "standardDayMinutes": "The minutes of a standard day a day's work is measured against.",
+            "summary": "Your hourly or daily rate as an External Contractor over time."
+          },
+          "contractorDetails": {
+            "companyName": "The company you contract through.",
+            "referenceCode": "The purchase order or cost-center reference your invoices are matched against.",
+            "summary": "Your contracting details as an External Contractor.",
+            "vatId": "Your VAT ID or tax reference."
+          },
           "costCenters": {
             "code": "The cost centre's code.",
             "costCenter": "The cost centre's name.",
@@ -2767,6 +2886,7 @@
             "contractType": "Your contract type.",
             "email": "The email address of your user account.",
             "endDate": "When your employment ended; empty while it continues.",
+            "engagementKind": "Whether you work for the organization as an employee (employee) or as an External Contractor (contractor) today.",
             "firstName": "Your first name in your employee record.",
             "gender": "Your gender.",
             "isActive": "Whether your employee record is active.",
@@ -2786,10 +2906,11 @@
           },
           "employmentPeriods": {
             "endedAt": "When the period ended; empty while it is open.",
+            "engagementKind": "Whether you worked in this period as an employee (employee) or as an External Contractor (contractor).",
             "startedAt": "When the period started.",
             "startProvenance": "Where the start comes from, for example a hire or a rehire.",
             "status": "Whether the period is open or closed.",
-            "summary": "Each period you were employed by the organization."
+            "summary": "Each period you worked for the organization, as an employee or as an External Contractor."
           },
           "employmentTerms": {
             "changeReason": "Why the terms were set or changed.",
@@ -3627,5 +3748,13 @@
   },
   "worksCouncil": {
     "loadingLabel": "Loading works council"
+  },
+  "contractorCompensation": {
+    "dayUnitRules": {
+      "anyWorkFullDay": "Any day with work counts as a full day",
+      "halfAndFullDay": "Half day up to {minutes} min, full day above",
+      "proratedCapped": "Prorated by a {minutes}-minute day, at most one day",
+      "proratedUncapped": "Prorated by a {minutes}-minute day, without a cap"
+    }
   }
 }

@@ -72,6 +72,8 @@ function ready(title = "Old managed employee evidence", producer = transportCont
 		category: "approval" as const,
 		severity: "warning" as const,
 		href: "/approvals/inbox",
+		canApprove: true,
+		canReject: true,
 		ownRequest: false,
 	};
 	briefing.sections.approvals.items = [item];

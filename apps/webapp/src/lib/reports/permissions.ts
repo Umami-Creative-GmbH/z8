@@ -33,6 +33,7 @@ type ReportEmployeeSource = {
 	pronouns: string | null;
 	position: string | null;
 	role: "admin" | "manager" | "employee";
+	engagementKind?: "employee" | "contractor";
 };
 
 export function getReportAccessibleEmployeeIds(input: {
@@ -105,6 +106,7 @@ function toAccessibleEmployee(emp: ReportEmployeeSource): AccessibleEmployee {
 		pronouns: emp.pronouns,
 		position: emp.position,
 		role: emp.role,
+		...(emp.engagementKind ? { engagementKind: emp.engagementKind } : {}),
 	};
 }
 
@@ -259,17 +261,7 @@ export async function getAccessibleEmployees(
 		});
 
 		// Ensure current employee is first in the list
-		const currentEmployeeData = {
-			id: currentEmp.id,
-			firstName: currentEmp.user.firstName,
-			lastName: currentEmp.user.lastName,
-			name: currentEmp.user.name || currentEmp.user.email,
-			email: currentEmp.user.email,
-			image: currentEmp.user.image,
-			pronouns: currentEmp.pronouns,
-			position: currentEmp.position,
-			role: currentEmp.role,
-		};
+		const currentEmployeeData = toAccessibleEmployee(currentEmp);
 
 		const otherEmployees = allEmployees.flatMap((emp) => {
 			if (
@@ -283,19 +275,7 @@ export async function getAccessibleEmployees(
 				return [];
 			}
 
-			return [
-				{
-					id: emp.id,
-					firstName: emp.user.firstName,
-					lastName: emp.user.lastName,
-					name: emp.user.name || emp.user.email,
-					email: emp.user.email,
-					image: emp.user.image,
-					pronouns: emp.pronouns,
-					position: emp.position,
-					role: emp.role,
-				},
-			];
+			return [toAccessibleEmployee(emp)];
 		});
 
 		return markFormerReportEmployees(currentEmp.organizationId, [
@@ -316,17 +296,5 @@ export async function getAccessibleEmployees(
 	}
 
 	// For employees: only self
-	return [
-		{
-			id: currentEmp.id,
-			firstName: currentEmp.user.firstName,
-			lastName: currentEmp.user.lastName,
-			name: currentEmp.user.name || currentEmp.user.email,
-			email: currentEmp.user.email,
-			image: currentEmp.user.image,
-			pronouns: currentEmp.pronouns,
-			position: currentEmp.position,
-			role: currentEmp.role,
-		},
-	];
+	return [toAccessibleEmployee(currentEmp)];
 }

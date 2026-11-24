@@ -59,7 +59,14 @@ export function VacationBalanceWidget({
 				refreshing={refreshing}
 				onRefresh={refetch}
 			>
-				{error ||
+				{!error && data?.externalContractor ? (
+					<p className="text-sm text-muted-foreground">
+						{t(
+							"dashboard.vacation.externalContractor",
+							"Vacation does not apply to External Contractors.",
+						)}
+					</p>
+				) : error ||
 				(!loading &&
 					!balance &&
 					(!data?.configuration ||

@@ -1,5 +1,5 @@
 /**
- * #1992: migration 0330 adds `shift.assignment_changed_at`, the instant from which § 12 Abs. 3
+ * #1992: migration 0334 adds `shift.assignment_changed_at`, the instant from which § 12 Abs. 3
  * TzBfG call-in notice runs, and backfills existing shifts conservatively: never earlier than the
  * latest change the row records, so no shift moved or reassigned before deploy gains notice it
  * never had. Runs the migration file against a minimal shift table in a scratch schema.
@@ -16,7 +16,7 @@ import { integrationAdminPool } from "@/test/integration-database";
 const SCHEMA = "t1992_migration";
 const admin = integrationAdminPool();
 const migration = readFileSync(
-	join(process.cwd(), "drizzle/0330_shift_assignment_changed_at.sql"),
+	join(process.cwd(), "drizzle/0334_shift_assignment_changed_at.sql"),
 	"utf8",
 );
 
@@ -76,7 +76,7 @@ async function changedAt(client: PoolClient) {
 	return Object.fromEntries(rows.map((row) => [row.id, row.changed]));
 }
 
-describe("0330 shift assignment_changed_at backfill", () => {
+describe("0334 shift assignment_changed_at backfill", () => {
 	afterAll(async () => {
 		await admin.query(`drop schema if exists ${SCHEMA} cascade`);
 	});

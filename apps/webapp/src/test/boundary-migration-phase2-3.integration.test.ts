@@ -21,6 +21,7 @@
 
 import { execFile } from "node:child_process";
 import { randomBytes, randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -66,6 +67,19 @@ type Journal = {
 };
 
 const silentLogger = { info: () => {}, warn: () => {}, error: () => {} };
+
+/**
+ * Migrations after the 0327 seal in the real journal (0328 on, #1935): the engine applies them in
+ * one `post_0327` stage right after the seal, so a run through the real folder ends there, with
+ * the ledger at the journal's last prefix.
+ */
+const realJournal = JSON.parse(
+	readFileSync(join(migrationsFolder, "meta", "_journal.json"), "utf8"),
+) as Journal;
+const LATEST_MIGRATION_PREFIX = Math.max(
+	...realJournal.entries.map((entry) => Number.parseInt(entry.tag.slice(0, 4), 10)),
+);
+const POST_0327_STAGES = LATEST_MIGRATION_PREFIX > 327 ? ["post_0327"] : [];
 
 function wrapPoolAsDrizzle(pool: Pool): DatabaseClient {
 	return drizzle({ client: pool, schema: fullSchema }) as unknown as DatabaseClient;
@@ -183,9 +197,10 @@ describe("Phase 2A/2B constraints, O(1) policy metadata swap, and zero-DDL v1 se
 					"phase2_0325",
 					"phase2_0326",
 					"phase2_0327",
+					...POST_0327_STAGES,
 				]);
-				expect(committedStages).toHaveLength(8);
-				expect(new Set(committedStages.map((s) => s.xid)).size).toBe(8);
+				expect(committedStages).toHaveLength(8 + POST_0327_STAGES.length);
+				expect(new Set(committedStages.map((s) => s.xid)).size).toBe(8 + POST_0327_STAGES.length);
 
 				// Inspect pg_constraint.conindid for all 8 concurrently built & attached unique constraints
 				const conindidRows = (
@@ -464,7 +479,7 @@ describe("Phase 2A/2B constraints, O(1) policy metadata swap, and zero-DDL v1 se
 					DB_ALLOW_CONTRACT_CONSTRAINTS: "true",
 					DB_ALLOW_POLICY_V1_SEAL: "true",
 				});
-				expect(await readMaxAppliedPrefix(sibling.pool)).toBe(327);
+				expect(await readMaxAppliedPrefix(sibling.pool)).toBe(LATEST_MIGRATION_PREFIX);
 				const cutoverAt0327 = (
 					await sibling.pool.query<{ sealed_cutover_at: Date | null }>(
 						`SELECT sealed_cutover_at FROM "work_policy_versioning_state" WHERE singleton = true`,
@@ -1141,7 +1156,7 @@ describe("Phase 2A/2B constraints, O(1) policy metadata swap, and zero-DDL v1 se
 					await editorClient.query("COMMIT");
 
 					const [sealRes] = await Promise.all([sealPromise, fkWriters, assignWriter]);
-					expect(sealRes.appliedStages).toEqual(["phase2_0327"]);
+					expect(sealRes.appliedStages).toEqual(["phase2_0327", ...POST_0327_STAGES]);
 				} finally {
 					await editorClient.query("ROLLBACK").catch(() => {});
 					editorClient.release();
@@ -1723,7 +1738,7 @@ describe("Phase 2A/2B constraints, O(1) policy metadata swap, and zero-DDL v1 se
 				const writerWaitMs = performance.now() - writerWaitStart;
 				const { res: sealRes, ms: duration0327Ms } = await seal0327Promise;
 
-				expect(sealRes.appliedStages).toEqual(["phase2_0327"]);
+				expect(sealRes.appliedStages).toEqual(["phase2_0327", ...POST_0327_STAGES]);
 				expect(concurrentWrite.policy.id).toBe(samplePolicyId);
 
 				// Log measured benchmark timings for verification reporting

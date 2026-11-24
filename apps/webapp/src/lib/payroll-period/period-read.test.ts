@@ -220,6 +220,32 @@ describe("buildPayrollPeriodRead", () => {
 			});
 		});
 
+		it("counts only payroll days as unsettled: a converted person's External Contractor days never settle (#1997)", () => {
+			const result = buildPayrollPeriodRead({
+				organizationId: "organization-a",
+				period: { start: "2026-11-01", end: "2026-11-30", label: "November 2026" },
+				generatedAt: Temporal.Instant.from("2026-11-30T12:00:00Z"),
+				generatedBy: { id: "payroll-1", name: "Payroll User" },
+				sources: {
+					organizationName: "Acme GmbH",
+					employees: [anna],
+					work: [],
+					absences: [],
+					blockers: [],
+					settledDays: [settled("settled-3", "2026-11-03", 0)],
+					// An External Contractor from 21 November on.
+					isPayrollDay: (_employeeId, date) => date < "2026-11-21",
+				},
+			});
+
+			expect(result.employees[0]?.days).toHaveLength(30);
+			expect(result.settlement).toEqual({
+				settledDays: 1,
+				changedSinceSettledDays: 0,
+				unsettledDays: 19,
+			});
+		});
+
 		it("keeps an employee who left whose settled days lost their hours", () => {
 			const result = read({ lastWorkingDay: "2026-11-05" });
 

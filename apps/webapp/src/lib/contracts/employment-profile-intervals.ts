@@ -65,6 +65,7 @@ export async function loadEmploymentProfileIntervals(
 			startProvenance: employeeEmploymentPeriod.startProvenance,
 			endedAt: employeeEmploymentPeriod.endedAt,
 			createdAt: employeeEmploymentPeriod.createdAt,
+			engagementKind: employeeEmploymentPeriod.engagementKind,
 		})
 		.from(employeeEmploymentPeriod)
 		.where(

@@ -7,6 +7,7 @@ import { UserAvatar } from "@/components/user-avatar";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { normalizePronouns } from "@/lib/employee-identity";
 import { cn } from "@/lib/utils";
+import { ExternalContractorBadge } from "@/components/engagement/engagement-kind-ui";
 import { FormerEmployeeBadge } from "@/components/former-employees/former-employee-ui";
 import { isFormerSelectableEmployee } from "./employee-select-item";
 import type { EmployeeSelectTriggerProps, SelectableEmployee } from "./types";
@@ -57,6 +58,7 @@ function TriggerSelection({
 					clockStatus={employee.clockStatus ?? "unknown"}
 				/>
 				<span className="truncate">{getEmployeeName(employee)}</span>
+				<ExternalContractorBadge engagementKind={employee.engagementKind} />
 				{isFormerSelectableEmployee(employee) && (
 					<FormerEmployeeBadge since={employee.formerSince} />
 				)}

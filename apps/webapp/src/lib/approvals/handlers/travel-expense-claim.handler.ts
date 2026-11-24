@@ -2,7 +2,7 @@ import { IconReceipt2 } from "@tabler/icons-react";
 import { and, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
 import { approvalRequest, travelExpenseClaim } from "@/db/schema";
-import { instantFromDate, parsePlainDate, systemClock } from "@/lib/datetime/temporal-core";
+import { instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
 import { NotFoundError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { calculateSLADeadline } from "../domain/sla-calculator";
@@ -19,6 +19,7 @@ import {
 	decideTravelExpenseClaimEffect,
 	loadTravelExpenseApprover,
 } from "../server/travel-expense-approvals";
+import { travelExpenseClaimDisplay } from "../presentation/travel-expense-claim-display";
 import { buildSLAInfo, fetchApprovals, getApprovalCount } from "./base-handler";
 
 function decisionOptions(options: ApprovalActionOptions) {
@@ -76,88 +77,8 @@ interface TravelExpenseClaimWithRelations {
 	} | null;
 }
 
-function getClaimTypeLabel(type: TravelExpenseClaimWithRelations["type"]): string {
-	switch (type) {
-		case "receipt":
-			return "Receipt";
-		case "mileage":
-			return "Mileage";
-		case "per_diem":
-			return "Per Diem";
-	}
-}
-
-function getClaimIcon(type: TravelExpenseClaimWithRelations["type"]): string {
-	switch (type) {
-		case "receipt":
-			return "receipt";
-		case "mileage":
-			return "route";
-		case "per_diem":
-			return "briefcase";
-	}
-}
-
-const MONTHS = [
-	"Jan",
-	"Feb",
-	"Mar",
-	"Apr",
-	"May",
-	"Jun",
-	"Jul",
-	"Aug",
-	"Sep",
-	"Oct",
-	"Nov",
-	"Dec",
-] as const;
-
-/**
- * The trip's logical dates exactly as entered (#295). They never shift with the
- * server's or viewer's zone; claims created before they were recorded show no
- * date range rather than one derived from their UTC bounds.
- */
-function formatTripDateRange(startDate: string | null, endDate: string | null): string | null {
-	if (!startDate || !endDate) return null;
-	let start: ReturnType<typeof parsePlainDate>;
-	let end: ReturnType<typeof parsePlainDate>;
-	try {
-		start = parsePlainDate(startDate);
-		end = parsePlainDate(endDate);
-	} catch {
-		return null;
-	}
-	const month = (date: typeof start) => MONTHS[date.month - 1];
-	if (start.equals(end)) {
-		return `${month(start)} ${String(start.day).padStart(2, "0")}, ${start.year}`;
-	}
-	if (start.year === end.year && start.month === end.month) {
-		return `${month(start)} ${start.day}-${end.day}, ${end.year}`;
-	}
-	if (start.year === end.year) {
-		return `${month(start)} ${start.day}-${month(end)} ${end.day}, ${end.year}`;
-	}
-	return `${month(start)} ${start.day}, ${start.year}-${month(end)} ${end.day}, ${end.year}`;
-}
-
 function getDisplayMetadata(entity: TravelExpenseClaimWithRelations): ApprovalDisplayMetadata {
-	const destination = entity.destinationCity ?? entity.destinationCountry ?? "Trip";
-	const tripRange = formatTripDateRange(entity.tripStartDate, entity.tripEndDate);
-	const claimTypeLabel = getClaimTypeLabel(entity.type);
-
-	return {
-		title: "Travel Expense",
-		subtitle: tripRange ? `${destination} - ${tripRange}` : destination,
-		summary: `${claimTypeLabel} for ${entity.calculatedCurrency} ${entity.calculatedAmount}`,
-		badge: entity.project
-			? {
-					label: entity.project.name,
-					color: null,
-				}
-			: undefined,
-		icon: getClaimIcon(entity.type),
-	};
+	return travelExpenseClaimDisplay(entity);
 }
 
 export const TravelExpenseClaimHandler: ApprovalTypeHandler<TravelExpenseClaimWithRelations> = {

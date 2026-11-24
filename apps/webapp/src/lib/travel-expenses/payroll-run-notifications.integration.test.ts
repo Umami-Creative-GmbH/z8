@@ -546,6 +546,44 @@ describe("payroll run notifications for expense officers (#855)", () => {
 		);
 	});
 
+	it("tells the covering officers once about an External Contractor's report every run leaves out (#1997)", async () => {
+		// The requester is an External Contractor and never was an employee.
+		await admin.query(
+			`insert into employee_employment_period
+			   (organization_id, employee_id, status, started_at, start_provenance, engagement_kind)
+			 values ($1, $2, 'open', now() - interval '90 days', 'recorded', 'contractor')`,
+			[ORG, ids.requester],
+		);
+		await admin.query("update employee set engagement_kind = 'contractor' where id = $1", [
+			ids.requester,
+		]);
+		const hotel = await approvedReceipt("requester", "100.00");
+		const control = await approvedReceipt("colleague", "8.05");
+		expect(await readyNotifications()).toEqual([]);
+
+		await exportPayroll("datev_lohn", current);
+
+		expect(await readyRecipients(hotel)).toEqual(["t855-allOfficer", "t855-berlinOfficer"]);
+		expect(await readyRecipients(control)).toEqual([]);
+		// The next runs leave it out again without telling anyone twice.
+		await exportPayroll("lexware_lohn", current);
+		await exportPayroll("datev_lohn", overlapping);
+		expect(await readyRecipients(hotel)).toEqual(["t855-allOfficer", "t855-berlinOfficer"]);
+
+		// No run holds it: it is paid by bank transfer.
+		signIn("berlinOfficer");
+		expect(
+			await finance.recordTravelExpenseReimbursementAction({
+				source: { type: "report", id: hotel },
+				idempotencyKey: randomUUID(),
+				amount: "100.00",
+				occurredOn: today.toString(),
+				reference: "SEPA-1",
+				expectedBalance: { currency: "EUR", amount: "100.00" },
+			}),
+		).toMatchObject({ success: true, data: { status: "recorded" } });
+	});
+
 	it("counts reports a run includes that no officer who confirms covers in the coverage gap", async () => {
 		await admin.query(
 			"update expense_officer_grant set is_active = false where officer_employee_id = $1",

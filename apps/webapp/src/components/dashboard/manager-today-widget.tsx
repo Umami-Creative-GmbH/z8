@@ -21,6 +21,10 @@ import { WidgetReadError } from "./widget-read-error";
 type MetricItem = {
 	label: string;
 	value: number;
+	/** The value as shown, such as a lower bound "3+"; the value itself when absent. */
+	display?: string;
+	/** Read to screen readers in place of `display` when the glyph alone says nothing ("—"). */
+	srDisplay?: string;
 	activeClass?: string;
 };
 
@@ -71,6 +75,20 @@ export function ManagerTodayWidget({
 		{
 			label: t("dashboard.manager-today.metric-approvals", "Approvals"),
 			value: metrics.approvals,
+			// No count known at all: unavailable. An approval type failed to load or count: at least
+			// this many wait (#1980).
+			...(metrics.approvalsUnavailable
+				? {
+						display: t("dashboard.manager-today.metric-unavailable", "—"),
+						srDisplay: t("dashboard.manager-today.metric-unavailable-label", "Unavailable"),
+					}
+				: metrics.approvalsAtLeast
+					? {
+							display: t("dashboard.manager-today.metric-at-least", "{count}+", {
+								count: metrics.approvals,
+							}),
+						}
+					: {}),
 		},
 		{
 			label: t("dashboard.manager-today.metric-clock-ins", "Clock-ins"),
@@ -140,7 +158,14 @@ export function ManagerTodayWidget({
 									)}
 								>
 									<div className="text-xl font-semibold tabular-nums leading-none">
-										{item.value}
+										{item.srDisplay ? (
+											<>
+												<span aria-hidden="true">{item.display}</span>
+												<span className="sr-only">{item.srDisplay}</span>
+											</>
+										) : (
+											(item.display ?? item.value)
+										)}
 									</div>
 									<div className="mt-1 text-sm font-medium text-muted-foreground break-words hyphens-auto">
 										{item.label}

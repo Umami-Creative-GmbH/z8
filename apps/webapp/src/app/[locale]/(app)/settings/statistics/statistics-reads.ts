@@ -43,7 +43,7 @@ import { reachesWholeOrganization } from "@/lib/organization-action/managed-scop
 import type { OrganizationActor } from "@/lib/organization-action/organization-action";
 import { loadEmployeeTrackingContexts } from "@/lib/time-tracking/tracking-start";
 import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
-import { loadEffectiveWorkPolicies } from "@/lib/work-policy/effective-work-policies";
+import { loadWorkPolicyCoverage, needsWorkPolicy } from "@/lib/work-policy/effective-work-policies";
 import { comparisonWindowsAt, type StatisticsWindow } from "./comparison-windows";
 import type { Kpi, LikeForLike } from "./statistics-types";
 
@@ -550,7 +550,8 @@ export function countTeams(scope: StatisticsScope) {
 
 /**
  * Employees on the current roster in scope whose setup is incomplete: no primary
- * team, or no effective work policy now.
+ * team, or no effective work policy now. No work policy applies to an External
+ * Contractor's stint (#1996), so only their team counts.
  */
 export function countIncompleteSetup(scope: StatisticsScope, now: Instant) {
 	return Effect.gen(function* () {
@@ -562,14 +563,14 @@ export function countIncompleteSetup(scope: StatisticsScope, now: Instant) {
 				.where(and(employeesInScope(scope), onCurrentRoster(scope.organizationId, employee, now))),
 		);
 		if (roster.length === 0) return 0;
-		const policies = yield* dbService.query("statistics.setupPolicies", () =>
-			loadEffectiveWorkPolicies(dbService.db, {
+		const coverage = yield* dbService.query("statistics.setupPolicies", () =>
+			loadWorkPolicyCoverage(dbService.db, {
 				organizationId: scope.organizationId,
 				employees: roster,
 				at: now,
 			}),
 		);
-		return roster.filter((person) => !person.teamId || !policies.get(person.id)).length;
+		return roster.filter((person) => !person.teamId || needsWorkPolicy(coverage, person.id)).length;
 	});
 }
 

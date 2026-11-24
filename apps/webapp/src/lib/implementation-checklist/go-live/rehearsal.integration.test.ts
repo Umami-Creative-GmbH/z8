@@ -657,6 +657,15 @@ describe("go-live rehearsal (PostgreSQL)", () => {
 		});
 	});
 
+	it("rehearses an external contractor with no work policy applying, not a missing one", async () => {
+		await workPolicy("Default", { type: "organization" });
+		const contractor = await fixture.seedEmployee({ organizationId, engagementKind: "contractor" });
+
+		const rehearsal = await rehearse(`employee:${contractor.employeeId}`);
+
+		expect(rehearsal.workPolicy).toEqual({ status: "not_applicable" });
+	});
+
 	it("leaves no new rows in any table: no work records, approvals, notifications, deliveries or audit entries", async () => {
 		await sql(
 			`insert into approval_workflow_rollout (organization_id, workflow_type, lifecycle_mode, side_effect_mode, updated_at)

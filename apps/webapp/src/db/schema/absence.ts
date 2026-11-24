@@ -62,6 +62,12 @@ export const absenceCategory = pgTable(
 			"absence_category_draws_on_work_balance_check",
 			sql`NOT ${table.drawsOnWorkBalance} OR (NOT ${table.countsAgainstVacation} AND NOT ${table.requiresWorkTime})`,
 		),
+		// An External Contractor's unavailability (#1996) never draws on vacation or the work
+		// balance and never requires work time.
+		check(
+			"absence_category_contractor_unavailability_check",
+			sql`${table.type} <> 'contractor_unavailability' OR (NOT ${table.countsAgainstVacation} AND NOT ${table.drawsOnWorkBalance} AND NOT ${table.requiresWorkTime})`,
+		),
 	],
 );
 

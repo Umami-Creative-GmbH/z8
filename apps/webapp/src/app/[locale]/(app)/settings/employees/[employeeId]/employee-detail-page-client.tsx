@@ -13,6 +13,7 @@ import { EmployeeLifecycleActions } from "@/components/organization/employee-lif
 import { ReactivationChecklistCard } from "@/components/organization/reactivation-checklist";
 import { PersonnelFilePanel } from "@/components/personnel-file/personnel-file-panel";
 import { EmployeeAssignedLocationsCard } from "@/components/settings/assigned-locations/employee-assigned-locations-card";
+import { ContractorCompensationCard } from "@/components/settings/contracts/contractor-compensation-card";
 import { EmployeeContractTab } from "@/components/settings/contracts/employee-contract-tab";
 import { EmployeeMinijobMonitorCard } from "@/components/settings/contracts/employee-minijob-monitor-card";
 import {
@@ -475,6 +476,8 @@ export function EmployeeDetailPageClient({
 										}
 									/>
 									<EmployeeRateSections employeeId={employeeId} settingsAccess={settingsAccess} />
+									{/* External Contractors only (#1998); renders nothing for employees. */}
+									<ContractorCompensationCard employeeId={employeeId} />
 								</>
 							) : (
 								<ScopedManagerPolicyCard

@@ -1,7 +1,7 @@
 /**
- * #1988: `db:push` re-applies migration 0329 for what schema push cannot create (baseline seed,
+ * #1988: `db:push` re-applies migration 0333 for what schema push cannot create (baseline seed,
  * guard triggers, exclusion constraints). Re-applying it to a migrated database changes nothing.
- * #1993: migration 0331 re-applies over a pushed or migrated database without error.
+ * #1993: migration 0335 re-applies over a pushed or migrated database without error.
  */
 import { readFile } from "node:fs/promises";
 import { getTableConfig } from "drizzle-orm/pg-core";
@@ -80,7 +80,7 @@ describe("installStatutoryFoundation (PostgreSQL)", () => {
 		expect(upgraded.releaseOverlap).toContain("pre_exam_day");
 	});
 
-	describe("migration 0331 (#1993)", () => {
+	describe("migration 0335 (#1993)", () => {
 		const RELEASE_CONSTRAINTS = [
 			"employee_apprentice_release_exam_link_check",
 			"employee_apprentice_release_exam_release_fk",
@@ -92,7 +92,7 @@ describe("installStatutoryFoundation (PostgreSQL)", () => {
 
 		async function apply0331() {
 			const migration = await readFile(
-				new URL("../../drizzle/0331_jarbschg_violation_types.sql", import.meta.url),
+				new URL("../../drizzle/0335_jarbschg_violation_types.sql", import.meta.url),
 				"utf8",
 			);
 			const client = await pool.connect();
@@ -145,7 +145,7 @@ describe("installStatutoryFoundation (PostgreSQL)", () => {
 	});
 
 	it("declares in Drizzle every CHECK and foreign key the migration creates on statutory tables", async () => {
-		// `drizzle-kit push` builds these tables from Drizzle, and re-applying 0329 then skips its
+		// `drizzle-kit push` builds these tables from Drizzle, and re-applying 0333 then skips its
 		// CREATE TABLE blocks: a constraint only in SQL would silently be missing on pushed databases.
 		for (const table of [
 			organizationStatutoryPreference,

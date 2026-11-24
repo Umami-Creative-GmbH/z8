@@ -22,11 +22,17 @@ import {
 } from "@/db/schema";
 import { env } from "@/env";
 import {
+	type ComplianceExceptionInboxScope,
+	complianceExceptionInboxScopesFor,
+	complianceExceptionScopeCondition,
+} from "@/lib/approvals/inbox/compliance-exception-inbox";
+import {
 	currentRosterDigestManager,
 	currentRosterReportIds,
 } from "@/lib/bot-platform/current-roster-team";
 import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import { resolveBotTemporalContext } from "@/lib/bot-platform/temporal-context";
+import { awaitingComplianceExceptionDecision } from "@/lib/compliance/pending-compliance-exception";
 import { resolveEffectiveContractOnDay } from "@/lib/contracts/resolve-contract";
 import {
 	dateFromInstant,
@@ -44,7 +50,6 @@ import {
 import { createLogger } from "@/lib/logger";
 import { shiftDateBounds } from "@/lib/scheduling/shift-date";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
-import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
 import { sendAdaptiveCard } from "../bot-adapter";
 import { buildDailyDigestCard } from "../cards/daily-digest-card";
 import { getOrganizationPersonalConversations } from "../conversation-manager";
@@ -217,6 +222,10 @@ async function processTenantDigest(tenant: DigestTenant): Promise<number> {
 	}
 
 	const appUrl = env.APP_URL || "https://z8-time.app";
+	const complianceScopes = complianceExceptionInboxScopesFor({
+		organizationId: tenant.organizationId,
+		userIds: conversations.map((conv) => conv.userId),
+	});
 
 	const results = await Promise.allSettled(
 		conversations.map(async (conv) => {
@@ -247,6 +256,7 @@ async function processTenantDigest(tenant: DigestTenant): Promise<number> {
 					tenant.organizationId,
 					temporal.effectiveTimezone,
 					temporal.locale,
+					await complianceScopes.of({ userId: conv.userId, employeeId: emp.id }),
 				);
 
 				// Build and send card
@@ -285,13 +295,41 @@ export function digestTitleDate(date: Date, timezone: string, locale: string): s
 }
 
 /**
- * Build digest data for a specific manager
+ * The pending compliance exceptions this recipient decides in the Approval inbox the digest links
+ * to (#1977), in the scope that inbox gives them: the organization's with `manage Compliance`,
+ * else those of the employees they are an eligible manager of. Not a lapsed one: the inbox lists
+ * it as expired.
+ */
+async function countPendingComplianceExceptionsInScope(
+	scope: ComplianceExceptionInboxScope | null,
+	organizationId: string,
+	nowInstant: Instant,
+): Promise<number> {
+	const inScope = complianceExceptionScopeCondition(scope);
+	if (inScope.kind === "none") return 0;
+	const [result] = await db
+		.select({ count: sql<number>`count(*)` })
+		.from(complianceException)
+		.where(
+			and(
+				eq(complianceException.organizationId, organizationId),
+				awaitingComplianceExceptionDecision(nowInstant),
+				inScope.kind === "condition" ? inScope.sql : undefined,
+			),
+		);
+	return Number(result?.count) || 0;
+}
+
+/**
+ * Build digest data for a specific manager. `complianceExceptionScope` is the recipient's, from
+ * the run's `complianceExceptionInboxScopesFor`.
  */
 export async function buildDigestDataForManager(
 	managerId: string,
 	organizationId: string,
 	timezone: string,
-	locale: string = DEFAULT_LANGUAGE,
+	locale: string,
+	complianceExceptionScope: ComplianceExceptionInboxScope | null,
 	nowInstant: Instant = systemClock.nowInstant(),
 ): Promise<DailyDigestData> {
 	const today = plainDateAt(nowInstant, timezone);
@@ -310,6 +348,7 @@ export async function buildDigestDataForManager(
 		managedEmployeeIds,
 		[todayShiftsResult, tomorrowShiftsResult],
 		scheduledShifts,
+		pendingComplianceExceptions,
 	] = await Promise.all([
 		// Pending approvals for this manager
 		db.query.approvalRequest.findMany({
@@ -365,6 +404,7 @@ export async function buildDigestDataForManager(
 				endTime: true,
 			},
 		}),
+		countPendingComplianceExceptionsInScope(complianceExceptionScope, organizationId, nowInstant),
 	]);
 
 	// Process Phase 1 results
@@ -372,6 +412,8 @@ export async function buildDigestDataForManager(
 	const tomorrowCount = Number(tomorrowShiftsResult[0]?.count) || 0;
 	const openShiftsToday = todayCount > 0 ? todayCount : undefined;
 	const openShiftsTomorrow = tomorrowCount > 0 ? tomorrowCount : undefined;
+	const compliancePending =
+		pendingComplianceExceptions > 0 ? pendingComplianceExceptions : undefined;
 
 	// =========================================
 	// Phase 2: Queries that depend on managedEmployeeIds
@@ -388,10 +430,9 @@ export async function buildDigestDataForManager(
 		startTime: Date;
 		employeeName: string | null;
 	}> = [];
-	let compliancePending: number | undefined;
 
 	if (managedEmployeeIds.length > 0) {
-		const [absences, activeWorkPeriodsResult, [pendingExceptionsResult]] = await Promise.all([
+		const [absences, activeWorkPeriodsResult] = await Promise.all([
 			// Employees out today
 			db
 				.select({
@@ -441,17 +482,6 @@ export async function buildDigestDataForManager(
 						inArray(workPeriod.employeeId, managedEmployeeIds),
 					),
 				),
-			// Pending compliance exceptions
-			db
-				.select({ count: sql<number>`count(*)` })
-				.from(complianceException)
-				.where(
-					and(
-						eq(complianceException.organizationId, organizationId),
-						eq(complianceException.status, "pending"),
-						inArray(complianceException.employeeId, managedEmployeeIds),
-					),
-				),
 		]);
 
 		// Process Phase 2 results
@@ -481,9 +511,6 @@ export async function buildDigestDataForManager(
 				durationSoFar: `${Math.floor(totalMinutes / 60)}h ${totalMinutes % 60}m`,
 			};
 		});
-
-		const pendingCount = Number(pendingExceptionsResult?.count) || 0;
-		if (pendingCount > 0) compliancePending = pendingCount;
 	}
 
 	// =========================================

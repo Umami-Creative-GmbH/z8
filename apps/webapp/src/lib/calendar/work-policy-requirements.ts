@@ -445,7 +445,8 @@ async function buildContractDailyRequirements(params: {
 		if (contract.contributesZeroBalanceDelta) {
 			trustBasedDates.add(dateKey);
 		}
-		if (!contract.isEmployedOnDay) continue;
+		// An External Contractor day has no required time, not even from published shifts (#1996).
+		if (!contract.isEmployedOnDay || contract.engagementKind === "contractor") continue;
 
 		if (contract.contractType === "hourly" || contract.scheduleSource === "published_shifts") {
 			shiftDays.add(dateKey);

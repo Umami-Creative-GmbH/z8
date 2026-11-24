@@ -178,6 +178,7 @@
       "days-remaining": "days remaining",
       "description": "{year} vacation days",
       "expires-in": "Expires in {days} days",
+      "externalContractor": "Vacation does not apply to External Contractors.",
       "label-available": "Available",
       "label-pending": "Pending",
       "label-used": "Used",

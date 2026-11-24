@@ -1,6 +1,7 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
+import { ExternalContractorBadge } from "@/components/engagement/engagement-kind-ui";
 import { EmployeeLifecycleActions } from "@/components/organization/employee-lifecycle-actions";
 import { MissingRequiredValuesBadge } from "@/components/settings/custom-fields/custom-field-values-section";
 import { EmployeeEmailLabel } from "@/components/settings/kiosk/employee-email-label";
@@ -61,7 +62,12 @@ export function createEmployeeColumns({
 							size="sm"
 						/>
 						<div className="min-w-0 whitespace-normal">
-							<div className="break-words font-medium [overflow-wrap:anywhere]">{displayName}</div>
+							<div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+								<span className="break-words font-medium [overflow-wrap:anywhere]">
+									{displayName}
+								</span>
+								<ExternalContractorBadge engagementKind={row.original.engagementKind} />
+							</div>
 							<div className="break-words text-sm text-muted-foreground [overflow-wrap:anywhere]">
 								<EmployeeEmailLabel email={row.original.user.email} />
 							</div>

@@ -27,8 +27,9 @@ export interface PayrollCarriedDay extends PayrollSettledDayValues {
 
 /**
  * The employee-days a file of the period and employees carries, by the same day
- * attribution as the Days tab: every period day of each employee, with zero-minute days
- * too, so work added to such a day later is changed since settled, never paid silently.
+ * attribution as the Days tab: every period day of each employee with employee time, with
+ * zero-minute days too, so work added to such a day later is changed since settled, never
+ * paid silently.
  *
  * `collectedWork` is the work the file was built from under scoped collection (#322);
  * without it the work is read as the legacy export reads it.
@@ -47,11 +48,15 @@ export async function readExportCarriedDays(input: {
 	>[];
 }): Promise<PayrollCarriedDay[]> {
 	if (input.employeeIds.length === 0) return [];
-	const { sources } = await loadPeriodSources(input.organizationId, input.employeeIds, {
-		startDate: input.startDate,
-		endDate: input.endDate,
-		label: `${input.startDate} – ${input.endDate}`,
-	});
+	const { sources, payrollScope } = await loadPeriodSources(
+		input.organizationId,
+		input.employeeIds,
+		{
+			startDate: input.startDate,
+			endDate: input.endDate,
+			label: `${input.startDate} – ${input.endDate}`,
+		},
+	);
 	const rows = buildPayrollPeriodRows({
 		period: { startDate: input.startDate, endDate: input.endDate },
 		employees: sources.employees,
@@ -66,7 +71,11 @@ export async function readExportCarriedDays(input: {
 			: sources.work,
 		absences: sources.absences,
 	});
-	return carriedDaysOf(rows.employees);
+	// A day without employee time is no payroll day (#1997): the file pays nothing for a converted
+	// person's External Contractor days, so confirming it never settles them.
+	return carriedDaysOf(rows.employees).filter((day) =>
+		payrollScope.isPayrollDay(day.employeeId, day.date),
+	);
 }
 
 /**

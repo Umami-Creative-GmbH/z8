@@ -285,6 +285,49 @@ describe("readPeriod on PostgreSQL", () => {
 		]);
 	});
 
+	it("leaves an External Contractor's unavailability out of every payroll view (#1996)", async () => {
+		const { rows: category } = await admin.query(
+			`insert into absence_category
+			 (organization_id, type, name, color, requires_approval, counts_against_vacation, is_active, updated_at)
+			 values ($1, 'contractor_unavailability', 'Unavailable', '#94a3b8', false, false, true, now())
+			 returning id`,
+			[ORG],
+		);
+		for (const [date, state] of [
+			["2026-11-16", "approved"],
+			["2026-11-17", "pending"],
+		] as const) {
+			const { rows: record } = await admin.query(
+				`insert into time_record (id, organization_id, employee_id, record_kind, start_at, end_at,
+				   approval_state, origin, created_by, updated_at)
+				 values (gen_random_uuid(), $1, $2, 'absence', $3::date,
+				   ($3::date + interval '1 day' - interval '1 millisecond'), $4, 'manual', 't1893-owner', now())
+				 returning id`,
+				[ORG, ids.anna, date, state],
+			);
+			await admin.query(
+				`insert into time_record_absence (record_id, organization_id, record_kind, absence_category_id)
+				 values ($1, $2, 'absence', $3)`,
+				[record[0].id, ORG, category[0].id],
+			);
+		}
+
+		const read = await readPeriod(ORG, holder, november);
+
+		const unavailable = (name: string | undefined) => name === "Unavailable";
+		expect(read.absences.filter((row) => unavailable(row.categoryName))).toEqual([]);
+		// The Overview summary (tab and PDF) and its blockers come from the same sources.
+		expect(read.summary.absenceDetails.filter((row) => unavailable(row.categoryName))).toEqual([]);
+		expect(
+			read.summary.employees.flatMap((row) =>
+				row.absenceDaysByCategory.filter((absence) => unavailable(absence.categoryName)),
+			),
+		).toEqual([]);
+		expect(
+			read.blockers.filter((blocker) => blocker.type === "pending_absence").map((b) => b.date),
+		).toEqual(["2026-11-12"]);
+	});
+
 	it("never widens the grant's scope to requested employees outside it", async () => {
 		const read = await readPeriod(ORG, holder, november, {
 			employeeIds: [ids.anna, ids.ben, ids.foreign],

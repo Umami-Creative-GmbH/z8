@@ -760,6 +760,22 @@ personnel file officer grants; an admin must grant them again. Nor does it
 revive a kiosk badge (issue a new one) or a kiosk fob (the employee registers
 it again at a kiosk).
 
+### Engagement kind: employees and External Contractors
+
+Every employment period records its `engagement_kind` (`employee` or
+`contractor`, #1995); `employee.engagement_kind` is the kind in force today.
+Migration 0328 refuses any change of a period's kind and any change of the
+employee's kind while an open (or reopenable legacy) period has another kind,
+so historical stints keep their exact legal status. Converting contractor ↔
+employee is therefore a departure (scheduled, immediate or retrospective)
+followed by a rehire that names the new period's kind. A contractor period gets
+no employment terms and no work policy; a rehire as employee still requires
+them. Ending a contractor period runs the same Employment ending participants,
+clock-out, session revocation and `billing_sync` as for an employee, but opens
+no `payroll_reconciliation` review (payroll reconciliation is employee-only);
+`work_after_cutoff` reviews still apply. Active contractors count as billable
+seats like employees until their engagement ends.
+
 ### A membership that needs a rehire
 
 A former employee whose departure took effect can regain an approved membership

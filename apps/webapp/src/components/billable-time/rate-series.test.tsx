@@ -304,3 +304,43 @@ it("offers the cost wage as an explicit starting value and retains it after a sa
 	);
 	expect(actions.setBillable).not.toHaveBeenCalled();
 });
+
+describe("cost rate series without a cost rate (#2001)", () => {
+	it("says an External Contractor's margin uses their contractor rate", async () => {
+		actions.costHistory.mockResolvedValue({
+			success: true,
+			data: {
+				currency: "EUR",
+				periods: [],
+				suggestedWage: null,
+				externalContractor: true,
+			},
+		});
+		renderSeries("cost");
+
+		expect(
+			await screen.findByText(
+				"No cost rate yet. Margin uses this person's External Contractor rate for their contractor work; other work, and contractor work without a rate, shows as cost unknown.",
+			),
+		).toBeTruthy();
+	});
+
+	it("says an employee's margin shows as cost unknown", async () => {
+		actions.costHistory.mockResolvedValue({
+			success: true,
+			data: {
+				currency: "EUR",
+				periods: [],
+				suggestedWage: null,
+				externalContractor: false,
+			},
+		});
+		renderSeries("cost");
+
+		expect(
+			await screen.findByText(
+				"No cost rate yet. Margin for this employee's work shows as cost unknown.",
+			),
+		).toBeTruthy();
+	});
+});

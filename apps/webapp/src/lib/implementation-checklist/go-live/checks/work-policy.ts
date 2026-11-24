@@ -1,5 +1,9 @@
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
-import { loadEffectiveWorkPolicies } from "@/lib/work-policy/effective-work-policies";
+import {
+	loadWorkPolicyCoverage,
+	needsWorkPolicy,
+	type WorkPolicySubject,
+} from "@/lib/work-policy/effective-work-policies";
 import { hasWorkPolicySettingsInOrg } from "@/lib/work-policy/policy-queries";
 import type { GoLiveFailureGroup, GoLiveFixLink, GoLiveMember } from "../types";
 import type { GoLiveCheck } from "./types";
@@ -12,26 +16,27 @@ export const WORK_POLICY_ASSIGNMENTS_HREF = "/settings/work-policies?tab=work&vi
  * id never matches an employee assignment, so they resolve by their draft team,
  * then at organization level. The go-live rehearsal resolves them the same way.
  */
-export function workPolicySubject(member: GoLiveMember) {
+export function workPolicySubject(member: GoLiveMember): WorkPolicySubject {
 	return member.kind === "employee"
 		? { id: member.employeeId, teamId: member.primaryTeamId }
-		: { id: member.draftId, teamId: member.teamId };
+		: { id: member.draftId, teamId: member.teamId, engagementKind: member.engagementKind };
 }
 
 /**
  * Work policy (mandatory): every member has an effective work policy today,
  * resolved employee, then primary team (an invitee's draft team), then
  * organization. Members without one are grouped by team; with no policy at
- * any level, nobody in that team (or in no team) is covered.
+ * any level, nobody in that team (or in no team) is covered. No work policy
+ * applies to an External Contractor (#1996), so they never fail it.
  */
 export const workPolicyGoLiveCheck: GoLiveCheck = {
 	id: "work-policy",
 	itemId: "work-policies",
 	severity: "mandatory",
 	async run({ db, organizationId, asOf, group, fixLink }) {
-		const [configured, policies] = await Promise.all([
+		const [configured, coverage] = await Promise.all([
 			hasWorkPolicySettings(db, organizationId),
-			loadEffectiveWorkPolicies(db, {
+			loadWorkPolicyCoverage(db, {
 				organizationId,
 				employees: group.members.map(workPolicySubject),
 				at: asOf.instant,
@@ -39,7 +44,7 @@ export const workPolicyGoLiveCheck: GoLiveCheck = {
 		]);
 
 		const uncovered = Map.groupBy(
-			group.members.filter((member) => !policies.get(workPolicySubject(member).id)),
+			group.members.filter((member) => needsWorkPolicy(coverage, workPolicySubject(member).id)),
 			(member) => workPolicySubject(member).teamId,
 		);
 		const fix = fixLink(WORK_POLICY_ASSIGNMENTS_HREF, {

@@ -9,8 +9,9 @@ import {
 	loadWorkingDaysForEmployees,
 	loadWorkingWeekPeriodsForEmployees,
 } from "./absence-days-resolver";
-import { FIRST_WORKING_WEEK_YEAR } from "./prorated-allowance";
+import { FIRST_WORKING_WEEK_YEAR, outsideVacationInYear } from "./prorated-allowance";
 import {
+	loadEmployeeEmployments,
 	loadEmployeeVacationOverrides,
 	loadProratedVacationAllowances,
 } from "./prorated-allowance-store";
@@ -57,6 +58,13 @@ export interface VacationBalances {
 	balances: Map<string, VacationBalance>;
 	/** Each balance's adjustments by kind (#1105, #1106); same keys as `balances`. */
 	adjustments: Map<string, VacationAdjustmentSums>;
+	/**
+	 * Requested people outside vacation for the year (#1996, `outsideVacationInYear`): only ever
+	 * External Contractors, or External Contractors at some point without an employee day in the
+	 * year. They have no vacation that year: no policy coverage, configuration or balance, so no
+	 * coverage gap is reported for them, and no carry-over leaves or enters the year.
+	 */
+	externalContractors: Set<string>;
 }
 
 /**
@@ -97,7 +105,7 @@ export async function loadVacationBalances(
 		year,
 	});
 	const requestedIds = [...new Set(input.employeeIds)];
-	const employeeIds = requestedIds.length
+	const organizationEmployeeIds = requestedIds.length
 		? (
 				await database.query.employee.findMany({
 					where: and(
@@ -108,6 +116,17 @@ export async function loadVacationBalances(
 				})
 			).map((row) => row.id)
 		: [];
+	// An External Contractor has no vacation in a year without an employee day (#1996).
+	const externalContractors = new Set<string>();
+	if (organizationEmployeeIds.length > 0) {
+		for (const [employeeId, employments] of await loadEmployeeEmployments(database, {
+			organizationId,
+			employeeIds: organizationEmployeeIds,
+		})) {
+			if (outsideVacationInYear(employments, year)) externalContractors.add(employeeId);
+		}
+	}
+	const employeeIds = organizationEmployeeIds.filter((id) => !externalContractors.has(id));
 	if (employeeIds.length === 0) {
 		return {
 			policy,
@@ -117,6 +136,7 @@ export async function loadVacationBalances(
 			workingWeeks: new Map(),
 			balances: new Map(),
 			adjustments: new Map(),
+			externalContractors,
 		};
 	}
 
@@ -183,6 +203,7 @@ export async function loadVacationBalances(
 			workingWeeks,
 			balances: new Map(),
 			adjustments: new Map(),
+			externalContractors,
 		};
 	const overrides = await loadEmployeeVacationOverrides(database, {
 		organizationId,
@@ -298,5 +319,6 @@ export async function loadVacationBalances(
 		workingWeeks,
 		balances,
 		adjustments,
+		externalContractors,
 	};
 }

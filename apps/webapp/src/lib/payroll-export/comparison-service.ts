@@ -1,10 +1,11 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { and, eq, gte, inArray, isNull, lt, lte, or, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, lt, lte, ne, or, sql } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
 import { z } from "zod";
 import { db } from "@/db";
 import {
+	absenceCategory,
 	absenceChangeRequest,
 	auditLog,
 	employee,
@@ -12,7 +13,9 @@ import {
 	payrollExportBaseline,
 	payrollExportConfig,
 	timeRecord,
+	timeRecordAbsence,
 } from "@/db/schema";
+import { CONTRACTOR_UNAVAILABILITY_TYPE } from "@/lib/absences/category-rules";
 import {
 	dateFromInstant,
 	instantFromDate,
@@ -21,11 +24,13 @@ import {
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
+import { loadPayrollScope, type PayrollScope } from "@/lib/engagement/payroll-scope";
 import {
 	listDepartedEmployeesCoveredForExport,
 	listOrganizationDepartedEmployeesForExport,
 } from "@/lib/payroll-access/adjustment-coverage";
 import { readPayrollWorkCollectionFromSnapshot } from "@/lib/payroll-collection/payroll-work-collection-reader";
+import { absenceRecordDates } from "@/lib/payroll-workspace/absence-record-dates";
 import {
 	canReadScope,
 	inspectPayrollBaseline,
@@ -137,19 +142,25 @@ async function requestScope(
 		].sort();
 	// Explicit employee selection takes precedence for the export run. Work rows
 	// still apply the team and project filters independently in collection.
-	if (request.employeeIds !== undefined || !selected.length || !request.teamIds?.length)
-		return selected;
-	const rows = await database
-		.select({ id: employee.id })
-		.from(employee)
-		.where(
-			and(
-				eq(employee.organizationId, actor.organizationId),
-				inArray(employee.id, selected),
-				inArray(employee.teamId, request.teamIds),
-			),
-		);
-	return rows.map((row) => row.id).sort();
+	if (request.employeeIds === undefined && selected.length && request.teamIds?.length) {
+		const rows = await database
+			.select({ id: employee.id })
+			.from(employee)
+			.where(
+				and(
+					eq(employee.organizationId, actor.organizationId),
+					inArray(employee.id, selected),
+					inArray(employee.teamId, request.teamIds),
+				),
+			);
+		selected = rows.map((row) => row.id).sort();
+	}
+	// The export covers only people with employee time in the period (#1997), and so does its
+	// baseline: a comparison reads the same payroll scope.
+	return loadPayrollScope(database, actor.organizationId, selected, {
+		startDate: request.startDate,
+		endDate: request.endDate,
+	});
 }
 /** Metadata listing never defaults to another destination, period or scope. */
 export async function listCompatiblePayrollBaselines(
@@ -157,8 +168,9 @@ export async function listCompatiblePayrollBaselines(
 	database: PayrollComparisonDatabase = db,
 ): Promise<PayrollBaselineSummary[]> {
 	const actor = await requireBaselineActor(database);
-	const scope = await requestScope(actor, request, database);
-	if (!scope) return [];
+	const payroll = await requestScope(actor, request, database);
+	if (!payroll) return [];
+	const scope = [...payroll.employeeIds];
 	const rows = await listPayrollBaselines(request, database);
 	const selected: PayrollBaselineSummary[] = [];
 	for (const summary of rows) {
@@ -247,8 +259,9 @@ export async function preparePayrollComparison(
 	database: PayrollComparisonDatabase = db,
 ): Promise<PayrollComparisonPreparation> {
 	const actor = await requireBaselineActor(database);
-	const scope = await requestScope(actor, request, database);
-	if (!scope || !z.uuid().safeParse(request.baselineId).success) return { status: "unavailable" };
+	const payroll = await requestScope(actor, request, database);
+	if (!payroll || !z.uuid().safeParse(request.baselineId).success) return { status: "unavailable" };
+	const scope = [...payroll.employeeIds];
 	const baseline = await inspectPayrollBaseline(request.baselineId, database);
 	if (!baseline?.evidence) return { status: "unavailable" };
 	const evidence = baseline.evidence;
@@ -324,7 +337,7 @@ export async function preparePayrollComparison(
 				const absenceBlockers = await readPendingAbsenceBlockers(
 					reader,
 					actor.organizationId,
-					scope,
+					payroll,
 					evidence.period,
 				);
 				if (absenceBlockers.length)
@@ -542,13 +555,18 @@ export async function cleanupExpiredPayrollComparisons(database: PayrollComparis
 		.returning({ id: payrollComparisonResult.id });
 }
 
-/** Pending absence decisions are unresolved payroll input, including proposals that move into the period. */
+/**
+ * Pending absence decisions are unresolved payroll input, including proposals that move into the
+ * period. Only employee days are payroll input (#1997): an External Contractor's unavailability and
+ * a pending absence on a converted person's contractor days block nothing.
+ */
 async function readPendingAbsenceBlockers(
 	reader: Reader,
 	organizationId: string,
-	scope: string[],
+	payroll: PayrollScope,
 	period: PayrollBaselineEvidence["period"],
 ) {
+	const scope = [...payroll.employeeIds];
 	if (!scope.length) return [];
 	const start = dateFromInstant(
 		parsePlainDate(period.startDate).toZonedDateTime("UTC").toInstant(),
@@ -556,21 +574,49 @@ async function readPendingAbsenceBlockers(
 	const end = dateFromInstant(
 		parsePlainDate(period.endDate).add({ days: 1 }).toZonedDateTime("UTC").toInstant(),
 	);
-	const pending = await reader
-		.select({ employeeId: timeRecord.employeeId })
+	const pendingRows = await reader
+		.select({
+			employeeId: timeRecord.employeeId,
+			startAt: timeRecord.startAt,
+			endAt: timeRecord.endAt,
+			startPeriod: timeRecordAbsence.startPeriod,
+			endPeriod: timeRecordAbsence.endPeriod,
+		})
 		.from(timeRecord)
+		.innerJoin(
+			timeRecordAbsence,
+			and(
+				eq(timeRecordAbsence.recordId, timeRecord.id),
+				eq(timeRecordAbsence.organizationId, organizationId),
+			),
+		)
+		.innerJoin(
+			absenceCategory,
+			and(
+				eq(absenceCategory.id, timeRecordAbsence.absenceCategoryId),
+				eq(absenceCategory.organizationId, organizationId),
+			),
+		)
 		.where(
 			and(
 				eq(timeRecord.organizationId, organizationId),
 				inArray(timeRecord.employeeId, scope),
 				eq(timeRecord.recordKind, "absence"),
 				inArray(timeRecord.approvalState, ["pending", "draft"]),
+				ne(absenceCategory.type, CONTRACTOR_UNAVAILABILITY_TYPE),
 				lt(timeRecord.startAt, end),
 				or(isNull(timeRecord.endAt), gte(timeRecord.endAt, start)),
 			),
 		);
-	const changes = await reader
-		.select({ employeeId: absenceChangeRequest.employeeId })
+	const pending = pendingRows.filter(
+		(row) => payroll.employeeTime.employeeDaysOf(row.employeeId, absenceRecordDates(row)) !== null,
+	);
+	const changeRows = await reader
+		.select({
+			employeeId: absenceChangeRequest.employeeId,
+			original: absenceChangeRequest.original,
+			proposed: absenceChangeRequest.proposed,
+		})
 		.from(absenceChangeRequest)
 		.where(
 			and(
@@ -584,6 +630,18 @@ async function readPendingAbsenceBlockers(
  )`,
 			),
 		);
+	// A change blocks when its original or proposed dates reach an employee day; an original without
+	// dates stays unresolved input, as the query above keeps it.
+	const reachesEmployeeDay = (employeeId: string, dates: unknown, withoutDates: boolean) => {
+		const { startDate, endDate } = (dates ?? {}) as { startDate?: unknown; endDate?: unknown };
+		if (typeof startDate !== "string" || typeof endDate !== "string") return withoutDates;
+		return payroll.employeeTime.employeeDaysOf(employeeId, { startDate, endDate }) !== null;
+	};
+	const changes = changeRows.filter(
+		(row) =>
+			reachesEmployeeDay(row.employeeId, row.original, true) ||
+			reachesEmployeeDay(row.employeeId, row.proposed, false),
+	);
 	return [
 		...pending.map((row) => ({
 			employeeId: row.employeeId,

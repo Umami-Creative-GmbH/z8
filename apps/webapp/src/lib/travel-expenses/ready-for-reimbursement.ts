@@ -127,7 +127,7 @@ function reportLabel(account: SettlementAccount): string {
 		case "standalone":
 			return title.description?.trim() || "Untitled receipt";
 		case "legacy_claim":
-			return "Legacy claim";
+			return "Earlier claim";
 	}
 }
 

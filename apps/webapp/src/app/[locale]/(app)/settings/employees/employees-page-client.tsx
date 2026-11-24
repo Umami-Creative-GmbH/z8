@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useOrganization } from "@/hooks/use-organization";
+import { type EngagementFilter, isEngagementFilter } from "@/lib/engagement/engagement-filter";
 import {
 	meetsSettingsAccess,
 	type SettingsAccess,
@@ -227,6 +228,7 @@ function EmployeeAdministration(props: EmployeeAdministrationProps) {
 					<InviteMemberDialog
 						organizationId={props.organizationId}
 						organizationName={people.organizationName}
+						organizationToday={people.organizationToday}
 						settingsAccess={props.settingsAccess}
 						open={inviteDialogOpen}
 						onOpenChange={setInviteDialogOpen}
@@ -244,6 +246,8 @@ function EmployeeDirectoryFilters({
 	onRoleChange,
 	status,
 	onStatusChange,
+	engagement,
+	onEngagementChange,
 }: {
 	searchInput: string;
 	onSearchInputChange(value: string): void;
@@ -251,6 +255,8 @@ function EmployeeDirectoryFilters({
 	onRoleChange(value: string): void;
 	status: EmployeeDirectoryStatus;
 	onStatusChange(value: EmployeeDirectoryStatus): void;
+	engagement: EngagementFilter;
+	onEngagementChange(value: EngagementFilter): void;
 }) {
 	const { t } = useTranslate();
 
@@ -291,13 +297,27 @@ function EmployeeDirectoryFilters({
 						{ value: "all", label: t("settings.employees.directory.statuses.all", "All Status") },
 					],
 				},
+				// All | Employees | External Contractors (#1995).
+				{
+					key: "engagement",
+					label: t("common:engagement.filter.label", "Engagement"),
+					options: [
+						{ value: "all", label: t("common:engagement.filter.all", "All") },
+						{ value: "employee", label: t("common:engagement.filter.employees", "Employees") },
+						{
+							value: "contractor",
+							label: t("common:engagement.filter.contractors", "External Contractors"),
+						},
+					],
+				},
 			]}
-			filterValues={{ role, status }}
-			onFilterChange={(key, value) =>
-				key === "role"
-					? onRoleChange(value)
-					: onStatusChange(normalizeEmployeeDirectoryStatus(value, "current"))
-			}
+			filterValues={{ role, status, engagement }}
+			onFilterChange={(key, value) => {
+				if (key === "role") onRoleChange(value);
+				else if (key === "engagement")
+					onEngagementChange(isEngagementFilter(value) ? value : "all");
+				else onStatusChange(normalizeEmployeeDirectoryStatus(value, "current"));
+			}}
 		/>
 	);
 }
@@ -319,9 +339,11 @@ function EmployeeDirectoryTab(props: {
 		hasEmployee,
 		role,
 		status,
+		engagement,
 		setSearch,
 		setRole,
 		setStatus,
+		setEngagement,
 		pagination,
 		setPagination,
 		pageCount,
@@ -430,6 +452,8 @@ function EmployeeDirectoryTab(props: {
 					onRoleChange={setRole}
 					status={status}
 					onStatusChange={setStatus}
+					engagement={engagement}
+					onEngagementChange={setEngagement}
 				/>
 
 				{isError ? (

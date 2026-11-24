@@ -15,7 +15,7 @@ export function payoutMinutes(input: { hours: number; minutes: number }): number
 /**
  * Why an overtime payout may not be recorded, or null when it may (#993). The
  * amount must be positive, its day no later than today in the employee's
- * timezone and outside a closed month, and the amount no more than the work
+ * timezone, an employee day (#1997) and outside a closed month, and the amount no more than the work
  * balance at the end of its day as computed now. Nor may it leave the balance
  * below zero at the end of the day of any later uncancelled payout. Later
  * corrections to work may still leave the balance negative; that is accepted.
@@ -37,10 +37,16 @@ export function refuseOvertimePayout(input: {
 	openingBalanceDay?: PlainDate | null;
 	/** The closed month (`YYYY-MM`) of the employee that `day` lies in, if any (#762). */
 	closedMonth?: string | null;
+	/**
+	 * Whether `day` is a day of an External Contractor stint (#1997): payroll never carries a
+	 * payout on it, so it would lower the balance without ever being paid.
+	 */
+	externalContractorDay?: boolean;
 }): Extract<
 	BalanceAdjustmentErrorCode,
 	| "amount_not_positive"
 	| "future_day"
+	| "external_contractor_day"
 	| "month_closed"
 	| "before_opening_balance"
 	| "exceeds_balance"
@@ -48,6 +54,7 @@ export function refuseOvertimePayout(input: {
 > | null {
 	if (!(input.amountMinutes > 0)) return "amount_not_positive";
 	if (comparePlainDates(input.day, input.today) > 0) return "future_day";
+	if (input.externalContractorDay) return "external_contractor_day";
 	if (input.closedMonth) return "month_closed";
 	if (input.openingBalanceDay && comparePlainDates(input.day, input.openingBalanceDay) <= 0) {
 		return "before_opening_balance";

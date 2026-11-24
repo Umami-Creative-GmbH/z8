@@ -682,6 +682,82 @@
       }
     }
   },
+  "contractorStatement": {
+    "basis": {
+      "daily": "Tagessatz",
+      "hourly": "Stundensatz"
+    },
+    "byProject": "Nach Projekt",
+    "columns": {
+      "amount": "Betrag",
+      "basis": "Vergütung",
+      "currency": "Währung",
+      "date": "Datum",
+      "dayUnitRule": "Tagesregel",
+      "end": "Ende",
+      "project": "Projekt",
+      "rate": "Satz",
+      "rowType": "Zeilenart",
+      "start": "Beginn",
+      "task": "Aufgabe",
+      "time": "Uhrzeit (lokal)",
+      "unit": "Einheit",
+      "units": "Einheiten",
+      "workedMinutes": "Gearbeitete Minuten"
+    },
+    "company": "Firma",
+    "contractor": "Dienstleister",
+    "contractorNumber": "Dienstleisternummer",
+    "empty": "Keine abgeschlossene Arbeit als Externer Dienstleister in diesem Zeitraum.",
+    "errors": {
+      "failed": "Der Nachweis konnte nicht erstellt werden",
+      "invalidPeriod": "Wählen Sie einen Zeitraum von höchstens einem Jahr, dessen erster Tag nicht nach dem letzten liegt.",
+      "notAllowed": "Sie können nur Ihre eigenen Nachweise herunterladen.",
+      "notContractor": "Diese Person war in diesem Zeitraum nicht als Externer Dienstleister tätig.",
+      "notFound": "Diese Person wurde in Ihrer Organisation nicht gefunden."
+    },
+    "export": {
+      "adminDescription": "Laden Sie herunter, was dieser Externe Dienstleister gearbeitet hat und was seine Sätze dafür ergeben, um seine Rechnung zu prüfen. Ein Prüfnachweis, keine Rechnung.",
+      "csv": "CSV für Tabellen",
+      "download": "Nachweis herunterladen",
+      "downloaded": "Nachweis heruntergeladen",
+      "format": "Format",
+      "from": "Von",
+      "fromRequired": "Wählen Sie den ersten Tag",
+      "pdf": "PDF",
+      "selfDescription": "Laden Sie Ihre erfasste Arbeit und den Preis nach Ihren vereinbarten Sätzen herunter, um Ihre Rechnung zu erstellen oder zu prüfen. Ein Prüfnachweis, keine Rechnung.",
+      "title": "Zeit- und Honorarnachweis",
+      "to": "Bis",
+      "toBeforeFrom": "Der letzte Tag darf nicht vor dem ersten liegen",
+      "toRequired": "Wählen Sie den letzten Tag"
+    },
+    "generated": "Erstellt (UTC)",
+    "noProject": "Kein Projekt",
+    "noRate": "Kein Satz vereinbart",
+    "notice": "Nur zur Prüfung. Kein Rechnungs- oder Gutschriftsdokument: Z8 stellt keine Rechnungen aus. Der Nachweis listet die in Z8 erfasste Arbeit und ihren Preis nach den vereinbarten Sätzen, damit eine Rechnung daran geprüft werden kann.",
+    "organization": "Organisation",
+    "page": "Seite",
+    "period": "Zeitraum",
+    "referenceCode": "Bestell- oder Kostenstellenreferenz",
+    "rows": {
+      "day": "Tag",
+      "total": "Summe",
+      "unpriced": "Ohne Satz",
+      "work": "Arbeit"
+    },
+    "times": "Tage sind die lokalen Kalendertage des Dienstleisters; Uhrzeiten werden mit dem bei der Arbeit erfassten UTC-Versatz angezeigt.",
+    "title": "Zeit- und Honorarnachweis für Externe Dienstleister",
+    "totals": "Summen",
+    "units": {
+      "days": "Tage",
+      "hours": "Stunden"
+    },
+    "unpricedNotice": "Für manche Arbeit galt an ihrem Tag kein vereinbarter Satz. Sie ist ohne Betrag aufgeführt und nicht in den Summen enthalten.",
+    "vatId": "USt-IdNr.",
+    "workedHours": "Gearbeitete Stunden",
+    "approvedOnly": "Nur freigegebene Arbeit ist aufgeführt. Arbeit, deren Freigabe aussteht, kommt hinzu, sobald sie freigegeben ist.",
+    "awaitingApprovalExcluded": "Nicht enthaltene Arbeitszeiträume mit ausstehender Freigabe: {count}"
+  },
   "drivingLicence": {
     "applyingInterval": "Wird angewendet…",
     "applyInterval": "Intervalländerung anwenden",
@@ -1103,6 +1179,20 @@
     "team": "Team",
     "totalEmployees": "{count} Mitarbeiter",
     "tryDifferentSearch": "Versuchen Sie, Ihre Suche oder Filter anzupassen"
+  },
+  "engagement": {
+    "absenceRefusals": {
+      "contractorRecordsUnavailabilityOnly": "An diesen Tagen arbeitet die Person als Externer Dienstleister: Es kann nur Nichtverfügbarkeit erfasst werden.",
+      "spansEngagementChange": "Diese Tage umfassen einen Wechsel zwischen Anstellung und Tätigkeit als Externer Dienstleister. Erfassen Sie jeden Teil separat.",
+      "unavailabilityIsForContractors": "An diesen Tagen ist die Person angestellt: Nichtverfügbarkeit gibt es nur für Externe Dienstleister."
+    },
+    "externalContractor": "Externer Dienstleister",
+    "filter": {
+      "all": "Alle",
+      "contractors": "Externe Dienstleister",
+      "employees": "Mitarbeiter",
+      "label": "Beschäftigungsart"
+    }
   },
   "errors": {
     "failedToLoad": "Daten konnten nicht geladen werden",
@@ -1781,6 +1871,11 @@
         "message": "Ihre Gehaltsabrechnung für {payPeriod} wurde mit Ihnen geteilt.",
         "title": "Neue Gehaltsabrechnung in Ihrer Personalakte"
       },
+      "plannedEngagementEndNeedsReview": {
+        "notScheduled": "Das geplante Auftragsende von {name} ({plannedEndDate}) konnte nicht als Austrittsdatum geplant werden. Planen Sie es auf der Mitarbeiterseite.",
+        "passed": "Das geplante Auftragsende von {name} ({plannedEndDate}) war beim Beitritt bereits vorbei, deshalb ist das Austrittsdatum heute ({leavingDate}). Ändern Sie es, falls der Auftrag weiterläuft.",
+        "title": "Ein geplantes Auftragsende muss geprüft werden"
+      },
       "policyForgottenClockOutReminder": {
         "message": "Sie haben die erforderlichen Stunden für {day} um {endTime} ({timezone}) erreicht. Stempeln Sie aus, wenn Sie Ihre Arbeit beendet haben."
       },
@@ -1976,6 +2071,11 @@
         "message": "Bleiben Sie gesund – trinken Sie etwas Wasser",
         "snooze": "Heute pausieren",
         "title": "Zeit, etwas zu trinken!"
+      },
+      "invitationContractorTermsNeedReview": {
+        "title": "Der Satz eines Externen Dienstleisters muss geprüft werden",
+        "message": "Der Satz aus der Einladung von {name} konnte beim Beitritt nicht übernommen werden. Legen Sie ihn in der Vergütung Externer Dienstleister fest; bis dahin bleibt die Arbeit unbepreist.",
+        "termsExistMessage": "Der Satz aus der Einladung von {name} wurde beim Beitritt nicht übernommen: Für das Engagement gibt es bereits einen Satz, der weiter gilt. Prüfen Sie in der Vergütung Externer Dienstleister, ob er geändert werden soll."
       }
     },
     "countFailed": "Anzahl ungelesener Elemente nicht verfügbar",
@@ -2701,6 +2801,25 @@
             "project": "Das Projekt, für das der Satz gilt; leer für Ihre gesamte Arbeit.",
             "summary": "Die Sätze, die die Organisation Kunden für Ihre Arbeit in Rechnung stellt."
           },
+          "contractorCompensationTerms": {
+            "capAtOneDay": "Ob ein Tag höchstens als ein Tag zählt, wie lange auch gearbeitet wurde.",
+            "compensationBasis": "Ob Sie nach Stunden (hourly) oder nach Tagen (daily) vergütet werden.",
+            "currency": "Die Währung des Satzes.",
+            "dayUnitRule": "Wie die Arbeit eines Tages bei einem Tagessatz zählt: jede Arbeit als ganzer Tag (any_work_full_day), halbe oder ganze Tage nach einer Schwelle (half_and_full_day) oder anteilig an einem Standardtag (prorated_by_standard_day). Leer bei einem Stundensatz.",
+            "effectiveFrom": "Der erste Tag, an dem diese Konditionen gelten (JJJJ-MM-TT).",
+            "effectiveTo": "Der erste Tag, an dem diese Konditionen nicht mehr gelten (JJJJ-MM-TT); leer, solange sie gelten.",
+            "employmentPeriodId": "Der Zeitraum, zu dem diese Konditionen gehören (seine ID in employment_periods).",
+            "halfDayThresholdMinutes": "Bis zu so vielen Minuten Arbeit zählt ein Tag als halber Tag; mehr zählt als ganzer Tag.",
+            "rate": "Ihr Satz pro Stunde oder pro Tag.",
+            "standardDayMinutes": "Die Minuten eines Standardtags, an denen die Arbeit eines Tages gemessen wird.",
+            "summary": "Ihr Stunden- oder Tagessatz als Externer Dienstleister im Zeitverlauf."
+          },
+          "contractorDetails": {
+            "companyName": "Das Unternehmen, über das Sie beauftragt werden.",
+            "referenceCode": "Die Bestell- oder Kostenstellenreferenz, mit der Ihre Rechnungen abgeglichen werden.",
+            "summary": "Ihre Vertragsangaben als Externer Dienstleister.",
+            "vatId": "Ihre USt-IdNr. oder Steuernummer."
+          },
           "costCenters": {
             "code": "Der Code der Kostenstelle.",
             "costCenter": "Der Name der Kostenstelle.",
@@ -2767,6 +2886,7 @@
             "contractType": "Ihre Vertragsart.",
             "email": "Die E-Mail-Adresse Ihres Benutzerkontos.",
             "endDate": "Wann Ihr Beschäftigungsverhältnis endete; leer, solange es fortbesteht.",
+            "engagementKind": "Ob Sie heute als Mitarbeiter (employee) oder als Externer Dienstleister (contractor) für die Organisation tätig sind.",
             "firstName": "Ihr Vorname in Ihrer Personalakte.",
             "gender": "Ihr Geschlecht.",
             "isActive": "Gibt an, ob Ihre Personalakte aktiv ist.",
@@ -2786,10 +2906,11 @@
           },
           "employmentPeriods": {
             "endedAt": "Wann der Zeitraum endete; leer, solange er offen ist.",
+            "engagementKind": "Ob Sie in diesem Zeitraum als Mitarbeiter (employee) oder als Externer Dienstleister (contractor) tätig waren.",
             "startedAt": "Wann der Zeitraum begann.",
             "startProvenance": "Ursprung des Beginns, zum Beispiel eine Einstellung oder Wiedereinstellung.",
             "status": "Ob der Zeitraum offen oder geschlossen ist.",
-            "summary": "Jeder Zeitraum, in dem Sie bei der Organisation angestellt waren."
+            "summary": "Jeder Zeitraum, in dem Sie für die Organisation tätig waren, angestellt oder als Externer Dienstleister."
           },
           "employmentTerms": {
             "changeReason": "Warum die Bedingungen festgelegt oder geändert wurden.",
@@ -3627,5 +3748,13 @@
   },
   "worksCouncil": {
     "loadingLabel": "Betriebsrat wird geladen"
+  },
+  "contractorCompensation": {
+    "dayUnitRules": {
+      "anyWorkFullDay": "Jeder Tag mit Arbeit zählt als voller Tag",
+      "halfAndFullDay": "Halber Tag bis {minutes} Min., darüber voller Tag",
+      "proratedCapped": "Anteilig nach einem {minutes}-Minuten-Tag, höchstens ein Tag",
+      "proratedUncapped": "Anteilig nach einem {minutes}-Minuten-Tag, ohne Obergrenze"
+    }
   }
 }

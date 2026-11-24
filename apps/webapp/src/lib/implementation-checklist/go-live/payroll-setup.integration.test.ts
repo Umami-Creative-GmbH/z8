@@ -317,6 +317,7 @@ describe("payroll setup go-live check (PostgreSQL)", () => {
 			draftId: randomUUID(),
 			email: "new@example.test",
 			teamId: null,
+			engagementKind: "employee",
 			displayName: "New Hire",
 		};
 		const group: GoLiveGroup = { ...roster, members: [...roster.members, invitee] };
@@ -347,6 +348,52 @@ describe("payroll setup go-live check (PostgreSQL)", () => {
 			wageTypeMappings: "present",
 			employmentTerms: "not-applicable",
 			personnelIdentifier: { status: "not-applicable" },
+		});
+	});
+
+	it("never asks an External Contractor for employment terms or a personnel identifier (#1997)", async () => {
+		const { organizationId, owner } = await createOrganizationWithOwner();
+		await confirmedTerms(organizationId, owner);
+		const anna = await seedNamed(organizationId, "Anna");
+		await confirmedTerms(organizationId, anna);
+		const ben = await seedNamed(organizationId, "Ben");
+		const contractor = await fixture.seedEmployee({ organizationId, engagementKind: "contractor" });
+		await activeTarget(
+			organizationId,
+			await identifierField(organizationId, [
+				[owner.employeeId, "LG-1"],
+				[anna.employeeId, "LG-7"],
+				[ben.employeeId, "LG-8"],
+				// An export never carries the External Contractor, so nobody is merged with Anna.
+				[contractor.employeeId, "LG-7"],
+			]),
+		);
+		await wageTypeMapping(organizationId);
+		const group = await resolveGoLiveGroup(db, organizationId, AS_OF);
+		const contractorMember = group.members.find(
+			(member) => member.kind === "employee" && member.employeeId === contractor.employeeId,
+		);
+		if (!contractorMember) throw new Error("The External Contractor is not in the group");
+
+		const result = await run(organizationId);
+
+		if (result.outcome === "unavailable") throw new Error("unexpected");
+		expect(result.failures).toEqual([]);
+		// The control: an employee without terms is still warned about.
+		expect(memberIds(result.warnings.flatMap((warning) => warning.members))).toEqual([
+			ben.employeeId,
+		]);
+		expect(result.notes).toContainEqual(
+			expect.objectContaining({
+				key: "settings.implementationChecklist.goLive.payrollSetup.externalContractorsSkipped",
+				params: { count: 1 },
+			}),
+		);
+		await expect(
+			readPayrollPrerequisites(db, { organizationId, asOf: AS_OF, member: contractorMember }),
+		).resolves.toMatchObject({
+			employmentTerms: "external-contractor",
+			personnelIdentifier: { status: "external-contractor" },
 		});
 	});
 

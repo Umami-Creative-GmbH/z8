@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { getManagerDailyBriefingFromSources } from "../get-manager-daily-briefing";
+import type { ApprovalInboxItem, ApprovalInboxType } from "@/lib/approvals/inbox/types";
+import { briefingInboxApproval } from "../testing/briefing-approval.test-fixture";
 import type { BriefingApproval } from "../types";
 
 describe("getManagerDailyBriefingFromSources", () => {
@@ -133,12 +135,12 @@ describe("getManagerDailyBriefingFromSources", () => {
 		});
 		expect(sources.getApprovals).toHaveBeenCalledWith({
 			organizationId: "org-1",
-			approverId: "manager-1",
 			employeeIds: ["emp-1"],
+			viewer: { id: "manager-1", role: "manager" },
 		});
 	});
 
-	it("loads all approvers for admin briefing approvals", async () => {
+	it("reads an admin's approvals as the admin's own Approval inbox shows them", async () => {
 		const sources = createSources();
 		await getManagerDailyBriefingFromSources({
 			organizationId: "org-1",
@@ -150,10 +152,410 @@ describe("getManagerDailyBriefingFromSources", () => {
 
 		expect(sources.getApprovals).toHaveBeenCalledWith({
 			organizationId: "org-1",
-			approverId: "admin-1",
 			employeeIds: ["emp-1"],
-			includeAllApprovers: true,
+			viewer: { id: "admin-1", role: "admin" },
 		});
+	});
+
+	it("lists every unified inbox type, period submissions and compliance exceptions included", async () => {
+		// In the inbox's own order: the high-priority exception before the normal period submission.
+		const sources = createSources({
+			getApprovals: vi.fn().mockResolvedValue([
+				createApproval({
+					id: "exception-1",
+					type: "compliance_exception",
+					title: "ArbZG exception: Rest Period",
+					detail: "Customer go-live",
+					priority: "high",
+					requesterId: "emp-1",
+					requesterName: "Ada Lovelace",
+					capabilities: { canBulkApprove: false, singleDecisionOnly: true },
+				}),
+				createApproval({
+					id: "period-1",
+					type: "period_submission",
+					title: "Period submission",
+					detail: "April 2026",
+					requesterId: "emp-1",
+					requesterName: "Ada Lovelace",
+				}),
+			]),
+		});
+
+		const briefing = await getManagerDailyBriefingFromSources({
+			organizationId: "org-1",
+			currentEmployee: { id: "manager-1", role: "manager" },
+			now: parseInstant("2026-04-28T09:20:00.000+02:00"),
+			timezone: "Europe/Berlin",
+			sources,
+		});
+
+		expect(briefing.summary.openApprovals).toBe(2);
+		expect(briefing.sections.approvals.items).toEqual([
+			expect.objectContaining({
+				id: "approval:exception-1",
+				approvalId: "exception-1",
+				approvalType: "compliance_exception",
+				entityId: "entity-exception-1",
+				severity: "high",
+				title: "Ada Lovelace: ArbZG exception: Rest Period",
+				summary: "Customer go-live",
+				requesterName: "Ada Lovelace",
+				href: "/approvals/inbox?types=compliance_exception",
+			}),
+			expect.objectContaining({
+				id: "approval:period-1",
+				approvalType: "period_submission",
+				severity: "warning",
+				title: "Ada Lovelace: Period submission",
+				summary: "April 2026",
+				href: "/approvals/inbox?types=period_submission",
+			}),
+		]);
+	});
+
+	it("carries the inbox item's detail-review requirement", async () => {
+		const sources = createSources({
+			getApprovals: vi.fn().mockResolvedValue([
+				createApproval({
+					id: "report-1",
+					type: "travel_expense_report",
+					requesterId: "emp-1",
+					requesterName: "Ada Lovelace",
+					capabilities: { canApprove: false, requiresDetailReview: true },
+				}),
+				createApproval({ id: "absence-1", requesterId: "emp-1", requesterName: "Ada Lovelace" }),
+			]),
+		});
+
+		const briefing = await getManagerDailyBriefingFromSources({
+			organizationId: "org-1",
+			currentEmployee: { id: "manager-1", role: "manager" },
+			now: parseInstant("2026-04-28T09:20:00.000+02:00"),
+			timezone: "Europe/Berlin",
+			sources,
+		});
+
+		const byApprovalId = new Map(
+			briefing.sections.approvals.items.map((item) => [item.approvalId, item]),
+		);
+		expect(byApprovalId.get("report-1")?.requiresDetailReview).toBe(true);
+		expect(byApprovalId.get("absence-1")?.requiresDetailReview).toBeUndefined();
+	});
+
+	it("sends an ArbZG compliance exception to the inbox's detail review, never a one-click approve", async () => {
+		// A statutory waiver is decided one at a time, with its type, duration and validity window
+		// in view (#1977): the briefing's one-line row shows none of them.
+		const sources = createSources({
+			getApprovals: vi.fn().mockResolvedValue([
+				createApproval({
+					id: "exception-1",
+					type: "compliance_exception",
+					requesterId: "emp-1",
+					requesterName: "Ada Lovelace",
+					capabilities: { canApprove: true, singleDecisionOnly: true },
+				}),
+			]),
+		});
+
+		const briefing = await getManagerDailyBriefingFromSources({
+			organizationId: "org-1",
+			currentEmployee: { id: "manager-1", role: "manager" },
+			now: parseInstant("2026-04-28T09:20:00.000+02:00"),
+			timezone: "Europe/Berlin",
+			sources,
+		});
+
+		expect(briefing.sections.approvals.items[0]).toMatchObject({
+			approvalId: "exception-1",
+			requiresDetailReview: true,
+		});
+	});
+
+	it("carries the inbox item's localized summary texts for the panel to translate", async () => {
+		const localized = {
+			title: { key: "approvals:approvals.periodSubmission.title", fallback: "Period submission" },
+			subtitle: {
+				key: "approvals:approvals.canonicalRequester",
+				fallback: "Requested by {name}",
+				params: { name: "Ada Lovelace" },
+			},
+			detail: { key: "approvals:approvals.periodSubmission.hours", fallback: "{hours} hours" },
+		};
+		const localizedApproval = createApproval({
+			id: "period-1",
+			type: "period_submission",
+			requesterId: "emp-1",
+			requesterName: "Ada Lovelace",
+		});
+		localizedApproval.summary.localized = localized;
+		const sources = createSources({
+			getApprovals: vi
+				.fn()
+				.mockResolvedValue([
+					localizedApproval,
+					createApproval({ id: "absence-1", requesterId: "emp-1", requesterName: "Ada Lovelace" }),
+				]),
+		});
+
+		const briefing = await getManagerDailyBriefingFromSources({
+			organizationId: "org-1",
+			currentEmployee: { id: "manager-1", role: "manager" },
+			now: parseInstant("2026-04-28T09:20:00.000+02:00"),
+			timezone: "Europe/Berlin",
+			sources,
+		});
+
+		const byApprovalId = new Map(
+			briefing.sections.approvals.items.map((item) => [item.approvalId, item]),
+		);
+		expect(byApprovalId.get("period-1")?.localized).toEqual(localized);
+		expect(byApprovalId.get("absence-1")?.localized).toBeUndefined();
+	});
+
+	it("counts every pending approval of the briefing's employees, not only those it shows", async () => {
+		const shown = [
+			createApproval({ id: "approval-1", requesterId: "emp-1", requesterName: "Ada Lovelace" }),
+			createApproval({ id: "approval-2", requesterId: "emp-1", requesterName: "Ada Lovelace" }),
+		];
+		const sources = createSources({
+			getApprovals: vi.fn().mockResolvedValue(Object.assign(shown, { totalCount: 40 })),
+		});
+
+		const briefing = await getManagerDailyBriefingFromSources({
+			organizationId: "org-1",
+			currentEmployee: { id: "manager-1", role: "manager" },
+			now: parseInstant("2026-04-28T09:20:00.000+02:00"),
+			timezone: "Europe/Berlin",
+			sources,
+		});
+
+		expect(briefing.sections.approvals.items).toHaveLength(2);
+		expect(briefing.summary.openApprovals).toBe(40);
+	});
+
+	it("keeps the inbox's own order (risk, priority, age), never re-sorting by title", async () => {
+		// The inbox put Zoe first (a high-risk staffing shortfall); a title sort would put Ada first.
+		const sources = createSources({
+			getApprovals: vi
+				.fn()
+				.mockResolvedValue([
+					createApproval({ id: "zoe", requesterId: "emp-1", requesterName: "Zoe Zander" }),
+					createApproval({ id: "ada", requesterId: "emp-1", requesterName: "Ada Lovelace" }),
+				]),
+		});
+
+		const briefing = await getManagerDailyBriefingFromSources({
+			organizationId: "org-1",
+			currentEmployee: { id: "manager-1", role: "manager" },
+			now: parseInstant("2026-04-28T09:20:00.000+02:00"),
+			timezone: "Europe/Berlin",
+			sources,
+		});
+
+		expect(briefing.sections.approvals.items.map((item) => item.approvalId)).toEqual([
+			"zoe",
+			"ada",
+		]);
+	});
+
+	it("never counts fewer open approvals than it lists, even when a count read failed", async () => {
+		const shown = [
+			createApproval({ id: "approval-1", requesterId: "emp-1", requesterName: "Ada Lovelace" }),
+			createApproval({ id: "approval-2", requesterId: "emp-1", requesterName: "Ada Lovelace" }),
+			createApproval({ id: "approval-3", requesterId: "emp-1", requesterName: "Ada Lovelace" }),
+		];
+		// The list read succeeded but the failed count read came back as 0.
+		const sources = createSources({
+			getApprovals: vi.fn().mockResolvedValue(Object.assign(shown, { totalCount: 0 })),
+		});
+
+		const briefing = await getManagerDailyBriefingFromSources({
+			organizationId: "org-1",
+			currentEmployee: { id: "manager-1", role: "manager" },
+			now: parseInstant("2026-04-28T09:20:00.000+02:00"),
+			timezone: "Europe/Berlin",
+			sources,
+		});
+
+		expect(briefing.summary.openApprovals).toBe(3);
+	});
+
+	it("names the approval types the inbox could not list, so the count never meets a silent empty list", async () => {
+		const sources = createSources({
+			getApprovals: vi
+				.fn()
+				.mockResolvedValue(
+					Object.assign([], { totalCount: 3, unavailableTypes: ["travel_expense_claim"] }),
+				),
+		});
+
+		const briefing = await getManagerDailyBriefingFromSources({
+			organizationId: "org-1",
+			currentEmployee: { id: "manager-1", role: "manager" },
+			now: parseInstant("2026-04-28T09:20:00.000+02:00"),
+			timezone: "Europe/Berlin",
+			sources,
+		});
+
+		expect(briefing.summary.openApprovals).toBe(3);
+		expect(briefing.sections.approvals.items).toEqual([]);
+		expect(briefing.sections.approvals.unavailableTypes).toEqual(["travel_expense_claim"]);
+	});
+
+	it("names the approval types the inbox listed but could not count, apart from those it could not list", async () => {
+		const shown = [
+			createApproval({ id: "approval-1", requesterId: "emp-1", requesterName: "Ada Lovelace" }),
+		];
+		const sources = createSources({
+			getApprovals: vi.fn().mockResolvedValue(
+				Object.assign(shown, {
+					totalCount: 0,
+					unavailableTypes: ["period_submission"],
+					uncountedTypes: ["absence_entry"],
+				}),
+			),
+		});
+
+		const briefing = await getManagerDailyBriefingFromSources({
+			organizationId: "org-1",
+			currentEmployee: { id: "manager-1", role: "manager" },
+			now: parseInstant("2026-04-28T09:20:00.000+02:00"),
+			timezone: "Europe/Berlin",
+			sources,
+		});
+
+		expect(briefing.summary.openApprovals).toBe(1);
+		expect(briefing.sections.approvals.unavailableTypes).toEqual(["period_submission"]);
+		expect(briefing.sections.approvals.uncountedTypes).toEqual(["absence_entry"]);
+	});
+
+	it("asks only for the approval counts when the caller shows no approval (#1980)", async () => {
+		const sources = createSources({
+			getApprovals: vi.fn().mockResolvedValue(Object.assign([], { totalCount: 7 })),
+		});
+
+		const briefing = await getManagerDailyBriefingFromSources({
+			organizationId: "org-1",
+			currentEmployee: { id: "manager-1", role: "manager" },
+			now: parseInstant("2026-04-28T09:20:00.000+02:00"),
+			timezone: "Europe/Berlin",
+			sources,
+			approvals: "counts",
+		});
+
+		expect(sources.getApprovals).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			employeeIds: ["emp-1"],
+			viewer: { id: "manager-1", role: "manager" },
+			countsOnly: true,
+		});
+		expect(briefing.summary.openApprovals).toBe(7);
+		expect(briefing.summary.openApprovalsAtLeast).toBeUndefined();
+	});
+
+	it("marks the open approvals a lower bound when an approval type was not listed, not counted, or the section failed", async () => {
+		async function summaryFor(getApprovals: ReturnType<typeof vi.fn>) {
+			const briefing = await getManagerDailyBriefingFromSources({
+				organizationId: "org-1",
+				currentEmployee: { id: "manager-1", role: "manager" },
+				now: parseInstant("2026-04-28T09:20:00.000+02:00"),
+				timezone: "Europe/Berlin",
+				sources: createSources({ getApprovals }),
+			});
+			return briefing.summary;
+		}
+
+		expect(
+			await summaryFor(
+				vi
+					.fn()
+					.mockResolvedValue(
+						Object.assign([], { totalCount: 3, unavailableTypes: ["travel_expense_claim"] }),
+					),
+			),
+		).toMatchObject({ openApprovals: 3, openApprovalsAtLeast: true });
+		expect(
+			await summaryFor(
+				vi
+					.fn()
+					.mockResolvedValue(
+						Object.assign([], { totalCount: 2, uncountedTypes: ["absence_entry"] }),
+					),
+			),
+		).toMatchObject({ openApprovals: 2, openApprovalsAtLeast: true });
+		// The whole section failed: no count is known at all, so it is unavailable, not "0+".
+		expect(
+			await summaryFor(vi.fn().mockRejectedValue(new Error("approval query failed"))),
+		).toMatchObject({
+			openApprovals: 0,
+			openApprovalsAtLeast: true,
+			openApprovalsUnavailable: true,
+		});
+		expect(
+			(
+				await summaryFor(
+					vi
+						.fn()
+						.mockResolvedValue(
+							Object.assign([], { totalCount: 2, uncountedTypes: ["absence_entry"] }),
+						),
+				)
+			).openApprovalsUnavailable,
+		).toBeUndefined();
+		expect(
+			(await summaryFor(vi.fn().mockResolvedValue(Object.assign([], { totalCount: 2 }))))
+				.openApprovalsAtLeast,
+		).toBeUndefined();
+	});
+
+	it("names no unavailable approval types when the inbox listed every one", async () => {
+		const briefing = await getManagerDailyBriefingFromSources({
+			organizationId: "org-1",
+			currentEmployee: { id: "manager-1", role: "manager" },
+			now: parseInstant("2026-04-28T09:20:00.000+02:00"),
+			timezone: "Europe/Berlin",
+			sources: createSources(),
+		});
+
+		expect(briefing.sections.approvals.unavailableTypes).toBeUndefined();
+		expect(briefing.sections.approvals.uncountedTypes).toBeUndefined();
+	});
+
+	it("carries the inbox item's approve and reject capabilities", async () => {
+		const sources = createSources({
+			getApprovals: vi.fn().mockResolvedValue([
+				createApproval({
+					id: "correction-1",
+					type: "time_entry",
+					requesterId: "emp-1",
+					requesterName: "Ada Lovelace",
+					capabilities: { canApprove: false, canReject: false },
+				}),
+				createApproval({
+					id: "blocked-1",
+					requesterId: "emp-1",
+					requesterName: "Ada Lovelace",
+					capabilities: { canApprove: false, canReject: true },
+				}),
+				createApproval({ id: "absence-1", requesterId: "emp-1", requesterName: "Ada Lovelace" }),
+			]),
+		});
+
+		const briefing = await getManagerDailyBriefingFromSources({
+			organizationId: "org-1",
+			currentEmployee: { id: "manager-1", role: "manager" },
+			now: parseInstant("2026-04-28T09:20:00.000+02:00"),
+			timezone: "Europe/Berlin",
+			sources,
+		});
+
+		const byApprovalId = new Map(
+			briefing.sections.approvals.items.map((item) => [item.approvalId, item]),
+		);
+		expect(byApprovalId.get("correction-1")).toMatchObject({ canApprove: false, canReject: false });
+		expect(byApprovalId.get("blocked-1")).toMatchObject({ canApprove: false, canReject: true });
+		expect(byApprovalId.get("absence-1")).toMatchObject({ canApprove: true, canReject: true });
 	});
 
 	it("does not surface manager coverage risks for subareas outside scoped shifts", async () => {
@@ -258,6 +660,7 @@ describe("getManagerDailyBriefingFromSources", () => {
 					id: "approval-own",
 					requesterId: "admin-1",
 					requesterName: "Alan Turing",
+					capabilities: { canApprove: false, canReject: false, ownRequest: true },
 				}),
 				createApproval({ id: "approval-1", requesterId: "emp-1", requesterName: "Ada Lovelace" }),
 			]),
@@ -324,20 +727,30 @@ function createApproval({
 	id,
 	requesterId,
 	requesterName,
+	type = "absence_entry",
+	title = "Vacation",
+	detail = `${requesterName} requested absence`,
+	priority = "normal",
+	capabilities = {},
 }: {
 	id: string;
 	requesterId: string;
 	requesterName: string;
+	type?: ApprovalInboxType;
+	title?: string;
+	detail?: string;
+	priority?: ApprovalInboxItem["triage"]["priority"];
+	capabilities?: Partial<ApprovalInboxItem["capabilities"]>;
 }): BriefingApproval {
-	return {
+	return briefingInboxApproval({
 		id,
-		approvalType: "absence_entry",
-		entityId: `entity-${id}`,
-		typeName: "absence",
+		type,
+		title,
+		detail,
+		priority,
+		capabilities,
 		requester: { id: requesterId, name: requesterName },
-		priority: "normal",
-		display: { summary: `${requesterName} requested absence` },
-	};
+	});
 }
 
 function createSources(overrides = {}) {

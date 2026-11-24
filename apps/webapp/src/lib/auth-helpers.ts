@@ -14,7 +14,10 @@ import { organizationForDisplay } from "@/lib/auth/organization-display";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import { getRequestSession } from "@/lib/auth/request-session";
 import { type AppAbility, defineAbilityFor, type PrincipalContext } from "@/lib/authorization";
-import { loadOrganizationPrincipalContext } from "@/lib/authorization/principal-loader";
+import {
+	loadOrganizationPrincipalContext,
+	platformAdminPrincipalContext,
+} from "@/lib/authorization/principal-loader";
 import { runtime } from "@/lib/effect/runtime";
 import { ManagerService } from "@/lib/effect/services/manager.service";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
@@ -602,18 +605,7 @@ export async function getPrincipalContext(): Promise<PrincipalContext | null> {
 		return null;
 
 	// Platform admin gets full access
-	if (isPlatformAdmin) {
-		return {
-			userId,
-			isPlatformAdmin: true,
-			activeOrganizationId,
-			orgMembership: null,
-			employee: null,
-			permissions: { orgWide: null, byTeamId: new Map() },
-			managedEmployeeIds: [],
-			customRoles: [],
-		};
-	}
+	if (isPlatformAdmin) return platformAdminPrincipalContext(userId, activeOrganizationId);
 
 	// No active org = limited context
 	if (!activeOrganizationId) {

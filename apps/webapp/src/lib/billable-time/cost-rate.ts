@@ -2,6 +2,12 @@ import { Temporal } from "temporal-polyfill";
 import type { Instant, PlainDate } from "@/lib/datetime/temporal-core";
 import { offsetMinutesToTimeZoneId } from "@/lib/datetime/temporal-format";
 import { workDayOf } from "./applicable-rate";
+import {
+	type ContractorCosts,
+	contractorCostOf,
+	hasContractorCost,
+	NO_CONTRACTOR_COSTS,
+} from "./contractor-cost";
 import { type ElapsedInterval, splitElapsedTime } from "./elapsed-split";
 import {
 	type AccruedAmount,
@@ -83,6 +89,8 @@ export function resolveCostRate(
 }
 
 export interface CostedWorkPeriod {
+	/** The work period; contractor cost (#1999) is looked up by it. */
+	id?: string;
 	employeeId: string;
 	startedAt: Instant;
 	endedAt: Instant;
@@ -92,8 +100,17 @@ export interface CostedWorkPeriod {
 	durationMinutes: number;
 }
 
+/**
+ * A share costed from the contractor's terms (#1999): its part of the day's
+ * contractor fee, when no explicit cost rate is in effect on that day.
+ */
+export interface ContractorShareCost {
+	kind: "contractor";
+	date: PlainDate;
+}
+
 export interface CostShare {
-	cost: CostRate;
+	cost: CostRate | ContractorShareCost;
 	start: Instant;
 	end: Instant;
 	durationMs: number;
@@ -146,28 +163,79 @@ export function costRateIntervals(
 	return intervals;
 }
 
+const MS_PER_HOUR = BigInt(3_600_000);
+
+/**
+ * `costRateIntervals`, with the days that have no cost rate but a contractor
+ * cost (#1999) as one interval each.
+ */
+function costIntervals(
+	work: CostedWorkPeriod,
+	rates: readonly CostRatePeriod[],
+	contractor: ContractorCosts,
+): ElapsedInterval<CostRate | ContractorShareCost>[] {
+	const workId = work.id;
+	if (workId === undefined || contractor.byWorkDay.size === 0) {
+		return costRateIntervals(work, rates);
+	}
+	const timeZone = offsetMinutesToTimeZoneId(work.startOffsetMinutes);
+	return costRateIntervals(work, rates).flatMap((interval) => {
+		if (interval.value.kind === "known" || interval.start === null || interval.end === null) {
+			return [interval];
+		}
+		// An unknown interval covers whole local days: cost each one on its own.
+		const days: ElapsedInterval<CostRate | ContractorShareCost>[] = [];
+		const end = interval.end;
+		for (
+			let date = workDayOf(interval.start, work.startOffsetMinutes);
+			Temporal.Instant.compare(date.toZonedDateTime({ timeZone }).toInstant(), end) < 0;
+			date = date.add({ days: 1 })
+		) {
+			days.push({
+				start: date.toZonedDateTime({ timeZone }).toInstant(),
+				end: date.add({ days: 1 }).toZonedDateTime({ timeZone }).toInstant(),
+				value: hasContractorCost(contractor, workId, date) ? { kind: "contractor", date } : UNKNOWN,
+			});
+		}
+		return days;
+	});
+}
+
 /**
  * The cost of one completed work period, the counterpart of
  * `priceWorkPeriod`: the recorded duration is split by elapsed time across the
  * cost rates of the local days it spans, and each share is costed at its rate.
- * Shares without a cost rate add nothing and are counted as unknown.
+ *
+ * An explicit cost rate always wins (Billable Time ADR 0001). On a local day
+ * without one, an External Contractor's work is costed at its part of the
+ * day's contractor fee from `contractor` (#1999). Shares with neither add
+ * nothing and are counted as unknown.
  */
 export function costWorkPeriod(
 	work: CostedWorkPeriod,
 	rates: readonly CostRatePeriod[],
+	contractor: ContractorCosts = NO_CONTRACTOR_COSTS,
 ): WorkPeriodCost {
 	const shares = splitElapsedTime(
 		{ start: work.startedAt, end: work.endedAt, durationMinutes: work.durationMinutes },
-		costRateIntervals(work, rates),
+		costIntervals(work, rates, contractor),
 	).map((share): CostShare => {
-		const cost = share.value ?? UNKNOWN;
-		return {
-			cost,
-			start: share.start,
-			end: share.end,
-			durationMs: share.durationMs,
-			accrued: cost.kind === "known" ? accrueAmount(cost.rate, share.durationMs) : BigInt(0),
-		};
+		const value = share.value ?? UNKNOWN;
+		const base = { start: share.start, end: share.end, durationMs: share.durationMs };
+		if (value.kind === "known") {
+			return { ...base, cost: value, accrued: accrueAmount(value.rate, share.durationMs) };
+		}
+		const cents =
+			value.kind === "contractor" && work.id !== undefined
+				? contractorCostOf(contractor, {
+						workId: work.id,
+						date: value.date,
+						start: share.start,
+						end: share.end,
+					})
+				: null;
+		if (cents === null) return { ...base, cost: UNKNOWN, accrued: BigInt(0) };
+		return { ...base, cost: value, accrued: cents * MS_PER_HOUR };
 	});
 	const accrued = addAccruedAmounts(shares.map((share) => share.accrued));
 	const unknownMs = shares

@@ -33,7 +33,8 @@ export interface CostRateSeriesProps {
  * One employee's cost rate history, loaded and changed through the Billable
  * Time server actions (#899). Owners and admins only; the actions authorize
  * every read and write. For an hourly employee with a wage in effect, the form
- * offers that wage as a starting value; nothing copies it.
+ * offers that wage as a starting value; nothing copies it. Without a cost rate,
+ * the empty state says whether External Contractor terms fill in (#2001).
  */
 export function CostRateSeries({
 	employeeId,
@@ -65,10 +66,18 @@ export function CostRateSeries({
 					"Cost rates could not be loaded",
 				),
 			}}
-			emptyText={t(
-				"settings.billableTime.costRates.empty",
-				"No cost rate yet. Margin for this employee's work shows as cost unknown.",
-			)}
+			emptyText={(history) =>
+				// An External Contractor's terms cost their contractor work without a cost rate (#1999).
+				history?.externalContractor
+					? t(
+							"settings.billableTime.costRates.emptyContractor",
+							"No cost rate yet. Margin uses this person's External Contractor rate for their contractor work; other work, and contractor work without a rate, shows as cost unknown.",
+						)
+					: t(
+							"settings.billableTime.costRates.empty",
+							"No cost rate yet. Margin for this employee's work shows as cost unknown.",
+						)
+			}
 			setRateHelp={t(
 				"settings.billableTime.costRates.setRateHelp",
 				"The new cost rate applies from this date until the next change. It never changes the wage, payroll or hourly earnings.",

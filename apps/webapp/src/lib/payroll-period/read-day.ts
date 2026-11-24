@@ -4,7 +4,14 @@ import { and, asc, eq, gt, inArray, isNull, lt, ne, or } from "drizzle-orm";
 import { organization } from "@/db/auth-schema";
 import { employee, timeRecord, timeRecordBreak, userSettings } from "@/db/schema";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
-import { dateFromInstant, instantFromDate, parsePlainDate } from "@/lib/datetime/temporal-core";
+import {
+	compareInstants,
+	dateFromInstant,
+	type Instant,
+	instantFromDate,
+	parsePlainDate,
+} from "@/lib/datetime/temporal-core";
+import { loadPayrollScope } from "@/lib/engagement/payroll-scope";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { resolvePeriodEmployeeIds } from "./read-period";
 import type { PayrollPeriodActor, PayrollPeriodDayDetail, PayrollPeriodDayRecord } from "./types";
@@ -12,9 +19,10 @@ import type { PayrollPeriodActor, PayrollPeriodDayDetail, PayrollPeriodDayRecord
 /**
  * The records behind one employee-day (#1894): every work and break record that
  * touches the employee's local day, with local times in the employee's zone. Read only;
- * rejected records are left out. Null when the employee is outside the actor's payroll
- * access grant scope (employees who left during or after the day included) or the
- * organization.
+ * rejected records are left out, and so is External Contractor time (#1997): a record
+ * across a conversion shows its employee part, and a contractor day shows no records.
+ * Null when the employee is outside the actor's payroll access grant scope (employees
+ * who left during or after the day included) or the organization.
  */
 export async function readPeriodDay(
 	organizationId: string,
@@ -50,6 +58,12 @@ async function readPeriodDayForEmployee(
 
 	const timezone = resolveEffectiveTimezone(person.userTimezone, person.organizationTimezone);
 	const day = localDayRange(query.date, timezone);
+	// Payroll shows employee time only (#1997): none of an External Contractor stint, and of a
+	// record across a conversion only its employee part. A day without any is an empty day.
+	const scope = await loadPayrollScope(db, organizationId, [person.id], {
+		startDate: query.date,
+		endDate: query.date,
+	});
 	const rows = await db
 		.select({
 			id: timeRecord.id,
@@ -80,30 +94,41 @@ async function readPeriodDayForEmployee(
 		)
 		.orderBy(asc(timeRecord.startAt), asc(timeRecord.id));
 
-	const localTime = (value: Date) =>
-		instantFromDate(value)
-			.toZonedDateTimeISO(timezone)
-			.toPlainDateTime()
-			.toString({ smallestUnit: "minute" });
+	const localTime = (value: Instant) =>
+		value.toZonedDateTimeISO(timezone).toPlainDateTime().toString({ smallestUnit: "minute" });
 
 	return {
 		employeeId: person.id,
 		date: query.date,
 		timezone,
-		records: rows.flatMap((row): PayrollPeriodDayRecord[] =>
-			(row.kind === "work" || row.kind === "break") && row.approvalState !== "rejected"
-				? [
-						{
-							id: row.id,
-							kind: row.kind,
-							approvalState: row.approvalState,
-							start: localTime(row.startAt),
-							end: row.endAt ? localTime(row.endAt) : null,
-							durationMinutes: row.endAt ? row.durationMinutes : null,
-							isPaid: row.kind === "break" ? (row.isPaid ?? false) : null,
-						},
-					]
-				: [],
-		),
+		records: rows.flatMap((row): PayrollPeriodDayRecord[] => {
+			if ((row.kind !== "work" && row.kind !== "break") || row.approvalState === "rejected") {
+				return [];
+			}
+			const shown = scope.clipRecord(person.id, {
+				startAt: instantFromDate(row.startAt),
+				endAt: row.endAt ? instantFromDate(row.endAt) : null,
+				durationMinutes: row.durationMinutes,
+			});
+			// The employee part of a record may lie outside the day: the day shows what touches it.
+			if (
+				!shown ||
+				compareInstants(shown.startAt, day.endExclusive) >= 0 ||
+				(shown.endAt !== null && compareInstants(shown.endAt, day.start) <= 0)
+			) {
+				return [];
+			}
+			return [
+				{
+					id: row.id,
+					kind: row.kind,
+					approvalState: row.approvalState,
+					start: localTime(shown.startAt),
+					end: shown.endAt ? localTime(shown.endAt) : null,
+					durationMinutes: shown.endAt ? shown.durationMinutes : null,
+					isPaid: row.kind === "break" ? (row.isPaid ?? false) : null,
+				},
+			];
+		}),
 	};
 }

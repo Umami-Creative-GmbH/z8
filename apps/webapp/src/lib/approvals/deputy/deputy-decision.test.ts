@@ -2,13 +2,31 @@ import { describe, expect, it } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import type { ApprovalWorkflowSnapshot } from "../workflow/ports";
 import {
+	DEPUTY_DECISION_ENTITY_TYPES,
 	decidedEarlierStage,
 	decideDeputyRight,
 	deputyActorLabel,
 	deputyDecisionRefusalError,
 	isDeputyCardAssignmentPending,
+	isDeputyDecisionEntityType,
 	isDeputyDecisionRefusal,
 } from "./deputy-decision";
+
+describe("the approval kinds a covering deputy decides", () => {
+	it("are absences, time approvals and travel expense reports only", () => {
+		expect([...DEPUTY_DECISION_ENTITY_TYPES].sort()).toEqual([
+			"absence_change_request",
+			"absence_entry",
+			"time_entry",
+			"travel_expense_report",
+		]);
+	});
+
+	it("never include ArbZG compliance exceptions (#1977, Approvals ADR-0005)", () => {
+		expect(DEPUTY_DECISION_ENTITY_TYPES).not.toContain("compliance_exception");
+		expect(isDeputyDecisionEntityType("compliance_exception")).toBe(false);
+	});
+});
 
 const X = "approver-x";
 const Y = "deputy-y";

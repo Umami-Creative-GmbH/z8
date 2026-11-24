@@ -1,6 +1,8 @@
+import { COMPLIANCE_EXCEPTION_INBOX_PATH } from "@/lib/approvals/inbox/compliance-exception-inbox-path";
 import { and, eq, gte, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { complianceException, workPolicyViolation } from "@/db/schema";
+import { awaitingComplianceExceptionDecision } from "@/lib/compliance/pending-compliance-exception";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import {
 	loadStatutoryReviewInbox,
@@ -25,6 +27,7 @@ export interface WorkforceComplianceSnapshot {
 	overtimeViolations: number;
 	pendingExceptions: number;
 	latestViolationAt: string | null;
+	latestPendingExceptionAt: string | null;
 	/**
 	 * Open statutory findings and acknowledgements per domain (#1994), or null when the statutory
 	 * monitors could not be read at all. Omitted: no statutory data (older callers).
@@ -104,18 +107,17 @@ export function deriveWorkforceComplianceSection(
 	const occurredAt =
 		snapshot.evaluatedAt ?? snapshot.latestViolationAt ?? systemClock.nowInstant().toString();
 	const statutory = statutoryParts(snapshot);
+	const hasViolations =
+		snapshot.restPeriodViolations > 0 ||
+		snapshot.generalPolicyViolations > 0 ||
+		snapshot.overtimeViolations > 0;
 	const status =
 		snapshot.restPeriodViolations > 0 || snapshot.generalPolicyViolations > 0 || statutory.critical
 			? "critical"
 			: snapshot.overtimeViolations > 0 || snapshot.pendingExceptions > 0 || statutory.warning
 				? "warning"
 				: "healthy";
-	const policyStatus: "critical" | "warning" | "healthy" =
-		snapshot.restPeriodViolations > 0 || snapshot.generalPolicyViolations > 0
-			? "critical"
-			: snapshot.overtimeViolations > 0 || snapshot.pendingExceptions > 0
-				? "warning"
-				: "healthy";
+	const policyCritical = snapshot.restPeriodViolations > 0 || snapshot.generalPolicyViolations > 0;
 
 	return {
 		card: {
@@ -144,19 +146,19 @@ export function deriveWorkforceComplianceSection(
 			],
 			updatedAt: snapshot.latestViolationAt ?? occurredAt,
 			primaryLink: {
-				label: text("compliance.commandCenter.links.openComplianceSettings"),
-				href: "/settings/compliance",
+				label: text("compliance.commandCenter.links.reviewComplianceExceptions"),
+				href: COMPLIANCE_EXCEPTION_INBOX_PATH,
 			},
 			...(statutory.links.length > 0 ? { links: statutory.links } : {}),
 		},
-		recentCriticalEvents:
-			policyStatus === "healthy"
-				? []
-				: [
+		recentCriticalEvents: [
+			...(hasViolations
+				? [
 						{
 							id: "workforce-violations",
 							sectionKey: "workforceCompliance",
-							severity: policyStatus,
+							// Statutory findings never raise this event's severity: they stay out of it.
+							severity: policyCritical ? "critical" : "warning",
 							title: text("compliance.commandCenter.events.workforceFindings.title"),
 							description: text("compliance.commandCenter.events.workforceFindings.description", {
 								restPeriodViolations: snapshot.restPeriodViolations,
@@ -164,12 +166,33 @@ export function deriveWorkforceComplianceSection(
 								overtimeViolations: snapshot.overtimeViolations,
 							}),
 							occurredAt: snapshot.latestViolationAt ?? occurredAt,
+							// Violations are reviewed and acknowledged in the work-policy compliance view (#1977).
 							primaryLink: {
-								label: text("compliance.commandCenter.links.inspectCompliance"),
-								href: "/settings/compliance",
+								label: text("compliance.commandCenter.links.reviewPolicyViolations"),
+								href: "/settings/work-policies?tab=work&view=compliance",
 							},
 						} satisfies ComplianceCriticalEvent,
-					],
+					]
+				: []),
+			...(snapshot.pendingExceptions > 0
+				? [
+						{
+							id: "workforce-pending-exceptions",
+							sectionKey: "workforceCompliance",
+							severity: "warning",
+							title: text("compliance.commandCenter.events.pendingExceptions.title"),
+							description: text("compliance.commandCenter.events.pendingExceptions.description", {
+								count: snapshot.pendingExceptions,
+							}),
+							occurredAt: snapshot.latestPendingExceptionAt ?? occurredAt,
+							primaryLink: {
+								label: text("compliance.commandCenter.links.reviewComplianceExceptions"),
+								href: COMPLIANCE_EXCEPTION_INBOX_PATH,
+							},
+						} satisfies ComplianceCriticalEvent,
+					]
+				: []),
+		],
 	};
 }
 
@@ -218,17 +241,22 @@ export async function getWorkforceComplianceSection(
 			)
 			.groupBy(workPolicyViolation.violationType),
 		db
-			.select({ count: sql<number>`count(*)::int` })
+			.select({
+				count: sql<number>`count(*)::int`,
+				latestPendingExceptionAt: sql<Date | null>`max(${complianceException.createdAt})`,
+			})
 			.from(complianceException)
 			.where(
 				and(
 					eq(complianceException.organizationId, organizationId),
 					gte(complianceException.createdAt, sevenDaysAgo),
-					eq(complianceException.status, "pending"),
+					// A lapsed exception is expired, as in the Approval inbox this links to (#1977).
+					awaitingComplianceExceptionDecision(now),
 				),
 			),
 		loadStatutorySummaries(organizationId, now),
 	]);
+	const latestPendingExceptionAt = pendingExceptionRows[0]?.latestPendingExceptionAt;
 	let latestViolationAtMs: number | null = null;
 	for (const row of violationRows) {
 		if (!(row.latestViolationAt instanceof Date)) {
@@ -255,6 +283,8 @@ export async function getWorkforceComplianceSection(
 		pendingExceptions: pendingExceptionRows[0]?.count ?? 0,
 		latestViolationAt:
 			latestViolationAtMs === null ? null : new Date(latestViolationAtMs).toISOString(),
+		latestPendingExceptionAt:
+			latestPendingExceptionAt == null ? null : new Date(latestPendingExceptionAt).toISOString(),
 		statutory,
 		evaluatedAt: now.toString(),
 	};
