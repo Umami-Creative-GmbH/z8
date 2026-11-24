@@ -12,7 +12,7 @@ import type {
 } from "./types";
 import type { EmployeeVacationPolicyPeriod } from "./vacation-policy-history";
 import type { VacationPolicy } from "./vacation-policy-store";
-import type { WorkingWeekPeriod } from "./working-days";
+import type { NotEmployedPeriod, ScheduledWorkingWeek, WorkingWeekPeriod } from "./working-days";
 
 /**
  * An employee's policy for a year combined from their dated policy periods: the reference
@@ -29,7 +29,7 @@ export function resolveWeightedVacationPolicy(
 		year: number;
 		/**
 		 * The employee's working days per week over the year. Days without a period, and every day
-		 * before the working-week rollout, count five days.
+		 * before the working-week rollout, count five days; `notEmployed` days have no rate.
 		 */
 		workingWeeks?: readonly WorkingWeekPeriod[];
 	},
@@ -101,6 +101,8 @@ export function resolveWeightedVacationPolicy(
 		annual += Number(policy.defaultAnnualDays) * share;
 		minimum += Number(policy.statutoryMinimumDays) * share;
 		for (const rate of workingWeekPeriodsBetween(workingWeeks, { from, until })) {
+			// Days without employment earn nothing and are no configuration error (#2009).
+			if (rate.notEmployed) continue;
 			if (rate.workingDaysPerWeek === 0) {
 				conflicts.push({
 					startDate: rate.startDate,
@@ -142,7 +144,7 @@ export function resolveWeightedVacationPolicy(
 /**
  * The working days per week from `startDate` through `endDate`, split where the working week
  * changes. Days the working weeks do not cover count five days; years before the working-week
- * rollout always count five days.
+ * rollout always count five days. `notEmployed` days stay `notEmployed`.
  */
 export function workingWeeksWithin(
 	workingWeeks: readonly WorkingWeekPeriod[],
@@ -158,25 +160,23 @@ export function workingWeeksWithin(
 
 /**
  * The working days per week over `[from, until)`, split where the working week changes. Days the
- * working weeks do not cover count five days.
+ * working weeks do not cover count five days; `notEmployed` days stay `notEmployed`.
  */
 function workingWeekPeriodsBetween(
 	workingWeeks: readonly WorkingWeekPeriod[],
 	range: { from: Temporal.PlainDate; until: Temporal.PlainDate },
 ): WorkingWeekPeriod[] {
 	const rates: WorkingWeekPeriod[] = [];
-	const push = (
-		from: Temporal.PlainDate,
-		until: Temporal.PlainDate,
-		workingDaysPerWeek: number,
-		workPolicyId: string | null,
-	) => {
+	const fiveDays: UndatedWorkingWeekPeriod = {
+		workingDaysPerWeek: REFERENCE_WORKING_DAYS_PER_WEEK,
+		workPolicyId: null,
+	};
+	const push = (from: Temporal.PlainDate, until: Temporal.PlainDate, week: UndatedWorkingWeekPeriod) => {
 		if (Temporal.PlainDate.compare(from, until) >= 0) return;
 		rates.push({
+			...week,
 			startDate: from.toString(),
 			endDate: until.subtract({ days: 1 }).toString(),
-			workingDaysPerWeek,
-			workPolicyId,
 		});
 	};
 	let cursor = range.from;
@@ -190,13 +190,18 @@ function workingWeekPeriodsBetween(
 			range.until,
 		);
 		if (Temporal.PlainDate.compare(weekFrom, weekUntil) >= 0) continue;
-		push(cursor, weekFrom, REFERENCE_WORKING_DAYS_PER_WEEK, null);
-		push(weekFrom, weekUntil, week.workingDaysPerWeek, week.workPolicyId);
+		push(cursor, weekFrom, fiveDays);
+		push(weekFrom, weekUntil, week);
 		cursor = weekUntil;
 	}
-	push(cursor, range.until, REFERENCE_WORKING_DAYS_PER_WEEK, null);
+	push(cursor, range.until, fiveDays);
 	return rates;
 }
+
+/** A working-week period without its dates. */
+type UndatedWorkingWeekPeriod =
+	| Omit<ScheduledWorkingWeek, "startDate" | "endDate">
+	| Omit<NotEmployedPeriod, "startDate" | "endDate">;
 
 function latest(left: Temporal.PlainDate, right: Temporal.PlainDate) {
 	return Temporal.PlainDate.compare(left, right) >= 0 ? left : right;
