@@ -38,7 +38,8 @@ function stub(name: string) {
 		<section
 			data-testid={name}
 			data-resolved={String(props.includeResolved ?? props.includeAcknowledged)}
-			data-empty={String(props.showWhenEmpty ?? false)}
+			// "unset": the tab did not say, and the section decides itself (it may show an empty card).
+			data-empty={String(props.showWhenEmpty ?? "unset")}
 			data-domain={String(props.domain ?? "")}
 		/>
 	);
@@ -96,7 +97,7 @@ describe("ContractsReviewsTab (#1994)", () => {
 		await waitFor(() => expect(migrationShown()).toBe(true));
 		for (const name of statutorySections) {
 			// Nothing to review in one domain is no reason to show an empty card under All.
-			expect(screen.getByTestId(name).dataset.empty).not.toBe("true");
+			expect(screen.getByTestId(name).dataset.empty).toBe("false");
 		}
 	});
 
@@ -104,6 +105,8 @@ describe("ContractsReviewsTab (#1994)", () => {
 		renderTab(`tab=reviews&domain=${domain}`);
 
 		expect(shown()).toEqual([domain, "monitor"]);
+		// Its own filter says so when it has nothing to review.
+		expect(screen.getByTestId(domain).dataset.empty).toBe("true");
 		expect(screen.getByTestId("monitor").dataset.domain).toBe(domain);
 		expect(migrationShown()).toBe(false);
 	});

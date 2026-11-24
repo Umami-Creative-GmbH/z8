@@ -143,6 +143,7 @@ export function ContractsReviewsTab({
 					<ShortTermBerufsmaessigkeitReviews
 						organizationId={organizationId}
 						includeResolved={includeResolved}
+						showWhenEmpty={domain === "short_term"}
 					/>
 				)}
 				{shows("working_student") && (

@@ -251,9 +251,12 @@ function ReviewItem({
 export function ShortTermBerufsmaessigkeitReviews({
 	organizationId,
 	includeResolved,
+	showWhenEmpty = false,
 }: {
 	organizationId: string;
 	includeResolved: boolean;
+	/** Show the card with an empty note instead of nothing (the domain filter is selected). */
+	showWhenEmpty?: boolean;
 }) {
 	const { t } = useTranslate();
 	const query = useQuery({
@@ -265,6 +268,7 @@ export function ShortTermBerufsmaessigkeitReviews({
 		},
 	});
 	const reviews = query.data ?? [];
+	if (query.isLoading || (query.isSuccess && reviews.length === 0 && !showWhenEmpty)) return null;
 
 	return (
 		<Card>
