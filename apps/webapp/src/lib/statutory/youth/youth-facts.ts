@@ -3,7 +3,7 @@
  * the clock-out compliance check. Every read is scoped to one organization and batched over the
  * employees judged.
  */
-import { and, eq, gte, inArray, isNull, lt, ne, notInArray } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, isNull, lt, ne, notInArray } from "drizzle-orm";
 import { employee, shift, workPeriod } from "@/db/schema";
 import { loadEmploymentPeriodSnapshots } from "@/lib/contracts/employment-profile-intervals";
 import { engagementKindOnDay } from "@/lib/contracts/resolve-contract";
@@ -194,7 +194,10 @@ export async function loadYouthShifts(
 			endTime: shift.endTime,
 		})
 		.from(shift)
-		.where(and(...conditions));
+		.where(and(...conditions))
+		// Deterministic order: the findings built from these shifts come out in it, and physical
+		// row order changes once Postgres reuses free space.
+		.orderBy(asc(shift.date), asc(shift.startTime), asc(shift.id));
 	return rows.flatMap((row) => {
 		if (!row.employeeId) return [];
 		const date = shiftCalendarDate(row.date, input.organizationTimezone);
