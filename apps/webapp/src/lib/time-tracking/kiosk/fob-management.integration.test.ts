@@ -445,8 +445,20 @@ describe("kiosk fob management on PostgreSQL", () => {
 			[ids.worker, ids.ownerUser],
 		);
 
-		signIn(ids.managerUser);
 		expect(await fobHolder()).toBeNull();
+		// Leaving dates are for org admins only (#1921 Story 22): a manager sees the departure
+		// without its last working day.
+		signIn(ids.managerUser);
+		expect(await getEmployeeKioskStateAction(ids.worker)).toMatchObject({
+			data: {
+				fob: {
+					active: null,
+					lastEnded: { at: expect.any(String), reason: "departure", departureLastWorkingDay: null },
+				},
+			},
+		});
+
+		signIn(ids.adminUser);
 		expect(await getEmployeeKioskStateAction(ids.worker)).toMatchObject({
 			data: {
 				fob: {

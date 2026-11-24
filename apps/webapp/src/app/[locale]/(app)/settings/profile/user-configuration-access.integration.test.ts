@@ -948,9 +948,13 @@ describe("user configuration and access mutations on PostgreSQL", () => {
 				organizationId: ids.orgA,
 			});
 			expect([...team.keys()]).toEqual([ids.colleagueA]);
-			// The batch leaves the user's employees to the rebuild but not the colleague.
+			// The batch leaves the user's employees to the rebuild but not the colleague. Marked dirty
+			// as production does, with a refresh request; the batch is database-wide and oldest request
+			// first, so the suite's fixed seed instant keeps both ahead of other suites' employees.
 			await admin.query(
-				"update employee_work_balance set is_dirty = true where employee_id = any($1::uuid[])",
+				`update employee_work_balance
+				 set is_dirty = true, refresh_requested_at = '2026-01-01T00:00:00Z'
+				 where employee_id = any($1::uuid[])`,
 				[[ids.employeeA, ids.colleagueA]],
 			);
 			const batch = await listEmployeesForWorkBalanceBatch(1000);
