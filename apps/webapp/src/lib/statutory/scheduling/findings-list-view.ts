@@ -3,14 +3,11 @@
  * may see, named by the user-name rule, ordered so what blocks this publication and what is
  * critical comes first. Server-side; the items it returns are the wage-free Scheduling projection.
  */
-import { and, eq, inArray } from "drizzle-orm";
-import { user } from "@/db/auth-schema";
-import { employee } from "@/db/schema";
-import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import type { ManagedScope } from "@/lib/organization-action/managed-scope";
 import type { StatutoryComplianceFinding } from "@/lib/scheduling/compliance/types";
+import { employeeDisplayNames } from "../employee-display-names";
 import type { StatutorySeverity } from "../finding";
 import type { StatutoryAudience } from "../redaction";
 import type {
@@ -77,27 +74,9 @@ export async function scheduleStatutoryFindingsFor(
 	const visible = input.findings.filter(({ finding }) =>
 		inScope(input.viewer.scope, finding.employeeId),
 	);
-	const employeeIds = [...new Set(visible.map(({ finding }) => finding.employeeId))];
-	const rows =
-		employeeIds.length === 0
-			? []
-			: await db
-					.select({
-						id: employee.id,
-						firstName: user.firstName,
-						lastName: user.lastName,
-						name: user.name,
-						email: user.email,
-					})
-					.from(employee)
-					.innerJoin(user, eq(user.id, employee.userId))
-					.where(
-						and(
-							eq(employee.organizationId, input.organizationId),
-							inArray(employee.id, employeeIds),
-						),
-					);
-	const names = new Map(rows.map((row) => [row.id, buildAuthUserDisplayName(row)]));
+	const names = await employeeDisplayNames(db, input.organizationId, [
+		...new Set(visible.map(({ finding }) => finding.employeeId)),
+	]);
 	const knownPeriods = new Map(
 		(input.dated ?? []).flatMap(({ finding, period }) =>
 			period ? [[datedFindingKey(finding), period]] : [],
