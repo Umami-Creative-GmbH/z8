@@ -125,7 +125,21 @@ describe("ScheduleXPortalCalendar", () => {
 		expect(screen.queryByText("Shift a")).toBeNull();
 	});
 
-	it("unmounts the copy of an overnight shift dragged in the date grid", async () => {
+	function nightShift() {
+		return {
+			id: "night",
+			title: "Night watch",
+			start: Temporal.ZonedDateTime.from(`2026-07-08T22:00[${BERLIN}]`),
+			end: Temporal.ZonedDateTime.from(`2026-07-09T06:00[${BERLIN}]`),
+		};
+	}
+
+	it.each([
+		{ refresh: false, name: "dragged in the date grid" },
+		// The planner sets its events again whenever its shifts reload, e.g. after the previous drop,
+		// which re-renders the dragged original while its copy is still on screen.
+		{ refresh: true, name: "dragged in the date grid while the shifts reload" },
+	])("unmounts the copy of an overnight shift $name", async ({ refresh }) => {
 		// jsdom lays nothing out; Schedule-X divides by a day column's width.
 		vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(100);
 		const calendarApp = createCalendar({
@@ -133,14 +147,7 @@ describe("ScheduleXPortalCalendar", () => {
 			selectedDate: Temporal.PlainDate.from("2026-07-08"),
 			timezone: BERLIN,
 			plugins: [createScheduleXDragAndDropPlugin()],
-			events: [
-				{
-					id: "night",
-					title: "Night watch",
-					start: Temporal.ZonedDateTime.from(`2026-07-08T22:00[${BERLIN}]`),
-					end: Temporal.ZonedDateTime.from(`2026-07-09T06:00[${BERLIN}]`),
-				},
-			],
+			events: [nightShift()],
 		});
 		render(
 			<ScheduleXPortalCalendar
@@ -166,6 +173,7 @@ describe("ScheduleXPortalCalendar", () => {
 			});
 		}
 		await waitFor(() => expect(mounted).toBe(2));
+		if (refresh) actPreact(() => calendarApp.events.set([nightShift()]));
 		actPreact(() => {
 			fireEvent.mouseUp(document, { clientX: 450, clientY: 10 });
 		});
