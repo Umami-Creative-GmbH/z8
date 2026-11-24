@@ -176,11 +176,11 @@ describe("MinorContractorReviewsSection (#2022)", () => {
 
 		expect(
 			await screen.findByText(
-				/It opens again when the engagement period or the birthday changes, or once the person is on the roster as a contractor after the engagement ends\.$/,
+				/It opens again when the person's engagements or the birthday change, or once the person is on the roster as a contractor after the engagement ends\.$/,
 			),
 		).toBeTruthy();
 		expect(minorContractorReviewRefusals.statutory_finding_changed[1]).toBe(
-			"The engagement or the birthday changed since this list was loaded, or the person is now on the roster as a contractor after the engagement ends. Review it again.",
+			"The person's engagements or the birthday changed since this list was loaded, or the person is now on the roster as a contractor after the engagement ends. Review it again.",
 		);
 		expect(de["settings.contracts.reviews.minorContractors.description"]).toMatch(
 			/oder die Person nach dem Ende der Beauftragung als Externer Dienstleister erfasst ist\.$/,

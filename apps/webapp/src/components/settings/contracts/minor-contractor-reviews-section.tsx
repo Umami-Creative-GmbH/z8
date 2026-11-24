@@ -46,7 +46,7 @@ export const minorContractorReviewRefusals = {
 	],
 	statutory_finding_changed: [
 		"settings.contracts.reviews.minorContractors.refusal.changed",
-		"The engagement or the birthday changed since this list was loaded, or the person is now on the roster as a contractor after the engagement ends. Review it again.",
+		"The person's engagements or the birthday changed since this list was loaded, or the person is now on the roster as a contractor after the engagement ends. Review it again.",
 	],
 	statutory_reason_required: [
 		"settings.contracts.reviews.minorContractors.refusal.reasonRequired",
@@ -64,8 +64,9 @@ export const minorContractorReviewRefusals = {
  * External Contractor engagements of minors (#2022). The youth protection monitor does not judge
  * contractor days, but § 1 Abs. 1 Nr. 3 JArbSchG covers minors whose services resemble an
  * employee's work: an org admin checks each engagement and documents the assessment with a reason.
- * The documentation re-opens when the engagement period or the birthday changes, or once the
- * person is on the roster as a contractor after the engagement ends (while under 18).
+ * The documentation re-opens when the person's engagements or the birthday change (including which
+ * engagement decides the days before the first start), or once the person is on the roster as a
+ * contractor after the engagement ends (while under 18).
  */
 export function MinorContractorReviewsSection({
 	organizationId,
@@ -105,7 +106,7 @@ export function MinorContractorReviewsSection({
 				<CardDescription>
 					{t(
 						"settings.contracts.reviews.minorContractors.description",
-						"The youth protection limits do not judge External Contractors. JArbSchG still covers minors whose services resemble an employee's work (§ 1 Abs. 1 Nr. 3 JArbSchG). Check each engagement and record your assessment. It opens again when the engagement period or the birthday changes, or once the person is on the roster as a contractor after the engagement ends.",
+						"Z8 does not judge External Contractors by the youth protection limits. JArbSchG still covers minors whose services resemble an employee's work (§ 1 Abs. 1 Nr. 3 JArbSchG). Check each engagement and record your assessment. It opens again when the person's engagements or the birthday change, or once the person is on the roster as a contractor after the engagement ends.",
 					)}
 				</CardDescription>
 			</CardHeader>

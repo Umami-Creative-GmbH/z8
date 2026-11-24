@@ -6,8 +6,9 @@
  * under JArbSchG (`applyJarbschgToMinorContractors`), each contractor engagement that decides a
  * contractor day of a minor (the days the monitor skips, `engagementKindOnDay`) is one warning an
  * org admin reviews and documents with a reason. Its fingerprint covers the engagement period, the
- * birthday and whether the window holds contractor days of the minor after the stint ended, so the
- * documentation re-opens when either period or birthday changes, or once such days appear.
+ * birthday, whether the window holds contractor days of the minor after the stint ended, and whether
+ * the engagement decides the days before the first start, so the documentation re-opens when the
+ * person's engagements or the birthday change, or once such days after the end appear.
  */
 import { and, eq, inArray } from "drizzle-orm";
 import { user } from "@/db/auth-schema";
@@ -402,8 +403,9 @@ async function employeeNames(
 }
 
 /**
- * Open minor contractor engagements (not documented, or documented before the period or birthday
- * changed or contractor days of the minor after the stint's end appeared), earliest first; with
+ * Open minor contractor engagements (not documented, or documented before the person's engagements
+ * or birthday changed or contractor days of the minor after the stint's end appeared), earliest
+ * first; with
  * `includeAcknowledged` also documented ones ("Show resolved").
  */
 export async function listMinorContractorReviews(
@@ -483,7 +485,7 @@ export async function acknowledgeMinorContractorReview(
 	if (finding.inputFingerprint !== input.expectedFingerprint) {
 		throw new ValidationError({
 			message:
-				"The engagement or the birthday changed since you reviewed it, or the person is now on the roster as a contractor after the engagement ends. Review it again.",
+				"The person's engagements or the birthday changed since you reviewed it, or the person is now on the roster as a contractor after the engagement ends. Review it again.",
 			refusal: "statutory_finding_changed" satisfies MinorContractorReviewRefusal,
 		});
 	}

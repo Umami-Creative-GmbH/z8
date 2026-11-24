@@ -108,8 +108,7 @@ Command Center, never a publish block. An org admin documents their assessment w
 (`jarbschg_minor_contractor_review`); the fingerprint covers the stint's recorded start and end,
 the birthday, whether the window holds contractor days after the stint ended on which the
 person is still under 18, and whether the stint decides the days before the first start while the
-person is under 18 (only other stints' data changes that, e.g. removing the stint that decided
-them). So a corrected birthday or a changed period re-opens it, and so does the
+person is under 18 (only changed data changes that, e.g. removing the stint that decided them). So a corrected birthday or a changed period re-opens it, and so does the
 window first reaching such a day after the end of a stint with no later one (that turns true once
 and only changed data turns it back). The window otherwise moving does not: not past the start of
 a first stint, and not onto days after the end that fall on or after the 18th birthday. The
