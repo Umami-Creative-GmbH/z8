@@ -240,7 +240,7 @@
         "break": "Unter 18: {used} Min. Pause genommen, {limit} Min. erforderlich",
         "uninterrupted": "Unter 18: {used} Min. ohne Pause gearbeitet, höchstens {limit} Min. erlaubt",
         "nightWork": "Unter 18: {used} Min. Nachtarbeit zwischen 20:00 und 06:00 Uhr",
-        "nightWorkBeyondSector": "Unter 18: {minutes} Min. Nachtarbeit außerhalb der Zeiten, die eine Branchenausnahme erlaubt (05:00 bis 21:00 Uhr; ab 16 bis 23:30 Uhr; ab 17 in Bäckereien ab 04:00 Uhr); keine Ausnahme erlaubt sie",
+        "nightWorkBeyondSector": "Unter 18: {minutes} Min. Nachtarbeit außerhalb der Zeiten, die eine Branchenausnahme erlaubt (ab 15: 05:00 bis 21:00 Uhr; ab 16 bis 23:30 Uhr; ab 17 in Bäckereien ab 04:00 Uhr; unter 15 keine); keine Ausnahme erlaubt sie",
         "saturdayWork": "Unter 18: Samstagsarbeit braucht eine gesetzliche Branchenausnahme",
         "sundayWork": "Unter 18: Sonntagsarbeit braucht eine gesetzliche Branchenausnahme",
         "holidayWork": "Unter 18: Arbeit an Feiertagen braucht eine gesetzliche Branchenausnahme",

@@ -126,7 +126,7 @@ planned shifts' span, make it stale.
 **Night-work sector hours** (§ 14 Abs. 2, 3, 5, 6 JArbSchG):
 Minors may work only from 06:00 to 20:00 (§ 14 Abs. 1). An org admin's sector exception covers
 night work only inside the union of the hours § 14 lets the employer use for the minor's age
-without the supervisory authority's approval: at any age 05:00 to 21:00 (Abs. 5 S. 1: until 21:00
+without the supervisory authority's approval: from 15 05:00 to 21:00 (a child under 15, or a minor still in full-time compulsory schooling under § 2 Abs. 3, gets no extension; the admin confirms the schooling) (Abs. 5 S. 1: until 21:00
 where the usual working time ends after 20:00 for transport reasons, after notice to the
 authority; Abs. 6: from 05:00 in the warm season in workplaces with extraordinary heat); from the
 16th birthday 05:00 to 23:30 (Abs. 2: hospitality and fairgrounds until 22:00, multi-shift

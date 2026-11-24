@@ -469,9 +469,21 @@ describe("night work and the § 14 Abs. 2, 3, 5, 6 JArbSchG sector hours", () =>
 	});
 
 	it("is never acknowledgeable for a child under 15 (§ 14 covers Jugendliche only)", () => {
-		const child = nightFinding("2012-06-01", "15:00", "20:45");
+		// Turns 15 on Wednesday 4 March: still 14 on Tuesday.
+		const child = nightFinding("2011-03-04", "15:00", "20:45");
 		expect(child).toMatchObject({ acknowledgementKind: null, blocksPublication: true });
-		expect(nightFinding("2012-06-01", "05:00", "11:00")?.acknowledgementKind).toBeNull();
+		expect(nightFinding("2011-03-04", "05:00", "11:00")?.acknowledgementKind).toBeNull();
+		// Turns 15 that Tuesday: the 15-year-old's hours apply.
+		expect(nightFinding("2011-03-03", "15:00", "20:45")?.acknowledgementKind).toBe(SECTOR);
+	});
+
+	it("judges the morning by the age on that morning: a 15th birthday allows 05:00", () => {
+		const dawn = findings({
+			birthday: "2011-03-04",
+			shifts: [shift("dawn", "2026-03-04", "05:00", "11:00")],
+			now: at("2026-03-01", "12:00"),
+		}).find((finding) => finding.kind === "jarbschg_night_work");
+		expect(dawn?.acknowledgementKind).toBe(SECTOR);
 	});
 
 	it("is acknowledgeable for a 15-year-old from 05:00 (Abs. 6, hot workplaces), never earlier", () => {

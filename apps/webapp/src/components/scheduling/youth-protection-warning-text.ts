@@ -83,7 +83,7 @@ export function youthProtectionWarningText(
 			if (finding.acknowledgementStatus === null) {
 				return t(
 					"scheduling:scheduling.statutory.jarbschg.nightWorkBeyondSector",
-					"Under 18: {minutes} min of night work outside the hours a sector exception allows (05:00 to 21:00; from 16 until 23:30; from 17 in bakeries from 04:00); no exception allows it",
+					"Under 18: {minutes} min of night work outside the hours a sector exception allows (from 15: 05:00 to 21:00; from 16 until 23:30; from 17 in bakeries from 04:00; none under 15); no exception allows it",
 					{ minutes: finding.beyondSectorHours ?? used },
 				);
 			}
