@@ -155,7 +155,6 @@ describe("useShiftPublishFlow", () => {
 			queryKeys.compliance.scheduleWarnings("org-1", dateRange),
 		]);
 		expect(toastSuccessMock).not.toHaveBeenCalled();
-		expect(toastSuccessMock).not.toHaveBeenCalled();
 
 		act(() => {
 			result.current.setIsComplianceDialogOpen(false);

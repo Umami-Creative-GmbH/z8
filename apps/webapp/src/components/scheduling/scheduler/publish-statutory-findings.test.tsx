@@ -12,10 +12,10 @@ import {
 } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
-import { queryKeys } from "@/lib/query/keys";
 import type { StatutoryComplianceFinding } from "@/lib/scheduling/compliance/types";
 import type { ScheduleStatutoryFindings } from "@/lib/statutory/scheduling/findings-list";
 import { STATUTORY_PUBLICATION_BLOCKED } from "@/lib/statutory/scheduling/publication-block";
+import { schedulerComplianceQueryKey, schedulerShiftsQueryKey } from "./scheduler-query-keys";
 
 const { publishShiftsMock, toastError } = vi.hoisted(() => ({
 	publishShiftsMock: vi.fn(),
@@ -193,12 +193,8 @@ describe("useShiftPublishFlow refusal", () => {
 
 	/** The calendar's shifts and the compliance banner, as `useShiftSchedulerData` keys them. */
 	const seedCalendarQueries = () => {
-		const shiftsKey = [...queryKeys.shifts.list("org", RANGE), "scheduling-viewer", "me", true];
-		const complianceKey = [
-			...queryKeys.compliance.scheduleWarnings("org", RANGE),
-			"scheduling-viewer",
-			"me",
-		];
+		const shiftsKey = schedulerShiftsQueryKey("org", RANGE, "me", true);
+		const complianceKey = schedulerComplianceQueryKey("org", RANGE, "me");
 		client.setQueryData(shiftsKey, []);
 		client.setQueryData(complianceKey, {});
 		return {
