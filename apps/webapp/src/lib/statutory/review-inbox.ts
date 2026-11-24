@@ -339,12 +339,14 @@ const domainLoaders: Record<
 		const [findings, minorContractors] = await Promise.all([
 			horizonFindings(db, context, youthContributors),
 			// #2022: minor contractor engagements over the same horizon and roster.
-			evaluateMinorContractorReviewFindings(db, {
-				organizationId: context.organizationId,
-				timezone: context.timezone,
-				now: context.now,
-				employeeIds: await context.roster(),
-			}),
+			context.roster().then((employeeIds) =>
+				evaluateMinorContractorReviewFindings(db, {
+					organizationId: context.organizationId,
+					timezone: context.timezone,
+					now: context.now,
+					employeeIds,
+				}),
+			),
 		]);
 		return [
 			...findings
