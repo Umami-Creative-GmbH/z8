@@ -28,6 +28,7 @@ import type { EffectiveWorkPolicy } from "@/lib/effect/services/work-policy.serv
 import type { EmploymentInterval } from "@/lib/employee-lifecycle/employment-coverage";
 import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 import type { EmployeeTrackingContext } from "@/lib/time-tracking/tracking-start";
+import { loadApprenticeReleaseDays } from "@/lib/statutory/apprenticeship/release-facts";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { resolvedPolicyVersionToEffectiveWorkPolicy } from "@/lib/work-policy/effective-work-policies";
 import { getAssignedHolidaysForEmployees } from "./assigned-holidays";
@@ -249,6 +250,15 @@ export const loadDailyWorkRequirementsForEmployees = Effect.fn("calendar.rangeRe
 			),
 		]);
 
+		// Apprentice release credits (#1993): one query for the range, none without releases.
+		const releaseDays = yield* database.query("calendar.rangeApprenticeReleaseDays", () =>
+			loadApprenticeReleaseDays(database.db, {
+				organizationId: input.organizationId,
+				employeeIds: scopedIds,
+				from: earliest,
+				until: latestDate.add({ days: 1 }).toString(),
+			}),
+		);
 		const absencesByEmployee = Map.groupBy(absences, (row) => row.employeeId);
 		const shiftsByEmployee = Map.groupBy(shifts, (row) => row.employeeId);
 		const todayKey = todayDate.toString();
@@ -284,6 +294,7 @@ export const loadDailyWorkRequirementsForEmployees = Effect.fn("calendar.rangeRe
 						absences: absencesByEmployee.get(person.id) ?? [],
 						employmentCoverage: coverage.get(person.id) ?? null,
 						holidays: holidays.get(person.id) ?? [],
+						apprenticeReleaseDays: releaseDays.get(person.id) ?? [],
 					},
 				},
 			);

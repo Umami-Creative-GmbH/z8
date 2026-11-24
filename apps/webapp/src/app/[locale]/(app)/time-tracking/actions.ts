@@ -54,7 +54,7 @@ import {
 } from "@/lib/time-tracking/clock-read-scope";
 import { localizeMonthClosed } from "@/lib/time-tracking/closed-months/refusal-message";
 import { readComplianceTotals } from "@/lib/time-tracking/compliance-totals";
-import { readEffectiveWorkPolicyAt } from "@/lib/time-tracking/effective-work-policy";
+import { readAdultArbzgPolicyAt } from "@/lib/time-tracking/effective-work-policy";
 import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
 import {
 	PROJECT_TASK_INELIGIBILITY_MESSAGES,
@@ -455,7 +455,7 @@ export async function getBreakReminderStatus(): Promise<
 				workStart: liveStart,
 				timezone,
 			}),
-			readEffectiveWorkPolicyAt({
+			readAdultArbzgPolicyAt({
 				employeeId: emp.id,
 				organizationId: emp.organizationId,
 				at: now,

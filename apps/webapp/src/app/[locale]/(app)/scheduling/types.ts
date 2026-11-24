@@ -2,6 +2,7 @@ import type { shift, shiftRecurrence, shiftRequest, shiftTemplate } from "@/db/s
 import type { AuthUserDisplayNameInput } from "@/lib/auth/derived-user-name";
 import type { ScheduleComplianceSummary } from "@/lib/scheduling/compliance/types";
 import type { SkillValidationResult } from "@/lib/scheduling/skill-validation";
+import type { ScheduleStatutoryFindings } from "@/lib/statutory/scheduling/findings-list";
 
 export type Shift = typeof shift.$inferSelect;
 export type ShiftTemplate = typeof shiftTemplate.$inferSelect;
@@ -32,6 +33,8 @@ export type PublishShiftsResult =
 			count: 0;
 			complianceSummary: ScheduleComplianceSummary;
 			evaluationFingerprint: string;
+			/** The statutory findings being acknowledged, for this viewer (#2026). */
+			statutoryFindings?: ScheduleStatutoryFindings;
 	  };
 
 export interface SubareaInfo {

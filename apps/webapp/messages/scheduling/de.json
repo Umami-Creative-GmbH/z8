@@ -52,7 +52,8 @@
       "publishing": "Wird veröffentlicht…",
       "restTime": "Ruhezeit: {count}",
       "totalFindings": "{count, plural, one {# Feststellung insgesamt} other {# Feststellungen insgesamt}}",
-      "warningsDetectedBeforePublish": "Vor der Veröffentlichung erkannte Warnungen"
+      "warningsDetectedBeforePublish": "Vor der Veröffentlichung erkannte Warnungen",
+      "statutory": "Gesetzliche Grenzen: {count}"
     },
     "scheduler": {
       "assigned": "Zugewiesen",
@@ -61,7 +62,8 @@
         "maxHours": "Max. Stunden: {count}",
         "overtime": "Überstunden: {count}",
         "restTime": "Ruhezeit: {count}",
-        "title": "Compliance-Warnungen in diesem Datumsbereich"
+        "title": "Compliance-Warnungen in diesem Datumsbereich",
+        "statutory": "Gesetzliche Grenzen: {count}"
       },
       "focus": {
         "anonymous": "Schichten eines Mitarbeiters werden angezeigt",
@@ -73,7 +75,8 @@
       "open": "Offene Schicht",
       "publish": {
         "failed": "Veröffentlichung der Schichten fehlgeschlagen",
-        "published": "{count} Schicht(en) veröffentlicht"
+        "published": "{count} Schicht(en) veröffentlicht",
+        "statutoryBlocked": "Einige Schichten verstoßen gegen den Jugendarbeitsschutz (JArbSchG). Ändern Sie die Schichten oder bestätigen Sie eine gesetzliche Branchenausnahme, bevor Sie veröffentlichen."
       },
       "retry": "Erneut versuchen",
       "shiftList": "Schichtliste",
@@ -82,6 +85,7 @@
         "overlapDescription": "Diese Schicht überschneidet sich mit {count} anderen Schicht(en)",
         "overlapWarning": "Schicht mit Überschneidungswarnung gespeichert",
         "skillOverrideReasonRequired": "Dem Mitarbeiter fehlt an diesem Tag eine erforderliche Qualifikation. Öffnen Sie die Schicht, um einen Grund anzugeben.",
+        "statutoryBlocked": "Diese Änderung einer veröffentlichten Schicht verstößt über das bereits Veröffentlichte hinaus gegen den Jugendarbeitsschutz (JArbSchG). Ändern Sie die Schicht so, dass sie keine Grenze neu oder stärker überschreitet. Eine Branchenausnahme kann nur für eine gespeicherte Schicht bestätigt werden: Legen Sie die Schicht dafür als Entwurf an, bestätigen Sie die Ausnahme und veröffentlichen Sie sie dann.",
         "updated": "Schicht aktualisiert"
       },
       "supportFailed": "Vorlagen oder Compliance-Informationen konnten nicht aktualisiert werden. Vor dem Veröffentlichen erneut prüfen.",
@@ -154,6 +158,7 @@
       "rejectFailed": "Anfrage konnte nicht abgelehnt werden",
       "rejectReason": "Grund für die Ablehnung (optional)",
       "shiftWhen": "{date}, {start}–{end}",
+      "statutoryBlocked": "Die Genehmigung dieser Anfrage würde für die Person, die die Schicht übernimmt, gegen den Jugendarbeitsschutz (JArbSchG) verstoßen. Lehnen Sie die Anfrage ab oder lassen Sie jemand anderen die Schicht übernehmen.",
       "swapSummary": "{requester} möchte diese Schicht an {target} übergeben",
       "swapWithoutTarget": "{requester} möchte diese Schicht abgeben, hat jedoch keinen Kollegen benannt",
       "title": "Schichtanfragen",
@@ -213,6 +218,95 @@
       "empty": "Keine Vorlagen verfügbar. Erstellen Sie Vorlagen in den Einstellungen, um schnell Schichten hinzuzufügen.",
       "selectHint": "Wählen Sie eine Vorlage und legen Sie dann das Schichtdatum und die Zuweisung fest.",
       "title": "Schichtvorlagen"
+    },
+    "statutory": {
+      "findings": {
+        "acknowledgeListLabel": "Zu bestätigende gesetzliche Befunde",
+        "blockedTitle": "Veröffentlichung abgelehnt",
+        "blockingListLabel": "Befunde, die die Veröffentlichung sperren",
+        "blocksPublishing": "Sperrt die Veröffentlichung",
+        "close": "Schließen",
+        "hide": "Gesetzliche Befunde ausblenden ({count})",
+        "hideOfTotal": "Gesetzliche Befunde ausblenden ({count} von {total})",
+        "listLabel": "Gesetzliche Befunde",
+        "openReviews": "In Prüfungen & Konflikte öffnen",
+        "outsideScope": "{count, plural, one {# weiterer Befund betrifft eine Person, die Sie nicht verwalten.} other {# weitere Befunde betreffen Personen, die Sie nicht verwalten.}}",
+        "outsideScopeOnly": "{count, plural, one {# Befund betrifft eine Person, die Sie nicht verwalten.} other {# Befunde betreffen Personen, die Sie nicht verwalten.}}",
+        "severity": {
+          "critical": "Kritisch",
+          "info": "Hinweis",
+          "warning": "Warnung"
+        },
+        "show": "Gesetzliche Befunde anzeigen ({count})",
+        "showOfTotal": "Gesetzliche Befunde anzeigen ({count} von {total})",
+        "showShifts": "Schichten von {name} anzeigen",
+        "unnamedEmployee": "Person ohne Namen",
+        "weekOf": "Woche ab {date}"
+      },
+      "warning": "{area}: gesetzliche Grenze gefährdet",
+      "warningApproaching": "{area}: gesetzliche Grenze fast erreicht",
+      "warningExceeded": "{area}: gesetzliche Grenze überschritten",
+      "warningPercent": "{area}: {percent} % der gesetzlichen Grenze",
+      "domain": {
+        "minijob": "Minijob-Grenze",
+        "shortTerm": "Grenze kurzfristige Beschäftigung",
+        "workingStudent": "Werkstudierenden-Grenze",
+        "onCall": "Arbeit auf Abruf (§ 12 TzBfG)",
+        "youthProtection": "Jugendarbeitsschutz (JArbSchG)",
+        "apprenticeship": "Freistellung Auszubildende (BBiG)"
+      },
+      "jarbschg": {
+        "dailyMax": "Unter 18: {used} Min. Arbeit an diesem Tag überschreiten die Jugendgrenze von {limit} Min.",
+        "dailyMaxOn": "Unter 18: {used} Min. Arbeit am {date} überschreiten die Jugendgrenze von {limit} Min.",
+        "weeklyMax": "Unter 18: {used} Min. Arbeit in dieser Woche überschreiten die Jugendgrenze von {limit} Min.",
+        "weeklyMaxWeekOf": "Unter 18: {used} Min. Arbeit in der Woche ab {date} überschreiten die Jugendgrenze von {limit} Min.",
+        "daysPerWeek": "Unter 18: {used} Arbeitstage in dieser Woche, höchstens {limit} erlaubt",
+        "restPeriod": "Unter 18: nur {used} Min. Ruhezeit vor dieser Schicht, {limit} Min. erforderlich",
+        "break": "Unter 18: {used} Min. Pause genommen, {limit} Min. erforderlich",
+        "uninterrupted": "Unter 18: {used} Min. ohne Pause gearbeitet, höchstens {limit} Min. erlaubt",
+        "nightWork": "Unter 18: {used} Min. Nachtarbeit zwischen {from} und {until}",
+        "nightWorkBeyondSector": "Unter 18: {minutes} Min. Nachtarbeit außerhalb der Zeiten, die eine Branchenausnahme erlaubt (ab 15: {from15} bis {until15}; ab 16 bis {until16}; ab 17 in Bäckereien ab {bakeryFrom17}; unter 15 keine); keine Ausnahme erlaubt sie",
+        "saturdayWork": "Unter 18: Samstagsarbeit braucht eine gesetzliche Branchenausnahme",
+        "sundayWork": "Unter 18: Sonntagsarbeit braucht eine gesetzliche Branchenausnahme",
+        "holidayWork": "Unter 18: Arbeit an Feiertagen braucht eine gesetzliche Branchenausnahme",
+        "holidayProhibited": "Unter 18: {used} Min. verbotene Arbeit: keine Arbeit am 24. und 31. Dezember nach {cutoff}, am 25. Dezember, 1. Januar, Ostersonntag oder 1. Mai; keine Ausnahme erlaubt sie",
+        "shiftSpan": "Unter 18: Die Schichtzeit beträgt {used} Min. vom Beginn der ersten bis zum Ende der letzten Arbeit; erlaubt sind höchstens {limit} Min. (11 Std. im Gaststättengewerbe, in der Landwirtschaft, Tierhaltung und auf Bau- und Montagestellen)",
+        "shiftSpanOn": "Unter 18: Die Schichtzeit am {date} beträgt {used} Min. vom Beginn der ersten bis zum Ende der letzten Arbeit; erlaubt sind höchstens {limit} Min. (11 Std. im Gaststättengewerbe, in der Landwirtschaft, Tierhaltung und auf Bau- und Montagestellen)"
+      },
+      "apprenticeship": {
+        "releaseDayShift": "Freistellungstag für Auszubildende: Berufsschul-, Blockunterrichts- oder Prüfungstag",
+        "releaseDayShiftOn": "Freistellungstag für Auszubildende am {date}: Berufsschul-, Blockunterrichts- oder Prüfungstag",
+        "blockWeekTraining": "Blockunterrichtswoche: {used} Min. Arbeit an den Schultagen dieser Woche, {limit} Min. betriebliche Ausbildungsveranstaltungen erlaubt; an diesem Tag überschritten",
+        "blockWeekTrainingWeek": "Blockunterrichtswoche: {used} Min. Arbeit an den Schultagen dieser Woche, {limit} Min. betriebliche Ausbildungsveranstaltungen erlaubt; überschritten am {date}",
+        "blockWeekTrainingNote": "Die erlaubten Ausbildungsveranstaltungen (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG) kommen zur Blockwoche hinzu, die mit der durchschnittlichen wöchentlichen Arbeitszeit angerechnet wird (§ 9 Abs. 2 Nr. 2 JArbSchG), und zählen bei Beschäftigten unter 18 nicht zu den Tages- und Wochenhöchstgrenzen nach § 8",
+        "workplaceReturn": "Unter 18: keine Arbeit an diesem Tag, dem vollen Berufsschultag der Woche",
+        "workplaceReturnOn": "Unter 18: keine Arbeit am {date}, dem vollen Berufsschultag der Woche"
+      },
+      "shortTerm": {
+        "daysRemaining": "Kurzfristige Beschäftigung: noch {remaining} von {limit} Arbeitstagen in diesem Jahr",
+        "daysExceeded": "Tagesgrenze der kurzfristigen Beschäftigung überschritten: {used} von {limit} Arbeitstagen in diesem Jahr",
+        "calendarDaysRemaining": "Kurzfristige Beschäftigung (Dreimonatsgrenze): noch {remaining} von {limit} Kalendertagen in diesem Jahr",
+        "calendarDaysExceeded": "Dreimonatsgrenze der kurzfristigen Beschäftigung überschritten: {used} von {limit} Kalendertagen in diesem Jahr"
+      },
+      "minijob": {
+        "monthlyDocumented": "Minijob-Monatsgrenze überschritten (als unvorhersehbar dokumentiert)",
+        "monthlyExceeded": "Minijob-Monatsgrenze überschritten",
+        "monthlyApproaching": "Minijob-Monatsgrenze rückt näher",
+        "rollingExceeded": "Minijob-Verdienstgrenze für 12 Monate überschritten",
+        "rollingApproaching": "Minijob-Verdienstgrenze für 12 Monate rückt näher"
+      },
+      "onCall": {
+        "shortNotice": "Abruf: {days, plural, one {# voller Tag} other {# volle Tage}} Vorlauf, {required} erforderlich (§ 12 Abs. 3 TzBfG)",
+        "shortCall": "Abruf: Einsatz von {duration} unter dem Minimum von {minimum}",
+        "shortWorkCall": "Abruf: Einsatz von {duration} gearbeitet, unter dem Mindesteinsatz von {minimum}",
+        "nearBand": "Abruf: Woche mit {used}, nahe an der Grenze des Abrufkorridors von {limit}",
+        "overBand": "Abruf: Woche mit {used}, über dem Abrufkorridor von {limit}",
+        "underBand": "Abruf: Woche mit {used}, unter dem Abrufkorridor von {limit}"
+      },
+      "workingStudent": {
+        "lectureWeek": "Werkstudierende/r über 20 Std. in einer Vorlesungswoche: {hours} Std. Arbeit werktags tagsüber (Grenze {limit} Std.)",
+        "ceiling": "Werkstudierende/r: {used} von {limit} Wochen über 20 Std. in 12 Monaten"
+      }
     }
   }
 }

@@ -10,6 +10,7 @@ import type {
 	ScheduleComplianceRegulation,
 	ScheduleComplianceWindow,
 } from "@/lib/scheduling/compliance/types";
+import { statutoryFindingChangeKey } from "@/lib/statutory/scheduling/finding-key";
 
 /**
  * Days judged around a hypothetical shift: its own day (daily totals, rest before it) and the
@@ -27,6 +28,8 @@ function findingKey(finding: ComplianceFinding): string {
 			return `maxHours|${finding.day}`;
 		case "overtime":
 			return `overtime|${finding.period}|${finding.periodKey}`;
+		case "statutory":
+			return statutoryFindingChangeKey(finding);
 	}
 }
 

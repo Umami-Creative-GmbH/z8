@@ -6,6 +6,7 @@ import {
 	dateFromInstant,
 	type PlainDate,
 	parsePlainDate,
+	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { type DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import {
@@ -29,6 +30,7 @@ import {
 import { addedComplianceFindings } from "@/lib/scheduling/staffing/staffing-compliance";
 import { assessStaffingSkills } from "@/lib/scheduling/staffing/staffing-skills";
 import type { StaffingShiftInput, StaffingSuggestion } from "@/lib/scheduling/staffing/types";
+import { addedStatutoryScheduleFindings } from "@/lib/statutory/scheduling/evaluate";
 import { DatabaseService } from "./database.service";
 import { type EffectiveWorkPolicy, WorkPolicyService } from "./work-policy.service";
 
@@ -256,6 +258,26 @@ export const StaffingSuggestionServiceLive = Layer.effect(
 						}),
 					);
 
+					// German statutory monitors (#1988 seam): findings the shift would add per candidate.
+					const statutoryAdded = yield* dbService.query("staffing.statutory", () =>
+						addedStatutoryScheduleFindings(dbService.db, {
+							organizationId,
+							timezone,
+							window: {
+								start: shift.date.toString(),
+								endExclusive: shift.date.add({ days: 1 }).toString(),
+							},
+							employeeIds: available.map(({ candidate }) => candidate.employeeId),
+							now: systemClock.nowInstant(),
+							proposedShift: {
+								date: shift.date.toString(),
+								startTime: input.shift.startTime,
+								endTime: input.shift.endTime,
+							},
+							replacesShiftId: excludeShiftId,
+						}),
+					);
+
 					const suggestions = yield* Effect.forEach(
 						available,
 						({ candidate, pendingAbsences }) =>
@@ -269,8 +291,12 @@ export const StaffingSuggestionServiceLive = Layer.effect(
 										at: shift.interval.start,
 									})
 									.pipe(Effect.catchTag("NotFoundError", () => Effect.succeed(null)));
+								// Executive employees are outside adult ArbZG rules; JArbSchG still
+								// applies through the statutory findings below (#1993).
 								const regulation = normalizeScheduleComplianceRegulation(
-									policy?.regulation ?? null,
+									facts.contract.arbzgScope === "executive_exempt"
+										? null
+										: (policy?.regulation ?? null),
 								);
 								const targetMinutes = hasUsableTarget(facts, policy)
 									? yield* loadWeeklyTargetMinutes({
@@ -293,15 +319,18 @@ export const StaffingSuggestionServiceLive = Layer.effect(
 											held: facts.heldSkills,
 											shiftDate: shift.date,
 										}),
-										complianceFindings: addedComplianceFindings({
-											employeeId: candidate.employeeId,
-											timezone,
-											shiftDate: shift.date,
-											regulation,
-											shifts: facts.shifts,
-											workPeriods: facts.workPeriods,
-											hypothetical: shift.source,
-										}),
+										complianceFindings: [
+											...addedComplianceFindings({
+												employeeId: candidate.employeeId,
+												timezone,
+												shiftDate: shift.date,
+												regulation,
+												shifts: facts.shifts,
+												workPeriods: facts.workPeriods,
+												hypothetical: shift.source,
+											}),
+											...(statutoryAdded.get(candidate.employeeId) ?? []),
+										],
 										restRuleApplies: regulation.minRestPeriodMinutes != null,
 										pendingAbsences,
 										requestedThisShift: context.pickupRequesterIds.has(candidate.employeeId),

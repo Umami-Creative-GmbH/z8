@@ -4,18 +4,33 @@ export type AutoClockOutTaskContext = {
 	recordProgress(patch: Record<string, unknown>): Promise<void>;
 };
 
+/**
+ * The follow-up effects of an automatic clock-out. `checkCompliance` checks the work policy only;
+ * the JArbSchG youth check (#1993) is its own step, so a retry of a failed youth check never
+ * logs the policy violations again.
+ */
+export type AutoClockOutFollowUpEffects = ClockOutFollowUpEffects & {
+	recordYouthProtection(
+		input: Parameters<ClockOutFollowUpEffects["checkCompliance"]>[0],
+	): Promise<void>;
+};
+
 /** Resume the existing effect owners with frozen closure facts. Break reconciliation owns its committed intent and idempotence. */
 export async function runAutoClockOutFollowUps(
 	closure: ClosedLiveWork,
 	progress: Record<string, unknown>,
 	context: AutoClockOutTaskContext,
-	effects: ClockOutFollowUpEffects,
+	effects: AutoClockOutFollowUpEffects,
 ): Promise<void> {
 	const { organizationId, employeeId, workPeriodId, timezone } = closure;
 	const scope = { organizationId, employeeId };
 	if (progress.complianceChecked !== true) {
 		await effects.checkCompliance({ ...scope, workPeriodId, timezone, work: closure });
 		await context.recordProgress({ complianceChecked: true });
+	}
+	if (progress.youthProtectionChecked !== true) {
+		await effects.recordYouthProtection({ ...scope, workPeriodId, timezone, work: closure });
+		await context.recordProgress({ youthProtectionChecked: true });
 	}
 	let affectedWorkPeriodIds = [workPeriodId];
 	if (progress.breaksEnforced === true) {

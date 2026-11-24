@@ -28,6 +28,7 @@
       },
       "arbzgScope": {
         "executiveExempt": "Executive exempt (§ 18 ArbZG)",
+        "executiveExemptNote": "Executive exempt (leitende Angestellte as defined in § 5 Abs. 3 BetrVG, § 18 Abs. 1 Nr. 1 ArbZG): no adult ArbZG checks, automatic break deductions or break reminders. Use it only for employees who meet that definition; team leads and other managers usually do not. Youth protection (JArbSchG) still applies while the employee is under 18.",
         "standard": "Standard (ArbZG applies)"
       },
       "balanceMode": {
@@ -414,7 +415,98 @@
         "queueDescription": "Resolve contract migration mismatches, post-cutoff work reviews, and closed/settled payroll reconciliations.",
         "queueTitle": "Reviews & Conflicts Queue",
         "resolveFailed": "Could not resolve review item.",
-        "showResolved": "Show resolved"
+        "showResolved": "Show resolved",
+        "youth": {
+          "acknowledge": "Record sector exception…",
+          "acknowledged": "Sector exception recorded",
+          "confirm": "Record sector exception",
+          "description": "Employees under 18 may work at night, on weekends or on public holidays only under a statutory sector exception (§§ 14, 16–18 JArbSchG). Record why it applies; it covers the shift as shown here.",
+          "kind": {
+            "holiday": "Public holiday work",
+            "night": "Night work (20:00–06:00)",
+            "saturday": "Saturday work",
+            "shiftSpan": "Shift span of 10 to 11 hours (§ 12)",
+            "sunday": "Sunday work"
+          },
+          "legalNote": "Legal basis (optional), e.g. § 14 Abs. 2 Nr. 1 JArbSchG",
+          "loadFailed": "Could not load youth protection findings.",
+          "nightConfirms": "Recording this confirms that one of these § 14 JArbSchG permissions applies to this work: hospitality or fairgrounds until 22:00 (from 16, Abs. 2 Nr. 1); multi-shift operations until 23:00 (from 16, Abs. 2 Nr. 2), or from 05:30 or until 23:30 after notifying the supervisory authority (Abs. 5 S. 2); agriculture from 05:00 or until 21:00 (from 16, Abs. 2 Nr. 3); bakeries and pastry shops from 05:00 (from 16, Abs. 2 Nr. 4), or bakeries from 04:00 (from 17, Abs. 3); until 21:00 from 15 where the usual working time ends after 20:00 for transport reasons, after notifying the supervisory authority (Abs. 5 S. 1); from 05:00 from 15 in a workplace with extraordinary heat in the warm season (Abs. 6). It also confirms that § 14 Abs. 4 does not exclude it: no work after 20:00 under Abs. 2 Nr. 1–3 on the day before a vocational school day whose lessons start before 09:00; and that the minor is no longer subject to full-time compulsory schooling (§ 2 Abs. 3) or works during school holidays, at most four weeks per calendar year (§ 5 Abs. 4); otherwise the rules for children apply and no exception does.",
+          "nightMinutes": "{minutes} min at night",
+          "reason": "Why does a sector exception apply?",
+          "reasonRequired": "Explain which sector exception applies.",
+          "refusal": {
+            "changed": "The shift changed since this list was loaded. Review it again before recording the exception.",
+            "notFound": "This finding is no longer open. The list shows the current findings.",
+            "reasonRequired": "Explain which sector exception applies.",
+            "subjectRequired": "This finding cannot be acknowledged. Reload the list and try again."
+          },
+          "shiftSpanMinutes": "{minutes} min shift span",
+          "stale": "Changed since last acknowledged",
+          "title": "Youth protection: sector exceptions",
+          "empty": "No youth protection finding needs a sector exception.",
+          "documented": "Sector exception recorded"
+        },
+        "minorContractors": {
+          "acknowledge": "Record assessment…",
+          "acknowledged": "Assessment recorded",
+          "afterEnd": "After the engagement ends on {date}, the person stays on the roster as a contractor. Their shifts and work after that day are not judged under youth protection either.",
+          "beforeStart": "Before the engagement starts on {date}, the person is on the roster as a contractor. Their shifts and work before that day are not judged under youth protection either.",
+          "confirm": "Record assessment",
+          "description": "Z8 does not judge External Contractors by the youth protection limits. JArbSchG still covers minors whose services resemble an employee's work (§ 1 Abs. 1 Nr. 3 JArbSchG). Check each engagement and record your assessment. It opens again when the person's engagements or the birthday change, or once the person is on the roster as a contractor after the engagement ends.",
+          "documented": "Assessment recorded",
+          "empty": "No contractor under 18 needs a review.",
+          "hint": "If the work resembles an employee's (bound by instructions, integrated into your organization, no own clients or business risk), youth protection applies: switch on “Apply youth protection (JArbSchG) to minor contractors” in the statutory limits, or employ the minor instead.",
+          "kind": "Contractor under 18: check whether the work falls under § 1 Abs. 1 Nr. 3 JArbSchG",
+          "legalNote": "Legal note (optional)",
+          "loadFailed": "Could not load contractors under 18.",
+          "onDay": "Engaged on {date}",
+          "period": "Engaged {from} – {until}",
+          "reason": "Your assessment of the engagement",
+          "reasonRequired": "Explain why the work does or does not fall under youth protection.",
+          "refusal": {
+            "changed": "The person's engagements or the birthday changed since this list was loaded, or the person is now on the roster as a contractor after the engagement ends. Review it again.",
+            "notFound": "This engagement no longer needs a review. The list shows the current ones.",
+            "reasonRequired": "Explain why the work does or does not fall under youth protection.",
+            "subjectRequired": "This engagement cannot be documented. Reload the list and try again."
+          },
+          "since": "Engaged since {from}",
+          "stale": "Changed since last assessed",
+          "startUnrecorded": "Engagement start not recorded",
+          "title": "Youth protection: contractors under 18",
+          "untilStartUnrecorded": "Engaged until {until} (start not recorded)"
+        },
+        "migrationTitle": "Contract migration and departure reviews",
+        "invalidated": "Acknowledgement invalidated: the work, shifts or figures changed after it was recorded. Review the current figures and acknowledge again if it still holds.",
+        "noLongerApplies": "Acknowledgement no longer applies: the finding can no longer be acknowledged, so the documented reason no longer counts. Change the schedule or the contract instead.",
+        "domain": {
+          "label": "Area",
+          "all": "All",
+          "minijob": "Minijob",
+          "shortTerm": "Short-Term",
+          "workingStudent": "Working Student",
+          "onCall": "On-Call",
+          "youthApprentice": "Youth & Apprentice",
+          "migrationDeparture": "Migration & Departure"
+        },
+        "history": {
+          "toggle": "Acknowledgement history",
+          "current": "Current",
+          "stale": "Invalidated",
+          "noLongerApplies": "No longer applies",
+          "noLongerAppliesDetail": "Recorded for these figures, but it does not document the current state: the finding can no longer be acknowledged.",
+          "superseded": "Earlier",
+          "reason": "Reason: {reason}",
+          "legalNote": "Legal note: {note}"
+        },
+        "monitor": {
+          "title": "Statutory limits to act on",
+          "description": "Limits approaching or exceeded in the last week and the next eight weeks that cannot be acknowledged: change the schedule or the contract instead. Shown until the figures are back within the limit.",
+          "empty": "No statutory limits approaching or exceeded."
+        },
+        "severity": {
+          "critical": "Critical",
+          "warning": "Warning"
+        }
       },
       "scheduleMode": {
         "customDays": "Custom working days",
@@ -453,11 +545,13 @@
         "defaults": "Defaults",
         "defaultsDescription": "Configure date-effective organization and primary-team default contracts with affected-employee previews.",
         "reviews": "Reviews & Conflicts",
-        "reviewsDescription": "Resolve contract migration conflicts, post-cutoff work reviews, payroll reconciliations, and migrated legacy terms.",
+        "reviewsDescription": "Statutory findings and acknowledgements, contract migration conflicts, departure and payroll reviews, and migrated legacy terms in one place. Acknowledgements that newer work or shifts invalidated are highlighted.",
         "templates": "Templates",
         "templatesDescription": "Create and version immutable stamping contract templates and apply them with divergence protection.",
         "workPolicies": "Work Policies",
-        "workPoliciesDescription": "Publish effective-dated work policy versions, toggle schedule/regulation/presence rules, and manage assignments."
+        "workPoliciesDescription": "Publish effective-dated work policy versions, toggle schedule/regulation/presence rules, and manage assignments.",
+        "statutory": "Statutory limits",
+        "statutoryDescription": "Review German statutory baselines and set when planners and HR are warned before a limit is reached."
       },
       "teamMove": {
         "changesHeading": "Operational contract rules affected by moving primary team:",
@@ -535,6 +629,335 @@
         "versioningOn": "Future scheduling enabled",
         "versioningPendingDescription": "Metadata and current-day policy edits save seamlessly while preserving all ArbZG regulation rules and disabled section drafts. Future-dated scheduling activates once policy versioning rollout completes.",
         "versioningPendingTitle": "Current-day and metadata policy editing"
+      },
+      "statutory": {
+        "baselinesTitle": "German statutory baselines",
+        "baselinesDescription": "Z8 maintains these limits and their effective dates. Each day is judged against the values in force on that day; organizations cannot change them.",
+        "showHistory": "Show earlier values",
+        "loadFailed": "Could not load the statutory baselines. Try again.",
+        "empty": "No statutory baselines are available.",
+        "effectiveRange": "{from} – {until}",
+        "effectiveFrom": "From {from}",
+        "column": {
+          "area": "Area",
+          "limit": "Limit",
+          "value": "Value",
+          "effective": "In force",
+          "legalReference": "Legal basis"
+        },
+        "status": {
+          "current": "Current",
+          "upcoming": "Upcoming"
+        },
+        "domain": {
+          "minijob": "Minijob (§ 8 SGB IV)",
+          "shortTerm": "Short-term employment",
+          "workingStudent": "Working students",
+          "onCall": "On-call work (§ 12 TzBfG)",
+          "youthProtection": "Youth protection (JArbSchG)",
+          "apprenticeship": "Apprentices (BBiG)"
+        },
+        "key": {
+          "minijobMonthlyLimit": "Monthly earnings limit",
+          "minijobUnforeseeableMonths": "Unforeseeable exceedance months per 12 months",
+          "minijobUnforeseeableMultiplier": "Maximum earnings in an exceedance month",
+          "shortTermDays": "Working days per calendar year",
+          "shortTermMonths": "Months per calendar year",
+          "workingStudentWeekly": "Weekly hours during lecture periods",
+          "workingStudentWeeks": "Weeks above 20 hours per 12 months",
+          "workingStudentDays": "Days above 20 hours per 12 months",
+          "onCallNotice": "Full days of call-in notice",
+          "onCallMinCall": "Minimum call duration",
+          "onCallDefaultWeekly": "Weekly hours when none are agreed",
+          "onCallMinBand": "Extra call-off above an agreed minimum",
+          "onCallMaxBand": "Reduced call-off below an agreed maximum",
+          "youthDaily": "Daily working time",
+          "youthDailyCompensatory": "Daily working time with compensation in the week",
+          "youthWeekly": "Weekly working time",
+          "youthDays": "Working days per week",
+          "youthRest": "Minimum daily rest",
+          "youthBreak270": "Break for more than 4.5 up to 6 hours of work",
+          "youthBreak360": "Break for more than 6 hours of work",
+          "youthBreakSegment": "Shortest counted break",
+          "youthUninterrupted": "Longest work without a break",
+          "youthNightStart": "Night rest starts",
+          "youthNightEnd": "Night rest ends"
+        },
+        "value": {
+          "hours": "{hours} h",
+          "days": "{count, plural, one {# day} other {# days}}",
+          "weeks": "{count, plural, one {# week} other {# weeks}}",
+          "months": "{count, plural, one {# month} other {# months}}",
+          "percent": "{value} %",
+          "multiplier": "{value}× the monthly limit"
+        },
+        "preferences": {
+          "title": "Statutory warning settings",
+          "description": "Decide when planners and HR are warned before a statutory limit is reached. Warnings never block clocking in or out.",
+          "warning": "Warning at",
+          "warningHelp": "Share of a statutory limit that raises a warning.",
+          "critical": "Critical at",
+          "criticalHelp": "Share of a statutory limit that raises an urgent warning.",
+          "blockJarbschg": "Block publishing shifts that break youth protection limits",
+          "blockJarbschgHelp": "Shifts for employees under 18 cannot be published while they break a JArbSchG limit, unless a statutory exception is acknowledged. Recorded working time is never blocked.",
+          "save": "Save warning settings",
+          "saved": "Warning settings saved",
+          "saveFailed": "Could not save the settings.",
+          "percentRange": "Enter whole percentages from 1 to 100.",
+          "warningBelowCritical": "The warning percentage must be below the critical percentage.",
+          "daytimeBand": "Working-student daytime band",
+          "daytimeBandHelp": "Weekday work inside this band during lecture periods counts against the 20-hour rule for working students (§ 6 Abs. 1 Nr. 3 SGB V). Evening and night work outside it, weekends and lecture-free periods do not count.",
+          "daytimeBandInsurer": "The law names no hours. Use the band your health insurer and payroll advisor accept.",
+          "daytimeStart": "Counts from",
+          "daytimeEnd": "Counts until",
+          "daytimeBandRange": "Choose whole quarter hours from 00:00 to 24:00.",
+          "daytimeBandOrder": "The daytime band must start before it ends.",
+          "minorContractors": "Apply youth protection (JArbSchG) to minor contractors",
+          "minorContractorsHelp": "JArbSchG also covers minors whose services resemble an employee's work (§ 1 Abs. 1 Nr. 3 JArbSchG). Off: each engagement of an External Contractor under 18 is flagged in Reviews & Conflicts so you can check whether it does. On: their working time is judged like an employee's under 18 in Scheduling, Staffing, the publish block and recorded working time."
+        }
+      },
+      "shortTerm": {
+        "title": "Short-term employment",
+        "description": "Calendar-year allowance under § 8 Abs. 1 Nr. 2 SGB IV, from completed work, planned shifts and prior employers. Warnings never block clocking in or out.",
+        "year": "Calendar year",
+        "breakdown": "Z8 work and planned shifts: {own}; prior employers: {prior}.",
+        "limitDays": "70-working-day limit: fewer than 5 working days a week on average, an irregular pattern, or such work together with 5-day weeks or prior working days. Every stint counts with its working days; a prior employer's month counts as 70 / 3 working days.",
+        "limitMonths": "3-month limit: 5 or more working days a week throughout. A single stint counts in calendar days up to 3 months from its first day; several stints, including prior employers, add up to 90 calendar days, a full calendar month counting as 30. Pauses between stints do not count.",
+        "calendarDays": "{count, plural, one {# calendar day} other {# calendar days}}",
+        "workDays": "{count, plural, one {# working day} other {# working days}}",
+        "noBaseline": "No statutory limit is available for {year}.",
+        "notApplicable": "Not employed short-term in {year}.",
+        "remaining": "{remaining} left in {year}",
+        "usedLabel": "Used share of the allowance",
+        "tier": {
+          "ok": "Within the limit",
+          "warning": "Approaching the limit",
+          "critical": "Limit almost reached",
+          "exceeded": "Limit exceeded"
+        },
+        "prior": {
+          "title": "Prior employers in {year}",
+          "empty": "No prior short-term employment recorded.",
+          "addTitle": "Add prior employment in {year}",
+          "kind": "Counted in",
+          "kindDays": "Working days",
+          "kindMonths": "Months",
+          "count": "Number",
+          "sourceEmployer": "Prior employer (optional)",
+          "note": "Evidence",
+          "notePlaceholder": "e.g. Employment certificate from the prior employer",
+          "submit": "Record prior employment",
+          "recorded": "Prior employment recorded",
+          "void": "Void",
+          "voidReason": "Why is this entry wrong?",
+          "voidSubmit": "Void entry",
+          "voided": "Entry voided"
+        },
+        "verification": {
+          "title": "Earnings above the Minijob limit",
+          "amounts": "{total} of {cap}",
+          "openReviews": "Open Reviews & Conflicts",
+          "needed": "Verification needed",
+          "stale": "Verify again: work or shifts changed",
+          "verified": "Verified",
+          "reason": "How was it verified?",
+          "reasonPlaceholder": "e.g. Student questionnaire on file; no other employment this year",
+          "legalNote": "Legal note (optional)",
+          "submit": "Record verification",
+          "recorded": "Verification recorded"
+        },
+        "reviews": {
+          "title": "Short-term employment: Berufsmäßigkeit checks",
+          "description": "A short-term employee earned more than the Minijob limit in these months. Verify that the employment is not berufsmäßig and record how. The verification has to be renewed when the month's work or shifts change.",
+          "earnings": "Earnings {total} (worked {earned}, planned {planned}) against the Minijob limit of {cap}",
+          "empty": "No short-term earnings above the Minijob limit to verify.",
+          "lastReason": "Last verification: {reason}"
+        },
+        "refusal": {
+          "noPrompt": "This month's earnings no longer exceed the Minijob limit. Reload to see the current state.",
+          "figuresChanged": "This month's work, shifts or earnings changed since you opened it. Review the current figures and verify again.",
+          "reasonRequired": "Explain how Berufsmäßigkeit was verified.",
+          "subjectRequired": "This verification could not be recorded. Reload and try again.",
+          "noteRequired": "Add a note or reason.",
+          "invalidValue": "Enter whole working days (1–366) or months (1–12).",
+          "invalidRange": "Choose a valid calendar year.",
+          "overlap": "This entry overlaps an existing one."
+        }
+      },
+      "minijob": {
+        "column": {
+          "month": "Month",
+          "monthly": "Monthly limit",
+          "rolling": "Rolling 12 months",
+          "exceedance": "Exceedance"
+        },
+        "currentMonth": "(current)",
+        "amountOfCap": "{amount} of {cap}",
+        "planned": "{amount} planned",
+        "external": "{amount} other Minijobs",
+        "missingWage": "Some work has no hourly wage in its terms and is not counted.",
+        "offsets": {
+          "saved": "External Minijob earnings saved",
+          "monthRequired": "Choose a month.",
+          "fromMonth": "First month",
+          "refusal": {
+            "range": "The last month must not be before the first month.",
+            "value": "Enter a monthly amount of 0 or more.",
+            "note": "Record where the earnings come from.",
+            "overlap": "The period overlaps existing earnings."
+          },
+          "lastMonth": "Last month (optional)",
+          "lastMonthHelp": "Leave empty while the other Minijob continues.",
+          "amount": "Monthly earnings (EUR)",
+          "sourceEmployer": "Other employer (optional)",
+          "note": "Source",
+          "notePlaceholder": "For example: payslip of the other Minijob",
+          "save": "Save earnings",
+          "voided": "External Minijob earnings voided",
+          "voidReasonRequired": "Record why the earnings are voided.",
+          "voidReason": "Why void these earnings?",
+          "confirmVoid": "Void",
+          "title": "Earnings from other Minijobs",
+          "add": "Add earnings",
+          "empty": "No other Minijob recorded.",
+          "perMonth": "{amount} a month",
+          "range": "{from} – {until}",
+          "since": "Since {from}",
+          "void": "Void"
+        },
+        "title": "Minijob earnings limit",
+        "descriptionAdmin": "Earned wages, planned shifts and earnings from other Minijobs against the monthly limit in force each month and the rolling 12 months (§ 8 Abs. 1 Nr. 1 SGB IV).",
+        "descriptionRestricted": "How close this employee is to the Minijob earnings limit. Amounts are visible to organization admins only.",
+        "review": {
+          "acknowledged": "Exceedance documented as unforeseeable",
+          "reason": "Why was it unforeseeable?",
+          "reasonPlaceholder": "For example: covered a colleague's unplanned sick leave",
+          "legalNote": "Legal note (optional)",
+          "acknowledge": "Document as unforeseeable",
+          "title": "Minijob earnings above the monthly limit",
+          "description": "Up to two months within 12 months may exceed the limit by up to twice the amount when the exceedance was unforeseeable (§ 8 Abs. 1b SGB IV). Document each such month; everything else needs a contract or schedule change.",
+          "loadFailed": "Could not load the Minijob exceedances.",
+          "total": "Earnings incl. planned shifts",
+          "cap": "Monthly limit",
+          "external": "Other Minijobs",
+          "doubleCap": "Twice the limit",
+          "prior": "Earlier exceedance months within 12 months: {months}",
+          "documentedReason": "Documented reason: {reason}",
+          "documentedReasonNoLongerCounts": "Documented reason (no longer counts): {reason}",
+          "noLongerApplies": "Acknowledgement no longer applies: the month became the third exceedance within 12 months or went above twice the limit, which no acknowledgement covers. The documented reason no longer counts.",
+          "empty": "No Minijob month above the monthly limit to review."
+        },
+        "refusal": {
+          "reasonRequired": "Explain why the exceedance was unforeseeable.",
+          "invalidMonth": "Choose a calendar month.",
+          "notExceeded": "The month's earnings are within the limit again; nothing to document.",
+          "notAcknowledgeable": "This month cannot count as an unforeseeable exceedance: it is above twice the limit or the third exceedance within 12 months.",
+          "changed": "The month's earnings changed since you opened this list. Review the updated figures and document them again.",
+          "subjectRequired": "The month could not be evaluated. Reload and try again."
+        },
+        "tier": {
+          "ok": "Within limit",
+          "warning": "Approaching limit",
+          "critical": "Close to limit",
+          "exceeded": "Over limit",
+          "exceededDocumented": "Exceeded (documented as unforeseeable)"
+        },
+        "exceedance": {
+          "acknowledged": "Documented as unforeseeable",
+          "unacknowledged": "Not documented",
+          "stale": "Documentation outdated: work or shifts changed",
+          "overDoubleCap": "More than twice the limit",
+          "tooMany": "Too many exceedance months within 12 months"
+        }
+      },
+      "workingStudent": {
+        "finding": {
+          "lectureWeek": "{hours} h of weekday daytime work in a lecture week (limit {limit} h)",
+          "ceiling": "{used} of {limit} weeks above 20 h in the last 12 months",
+          "generic": "Working-student limit at risk"
+        },
+        "severity": {
+          "critical": "Critical",
+          "warning": "Warning"
+        },
+        "ack": {
+          "current": "Acknowledged",
+          "stale": "Changed since acknowledged"
+        },
+        "week": {
+          "breach": "Above 20 h in lecture time",
+          "permitted": "Above 20 h, permitted",
+          "within": "Within 20 h"
+        },
+        "voidReasonRequired": "Say why this entry is voided.",
+        "voidReason": "Reason for voiding",
+        "void": "Void",
+        "cancel": "Cancel",
+        "lectureFree": {
+          "saved": "Lecture-free period recorded",
+          "startsOn": "First lecture-free day",
+          "endsOn": "Last lecture-free day",
+          "add": "Add period",
+          "title": "Lecture-free periods",
+          "empty": "No lecture-free periods recorded.",
+          "void": "Void lecture-free period"
+        },
+        "dateRequired": "Choose a date.",
+        "note": "Note (optional)",
+        "prior": {
+          "saved": "Prior-employer weeks recorded",
+          "monday": "Choose the Monday the first week starts on.",
+          "firstWeek": "First week (Monday)",
+          "count": "Consecutive weeks above 20 h",
+          "employer": "Previous employer (optional)",
+          "note": "Evidence",
+          "notePlaceholder": "e.g. certificate of the previous employer",
+          "add": "Add prior weeks",
+          "title": "Prior-employer weeks above 20 h",
+          "empty": "No prior-employer weeks recorded.",
+          "run": "{count, plural, one {# week} other {# weeks}} from {from}",
+          "void": "Void prior-employer weeks"
+        },
+        "refusal": {
+          "invalidValue": "Enter a number of weeks from 1 to 53.",
+          "noteRequired": "Add a note explaining the entry.",
+          "overlap": "This period overlaps a recorded lecture-free period.",
+          "invalidRange": "Check the dates: the end must not be before the start, and prior weeks start on a Monday."
+        },
+        "voided": "Entry voided",
+        "rolling": {
+          "title": "26-week balance",
+          "noBaseline": "No statutory baseline covers this week.",
+          "summary": "{used} of {limit} weeks above 20 h in the last 12 months; {remaining} remaining."
+        },
+        "notCurrent": "Not a working student this week. Recorded weeks and periods stay available.",
+        "findings": "Open findings",
+        "column": {
+          "week": "Week",
+          "total": "Total",
+          "core": "Lecture daytime",
+          "lectureFree": "Lecture-free",
+          "eveningWeekend": "Evening/weekend",
+          "otherProfile": "Other profile",
+          "status": "Status"
+        },
+        "title": "Working student (§ 6 SGB V)",
+        "description": "In lecture periods, weekday daytime work ({start}–{end}) may not exceed 20 hours a week; evening, night, weekend and lecture-free work may. Every week above 20 hours counts toward 26 weeks in 12 months, including weeks under another employment profile. Warnings never block clocking.",
+        "descriptionWithoutBand": "In lecture periods, weekday daytime work may not exceed 20 hours a week; evening, night, weekend and lecture-free work may. Every week above 20 hours counts toward 26 weeks in 12 months, including weeks under another employment profile. Warnings never block clocking.",
+        "loadFailed": "Could not load the working-student monitor.",
+        "reviews": {
+          "acknowledged": "Week acknowledged",
+          "reasonRequired": "Explain why this week is acknowledged.",
+          "reason": "Reason",
+          "reasonPlaceholder": "e.g. exam-free project week confirmed by the university",
+          "legalNote": "Legal note (optional)",
+          "acknowledge": "Acknowledge",
+          "title": "Working students above 20 hours",
+          "description": "Lecture weeks above 20 hours of weekday daytime work and weeks that use up the 26-week allowance. Acknowledge a week once you have reviewed it.",
+          "notFound": "This week no longer has the finding. Reload the reviews.",
+          "changed": "This week's figures changed since you opened the reviews. Review the updated figures and acknowledge again.",
+          "empty": "No working-student week to review."
+        }
       }
     },
     "timeRegulations": {
@@ -844,6 +1267,18 @@
       "violationsLoadError": "Failed to load violations",
       "violationType": {
         "breakRequired": "Required Break Missing",
+        "jarbschgBreak": "Youth Required Break Missing",
+        "jarbschgDailyMax": "Youth Max Daily Exceeded",
+        "jarbschgDaysPerWeek": "Youth Working Days Exceeded",
+        "jarbschgHolidayProhibited": "Youth Work on a Prohibited Holiday",
+        "jarbschgHolidayWork": "Youth Holiday Work",
+        "jarbschgNightWork": "Youth Night Work",
+        "jarbschgRestPeriod": "Youth Rest Period Too Short",
+        "jarbschgSaturdayWork": "Youth Saturday Work",
+        "jarbschgShiftSpan": "Youth Shift Span Exceeded",
+        "jarbschgSundayWork": "Youth Sunday Work",
+        "jarbschgUninterrupted": "Youth Max Continuous Exceeded",
+        "jarbschgWeeklyMax": "Youth Max Weekly Exceeded",
         "maxDaily": "Max Daily Exceeded",
         "maxUninterrupted": "Max Continuous Exceeded",
         "maxWeekly": "Max Weekly Exceeded",

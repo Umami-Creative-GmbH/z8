@@ -6,6 +6,7 @@ import { ContractsBulkCsvTab } from "./contracts-bulk-csv-tab";
 import { ContractsContractorsTab } from "./contracts-contractors-tab";
 import { ContractsDefaultsTab } from "./contracts-defaults-tab";
 import { ContractsReviewsTab } from "./contracts-reviews-tab";
+import { ContractsStatutoryTab } from "./contracts-statutory-tab";
 import { ContractsTemplatesTab } from "./contracts-templates-tab";
 import { ContractsWorkPoliciesTab } from "./contracts-work-policies-tab";
 
@@ -15,7 +16,8 @@ export type ContractsHubTab =
 	| "work-policies"
 	| "contractors"
 	| "bulk"
-	| "reviews";
+	| "reviews"
+	| "statutory";
 
 export interface ContractsHubClientProps {
 	organizationId: string;
@@ -106,7 +108,7 @@ export function ContractsHubClient({
 					label: t("settings.contracts.tabs.reviews", "Reviews & Conflicts"),
 					description: t(
 						"settings.contracts.tabs.reviewsDescription",
-						"Resolve contract migration conflicts, post-cutoff work reviews, payroll reconciliations, and migrated legacy terms.",
+						"Statutory findings and acknowledgements, contract migration conflicts, departure and payroll reviews, and migrated legacy terms in one place. Acknowledgements that newer work or shifts invalidated are highlighted.",
 					),
 					panel: (
 						<ContractsReviewsTab
@@ -114,6 +116,15 @@ export function ContractsHubClient({
 							organizationTimezone={organizationTimezone}
 						/>
 					),
+				},
+				{
+					value: "statutory",
+					label: t("settings.contracts.tabs.statutory", "Statutory limits"),
+					description: t(
+						"settings.contracts.tabs.statutoryDescription",
+						"Review German statutory baselines and set when planners and HR are warned before a limit is reached.",
+					),
+					panel: <ContractsStatutoryTab organizationId={organizationId} />,
 				},
 			]}
 		/>

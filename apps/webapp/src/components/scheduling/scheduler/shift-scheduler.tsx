@@ -4,7 +4,7 @@
 import "temporal-polyfill/global";
 
 import { createViewDay, createViewMonthGrid, createViewWeek } from "@schedule-x/calendar";
-import { ScheduleXCalendar, useCalendarApp } from "@schedule-x/react";
+import { useCalendarApp } from "@schedule-x/react";
 import "@schedule-x/theme-default/dist/index.css";
 import { IconPlus } from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
@@ -14,23 +14,27 @@ import type {
 	ShiftTemplate,
 	ShiftWithRelations,
 } from "@/app/[locale]/(app)/scheduling/types";
-import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
+import { useTimeFormat, useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
-import { toScheduleXLocale } from "@/lib/calendar/schedule-x-locale";
+import { scheduleXTimeAxisFormat, toScheduleXLocale } from "@/lib/calendar/schedule-x-locale";
 import { type PlainDate, parsePlainDate, type ZonedDateTime } from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { ShiftRequestsReview } from "../shift-requests/shift-requests-panel";
 import { ShiftDialog } from "../shifts/shift-dialog";
 import { CoverageHeatmapOverlay } from "./coverage-heatmap-overlay";
 import { EmployeeShiftSchedule } from "./employee-shift-schedule";
+import { PublishBlockedDialog } from "./publish-blocked-dialog";
 import { PublishComplianceDialog } from "./publish-compliance-dialog";
 import { PublishFab } from "./publish-fab";
 import { ScheduleComplianceBanner } from "./schedule-compliance-banner";
 import { ScheduleReadFailure } from "./schedule-read-failure";
 import { ScheduleShiftList } from "./schedule-shift-list";
 import { createScheduleXDragAndDropPlugin } from "./schedule-x-drag-and-drop";
+import { ScheduleXPortalCalendar } from "./schedule-x-portal-calendar";
+import { shiftCalendarEventComponents } from "./shift-calendar-event";
+import { SHIFT_CALENDARS } from "./shift-calendars";
 import {
 	calendarRangeToDateRange,
 	eventToShiftTimes,
@@ -111,6 +115,8 @@ function PlannerShiftScheduler({
 		supportingDataRetryPending,
 		retrySupportingData,
 		complianceSummary,
+		statutoryFindings,
+		shiftEmployeeIds,
 		draftCount,
 		complianceFindingsCount,
 		hasComplianceWarnings,
@@ -127,6 +133,9 @@ function PlannerShiftScheduler({
 		pendingAcknowledgment,
 		isComplianceDialogOpen,
 		setIsComplianceDialogOpen,
+		blockedFindings,
+		isBlockedDialogOpen,
+		setIsBlockedDialogOpen,
 		publish,
 		confirmPublish,
 		isPublishing,
@@ -200,7 +209,12 @@ function PlannerShiftScheduler({
 					)}
 				</ScheduleReadFailure>
 			)}
-			<ScheduleComplianceBanner summary={complianceSummary} />
+			<ScheduleComplianceBanner
+				summary={complianceSummary}
+				statutoryFindings={statutoryFindings}
+				dateRange={dateRange}
+				shiftEmployeeIds={shiftEmployeeIds}
+			/>
 
 			{/* Coverage summary bar and toggle for managers */}
 			<div className="flex flex-wrap items-center gap-4">
@@ -232,7 +246,10 @@ function PlannerShiftScheduler({
 				{/* `isolate` keeps Schedule-X's z-indexes (sticky header 100) below dialogs and sheets. */}
 				<div className="relative isolate h-[36rem] min-w-0 overflow-auto rounded-lg border lg:flex-1">
 					<div className="h-full min-w-[42rem]">
-						<ScheduleXCalendar calendarApp={calendar} />
+						<ScheduleXPortalCalendar
+							calendarApp={calendar}
+							customComponents={shiftCalendarEventComponents}
+						/>
 					</div>
 					{/* Over the calendar, not instead of it, so it stays mounted while a new range loads. */}
 					{shiftsLoading && (
@@ -286,8 +303,18 @@ function PlannerShiftScheduler({
 				open={isComplianceDialogOpen}
 				onOpenChange={setIsComplianceDialogOpen}
 				summary={pendingAcknowledgment?.complianceSummary ?? null}
+				statutoryFindings={pendingAcknowledgment?.statutoryFindings ?? null}
+				dateRange={dateRange}
+				shiftEmployeeIds={shiftEmployeeIds}
 				onConfirm={confirmPublish}
 				isConfirming={isPublishing}
+			/>
+
+			<PublishBlockedDialog
+				open={isBlockedDialogOpen}
+				onOpenChange={setIsBlockedDialogOpen}
+				statutoryFindings={blockedFindings}
+				dateRange={dateRange}
 			/>
 		</div>
 	);
@@ -358,58 +385,21 @@ function usePlannerCalendar({
 		setDateRange(calendarRangeToDateRange(range));
 	};
 
+	const timeFormat = useTimeFormat();
+
 	// Create calendar
 	const calendar = useCalendarApp({
 		views: [createViewDay(), createViewWeek(), createViewMonthGrid()],
 		defaultView: "week",
 		locale: toScheduleXLocale(locale),
+		weekOptions: { timeAxisFormatOptions: scheduleXTimeAxisFormat(timeFormat) },
 		isResponsive: false,
 		selectedDate: initialView.selectedDate,
 		timezone: organizationTimezone,
 		firstDayOfWeek: scheduleXFirstDayOfWeek(weekStartDay),
 		events,
 		isDark,
-		calendars: {
-			published: {
-				colorName: "published",
-				lightColors: {
-					main: "#3b82f6",
-					container: "#dbeafe",
-					onContainer: "#1e40af",
-				},
-				darkColors: {
-					main: "#60a5fa",
-					container: "#1e3a8a",
-					onContainer: "#bfdbfe",
-				},
-			},
-			draft: {
-				colorName: "draft",
-				lightColors: {
-					main: "#9ca3af",
-					container: "#f3f4f6",
-					onContainer: "#374151",
-				},
-				darkColors: {
-					main: "#6b7280",
-					container: "#374151",
-					onContainer: "#d1d5db",
-				},
-			},
-			open: {
-				colorName: "open",
-				lightColors: {
-					main: "#f59e0b",
-					container: "#fef3c7",
-					onContainer: "#92400e",
-				},
-				darkColors: {
-					main: "#fbbf24",
-					container: "#78350f",
-					onContainer: "#fde68a",
-				},
-			},
-		},
+		calendars: SHIFT_CALENDARS,
 		// No event modal: a click opens the shift dialog, which the modal would only duplicate.
 		plugins: [createScheduleXDragAndDropPlugin()],
 		callbacks: {

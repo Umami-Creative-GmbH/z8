@@ -5,15 +5,22 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Pool } from "pg";
-import { describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 import {
 	ensureAttachableUniqueIndex,
 	runBoundaryAwareMigrations,
 	verifyPhase1BackfillCompleteness,
 } from "../../scripts/boundary-migration-engine.js";
 import { integrationAdminPool, openIntegrationPool } from "@/test/integration-database";
+import { migrationsFolderThrough } from "@/test/migrations-through";
 
-const migrationsFolder = fileURLToPath(new URL("../../drizzle", import.meta.url));
+// This suite pins the 0000-0327 chain: migrations after 0327 are out of its scope.
+const pinnedMigrations = await migrationsFolderThrough(
+	fileURLToPath(new URL("../../drizzle", import.meta.url)),
+	327,
+);
+const migrationsFolder = pinnedMigrations.folder;
+afterAll(pinnedMigrations.cleanup);
 
 type Journal = {
 	version: string;

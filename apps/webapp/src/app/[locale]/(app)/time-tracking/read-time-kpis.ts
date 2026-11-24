@@ -20,7 +20,8 @@ export type { TimeKpiRead };
 
 /**
  * The KPI cards for today, this week and this month in the employee's timezone: day totals,
- * the previous week and month up to the same point, required time and the work policy's limits.
+ * the previous week and month up to the same point, required time and the work policy's limits
+ * (none for executive-exempt terms, § 18 Abs. 1 Nr. 1 ArbZG).
  */
 export async function readTimeKpis(
 	scope: EmployeeReadScope,
@@ -45,7 +46,8 @@ export async function readTimeKpis(
 							endDate: new Date(range.endExclusive.getTime() - 1),
 							timezone,
 						}),
-						policy: service.getEffectivePolicyAt({ ...scope, at: now }),
+						// Limit alerts are ArbZG limits: none while the terms are executive-exempt (#1993).
+						policy: service.getAdultArbzgPolicyAt({ ...scope, at: now }),
 					},
 					{ concurrency: "unbounded" },
 				);

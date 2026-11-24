@@ -29,7 +29,7 @@ import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { drizzle } from "drizzle-orm/node-postgres";
 import type { Pool } from "pg";
-import { describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 import * as authSchema from "@/db/auth-schema";
 import * as schema from "@/db/schema";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
@@ -42,6 +42,7 @@ import {
 	openIntegrationPool,
 	parseIntegrationDatabaseUrl,
 } from "@/test/integration-database";
+import { migrationsFolderThrough } from "@/test/migrations-through";
 import {
 	extractPostgresErrorCode,
 	runBoundaryAwareMigrations,
@@ -50,7 +51,13 @@ import {
 
 const execute = promisify(execFile);
 const appDirectory = fileURLToPath(new URL("../../", import.meta.url));
-const migrationsFolder = fileURLToPath(new URL("../../drizzle", import.meta.url));
+// This suite pins the 0000-0327 chain: migrations after 0327 are out of its scope.
+const pinnedMigrations = await migrationsFolderThrough(
+	fileURLToPath(new URL("../../drizzle", import.meta.url)),
+	327,
+);
+const migrationsFolder = pinnedMigrations.folder;
+afterAll(pinnedMigrations.cleanup);
 const fullSchema = { ...authSchema, ...schema };
 
 type Journal = {
@@ -136,6 +143,7 @@ async function runCliMigrationRunner(
 		POSTGRES_USER: decodeURIComponent(url.username),
 		POSTGRES_PASSWORD: decodeURIComponent(url.password),
 		POSTGRES_SSL_MODE: "disable",
+		DRIZZLE_MIGRATIONS_FOLDER: migrationsFolder,
 		...extraEnv,
 	};
 	delete env.DRIZZLE_MIGRATE_COMMAND;

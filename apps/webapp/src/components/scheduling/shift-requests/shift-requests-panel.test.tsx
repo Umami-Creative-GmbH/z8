@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ShiftRequestWithRelations } from "@/app/[locale]/(app)/scheduling/types";
+import { UserPreferencesProvider } from "@/components/providers/user-preferences-provider";
 import type { SkillValidationResult } from "@/lib/scheduling/skill-validation";
 
 const {
@@ -99,18 +100,20 @@ function buildRequest(
 	} as ShiftRequestWithRelations;
 }
 
-function renderPanel() {
+function renderPanel(timeFormat: "12h" | "24h" = "24h") {
 	const queryClient = new QueryClient({
 		defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
 	});
 	return render(
 		<QueryClientProvider client={queryClient}>
-			<ShiftRequestsPanel
-				open
-				onOpenChange={vi.fn()}
-				approverId="employee-manager"
-				organizationTimezone="Europe/Berlin"
-			/>
+			<UserPreferencesProvider timeFormat={timeFormat}>
+				<ShiftRequestsPanel
+					open
+					onOpenChange={vi.fn()}
+					approverId="employee-manager"
+					organizationTimezone="Europe/Berlin"
+				/>
+			</UserPreferencesProvider>
 		</QueryClientProvider>,
 	);
 }
@@ -132,6 +135,12 @@ describe("ShiftRequestsPanel", () => {
 		).toBeTruthy();
 		expect(screen.getByText("Tue, Oct 20, 06:00–14:00")).toBeTruthy();
 		expect(screen.getByText("Warehouse – Dock")).toBeTruthy();
+	});
+
+	it("writes the shift's times in the planner's 12-hour format (#2018)", async () => {
+		renderPanel("12h");
+
+		expect(await screen.findByText("Tue, Oct 20, 6:00 AM–2:00 PM")).toBeTruthy();
 	});
 
 	it("shows the unmet required skills and approves with the planner's reason (#893)", async () => {
@@ -216,6 +225,26 @@ describe("ShiftRequestsPanel", () => {
 			}),
 		);
 		expect(screen.queryByLabelText("Reason for the skill override")).toBeNull();
+	});
+
+	it("words a youth-protection publication block in the reader's language (#1993)", async () => {
+		approveShiftRequestMock.mockResolvedValueOnce({
+			success: false,
+			error: "Cannot save: this change to a published shift breaks youth protection limits",
+			code: "ValidationError",
+			refusal: "statutory_publication_blocked",
+		});
+		renderPanel();
+
+		fireEvent.click(await screen.findByRole("button", { name: "Approve" }));
+		fireEvent.click(screen.getByRole("button", { name: "Confirm approval" }));
+
+		await waitFor(() =>
+			expect(toastErrorMock).toHaveBeenCalledWith("Failed to approve the request", {
+				description:
+					"Approving this request would break youth protection limits (JArbSchG) for the employee taking the shift. Reject the request or ask someone else to take the shift.",
+			}),
+		);
 	});
 
 	it("checks a swap against the named colleague", async () => {

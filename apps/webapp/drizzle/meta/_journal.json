@@ -2332,6 +2332,41 @@
       "when": 1813420800000,
       "tag": "0332_invitation_contractor_compensation",
       "breakpoints": true
+    },
+    {
+      "idx": 333,
+      "version": "7",
+      "when": 1813507200000,
+      "tag": "0333_statutory_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 334,
+      "version": "7",
+      "when": 1813593600000,
+      "tag": "0334_shift_assignment_changed_at",
+      "breakpoints": true
+    },
+    {
+      "idx": 335,
+      "version": "7",
+      "when": 1813680000000,
+      "tag": "0335_jarbschg_violation_types",
+      "breakpoints": true
+    },
+    {
+      "idx": 336,
+      "version": "7",
+      "when": 1813766400000,
+      "tag": "0336_working_student_daytime_band",
+      "breakpoints": true
+    },
+    {
+      "idx": 337,
+      "version": "7",
+      "when": 1813852800000,
+      "tag": "0337_jarbschg_minor_contractors",
+      "breakpoints": true
     }
   ]
 }

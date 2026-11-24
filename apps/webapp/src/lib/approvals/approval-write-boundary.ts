@@ -1338,11 +1338,13 @@ export interface ScanApprovalWriteBoundaryOptions {
 const PRODUCTION_SOURCE = /\.[cm]?[jt]sx?$/;
 const TEST_SOURCE = /\.(?:test|spec)\.[cm]?[jt]sx?$/;
 // #1448 grew the admitted inventory from 4,081 to over 4,121 sources.
-// Keep a finite file budget with growth headroom; the independent 32 MiB total,
+// Keep a finite file budget with growth headroom; the independent 48 MiB total,
 // 2 MiB per-file and native analysis budgets still fail closed.
+// #1934 took the sources to ~32 MiB with LF and over 32 MiB on CRLF checkouts, so the
+// total budget grew to 48 MiB.
 const MAX_PRODUCTION_FILES = 6_144;
 const MAX_SOURCE_BYTES = 2 * 1024 * 1024;
-const MAX_TOTAL_SOURCE_BYTES = 32 * 1024 * 1024;
+const MAX_TOTAL_SOURCE_BYTES = 48 * 1024 * 1024;
 const APPROVAL_TABLE_PREFILTER =
 	/approval_(?:assignment|chain|command|decision|delivery|event|evidence|inbox|invocation|migration|outbox|presentation|projection|request|requester|review|rollout|stage|submitted|workflow)/i;
 const APPROVAL_TABLE_SYMBOL_PREFILTER =

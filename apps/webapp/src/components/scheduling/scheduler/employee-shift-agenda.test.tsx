@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import { Temporal } from "temporal-polyfill";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import type { ShiftWithRelations } from "@/app/[locale]/(app)/scheduling/types";
+import { UserPreferencesProvider } from "@/components/providers/user-preferences-provider";
 
 vi.mock("@tolgee/react", () => ({
 	useTolgee: () => ({ getLanguage: () => "en" }),
@@ -87,6 +88,26 @@ describe("EmployeeShiftAgenda", () => {
 		fireEvent.touchEnd(list, { changedTouches: [{ clientX: 180, clientY: 400 }] });
 		expect(props.onNextWeek).toHaveBeenCalledTimes(1);
 		expect(props.onPreviousWeek).toHaveBeenCalledTimes(1);
+	});
+
+	it("writes shift times in the employee's 12-hour format (#2018)", () => {
+		render(
+			<UserPreferencesProvider timeFormat="12h">
+				<EmployeeShiftAgenda
+					days={days}
+					shifts={[nightShift]}
+					loading={false}
+					today={Temporal.PlainDate.from("2026-10-08")}
+					focusDate={null}
+					organizationTimezone="Europe/Berlin"
+					onSelectShift={vi.fn()}
+					onPreviousWeek={vi.fn()}
+					onNextWeek={vi.fn()}
+				/>
+			</UserPreferencesProvider>,
+		);
+
+		expect(screen.getByRole("button").textContent).toContain("10:00 PM – 6:00 AM");
 	});
 
 	it("scrolls the focused day into view", () => {

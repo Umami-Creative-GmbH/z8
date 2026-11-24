@@ -570,6 +570,25 @@ describe("unified read-only contract resolver & clock-out snapshot v2 (PostgreSQ
 		// Foreign-org team row from between 0120 and 0132 is ignored -> falls back to Org Default (480m)
 		expect(batch.get(emp3.employeeId)?.get("2026-06-15")?.primaryTeamId).toBeNull();
 		expect(batch.get(emp3.employeeId)?.get("2026-06-15")?.requiredMinutes).toBe(480);
+
+		// Each employee on its own dates only, with the same terms as the full batch.
+		const own = await loadEffectiveContractsBatch(db, {
+			organizationId: ORG_ID,
+			employeeIds: [emp1.employeeId, emp2.employeeId],
+			dates: ["2026-06-12", "2026-06-15"],
+			datesByEmployee: new Map([
+				[emp1.employeeId, ["2026-06-12"]],
+				[emp2.employeeId, ["2026-06-15"]],
+			]),
+		});
+		expect([...(own.get(emp1.employeeId)?.keys() ?? [])]).toEqual(["2026-06-12"]);
+		expect([...(own.get(emp2.employeeId)?.keys() ?? [])]).toEqual(["2026-06-15"]);
+		expect(own.get(emp1.employeeId)?.get("2026-06-12")).toEqual(
+			batch.get(emp1.employeeId)?.get("2026-06-12"),
+		);
+		expect(own.get(emp2.employeeId)?.get("2026-06-15")).toEqual(
+			batch.get(emp2.employeeId)?.get("2026-06-15"),
+		);
 	});
 
 	it("handles same-day departure + rehire, cross-timezone (employeeTz != orgTz), and clock-out break snapshot v2 + v1 replay", async () => {

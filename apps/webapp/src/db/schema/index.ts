@@ -48,6 +48,8 @@ export * from "./compliance";
 // Contract defaults, templates, statutory thresholds, and durable batches (#1921, #1923)
 export * from "./contract";
 export * from "./contract-reviews";
+// German statutory preferences and per-employee statutory context (#1988)
+export * from "./statutory";
 export * from "./cost-center";
 // Coverage targets (minimum staffing requirements)
 export * from "./coverage";

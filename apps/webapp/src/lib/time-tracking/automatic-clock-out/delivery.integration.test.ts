@@ -59,6 +59,7 @@ describe("automatic clock-out durable delivery", () => {
 		>;
 	const effects = {
 		checkCompliance: vi.fn(async () => []),
+		recordYouthProtection: vi.fn(async () => {}),
 		enforceBreaks: vi.fn(async () => ({
 			wasAdjusted: false,
 			affectedWorkPeriodIds: [] as string[],

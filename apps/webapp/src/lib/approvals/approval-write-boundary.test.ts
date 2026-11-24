@@ -3379,7 +3379,7 @@ describe("approval write boundary production ownership", () => {
 
 	it("fails closed before parsing when the total source byte limit is exceeded", () => {
 		withApprovalWriteTree({}, (workspaceRoot) => {
-			for (let index = 0; index < 17; index += 1) {
+			for (let index = 0; index < 25; index += 1) {
 				const fileName = join(workspaceRoot, "src", `${index}.ts`);
 				mkdirSync(dirname(fileName), { recursive: true });
 				writeFileSync(fileName, "");
@@ -3392,7 +3392,7 @@ describe("approval write boundary production ownership", () => {
 				{
 					column: 0,
 					detail:
-						"Approval write boundary total source byte limit exceeded: 33554432.",
+						"Approval write boundary total source byte limit exceeded: 50331648.",
 					error: "traversal",
 					kind: "error",
 					line: 0,

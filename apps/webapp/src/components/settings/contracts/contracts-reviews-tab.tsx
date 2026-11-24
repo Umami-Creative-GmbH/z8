@@ -10,6 +10,7 @@ import {
 } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
+import { useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -44,6 +45,19 @@ import type { PreviewBulkContractActionResult } from "@/lib/contracts/bulk-opera
 import { type EngagementFilter, filterByEngagement } from "@/lib/engagement/engagement-filter";
 import { Link } from "@/navigation";
 import { todayIsoDateInTimezone } from "./contract-formatters";
+import { MinijobExceedanceReviews } from "./minijob-exceedance-reviews";
+import { MinorContractorReviewsSection } from "./minor-contractor-reviews-section";
+import { OnCallReviewsSection } from "./on-call-reviews-section";
+import { ShortTermBerufsmaessigkeitReviews } from "./short-term-berufsmaessigkeit-reviews";
+import { StatutoryMonitorFindingsSection } from "./statutory-monitor-findings-section";
+import {
+	parseReviewDomainFilter,
+	type ReviewDomainFilter,
+	reviewDomainFilters,
+	reviewDomainLabel,
+} from "./statutory-review-shared";
+import { WorkingStudentReviewsSection } from "./working-student-reviews-section";
+import { YouthSectorExceptionsSection } from "./youth-sector-exceptions-section";
 
 type ReviewFilterKind =
 	| "all"
@@ -61,11 +75,131 @@ export function ContractsReviewsTab({
 	organizationTimezone,
 }: ContractsReviewsTabProps) {
 	const { t } = useTranslate();
+	const searchParams = useSearchParams();
+	// The Compliance Command Center deep-links here with `?tab=reviews&domain=<domain>` (#1994).
+	const [domain, setDomain] = useState<ReviewDomainFilter>(() =>
+		parseReviewDomainFilter(searchParams?.get("domain")),
+	);
+	const [includeResolved, setIncludeResolved] = useState(false);
+	const shows = (candidate: Exclude<ReviewDomainFilter, "all">) =>
+		domain === "all" || domain === candidate;
+	const statutoryDomain = domain === "all" || domain === "migration_departure" ? null : domain;
+
+	return (
+		<div className="space-y-6">
+			{/* The tab's own description introduces the inbox; this card holds only its filters. */}
+			<Card>
+				<CardContent className="flex flex-wrap items-center gap-x-6 gap-y-3 pt-6">
+					<div className="flex items-center gap-2">
+						<Label htmlFor="reviews-domain-filter" className="text-sm">
+							{t("settings.contracts.reviews.domain.label", "Area")}
+						</Label>
+						<Select
+							value={domain}
+							onValueChange={(value) => setDomain(parseReviewDomainFilter(value))}
+						>
+							<SelectTrigger id="reviews-domain-filter" className="w-56">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{reviewDomainFilters.map((filter) => (
+									<SelectItem key={filter} value={filter}>
+										{reviewDomainLabel(filter, t)}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+					<div className="flex items-center gap-2">
+						<Checkbox
+							id="reviews-include-resolved"
+							checked={includeResolved}
+							onCheckedChange={(c) => setIncludeResolved(c === true)}
+						/>
+						<Label htmlFor="reviews-include-resolved" className="text-sm">
+							{t("settings.contracts.reviews.showResolved", "Show resolved")}
+						</Label>
+					</div>
+				</CardContent>
+			</Card>
+			{shows("migration_departure") && (
+				<MigrationAndDepartureReviews
+					organizationId={organizationId}
+					organizationTimezone={organizationTimezone}
+					includeResolved={includeResolved}
+				/>
+			)}
+			{statutoryDomain !== null || domain === "all" ? (
+				<StatutoryMonitorFindingsSection
+					organizationId={organizationId}
+					domain={statutoryDomain}
+					showWhenEmpty={false}
+				/>
+			) : null}
+			{shows("minijob") && (
+				<MinijobExceedanceReviews
+					organizationId={organizationId}
+					includeAcknowledged={includeResolved}
+					showWhenEmpty={domain === "minijob"}
+				/>
+			)}
+			{shows("short_term") && (
+				<ShortTermBerufsmaessigkeitReviews
+					organizationId={organizationId}
+					includeResolved={includeResolved}
+					showWhenEmpty={domain === "short_term"}
+				/>
+			)}
+			{shows("working_student") && (
+				<WorkingStudentReviewsSection
+					organizationId={organizationId}
+					includeResolved={includeResolved}
+					showWhenEmpty={domain === "working_student"}
+				/>
+			)}
+			{shows("on_call") && (
+				<OnCallReviewsSection
+					organizationId={organizationId}
+					includeResolved={includeResolved}
+					showWhenEmpty={domain === "on_call"}
+				/>
+			)}
+			{shows("youth_apprentice") && (
+				<YouthSectorExceptionsSection
+					organizationId={organizationId}
+					includeResolved={includeResolved}
+					showWhenEmpty={domain === "youth_apprentice"}
+				/>
+			)}
+			{shows("youth_apprentice") && (
+				<MinorContractorReviewsSection
+					organizationId={organizationId}
+					includeResolved={includeResolved}
+					showWhenEmpty={false}
+				/>
+			)}
+		</div>
+	);
+}
+
+/**
+ * Contract migration conflicts, post-cutoff work and payroll reconciliation reviews: the
+ * "Migration & Departure" group of the inbox, with its own review-type filter.
+ */
+function MigrationAndDepartureReviews({
+	organizationId,
+	organizationTimezone,
+	includeResolved,
+}: {
+	organizationId: string;
+	organizationTimezone: string;
+	includeResolved: boolean;
+}) {
+	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [filterKind, setFilterKind] = useState<ReviewFilterKind>("all");
 	// All | Employees | External Contractors (#1995).
 	const [engagement, setEngagement] = useState<EngagementFilter>("all");
-	const [includeResolved, setIncludeResolved] = useState(false);
 	const [adoptDate, setAdoptDate] = useState(() => todayIsoDateInTimezone(organizationTimezone));
 	const [adoptPreview, setAdoptPreview] = useState<PreviewBulkContractActionResult | null>(null);
 	const [adoptRequestId, setAdoptRequestId] = useState<string | null>(null);
@@ -320,7 +454,10 @@ export function ContractsReviewsTab({
 					<div className="flex flex-wrap items-center justify-between gap-3">
 						<div>
 							<CardTitle>
-								{t("settings.contracts.reviews.queueTitle", "Reviews & Conflicts Queue")}
+								{t(
+									"settings.contracts.reviews.migrationTitle",
+									"Contract migration and departure reviews",
+								)}
 							</CardTitle>
 							<CardDescription>
 								{t(
@@ -362,16 +499,6 @@ export function ContractsReviewsTab({
 								</SelectContent>
 							</Select>
 							<EngagementFilterToggle value={engagement} onValueChange={setEngagement} />
-							<div className="flex items-center gap-2">
-								<Checkbox
-									id="reviews-include-resolved"
-									checked={includeResolved}
-									onCheckedChange={(c) => setIncludeResolved(c === true)}
-								/>
-								<Label htmlFor="reviews-include-resolved" className="text-xs">
-									{t("settings.contracts.reviews.showResolved", "Show resolved")}
-								</Label>
-							</div>
 						</div>
 					</div>
 				</CardHeader>

@@ -238,6 +238,35 @@ function parseFixedDays(raw: string | null): readonly DayOfWeek[] | null {
 }
 
 /**
+ * Which of two stints covering the same day decides it: negative when `left` does. The stint
+ * still active at the end of the day (`nextDayStart`) first, then the later `startedAt` (none
+ * counts as earliest), then the later record (`createdAt`), then the greater id. Independent of
+ * the order the stints were read in. `resolveEmploymentPeriodForDay` sorts by it, and
+ * `periodOutsideEmployment` breaks ties by it so the days just outside a tie continue the stint
+ * that decides the last (or first) day in force.
+ */
+function compareStintsForDay(
+	left: EmploymentPeriodSnapshot,
+	right: EmploymentPeriodSnapshot,
+	nextDayStart: Instant,
+): number {
+	const leftActiveAtEod =
+		left.endedAt === null || compareInstants(left.endedAt, nextDayStart) >= 0 ? 1 : 0;
+	const rightActiveAtEod =
+		right.endedAt === null || compareInstants(right.endedAt, nextDayStart) >= 0 ? 1 : 0;
+	if (rightActiveAtEod !== leftActiveAtEod) return rightActiveAtEod - leftActiveAtEod;
+
+	const leftStart = left.startedAt?.epochNanoseconds ?? BigInt(-1);
+	const rightStart = right.startedAt?.epochNanoseconds ?? BigInt(-1);
+	if (rightStart > leftStart) return 1;
+	if (rightStart < leftStart) return -1;
+
+	const createdCmp = compareInstants(right.createdAt, left.createdAt);
+	if (createdCmp !== 0) return createdCmp;
+	return right.id.localeCompare(left.id);
+}
+
+/**
  * Resolves the active employment period for a calendar day in `employeeCalendarTimezone`.
  * Half-open `[startedAt, endedAt)`. On a same-day departure + rehire, deduplicates the
  * shared calendar date once by selecting the rehire stint active at end-of-day.
@@ -272,22 +301,9 @@ export function resolveEmploymentPeriodForDay(
 		return { employmentPeriodId: null, period: null, isEmployed: false };
 	}
 
-	const sorted = [...intersecting].sort((left, right) => {
-		const leftActiveAtEod =
-			left.endedAt === null || compareInstants(left.endedAt, nextDayStart) >= 0 ? 1 : 0;
-		const rightActiveAtEod =
-			right.endedAt === null || compareInstants(right.endedAt, nextDayStart) >= 0 ? 1 : 0;
-		if (rightActiveAtEod !== leftActiveAtEod) return rightActiveAtEod - leftActiveAtEod;
-
-		const leftStart = left.startedAt?.epochNanoseconds ?? BigInt(-1);
-		const rightStart = right.startedAt?.epochNanoseconds ?? BigInt(-1);
-		if (rightStart > leftStart) return 1;
-		if (rightStart < leftStart) return -1;
-
-		const createdCmp = compareInstants(right.createdAt, left.createdAt);
-		if (createdCmp !== 0) return createdCmp;
-		return right.id.localeCompare(left.id);
-	});
+	const sorted = [...intersecting].sort((left, right) =>
+		compareStintsForDay(left, right, nextDayStart),
+	);
 
 	const winner = sorted[0] ?? null;
 	return {
@@ -309,49 +325,142 @@ export function engagementKindOnDay(input: {
 	employeeEngagementKind?: EngagementKind;
 }): EngagementKind {
 	if (input.periods.length === 0) return input.employeeEngagementKind ?? "employee";
-	const { period } = resolveEmploymentPeriodForDay(
-		input.periods,
-		input.day,
-		input.employeeCalendarTimezone,
-	);
 	return (
-		period?.engagementKind ??
-		engagementKindOutsideEmployment(input.periods, input.day, input.employeeCalendarTimezone)
+		engagementPeriodDecidingDay(input.periods, input.day, input.employeeCalendarTimezone)?.period
+			.engagementKind ?? "employee"
 	);
 }
 
 /**
- * The engagement kind of a day no employment period covers (#1996): the kind of the stint
- * that ended last before the day, or, before the first stint, of the stint that starts
- * first after it. Only callers that found no period on the day use this.
+ * The stint whose engagement kind `engagementKindOnDay` gives an employee-local day (#1996): the
+ * one in force that day (`in_force`); outside every stint, the one that ended last before the day
+ * (`after_end`), or, before the first stint, the one the resolver picks on the first day a stint
+ * starts (`before_start`).
+ * Null when no stint decides it (none recorded, or none with a known position).
  */
-function engagementKindOutsideEmployment(
+export function engagementPeriodDecidingDay(
 	periods: readonly EmploymentPeriodSnapshot[],
 	day: PlainDate,
 	employeeCalendarTimezone: string,
-): EngagementKind {
+): {
+	readonly period: EmploymentPeriodSnapshot;
+	readonly position: "in_force" | "after_end" | "before_start";
+} | null {
+	if (periods.length === 0) return null;
+	const { period } = resolveEmploymentPeriodForDay(periods, day, employeeCalendarTimezone);
+	if (period) return { period, position: "in_force" };
+	return periodOutsideEmployment(periods, day, employeeCalendarTimezone);
+}
+
+/**
+ * The stint deciding a day no employment period covers (#1996): the stint that ended last
+ * before the day, or, before the first stint, the stint `resolveEmploymentPeriodForDay` picks on
+ * the first day a stint starts. Only callers that found no period on the day use this.
+ *
+ * Stints ending at the same instant tie. Among the tied stints, the tie goes to the one the
+ * resolver picks on the last day in force (a zero-length stint ending at midnight is never
+ * picked; otherwise the later start, then the later record, then the greater id), so the
+ * engagement kind does not flip at the boundary. Before the first stint the resolver's pick on the
+ * first start day decides directly, so it does not flip there either, also when a stint that starts
+ * later that day takes over. Only when the resolver covers none of the stints starting that day
+ * (all zero-length at its midnight) does the earliest start decide, ties by record and id.
+ *
+ * Known differences from payroll (`engagement/employee-time.ts`, `kindAt`), which works per
+ * instant: it lets the contractor win overlapping stints (the schema allows them, but normal
+ * conversions, which end one stint where the next starts, never create them), and it gives the
+ * days before a first-day conversion the stint that starts first, while this gives them the one
+ * in force at the end of that first day. Neither touches a day a stint covers without overlap.
+ */
+function periodOutsideEmployment(
+	periods: readonly EmploymentPeriodSnapshot[],
+	day: PlainDate,
+	employeeCalendarTimezone: string,
+): {
+	readonly period: EmploymentPeriodSnapshot;
+	readonly position: "after_end" | "before_start";
+} | null {
 	const dayStart = day.toZonedDateTime(employeeCalendarTimezone).toInstant();
-	let preceding: EmploymentPeriodSnapshot | null = null;
-	let following: EmploymentPeriodSnapshot | null = null;
+	let preceding: { period: EmploymentPeriodSnapshot; endedAt: Instant } | null = null;
+	let following: { period: EmploymentPeriodSnapshot; startedAt: Instant } | null = null;
 	for (const period of periods) {
 		if (period.endedAt !== null && compareInstants(period.endedAt, dayStart) <= 0) {
-			if (preceding?.endedAt == null || compareInstants(period.endedAt, preceding.endedAt) > 0) {
-				preceding = period;
+			const order = preceding ? compareInstants(period.endedAt, preceding.endedAt) : 1;
+			if (
+				order > 0 ||
+				(order === 0 &&
+					preceding &&
+					endsTieBefore(period, preceding.period, period.endedAt, employeeCalendarTimezone))
+			) {
+				preceding = { period, endedAt: period.endedAt };
 			}
 			continue;
 		}
 		const start =
 			period.startProvenance === "recorded" && period.startedAt ? period.startedAt : null;
 		if (start === null) continue;
+		const order = following ? compareInstants(start, following.startedAt) : -1;
 		if (
-			following === null ||
-			following.startedAt === null ||
-			compareInstants(start, following.startedAt) < 0
+			order < 0 ||
+			(order === 0 &&
+				following &&
+				startsTieBefore(period, following.period, start, employeeCalendarTimezone))
 		) {
-			following = period;
+			following = { period, startedAt: start };
 		}
 	}
-	return (preceding ?? following)?.engagementKind ?? "employee";
+	if (preceding) return { period: preceding.period, position: "after_end" };
+	if (following) {
+		// The days before the first stint continue whichever stint decides the first day in force,
+		// also when a later stint takes over on that same day (a first-day conversion).
+		const firstDay = resolveEmploymentPeriodForDay(
+			periods,
+			plainDateAt(following.startedAt, employeeCalendarTimezone),
+			employeeCalendarTimezone,
+		);
+		return { period: firstDay.period ?? following.period, position: "before_start" };
+	}
+	return null;
+}
+
+/**
+ * Whether `left` decides the days after an end it shares with `right`: whichever of the two the
+ * resolver picks on the last day before that end keeps deciding after it. That settles a
+ * zero-length stint (it starts at the shared end) as the resolver does: never in force when the
+ * end is at the day's midnight, the pick of that day when the end falls during it. When the
+ * resolver covers neither (both zero-length at midnight), the comparator settles it by start,
+ * record and id.
+ */
+function endsTieBefore(
+	left: EmploymentPeriodSnapshot,
+	right: EmploymentPeriodSnapshot,
+	sharedEnd: Instant,
+	employeeCalendarTimezone: string,
+): boolean {
+	const lastDay = plainDateAt(sharedEnd.subtract({ nanoseconds: 1 }), employeeCalendarTimezone);
+	const { period } = resolveEmploymentPeriodForDay(
+		[left, right],
+		lastDay,
+		employeeCalendarTimezone,
+	);
+	if (period) return period === left;
+	return compareStintsForDay(left, right, sharedEnd) < 0;
+}
+
+/**
+ * Whether `left` precedes `right` among stints starting at the same instant, for the fallback when
+ * the resolver covers none of them on their start day: the comparator at the end of that day.
+ */
+function startsTieBefore(
+	left: EmploymentPeriodSnapshot,
+	right: EmploymentPeriodSnapshot,
+	sharedStart: Instant,
+	employeeCalendarTimezone: string,
+): boolean {
+	const startDayEnd = plainDateAt(sharedStart, employeeCalendarTimezone)
+		.add({ days: 1 })
+		.toZonedDateTime(employeeCalendarTimezone)
+		.toInstant();
+	return compareStintsForDay(left, right, startDayEnd) < 0;
 }
 
 /**
@@ -413,7 +522,10 @@ export function resolvePrimaryTeamAtDayStart(input: {
 }
 
 function termsDateBounds(
-	row: EmploymentHistorySnapshot,
+	row: Pick<
+		EmploymentHistorySnapshot,
+		"validFrom" | "validUntil" | "validFromDate" | "validUntilDate"
+	>,
 	organizationTimezone: string,
 ): { from: PlainDate; until: PlainDate | null } {
 	const from = row.validFromDate
@@ -541,6 +653,124 @@ function selectConfirmedTermsForPeriodOnDay(input: {
 	});
 
 	return { terms: null, inEndedTermsGap, effectivePolicyEvaluationDate: null };
+}
+
+/**
+ * The employment profile `resolveEffectiveContractPure` resolves on `day`, or null when the
+ * employee is not employed that day. Depends only on employment periods and confirmed terms.
+ */
+export function resolveEmploymentProfileOnDay(input: {
+	readonly day: PlainDate;
+	readonly employmentPeriods: readonly EmploymentPeriodSnapshot[];
+	readonly confirmedTerms: readonly EmploymentHistorySnapshot[];
+	readonly employeeCalendarTimezone: string;
+	readonly organizationTimezone: string;
+}): EffectiveContractOnDay["employmentProfile"] | null {
+	const { period, isEmployed } = resolveEmploymentPeriodForDay(
+		input.employmentPeriods,
+		input.day,
+		input.employeeCalendarTimezone,
+	);
+	// An External Contractor stint has no employee statutory profile (#1996).
+	if (!isEmployed || period?.engagementKind === "contractor") return null;
+	const { terms } = selectConfirmedTermsForPeriodOnDay({
+		confirmedTerms: input.confirmedTerms,
+		period,
+		day: input.day,
+		employeeCalendarTimezone: input.employeeCalendarTimezone,
+		organizationTimezone: input.organizationTimezone,
+	});
+	return terms?.employmentProfile ?? "regular";
+}
+
+/**
+ * Every day on which `resolveEmploymentProfileOnDay` can change: terms boundaries, and the local
+ * days an employment period starts or ends on (and the day after, since a period touching a day
+ * covers it). Between two consecutive change days the profile is constant, and so are the terms
+ * row in force and its wage. Unsorted, with repeats.
+ */
+export function employmentProfileChangeDays(input: {
+	readonly employmentPeriods: readonly Pick<EmploymentPeriodSnapshot, "startedAt" | "endedAt">[];
+	readonly confirmedTerms: readonly Pick<
+		EmploymentHistorySnapshot,
+		"validFrom" | "validUntil" | "validFromDate" | "validUntilDate"
+	>[];
+	readonly employeeCalendarTimezone: string;
+	readonly organizationTimezone: string;
+}): PlainDate[] {
+	const days: PlainDate[] = [];
+	for (const row of input.confirmedTerms) {
+		const bounds = termsDateBounds(row, input.organizationTimezone);
+		days.push(bounds.from);
+		if (bounds.until) days.push(bounds.until);
+	}
+	for (const period of input.employmentPeriods) {
+		for (const instant of [period.startedAt, period.endedAt]) {
+			if (!instant) continue;
+			for (const zone of [input.employeeCalendarTimezone, input.organizationTimezone]) {
+				const day = plainDateAt(instant, zone);
+				days.push(day, day.add({ days: 1 }));
+			}
+		}
+	}
+	return days;
+}
+
+export function employmentPeriodSnapshotOf(row: {
+	readonly id: string;
+	readonly employeeId: string;
+	readonly status: EmploymentPeriodSnapshot["status"];
+	readonly startedAt: Date | null;
+	readonly startProvenance: EmploymentPeriodSnapshot["startProvenance"];
+	readonly endedAt: Date | null;
+	readonly createdAt: Date;
+	readonly engagementKind: EngagementKind;
+}): EmploymentPeriodSnapshot {
+	return {
+		id: row.id,
+		employeeId: row.employeeId,
+		status: row.status,
+		startedAt: row.startedAt ? instantFromDate(row.startedAt) : null,
+		startProvenance: row.startProvenance,
+		endedAt: row.endedAt ? instantFromDate(row.endedAt) : null,
+		createdAt: instantFromDate(row.createdAt),
+		engagementKind: row.engagementKind,
+	};
+}
+
+export function employmentHistorySnapshotOf(
+	row: typeof employeeEmploymentHistory.$inferSelect,
+	createdAtIso: string,
+	customDays: EmploymentHistorySnapshot["customDays"],
+): EmploymentHistorySnapshot {
+	return {
+		id: row.id,
+		employeeId: row.employeeId,
+		employmentPeriodId: row.employmentPeriodId,
+		validFrom: row.validFrom,
+		validUntil: row.validUntil,
+		validFromDate: row.validFromDate,
+		validUntilDate: row.validUntilDate,
+		contractType: row.contractType,
+		weeklyContractMinutes: row.weeklyContractMinutes ?? null,
+		workModel: row.workModel ?? null,
+		workPolicyId: row.workPolicyId,
+		scheduleMode: row.scheduleMode,
+		presenceOverride: row.presenceOverride,
+		balanceMode: row.balanceMode,
+		scheduleSource: row.scheduleSource,
+		employmentProfile: row.employmentProfile,
+		arbzgScope: row.arbzgScope,
+		onCallHoursKind: row.onCallHoursKind,
+		onCallWeeklyMinutes: row.onCallWeeklyMinutes,
+		onCallDailyMinutes: row.onCallDailyMinutes,
+		migratedLegacyTerms: row.migratedLegacyTerms,
+		hourlyRate: row.hourlyRate,
+		currency: row.currency,
+		createdAt: row.createdAt,
+		createdAtIso,
+		customDays,
+	};
 }
 
 function selectContractDefaultOnDay(
@@ -1743,6 +1973,11 @@ export async function loadEffectiveContractsBatch(
 		organizationId: string;
 		employeeIds: readonly string[];
 		dates: readonly (PlainDate | string)[];
+		/**
+		 * Resolve each listed employee only on its own dates (`YYYY-MM-DD`) instead of every date
+		 * in `dates`; employees missing from the map get every date.
+		 */
+		datesByEmployee?: ReadonlyMap<string, readonly string[]>;
 		timezoneOverride?: string;
 		employmentStartDateOverride?: string;
 		organizationTimezone?: string;
@@ -2337,16 +2572,7 @@ export async function loadEffectiveContractsBatch(
 	} else {
 		for (const p of periodRows ?? []) {
 			const list = periodsByEmployee.get(p.employeeId) ?? [];
-			list.push({
-				id: p.id,
-				employeeId: p.employeeId,
-				status: p.status,
-				startedAt: p.startedAt ? instantFromDate(p.startedAt) : null,
-				startProvenance: p.startProvenance,
-				endedAt: p.endedAt ? instantFromDate(p.endedAt) : null,
-				createdAt: instantFromDate(p.createdAt),
-				engagementKind: p.engagementKind,
-			});
+			list.push(employmentPeriodSnapshotOf(p));
 			periodsByEmployee.set(p.employeeId, list);
 		}
 	}
@@ -2388,34 +2614,9 @@ export async function loadEffectiveContractsBatch(
 	const termsByEmployee = new Map<string, EmploymentHistorySnapshot[]>();
 	for (const { row, createdAtIso } of termsRows) {
 		const list = termsByEmployee.get(row.employeeId) ?? [];
-		list.push({
-			id: row.id,
-			employeeId: row.employeeId,
-			employmentPeriodId: row.employmentPeriodId,
-			validFrom: row.validFrom,
-			validUntil: row.validUntil,
-			validFromDate: row.validFromDate,
-			validUntilDate: row.validUntilDate,
-			contractType: row.contractType,
-			weeklyContractMinutes: row.weeklyContractMinutes ?? null,
-			workModel: row.workModel ?? null,
-			workPolicyId: row.workPolicyId,
-			scheduleMode: row.scheduleMode,
-			presenceOverride: row.presenceOverride,
-			balanceMode: row.balanceMode,
-			scheduleSource: row.scheduleSource,
-			employmentProfile: row.employmentProfile,
-			arbzgScope: row.arbzgScope,
-			onCallHoursKind: row.onCallHoursKind,
-			onCallWeeklyMinutes: row.onCallWeeklyMinutes,
-			onCallDailyMinutes: row.onCallDailyMinutes,
-			migratedLegacyTerms: row.migratedLegacyTerms,
-			hourlyRate: row.hourlyRate,
-			currency: row.currency,
-			createdAt: row.createdAt,
-			createdAtIso,
-			customDays: historyDaysByHistoryId.get(row.id) ?? [],
-		});
+		list.push(
+			employmentHistorySnapshotOf(row, createdAtIso, historyDaysByHistoryId.get(row.id) ?? []),
+		);
 		termsByEmployee.set(row.employeeId, list);
 	}
 
@@ -2483,7 +2684,9 @@ export async function loadEffectiveContractsBatch(
 			if (teamDefs) empScopedDefaults.push(...teamDefs);
 		}
 
-		for (const day of uniqueDates) {
+		const ownDates = input.datesByEmployee?.get(emp.id);
+		const days = ownDates ? [...new Set(ownDates)].map((date) => toPlainDate(date)) : uniqueDates;
+		for (const day of days) {
 			const resolved = resolveEffectiveContractPure({
 				date: day,
 				at: input.at,

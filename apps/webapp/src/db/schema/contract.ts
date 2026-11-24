@@ -328,6 +328,8 @@ export const statutoryThreshold = pgTable(
 		integerValue: integer("integer_value"),
 		currency: text("currency"),
 		unit: text("unit"),
+		/** Statute the value comes from, e.g. `§ 8 Abs. 1a SGB IV` (#1988). */
+		legalReference: text("legal_reference"),
 		notes: text("notes"),
 		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 	},

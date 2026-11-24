@@ -250,7 +250,8 @@ describe("overtime range evidence on PostgreSQL", () => {
 			);
 			expect(response.evidence.tracking).toBe(1);
 			expect(response.evidence.periods).toBe(1);
-			expect(response.evidence.queries).toBe(16);
+			// 16 + the range's apprentice release days, which release required time (#1993).
+			expect(response.evidence.queries).toBe(17);
 		}
 	});
 	async function personWithTerms(timezone = "UTC", weeklyMinutes = 0) {

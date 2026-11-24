@@ -64,8 +64,21 @@ vi.mock("@/app/[locale]/(app)/settings/contracts/bulk-actions", () => ({
 	commitCsvImportBatchAction: vi.fn(),
 }));
 
+vi.mock("@/app/[locale]/(app)/settings/contracts/minijob-review-actions", () => ({
+	listMinijobExceedanceReviewsAction: vi.fn(async () => ({ success: true, data: [] })),
+	acknowledgeMinijobExceedanceAction: vi.fn(),
+}));
+
 vi.mock("@/app/[locale]/(app)/settings/employees/employee-offboarding.actions", () => ({
 	resolveDepartureReviewAction: mocks.resolveDepartureReviewAction,
+}));
+
+vi.mock("./working-student-reviews-section", () => ({
+	WorkingStudentReviewsSection: () => null,
+}));
+
+vi.mock("./statutory-monitor-findings-section", () => ({
+	StatutoryMonitorFindingsSection: () => null,
 }));
 
 vi.mock("@/app/[locale]/(app)/settings/work-policies/actions", () => ({

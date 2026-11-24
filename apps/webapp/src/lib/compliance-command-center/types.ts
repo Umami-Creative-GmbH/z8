@@ -21,6 +21,8 @@ export interface ComplianceSectionCard {
 	facts: ComplianceText[];
 	updatedAt: string | null;
 	primaryLink: CompliancePrimaryLink;
+	/** Further drill-downs, e.g. one per statutory domain with open findings. */
+	links?: CompliancePrimaryLink[];
 }
 
 export interface ComplianceCriticalEvent {

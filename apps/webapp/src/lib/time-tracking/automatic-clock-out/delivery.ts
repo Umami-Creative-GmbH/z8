@@ -20,10 +20,10 @@ import {
 	NOTIFICATION_CHANNELS,
 	type NotificationChannel,
 } from "@/lib/notifications/types";
-import type { ClockOutFollowUpEffects, ClosedLiveWork } from "../clocking/follow-ups";
+import type { ClosedLiveWork } from "../clocking/follow-ups";
 import { parsePolicyClockOutSurchargeSnapshot } from "../policy-clock-out-surcharge-snapshot";
 import { deriveWorkDurationMinutes } from "../work-duration";
-import { runAutoClockOutFollowUps } from "./follow-ups";
+import { type AutoClockOutFollowUpEffects, runAutoClockOutFollowUps } from "./follow-ups";
 import { buildAutoClockOutNotification, planAutoClockOutChannels } from "./notifications";
 import { AutoClockOutTaskLeaseNotOwnedError, createAutoClockOutTaskOutbox } from "./outbox";
 import type {
@@ -179,7 +179,7 @@ async function loadFacts(database: typeof db, claim: AutoClockOutTaskClaim) {
 export function createAutoClockOutDelivery(deps: {
 	database: typeof db;
 	clock: Clock;
-	effects: ClockOutFollowUpEffects;
+	effects: AutoClockOutFollowUpEffects;
 	transport: AutoClockOutNotificationTransport;
 }) {
 	const outbox = createAutoClockOutTaskOutbox(deps.database);
@@ -323,7 +323,7 @@ export async function runAutoClockOutDelivery(deps: {
 }): Promise<AutoClockOutDeliveryResult> {
 	const [
 		{ clockOutFollowUpEffects },
-		{ checkComplianceAfterClockOut, checkProjectBudgetAfterClockOut },
+		{ automaticClockOutComplianceEffects, checkProjectBudgetAfterClockOut },
 		service,
 	] = await Promise.all([
 		import("../clocking"),
@@ -334,7 +334,7 @@ export async function runAutoClockOutDelivery(deps: {
 		...deps,
 		effects: {
 			...clockOutFollowUpEffects,
-			checkCompliance: (input) => checkComplianceAfterClockOut(input, { throwOnError: true }),
+			...automaticClockOutComplianceEffects,
 			checkProjectBudget: (projectId, organizationId) =>
 				checkProjectBudgetAfterClockOut(projectId, organizationId, { throwOnError: true }),
 		},
