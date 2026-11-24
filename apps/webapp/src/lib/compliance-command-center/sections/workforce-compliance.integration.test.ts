@@ -85,25 +85,8 @@ describe("Compliance Command Center workforce compliance with statutory monitors
 				href: "/settings/contracts?tab=reviews&domain=youth_apprentice",
 			},
 		]);
-		expect(section.recentCriticalEvents).toContainEqual(
-			expect.objectContaining({
-				id: "statutory-minijob",
-				sectionKey: "workforceCompliance",
-				severity: "critical",
-				title: { key: "compliance.commandCenter.events.statutory.minijob.title" },
-				description: {
-					key: "compliance.commandCenter.events.statutory.description",
-					params: { critical: 1, warning: 0, pending: 1, stale: 0 },
-				},
-				primaryLink: {
-					label: { key: "compliance.commandCenter.links.reviewDomain.minijob" },
-					href: "/settings/contracts?tab=reviews&domain=minijob",
-				},
-			}),
-		);
-		expect(section.recentCriticalEvents).toContainEqual(
-			expect.objectContaining({ id: "statutory-short_term", severity: "warning" }),
-		);
+		// Open findings are a standing backlog on the card, not recent events.
+		expect(section.recentCriticalEvents).toEqual([]);
 		// Counts only: no amounts, names or employee ids leave the section.
 		const payload = JSON.stringify(section);
 		expect(payload).not.toMatch(/EUR|€|67500|60300/);
@@ -134,53 +117,38 @@ describe("Compliance Command Center workforce compliance with statutory monitors
 
 		const section = await getWorkforceComplianceSection(organizationId, { now });
 
-		// January, February, March (the third, documented before) and November.
-		expect(section.recentCriticalEvents).toContainEqual(
-			expect.objectContaining({
-				id: "statutory-minijob",
-				severity: "critical",
-				description: {
-					key: "compliance.commandCenter.events.statutory.description",
-					params: { critical: 4, warning: 0, pending: 2, stale: 0 },
-				},
-			}),
-		);
+		// Minijob: January, February, March (the third, documented before) and November are
+		// critical, three more than the seed's November alone.
+		expect(section.card.facts).toContainEqual({
+			key: "compliance.commandCenter.facts.workforce.statutoryFindings",
+			params: { critical: 6, warning: 7 },
+		});
+		expect(section.card.facts).toContainEqual({
+			key: "compliance.commandCenter.facts.workforce.statutoryAcknowledgements",
+			params: { pending: 6, stale: 0 },
+		});
+		expect(section.card.links).toContainEqual({
+			label: {
+				key: "compliance.commandCenter.links.statutoryDomain.minijob",
+				params: { count: 4 },
+			},
+			href: "/settings/contracts?tab=reviews&domain=minijob",
+		});
 	});
 
-	it("counts invalidated acknowledgements as stale per domain", async () => {
+	it("counts invalidated acknowledgements as stale", async () => {
 		const seed = await domains.seed("a");
 		await acknowledgeMinijobShortTermAndYouth(seed);
 		await invalidateMinijobShortTermAndYouth(admin, domains, seed);
 
 		const section = await getWorkforceComplianceSection(seed.org.id, { now });
 
-		// The working-student week and the on-call short notice are still pending.
+		// Minijob, short-term and youth are invalidated by newer work; the working-student week and
+		// the on-call short notice are still pending.
 		expect(section.card.facts).toContainEqual({
 			key: "compliance.commandCenter.facts.workforce.statutoryAcknowledgements",
 			params: { pending: 2, stale: 3 },
 		});
-		for (const domain of ["minijob", "short_term", "youth_apprentice"] as const) {
-			expect(section.recentCriticalEvents).toContainEqual(
-				expect.objectContaining({
-					id: `statutory-${domain}`,
-					description: {
-						key: "compliance.commandCenter.events.statutory.description",
-						params: expect.objectContaining({ pending: 0, stale: 1 }),
-					},
-				}),
-			);
-		}
-		for (const domain of ["working_student", "on_call"] as const) {
-			expect(section.recentCriticalEvents).toContainEqual(
-				expect.objectContaining({
-					id: `statutory-${domain}`,
-					description: {
-						key: "compliance.commandCenter.events.statutory.description",
-						params: expect.objectContaining({ pending: 1, stale: 0 }),
-					},
-				}),
-			);
-		}
 	});
 
 	it("counts a Minijob exceedance planned in the last month of the planning horizon", async () => {

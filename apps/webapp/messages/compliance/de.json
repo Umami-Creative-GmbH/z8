@@ -27,24 +27,6 @@
         "workforceFindings": {
           "description": "Ruhezeit: {restPeriodViolations}, Sonstige Richtlinien: {generalPolicyViolations}, Überstunden: {overtimeViolations}",
           "title": "Aktuelle Ergebnisse zur Arbeitsplatzrichtlinie"
-        },
-        "statutory": {
-          "description": "{critical} kritisch, {warning, plural, one {# Warnung} other {# Warnungen}}; {pending, plural, one {# Bestätigung} other {# Bestätigungen}} ausstehend, {stale} durch neuere Arbeit oder Schichten ungültig",
-          "minijob": {
-            "title": "Minijob-Verdienstgrenzen"
-          },
-          "short_term": {
-            "title": "Grenzen der kurzfristigen Beschäftigung"
-          },
-          "working_student": {
-            "title": "Werkstudierende über 20 Stunden"
-          },
-          "on_call": {
-            "title": "Arbeit auf Abruf (§ 12 TzBfG)"
-          },
-          "youth_apprentice": {
-            "title": "Jugendarbeitsschutz und Auszubildende (JArbSchG, BBiG)"
-          }
         }
       },
       "facts": {
@@ -94,13 +76,6 @@
           "working_student": "Werkstudierende: {count} offen",
           "on_call": "Abrufarbeit: {count} offen",
           "youth_apprentice": "Jugendliche & Azubis: {count} offen"
-        },
-        "reviewDomain": {
-          "minijob": "Minijob-Befunde prüfen",
-          "short_term": "Befunde zur kurzfristigen Beschäftigung prüfen",
-          "working_student": "Werkstudierenden-Befunde prüfen",
-          "on_call": "Befunde zur Abrufarbeit prüfen",
-          "youth_apprentice": "Befunde zu Jugendlichen und Azubis prüfen"
         }
       },
       "loading": "Compliance-Signale werden geladen",

@@ -34,31 +34,6 @@ export const COMPLIANCE_COMMAND_CENTER_I18N = {
 		default:
 			"Workforce compliance uses the last 7 days of work-policy violations and pending exception requests, plus the open findings and acknowledgements of the German statutory monitors (Minijob, short-term employment, working students, on-call work, youth protection and apprentices).",
 	},
-	eventStatutoryDescription: {
-		key: "compliance.commandCenter.events.statutory.description",
-		default:
-			"{critical} critical, {warning, plural, one {# warning} other {# warnings}}; {pending, plural, one {# acknowledgement} other {# acknowledgements}} pending, {stale} invalidated by newer work or shifts",
-	},
-	eventStatutoryMinijobTitle: {
-		key: "compliance.commandCenter.events.statutory.minijob.title",
-		default: "Minijob earnings limits",
-	},
-	eventStatutoryShortTermTitle: {
-		key: "compliance.commandCenter.events.statutory.short_term.title",
-		default: "Short-term employment limits",
-	},
-	eventStatutoryWorkingStudentTitle: {
-		key: "compliance.commandCenter.events.statutory.working_student.title",
-		default: "Working students above 20 hours",
-	},
-	eventStatutoryOnCallTitle: {
-		key: "compliance.commandCenter.events.statutory.on_call.title",
-		default: "On-call work (§ 12 TzBfG)",
-	},
-	eventStatutoryYouthApprenticeTitle: {
-		key: "compliance.commandCenter.events.statutory.youth_apprentice.title",
-		default: "Youth protection and apprentices (JArbSchG, BBiG)",
-	},
 	factWorkforceStatutoryFindings: {
 		key: "compliance.commandCenter.facts.workforce.statutoryFindings",
 		default:
@@ -72,26 +47,6 @@ export const COMPLIANCE_COMMAND_CENTER_I18N = {
 	factWorkforceStatutoryUnavailable: {
 		key: "compliance.commandCenter.facts.workforce.statutoryUnavailable",
 		default: "Some statutory monitors could not be loaded.",
-	},
-	linkReviewDomainMinijob: {
-		key: "compliance.commandCenter.links.reviewDomain.minijob",
-		default: "Review Minijob findings",
-	},
-	linkReviewDomainShortTerm: {
-		key: "compliance.commandCenter.links.reviewDomain.short_term",
-		default: "Review short-term findings",
-	},
-	linkReviewDomainWorkingStudent: {
-		key: "compliance.commandCenter.links.reviewDomain.working_student",
-		default: "Review working-student findings",
-	},
-	linkReviewDomainOnCall: {
-		key: "compliance.commandCenter.links.reviewDomain.on_call",
-		default: "Review on-call findings",
-	},
-	linkReviewDomainYouthApprentice: {
-		key: "compliance.commandCenter.links.reviewDomain.youth_apprentice",
-		default: "Review youth and apprentice findings",
 	},
 	linkStatutoryDomainMinijob: {
 		key: "compliance.commandCenter.links.statutoryDomain.minijob",

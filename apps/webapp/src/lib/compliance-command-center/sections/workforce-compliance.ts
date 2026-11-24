@@ -30,7 +30,7 @@ export interface WorkforceComplianceSnapshot {
 	 * monitors could not be read at all. Omitted: no statutory data (older callers).
 	 */
 	statutory?: readonly StatutoryReviewDomainSummary[] | null;
-	/** When the snapshot was taken (statutory events are dated by it). */
+	/** When the snapshot was taken: the card's date when no violation dates it. */
 	evaluatedAt?: string;
 }
 
@@ -43,16 +43,15 @@ function openFindings(summary: StatutoryReviewDomainSummary): number {
 	return summary.critical + summary.warning;
 }
 
-function statutoryParts(snapshot: WorkforceComplianceSnapshot, occurredAt: string) {
+function statutoryParts(snapshot: WorkforceComplianceSnapshot) {
 	const statutory = snapshot.statutory;
 	if (statutory === undefined) {
-		return { facts: [], links: [], events: [], critical: false, warning: false };
+		return { facts: [], links: [], critical: false, warning: false };
 	}
 	if (statutory === null) {
 		return {
 			facts: [text("compliance.commandCenter.facts.workforce.statutoryUnavailable")],
 			links: [],
-			events: [],
 			critical: false,
 			warning: true,
 		};
@@ -80,34 +79,19 @@ function statutoryParts(snapshot: WorkforceComplianceSnapshot, occurredAt: strin
 		facts.push(text("compliance.commandCenter.facts.workforce.statutoryUnavailable"));
 	}
 
-	const withFindings = statutory.filter((summary) => openFindings(summary) > 0);
-	const links: CompliancePrimaryLink[] = withFindings.map((summary) => ({
-		label: text(`compliance.commandCenter.links.statutoryDomain.${summary.domain}`, {
-			count: openFindings(summary),
-		}),
-		href: statutoryReviewsHref(summary.domain),
-	}));
-	const events: ComplianceCriticalEvent[] = withFindings.map((summary) => ({
-		id: `statutory-${summary.domain}`,
-		sectionKey: "workforceCompliance",
-		severity: summary.critical > 0 ? "critical" : "warning",
-		title: text(`compliance.commandCenter.events.statutory.${summary.domain}.title`),
-		description: text("compliance.commandCenter.events.statutory.description", {
-			critical: summary.critical,
-			warning: summary.warning,
-			pending: summary.pendingAcknowledgements,
-			stale: summary.staleAcknowledgements,
-		}),
-		occurredAt,
-		primaryLink: {
-			label: text(`compliance.commandCenter.links.reviewDomain.${summary.domain}`),
+	// Open findings are a standing backlog, not events: the card lists them per domain and they stay
+	// out of "Recent critical events", where they would crowd out what actually just happened.
+	const links: CompliancePrimaryLink[] = statutory
+		.filter((summary) => openFindings(summary) > 0)
+		.map((summary) => ({
+			label: text(`compliance.commandCenter.links.statutoryDomain.${summary.domain}`, {
+				count: openFindings(summary),
+			}),
 			href: statutoryReviewsHref(summary.domain),
-		},
-	}));
+		}));
 	return {
 		facts,
 		links,
-		events,
 		critical: critical > 0,
 		// Stale or pending acknowledgements need an org admin even without a warning finding.
 		warning: warning > 0 || pending > 0 || stale > 0 || unavailable > 0,
@@ -119,7 +103,7 @@ export function deriveWorkforceComplianceSection(
 ): ComplianceSectionResult {
 	const occurredAt =
 		snapshot.evaluatedAt ?? snapshot.latestViolationAt ?? systemClock.nowInstant().toString();
-	const statutory = statutoryParts(snapshot, occurredAt);
+	const statutory = statutoryParts(snapshot);
 	const status =
 		snapshot.restPeriodViolations > 0 || snapshot.generalPolicyViolations > 0 || statutory.critical
 			? "critical"
@@ -165,8 +149,8 @@ export function deriveWorkforceComplianceSection(
 			},
 			...(statutory.links.length > 0 ? { links: statutory.links } : {}),
 		},
-		recentCriticalEvents: [
-			...(policyStatus === "healthy"
+		recentCriticalEvents:
+			policyStatus === "healthy"
 				? []
 				: [
 						{
@@ -185,9 +169,7 @@ export function deriveWorkforceComplianceSection(
 								href: "/settings/compliance",
 							},
 						} satisfies ComplianceCriticalEvent,
-					]),
-			...statutory.events,
-		],
+					],
 	};
 }
 

@@ -27,24 +27,6 @@
         "workforceFindings": {
           "description": "Rest: {restPeriodViolations}, Other policy: {generalPolicyViolations}, Overtime: {overtimeViolations}",
           "title": "Recent workforce policy findings"
-        },
-        "statutory": {
-          "description": "{critical} critical, {warning, plural, one {# warning} other {# warnings}}; {pending, plural, one {# acknowledgement} other {# acknowledgements}} pending, {stale} invalidated by newer work or shifts",
-          "minijob": {
-            "title": "Minijob earnings limits"
-          },
-          "short_term": {
-            "title": "Short-term employment limits"
-          },
-          "working_student": {
-            "title": "Working students above 20 hours"
-          },
-          "on_call": {
-            "title": "On-call work (§ 12 TzBfG)"
-          },
-          "youth_apprentice": {
-            "title": "Youth protection and apprentices (JArbSchG, BBiG)"
-          }
         }
       },
       "facts": {
@@ -94,13 +76,6 @@
           "working_student": "Working students: {count} open",
           "on_call": "On-call: {count} open",
           "youth_apprentice": "Youth & apprentices: {count} open"
-        },
-        "reviewDomain": {
-          "minijob": "Review Minijob findings",
-          "short_term": "Review short-term findings",
-          "working_student": "Review working-student findings",
-          "on_call": "Review on-call findings",
-          "youth_apprentice": "Review youth and apprentice findings"
         }
       },
       "loading": "Loading compliance signals",

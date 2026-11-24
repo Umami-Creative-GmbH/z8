@@ -130,7 +130,8 @@ describe("deriveWorkforceComplianceSection", () => {
 				href: "/settings/contracts?tab=reviews&domain=minijob",
 			},
 		]);
-		expect(result.recentCriticalEvents.map((event) => event.id)).toEqual(["statutory-minijob"]);
+		// A standing backlog, not an event: it stays out of "Recent critical events".
+		expect(result.recentCriticalEvents).toEqual([]);
 	});
 
 	it("warns about an acknowledgement invalidated by newer work even without an open warning", () => {
