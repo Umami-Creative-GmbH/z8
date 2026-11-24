@@ -1,8 +1,9 @@
 /**
  * Everything the § 12 TzBfG on-call monitor reads, loaded once per evaluation and batched across
  * employees: who is on call on which day (confirmed terms through the contract resolver), their
- * shifts (draft and published, or published only for readers who never see drafts), their work per organization-local day and per call (a running
- * clock-in counts up to now) and the on-call baselines. Read-only: `select` only.
+ * shifts (draft and published, or published only for readers who never see drafts), their work
+ * periods and calls (a running clock-in counts up to now) and the on-call baselines. Read-only:
+ * `select` only.
  */
 import { and, eq, gt, gte, inArray, isNotNull, isNull, lt, or } from "drizzle-orm";
 import { employeeEmploymentHistory, shift, workPeriod } from "@/db/schema";
@@ -11,10 +12,10 @@ import type { ResolvedOnCallTerms } from "@/lib/contracts/types";
 import {
 	compareInstants,
 	comparePlainDates,
+	dateFromInstant,
 	type Instant,
 	instantFromDate,
 	type PlainDate,
-	plainDateAt,
 } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
@@ -70,6 +71,9 @@ export interface OnCallWorkCall {
  */
 const ON_CALL_TOUCHING_GAP_MINUTES = 1;
 
+/** Longer than any finished work period: how far before the loaded days finished work is read. */
+const WORK_PERIOD_LOOKBACK_DAYS = 2;
+
 export interface OnCallFacts {
 	readonly thresholds: StatutoryThresholdTable;
 	/** Employees on call on at least one loaded day, with their terms per day (`YYYY-MM-DD`). */
@@ -80,8 +84,6 @@ export interface OnCallFacts {
 	 * asked for, unassigned or outside the loaded days): its assignee keeps its announcement.
 	 */
 	readonly replacedShift: OnCallShift | null;
-	/** Worked minutes per organization-local start day; a running clock-in counts up to now. */
-	readonly workMinutesByEmployee: ReadonlyMap<string, ReadonlyMap<string, number>>;
 	/** Worked calls in start order. */
 	readonly workCallsByEmployee: ReadonlyMap<string, readonly OnCallWorkCall[]>;
 	/** Work periods (a running clock-in up to now), to match work to the shifts it fulfils. */
@@ -146,7 +148,6 @@ export async function loadOnCallFacts(
 		termsByEmployee: new Map(),
 		shiftsByEmployee: new Map(),
 		replacedShift: null,
-		workMinutesByEmployee: new Map(),
 		workCallsByEmployee: new Map(),
 		workPiecesByEmployee: new Map(),
 		releasedDaysByEmployee: new Map(),
@@ -196,37 +197,56 @@ export async function loadOnCallFacts(
 	const onCallIds = [...termsByEmployee.keys()].toSorted();
 	if (onCallIds.length === 0) return empty;
 
-	const bounds = shiftDateRangeBounds(input.from, input.untilExclusive, input.timezone);
-	const workRows = await db
-		.select({
-			employeeId: workPeriod.employeeId,
-			startTime: workPeriod.startTime,
-			endTime: workPeriod.endTime,
-			durationMinutes: workPeriod.durationMinutes,
-			isActive: workPeriod.isActive,
-		})
+	// Shifts and work one day either side of the loaded days, for every employee alike, so a day's
+	// figures depend neither on the range it is loaded in nor on other employees: a shift runs at
+	// most 24 hours, so Sunday's night shift reaches into Monday, a planned or worked call that
+	// starts on the last day continues into the next, and work from the last day fills the next
+	// day's shift (`workAttribution` in the monitor).
+	const bounds = shiftDateRangeBounds(
+		input.from.subtract({ days: 1 }),
+		input.untilExclusive.add({ days: 1 }),
+		input.timezone,
+	);
+	const workColumns = {
+		employeeId: workPeriod.employeeId,
+		startTime: workPeriod.startTime,
+		endTime: workPeriod.endTime,
+		durationMinutes: workPeriod.durationMinutes,
+		isActive: workPeriod.isActive,
+	};
+	const ofOnCallEmployees = and(
+		eq(workPeriod.organizationId, input.organizationId),
+		inArray(workPeriod.employeeId, onCallIds),
+		lt(workPeriod.startTime, bounds.endExclusive),
+	);
+	// Completed work on the loaded days, and work started earlier that runs into them (a night
+	// clocked in the day before): it fulfils the loaded days' shifts. No work period lasts
+	// `WORK_PERIOD_LOOKBACK_DAYS`, so the start bound keeps the read on the employee's
+	// (employee, organization, start) index range instead of their whole history.
+	const finishedRows = db
+		.select(workColumns)
 		.from(workPeriod)
 		.where(
 			and(
-				eq(workPeriod.organizationId, input.organizationId),
-				inArray(workPeriod.employeeId, onCallIds),
-				// Completed work, and a running clock-in: work in progress must not vanish.
-				or(
-					and(completedWorkPeriodCondition(), isNotNull(workPeriod.endTime)),
-					and(eq(workPeriod.isActive, true), isNull(workPeriod.deletedAt)),
+				ofOnCallEmployees,
+				completedWorkPeriodCondition(),
+				isNotNull(workPeriod.endTime),
+				gte(
+					workPeriod.startTime,
+					dateFromInstant(
+						instantFromDate(bounds.start).subtract({ hours: 24 * WORK_PERIOD_LOOKBACK_DAYS }),
+					),
 				),
-				lt(workPeriod.startTime, bounds.endExclusive),
-				// Work started on the loaded days, and work started earlier that runs into them (a night
-				// clocked in the day before): it fulfils the loaded days' shifts.
-				or(
-					gte(workPeriod.startTime, bounds.start),
-					gt(workPeriod.endTime, bounds.start),
-					eq(workPeriod.isActive, true),
-				),
+				gt(workPeriod.endTime, bounds.start),
 			),
 		);
+	// A running clock-in, however long ago it started: work in progress must not vanish.
+	const runningRows = db
+		.select(workColumns)
+		.from(workPeriod)
+		.where(and(ofOnCallEmployees, eq(workPeriod.isActive, true), isNull(workPeriod.deletedAt)));
+	const workRows = [...(await finishedRows), ...(await runningRows)];
 	const piecesByEmployee = new Map<string, OnCallWorkPiece[]>();
-	let runningUntil: Instant | null = null;
 	for (const row of workRows) {
 		const start = instantFromDate(row.startTime);
 		if (row.isActive || !row.endTime) {
@@ -237,7 +257,6 @@ export async function loadOnCallFacts(
 			const minutes = Math.floor(start.until(input.now).total("minutes"));
 			const end = start.add({ minutes });
 			push(piecesByEmployee, row.employeeId, { start, end, minutes, running: true });
-			if (!runningUntil || compareInstants(end, runningUntil) > 0) runningUntil = end;
 			continue;
 		}
 		const end = instantFromDate(row.endTime);
@@ -246,15 +265,6 @@ export async function loadOnCallFacts(
 		push(piecesByEmployee, row.employeeId, { start, end, minutes, running: false });
 	}
 
-	// A running clock-in's minutes inside a shift count on that shift's day, so the shifts it has run
-	// into are loaded too, also past the loaded days (a Sunday clock-in running into Monday's shift).
-	const runningDayAfter = runningUntil
-		? plainDateAt(runningUntil, input.timezone).add({ days: 1 })
-		: null;
-	const shiftBounds =
-		runningDayAfter && comparePlainDates(runningDayAfter, input.untilExclusive) > 0
-			? shiftDateRangeBounds(input.from, runningDayAfter, input.timezone)
-			: bounds;
 	const shiftRows = await db
 		.select({
 			id: shift.id,
@@ -271,8 +281,8 @@ export async function loadOnCallFacts(
 			and(
 				eq(shift.organizationId, input.organizationId),
 				inArray(shift.employeeId, onCallIds),
-				gte(shift.date, shiftBounds.start),
-				lt(shift.date, shiftBounds.endExclusive),
+				gte(shift.date, bounds.start),
+				lt(shift.date, bounds.endExclusive),
 				input.publishedShiftsOnly ? eq(shift.status, "published") : undefined,
 			),
 		);
@@ -308,16 +318,8 @@ export async function loadOnCallFacts(
 		);
 	}
 
-	const workMinutesByEmployee = new Map<string, Map<string, number>>();
 	const workCallsByEmployee = new Map<string, OnCallWorkCall[]>();
 	for (const [employeeId, pieces] of piecesByEmployee) {
-		const byDay = new Map<string, number>();
-		for (const piece of pieces) {
-			// Work counts on its organization-local start day, as Scheduling buckets work.
-			const day = plainDateAt(piece.start, input.timezone).toString();
-			byDay.set(day, (byDay.get(day) ?? 0) + piece.minutes);
-		}
-		workMinutesByEmployee.set(employeeId, byDay);
 		workCallsByEmployee.set(
 			employeeId,
 			workCalls(pieces, shiftsByEmployee.get(employeeId) ?? [], input.timezone),
@@ -339,7 +341,6 @@ export async function loadOnCallFacts(
 		termsByEmployee,
 		shiftsByEmployee,
 		replacedShift,
-		workMinutesByEmployee,
 		workCallsByEmployee,
 		workPiecesByEmployee: piecesByEmployee,
 		releasedDaysByEmployee,

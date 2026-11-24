@@ -963,6 +963,344 @@ describe("§ 12 TzBfG on-call monitor (PostgreSQL)", () => {
 		});
 	});
 
+	describe("work counts in the same week while the clock runs and once it is finished", () => {
+		const BOTH_WEEKS = { start: "2026-03-09", endExclusive: "2026-03-23" };
+
+		/** Each week's band finding as [kind, severity, summary, stable used]. */
+		async function bands(
+			org: { id: string; timezone: string },
+			employeeId: string,
+			now: Temporal.Instant,
+			window: { start: string; endExclusive: string } = BOTH_WEEKS,
+		) {
+			return Object.fromEntries(
+				(
+					await evaluateOnCallFindings(db, {
+						organizationId: org.id,
+						timezone: org.timezone,
+						window,
+						employeeIds: [employeeId],
+						now,
+					})
+				)
+					.filter((f) => f.kind.startsWith("on_call_weekly_"))
+					.map((f) => [f.subjectKey, [f.kind, f.severity, f.summary, f.stableDepth ?? null]]),
+			);
+		}
+
+		it("keeps both weeks' figures when a Sunday clock-in for Monday's shift clocks out", async () => {
+			// At least 20 h a week, at most 25 h; 2026-W11 called 1300 minutes Tuesday to Thursday. A
+			// clock-in at Sunday 23:45 works Monday's 00:00–06:00 shift and clocks out at 06:00.
+			async function worker(key: string) {
+				const org = await onCall.organization(key);
+				const worker = await fx.employee(org, `${key}-worker`, { contractType: "hourly" });
+				await onCall.onCallTerms(org, worker, { kind: "minimum", weeklyMinutes: 1200 });
+				await onCall.work(org, worker, {
+					date: "2026-03-10",
+					startTime: "09:00",
+					endTime: "17:00",
+				});
+				await onCall.work(org, worker, {
+					date: "2026-03-11",
+					startTime: "09:00",
+					endTime: "17:00",
+				});
+				await onCall.work(org, worker, {
+					date: "2026-03-12",
+					startTime: "09:00",
+					endTime: "14:40",
+				});
+				await onCall.shift(org, {
+					employeeId: worker.employeeId,
+					date: "2026-03-16",
+					startTime: "00:00",
+					endTime: "06:00",
+					publishedAt: localInstant("2026-03-01", "10:00", org.timezone),
+				});
+				return { org, worker };
+			}
+			const running = await worker("a");
+			await onCall.openWork(running.org, running.worker, {
+				date: "2026-03-15",
+				startTime: "23:45",
+			});
+			const finished = await worker("b");
+			await onCall.work(finished.org, finished.worker, {
+				date: "2026-03-15",
+				startTime: "23:45",
+				endTime: "06:00",
+			});
+
+			const before = await bands(
+				running.org,
+				running.worker.employeeId,
+				localInstant("2026-03-16", "05:59:30", running.org.timezone),
+			);
+			// W11: 1300 + the 15 minutes before the shift, inside the band. W12: the shift's 360 minutes
+			// (359 worked, 1 still planned), under the 1200-minute minimum of a week still running.
+			expect(before).toEqual({
+				"2026-W12": [
+					"on_call_weekly_under_band",
+					"info",
+					{
+						used: { unit: "minutes", value: 360 },
+						limit: { unit: "minutes", value: 1200 },
+						limitDirection: "floor",
+						remaining: { unit: "minutes", value: 840 },
+					},
+					null,
+				],
+			});
+			expect(
+				await bands(
+					finished.org,
+					finished.worker.employeeId,
+					localInstant("2026-03-16", "06:00:30", finished.org.timezone),
+				),
+			).toEqual(before);
+		});
+
+		it("counts a finished night's minutes inside a shift in the shift's week, the rest on its start day", async () => {
+			const org = await onCall.organization("a");
+			const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+			await onCall.onCallTerms(org, worker, { kind: "unspecified" });
+			await onCall.shift(org, {
+				employeeId: worker.employeeId,
+				date: "2026-03-16",
+				startTime: "00:00",
+				endTime: "06:00",
+				publishedAt: localInstant("2026-03-01", "10:00", org.timezone),
+			});
+			// Clocked in two hours before the shift, on Sunday of 2026-W11.
+			await onCall.work(org, worker, { date: "2026-03-15", startTime: "22:00", endTime: "06:00" });
+
+			const found = await bands(
+				org,
+				worker.employeeId,
+				localInstant("2026-03-17", "12:00", org.timezone),
+			);
+			expect(
+				Object.fromEntries(
+					Object.entries(found).map(([week, [kind, severity, summary]]) => [
+						week,
+						[kind, severity, (summary as { used?: { value: number } }).used?.value],
+					]),
+				),
+			).toEqual({
+				"2026-W11": ["on_call_weekly_under_band", "warning", 120],
+				"2026-W12": ["on_call_weekly_under_band", "info", 360],
+			});
+		});
+	});
+
+	describe("reading work", () => {
+		interface RecordedQuery {
+			readonly sql: string;
+			readonly params: unknown[];
+		}
+
+		/** `db`, recording the SQL of every query builder it awaits. */
+		function recordingReader<T extends object>(target: T, recorded: RecordedQuery[]): T {
+			return new Proxy(target, {
+				get(object, property) {
+					const value = Reflect.get(object, property, object);
+					if (typeof value !== "function") return value;
+					if (property === "then" && "toSQL" in object) {
+						recorded.push((object as { toSQL(): RecordedQuery }).toSQL());
+						return value.bind(object);
+					}
+					return (...args: unknown[]) => {
+						const result = value.apply(object, args);
+						return result && typeof result === "object" && !(result instanceof Promise)
+							? recordingReader(result, recorded)
+							: result;
+					};
+				},
+			});
+		}
+
+		/**
+		 * Rows of `work_period` the query's plan examines, planned with fresh statistics and sequential
+		 * scans disabled, as on a large table.
+		 */
+		async function workRowsExamined(query: RecordedQuery): Promise<number> {
+			const client = await admin.connect();
+			try {
+				await client.query("BEGIN");
+				await client.query("SET LOCAL enable_seqscan = off");
+				await client.query("ANALYZE work_period");
+				const { rows } = await client.query<{ "QUERY PLAN": [{ Plan: PlanNode }] }>(
+					`EXPLAIN (ANALYZE, FORMAT JSON) ${query.sql}`,
+					query.params,
+				);
+				let examined = 0;
+				const visit = (node: PlanNode) => {
+					if (node["Relation Name"] === "work_period") {
+						examined +=
+							(node["Actual Rows"] +
+								(node["Rows Removed by Filter"] ?? 0) +
+								(node["Rows Removed by Index Recheck"] ?? 0)) *
+							node["Actual Loops"];
+					}
+					for (const child of node.Plans ?? []) visit(child);
+				};
+				visit(rows[0]["QUERY PLAN"][0].Plan);
+				return examined;
+			} finally {
+				await client.query("ROLLBACK");
+				client.release();
+			}
+		}
+		interface PlanNode {
+			readonly "Relation Name"?: string;
+			readonly "Actual Rows": number;
+			readonly "Actual Loops": number;
+			readonly "Rows Removed by Filter"?: number;
+			readonly "Rows Removed by Index Recheck"?: number;
+			readonly Plans?: readonly PlanNode[];
+		}
+
+		it("reads finished work from shortly before the window, not the employee's whole history", async () => {
+			const { org, worker } = await onCallWorker();
+			const OLD_PERIODS = 30;
+			for (let day = 0; day < OLD_PERIODS; day++) {
+				const date = Temporal.PlainDate.from("2025-06-02").add({ days: day }).toString();
+				await onCall.work(org, worker, { date, startTime: "08:00", endTime: "12:00" });
+			}
+			await onCall.work(org, worker, { date: "2026-03-10", startTime: "08:00", endTime: "12:00" });
+
+			const recorded: RecordedQuery[] = [];
+			await evaluateOnCallFindings(recordingReader(db, recorded), {
+				organizationId: org.id,
+				timezone: org.timezone,
+				window: { start: "2026-03-09", endExclusive: "2026-03-16" },
+				employeeIds: [worker.employeeId],
+				now: Temporal.Instant.from("2026-03-20T12:00:00Z"),
+			});
+
+			// The read of finished work: bounded by its end, unlike the read of running clock-ins.
+			const finishedWork = recorded.filter(
+				(query) => query.sql.includes('from "work_period"') && query.sql.includes('"end_time" >'),
+			);
+			expect(finishedWork).toHaveLength(1);
+			expect(await workRowsExamined(finishedWork[0])).toBeLessThan(OLD_PERIODS);
+		});
+	});
+
+	describe("a week's figures depend neither on the window nor on other employees", () => {
+		const published = (timezone: string) => localInstant("2026-03-01", "10:00", timezone);
+
+		async function findingsOf(
+			org: { id: string; timezone: string },
+			employeeIds: string[] | null,
+			window: { start: string; endExclusive: string },
+			now: Temporal.Instant,
+		) {
+			return (
+				await evaluateOnCallFindings(db, {
+					organizationId: org.id,
+					timezone: org.timezone,
+					window,
+					employeeIds,
+					now,
+				})
+			).map((f) => [f.employeeId, f.kind, f.subjectKey, f.summary.used?.value ?? null]);
+		}
+
+		it("gives Monday's week the same figures in a Monday-only window as in a two-week one", async () => {
+			const org = await onCall.organization("a");
+			const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+			await onCall.onCallTerms(org, worker, { kind: "unspecified" });
+			// Sunday's night shift overlaps Monday's 04:00–08:00 shift until 06:00; the shared time
+			// counts once, on Sunday, whose shift starts first.
+			for (const [date, startTime, endTime] of [
+				["2026-03-15", "22:00", "06:00"],
+				["2026-03-16", "04:00", "08:00"],
+			]) {
+				await onCall.shift(org, {
+					employeeId: worker.employeeId,
+					date,
+					startTime,
+					endTime,
+					publishedAt: published(org.timezone),
+				});
+			}
+			await onCall.openWork(org, worker, { date: "2026-03-16", startTime: "04:00" });
+			const now = localInstant("2026-03-16", "05:00:10", org.timezone);
+			const week12 = async (window: { start: string; endExclusive: string }) =>
+				(await findingsOf(org, [worker.employeeId], window, now)).filter(
+					([, kind, subject]) => kind === "on_call_weekly_under_band" && subject === "2026-W12",
+				);
+
+			// Monday: only its 06:00–08:00 is its own; the work until now fills Sunday's shift.
+			const monday = await week12({ start: "2026-03-16", endExclusive: "2026-03-17" });
+			expect(monday).toEqual([[worker.employeeId, "on_call_weekly_under_band", "2026-W12", 120]]);
+			expect(await week12({ start: "2026-03-09", endExclusive: "2026-03-23" })).toEqual(monday);
+		});
+
+		it("joins a Sunday-to-Monday planned call the same way in every window", async () => {
+			const org = await onCall.organization("a");
+			const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+			await onCall.onCallTerms(org, worker, { kind: "unspecified" });
+			// Sunday 22:00–24:00 and Monday 00:00–01:00 touch: one three-hour call, not two short ones.
+			for (const [date, startTime, endTime] of [
+				["2026-03-15", "22:00", "00:00"],
+				["2026-03-16", "00:00", "01:00"],
+			]) {
+				await onCall.shift(org, {
+					employeeId: worker.employeeId,
+					date,
+					startTime,
+					endTime,
+					publishedAt: published(org.timezone),
+				});
+			}
+			const now = localInstant("2026-03-02", "12:00", org.timezone);
+			const calls = async (window: { start: string; endExclusive: string }) =>
+				(await findingsOf(org, [worker.employeeId], window, now)).filter(
+					([, kind]) => kind === "on_call_short_call",
+				);
+
+			expect(await calls({ start: "2026-03-09", endExclusive: "2026-03-23" })).toEqual([]);
+			expect(await calls({ start: "2026-03-09", endExclusive: "2026-03-16" })).toEqual([]);
+			expect(await calls({ start: "2026-03-16", endExclusive: "2026-03-17" })).toEqual([]);
+		});
+
+		it("does not change a past window's findings when another employee clocks in", async () => {
+			const org = await onCall.organization("a");
+			const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+			const colleague = await fx.employee(org, "colleague", { contractType: "hourly" });
+			for (const who of [worker, colleague]) {
+				await onCall.onCallTerms(org, who, { kind: "unspecified" });
+			}
+			for (const [date, startTime, endTime] of [
+				["2026-03-15", "22:00", "00:00"],
+				["2026-03-16", "00:00", "01:00"],
+			]) {
+				await onCall.shift(org, {
+					employeeId: worker.employeeId,
+					date,
+					startTime,
+					endTime,
+					publishedAt: published(org.timezone),
+				});
+			}
+			await onCall.work(org, worker, { date: "2026-03-15", startTime: "22:00", endTime: "01:00" });
+			const now = localInstant("2026-03-25", "12:00", org.timezone);
+			const week11 = { start: "2026-03-09", endExclusive: "2026-03-16" };
+			const workersFindings = async () =>
+				(await findingsOf(org, null, week11, now)).filter(
+					([employeeId]) => employeeId === worker.employeeId,
+				);
+			const before = await workersFindings();
+			// Sunday's two planned hours are in 2026-W11; Monday's hour, worked too, is in 2026-W12.
+			expect(before).toEqual([[worker.employeeId, "on_call_weekly_under_band", "2026-W11", 120]]);
+
+			await onCall.openWork(org, colleague, { date: "2026-03-25", startTime: "08:00" });
+			expect(await workersFindings()).toEqual(before);
+		});
+	});
+
 	describe("employee status: drafts stay with the planners", () => {
 		// Wednesday of ISO week 2026-W10; the draft call is on Saturday 2026-03-07.
 		const NOW = Temporal.Instant.from("2026-03-04T10:00:00Z");

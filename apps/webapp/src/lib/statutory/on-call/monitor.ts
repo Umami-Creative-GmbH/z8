@@ -390,23 +390,27 @@ function fullWeekBand(
 }
 
 /**
- * Where running clock-ins count, by organization-local day (`YYYY-MM-DD`). Their minutes inside a
- * planned shift count on that shift's day, as its still-planned rest does: worked plus still
- * planned is the shift, on its own day and week, whichever day the clock-in started (a Sunday
- * clock-in running into Monday's shift). Their minutes outside every shift (clocked in early,
- * between shifts, past the end) count on the clock-in's start day, as completed work does, and
- * grow: every further minute adds one, whether or not the clock has reached a shift yet, so the
- * figure does not jump when it does. The planner's publish acknowledgement counts each week
- * without the growing minutes (`stableDepth`), so it holds while the clock runs.
+ * Where work counts, by organization-local day (`YYYY-MM-DD`), one rule for running and finished
+ * work alike, so clocking out moves no minute between days or weeks. Minutes inside a planned
+ * shift count on that shift's day, as its still-planned rest does: worked plus still planned is the
+ * shift, on its own day and week, whichever day the work started (a Sunday clock-in running into
+ * Monday's shift). Minutes outside every shift (clocked in early, between shifts, past the end)
+ * count on the work's start day. Only shifts up to the day after the start day take work (the
+ * loaded shifts reach one day past the loaded days, for every employee alike): a clock-in left
+ * running for days counts on its start day, whichever range it is judged in. A running clock-in's
+ * minutes outside shifts grow: every further
+ * minute adds one, whether or not the clock has reached a shift yet, so the figure does not jump
+ * when it does. The planner's publish acknowledgement counts each week without the growing
+ * minutes (`stableDepth`), so it holds while the clock runs.
  */
-function runningAttribution(
-	running: readonly OnCallWorkPiece[],
+function workAttribution(
+	pieces: readonly OnCallWorkPiece[],
 	shifts: readonly OnCallShift[],
 	timezone: string,
 ): {
-	/** Minutes to move per day: off each clock-in's start day, onto the day of the shift they fill. */
-	readonly shiftedByDay: ReadonlyMap<string, number>;
-	/** Minutes outside every shift, per clock-in start day. */
+	/** Worked minutes per day. */
+	readonly workedByDay: ReadonlyMap<string, number>;
+	/** Minutes of running clock-ins outside every shift, per clock-in start day. */
 	readonly growingByDay: ReadonlyMap<string, number>;
 } {
 	// Planned time as disjoint segments: overlapping shifts count their shared time once, on the day
@@ -424,23 +428,27 @@ function runningAttribution(
 		plannedUntil = interval.end;
 		segments.push({ day: shift.date.toString(), start, end: interval.end });
 	}
-	const shiftedByDay = new Map<string, number>();
+	const workedByDay = new Map<string, number>();
 	const growingByDay = new Map<string, number>();
 	const add = (map: Map<string, number>, day: string, minutes: number) =>
 		map.set(day, (map.get(day) ?? 0) + minutes);
-	for (const piece of running) {
-		const startDay = plainDateAt(piece.start, timezone).toString();
+	for (const piece of pieces) {
+		const startDate = plainDateAt(piece.start, timezone);
+		const startDay = startDate.toString();
+		const lastShiftDay = startDate.add({ days: 1 }).toString();
 		let inShifts = 0;
 		for (const segment of segments) {
+			if (segment.day > lastShiftDay) continue;
 			const minutes = overlapMinutes([piece], segment);
 			if (minutes <= 0) continue;
 			inShifts += minutes;
-			add(shiftedByDay, segment.day, minutes);
+			add(workedByDay, segment.day, minutes);
 		}
-		add(shiftedByDay, startDay, -inShifts);
-		add(growingByDay, startDay, Math.max(0, piece.minutes - inShifts));
+		const outside = Math.max(0, piece.minutes - inShifts);
+		add(workedByDay, startDay, outside);
+		if (piece.running) add(growingByDay, startDay, outside);
 	}
-	return { shiftedByDay, growingByDay };
+	return { workedByDay, growingByDay };
 }
 
 function bandFindings(
@@ -459,13 +467,12 @@ function bandFindings(
 	if (!terms) return [];
 	const week = daysOf(input.monday, input.monday.add({ days: 7 }));
 	const onCallDays = week.filter((day) => terms.has(day.toString()));
-	const work = input.facts.workMinutesByEmployee.get(base.employeeId);
 	const pieces = input.facts.workPiecesByEmployee.get(base.employeeId) ?? [];
 	const released = input.facts.releasedDaysByEmployee.get(base.employeeId);
 	const running = pieces.filter((piece) => piece.running);
 	// Each day counts what was worked plus what is still planned: the part of each of its shifts
-	// not yet worked (an unplanned call adds to a later shift; a call running on its shift counts
-	// once, on the shift's day: `runningAttribution`). A shift that has ended adds nothing; one still running adds its rest whatever day it
+	// not yet worked (an unplanned call adds to a later shift; work on a shift counts once, on the
+	// shift's day: `workAttribution`). A shift that has ended adds nothing; one still running adds its rest whatever day it
 	// started, such as last night's shift past midnight. A running clock-in on the shift ends on its
 	// whole-minute grid, so the rest of the shift is measured from there and the total stays
 	// constant within the minute; its unworked past part (a late start, a break before it) is not
@@ -517,11 +524,9 @@ function bandFindings(
 		const day = rest.shift.date.toString();
 		stillPlannedByDay.set(day, (stillPlannedByDay.get(day) ?? 0) + minutes);
 	}
-	const { shiftedByDay, growingByDay } = runningAttribution(running, input.shifts, input.timezone);
+	const { workedByDay, growingByDay } = workAttribution(pieces, input.shifts, input.timezone);
 	const minutesOn = (day: PlainDate) =>
-		(work?.get(day.toString()) ?? 0) +
-		(shiftedByDay.get(day.toString()) ?? 0) +
-		(stillPlannedByDay.get(day.toString()) ?? 0);
+		(workedByDay.get(day.toString()) ?? 0) + (stillPlannedByDay.get(day.toString()) ?? 0);
 	// § 12 Abs. 4–5 TzBfG: approved absence and public holidays are paid by the reference period,
 	// not called. Unless worked anyway or still planned (a call scheduled on it counts like any
 	// other), such a day leaves the band, which is prorated to the days that could be called, as for

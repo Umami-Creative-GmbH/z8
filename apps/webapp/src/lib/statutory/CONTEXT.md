@@ -46,8 +46,9 @@ without the minutes it grows by (`stableDepth`, server-only): its time inside pl
 counts to the shift's end, also once it runs past it, on the shift's own day and week (an on-call
 clock-in from Sunday evening running into Monday's shift counts that shift's time on Monday);
 only its minutes outside them (clocked in early, between shifts, or past the shift's end) grow,
-on the clock-in's start day, whether or not the clock has reached the shift. A week's figures do
-not depend on the window it is judged in. While nobody is clocked in, a started shift still counts its rest from the end of its last
+on the clock-in's start day, whether or not the clock has reached the shift (on-call: the
+**call-off day**, the same for finished work). A week's figures depend neither on the window it is
+judged in nor on other employees. While nobody is clocked in, a started shift still counts its rest from the end of its last
 recorded work, or from its start, until it ends: a break, a late start or a missed shift holds the
 figures. A breach the rules attribute by position (a minor's rest
 period or shift span) is matched by its day or week when the running work carries it. The planner's publish acknowledgement goes stale when a finding's severity, tier,
@@ -70,6 +71,18 @@ Approved sick leave other than child-sick days, back-to-back leave joined into o
 illness is a § 12 Abs. 4 TzBfG sick-leave event and gets § 3 EFZG continued pay (waiting time, six
 weeks); child-sick days around it neither start nor extend it.
 _Avoid_: counting `child_sick` absence as sick leave
+
+**Call-off day** (on-call):
+The day and compliance week work counts on for the weekly call-off band, calls and their breach
+depth. Minutes inside a planned shift count on that shift's date; minutes outside every shift on the
+day the work started. One rule for running and finished work, so clocking out moves no minute
+between weeks: a clock-in at Sunday 23:45 for Monday's 00:00–06:00 shift counts 15 minutes on Sunday
+and the shift on Monday, before and after it clocks out. Only shifts dated up to the day after the
+work's start day take its minutes, so a clock-in left running for days counts on its start day in
+any window. The § 12 Abs. 4–5 TzBfG reference period that pays released days
+(`reference-period.ts`) is a different figure: continued pay averages the hours worked per calendar
+day, so it splits work at local midnight (`allocateTrackedDailyWorkMinutes`) and ignores shifts.
+_Avoid_: bucketing on-call band work by its start day alone
 
 **Block-week training allowance**:
 In a full block-release week (at least 25 hours of lessons on at least five days), additional
