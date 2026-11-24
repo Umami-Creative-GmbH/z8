@@ -65,29 +65,11 @@ export function OriginalDrivingCheckForm({
 	onCompleted: () => Promise<void>;
 }) {
 	const { t } = useTranslate();
-	const { className: nameOf } = useLicenceClassNames();
 	const [error, setError] = useState("");
 	const [commandId, setCommandId] = useState(() => crypto.randomUUID());
 	const declaredCodes = new Set(declaredUnchecked);
-	const declaredExpiry = new Map(
-		declared?.classes.map((entry) => [entry.code, entry.expiryDate]) ?? [],
-	);
 	const form = useForm({
-		defaultValues: {
-			documentIssuedOn: "",
-			documentExpiresOn: declared?.documentExpiresOn ?? "",
-			originalInspected: false,
-			identityConfirmed: false,
-			employeeDeclaration: false,
-			verifierConfirmed: false,
-			failureScope: "classes" as FailureScope,
-			selected: LICENCE_CLASSES.filter((code) => declaredCodes.has(code)) as string[],
-			classes: DEFAULT_CLASSES.map((row) =>
-				declaredCodes.has(row.code)
-					? { ...row, expiryDate: declaredExpiry.get(row.code) ?? null }
-					: row,
-			),
-		},
+		defaultValues: originalCheckDefaults(declared, declaredCodes),
 		onSubmit: async ({ value }) => {
 			setError("");
 			const selectedCodes = new Set(value.selected);
@@ -136,46 +118,10 @@ export function OriginalDrivingCheckForm({
 	});
 	return (
 		<Card>
-			<CardHeader>
-				<CardTitle>
-					<h2 className="text-lg font-semibold">
-						{t(
-							"drivingLicence.check.title",
-							"Inspect {name}'s original licence",
-							{ name },
-						)}
-					</h2>
-				</CardTitle>
-				<CardDescription>
-					{t(
-						"drivingLicence.check.privacy",
-						"Record only document dates, inspected classes and necessary driving restrictions. Do not enter a licence number, address, medical explanations or personal background.",
-					)}
-				</CardDescription>
-			</CardHeader>
+			<OriginalCheckHeader name={name} />
 			<CardContent>
 				{declaredCodes.size ? (
-					<Alert className="mb-6">
-						<IconUserCheck aria-hidden="true" />
-						<AlertTitle>
-							{t(
-								"drivingLicence.check.declaredTitle",
-								"{name} declared {classes}",
-								{
-									name,
-									classes: [...declaredCodes]
-										.map((code) => `${code} (${nameOf(code)})`)
-										.join(", "),
-								},
-							)}
-						</AlertTitle>
-						<AlertDescription>
-							{t(
-								"drivingLicence.check.declaredHelp",
-								"These classes and any dates the employee entered are preselected. Compare them with the original licence and correct anything that differs.",
-							)}
-						</AlertDescription>
-					</Alert>
+					<DeclaredClassesAlert name={name} codes={declaredCodes} />
 				) : null}
 				<form
 					className="space-y-6"
@@ -226,41 +172,19 @@ export function OriginalDrivingCheckForm({
 							{t("drivingLicence.check.classes", "Classes actually inspected")}
 						</legend>
 						<form.Field name="selected">
-							{(selected) => {
-								const selectedCodes = new Set(selected.state.value);
-								return (
-									<form.Field name="classes">
-										{(classes) => (
-											<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-												{classes.state.value.map((inspected, index) => (
-													<InspectionClassRow
-														key={inspected.code}
-														inspected={inspected}
-														declared={declaredCodes.has(inspected.code)}
-														chosen={selectedCodes.has(inspected.code)}
-														onSelect={(chosen) =>
-															selected.handleChange(
-																chosen
-																	? [...selected.state.value, inspected.code]
-																	: selected.state.value.filter(
-																			(code) => code !== inspected.code,
-																		),
-															)
-														}
-														onChange={(values) =>
-															classes.handleChange(
-																classes.state.value.map((row, i) =>
-																	i === index ? { ...row, ...values } : row,
-																),
-															)
-														}
-													/>
-												))}
-											</div>
-										)}
-									</form.Field>
-								);
-							}}
+							{(selected) => (
+								<form.Field name="classes">
+									{(classes) => (
+										<InspectionClassGrid
+											classes={classes.state.value}
+											selected={selected.state.value}
+											declaredCodes={declaredCodes}
+											onSelectedChange={selected.handleChange}
+											onClassesChange={classes.handleChange}
+										/>
+									)}
+								</form.Field>
+							)}
 						</form.Field>
 					</fieldset>
 					<form.Field name="failureScope">
@@ -346,17 +270,145 @@ export function OriginalDrivingCheckForm({
 						</p>
 					)}
 					<form.Subscribe selector={(state) => state.isSubmitting}>
-						{(isSubmitting) => (
-							<Button type="submit" disabled={isSubmitting}>
-								{isSubmitting
-									? t("drivingLicence.check.saving", "Recording check…")
-									: t("drivingLicence.check.submit", "Record original check")}
-							</Button>
-						)}
+						{(isSubmitting) => <RecordCheckButton isSubmitting={isSubmitting} />}
 					</form.Subscribe>
 				</form>
 			</CardContent>
 		</Card>
+	);
+}
+
+function originalCheckDefaults(
+	declared: DrivingLicenceDeclaredClasses | null,
+	declaredCodes: ReadonlySet<string>,
+) {
+	const declaredExpiry = new Map(
+		declared?.classes.map((entry) => [entry.code, entry.expiryDate]) ?? [],
+	);
+	return {
+		documentIssuedOn: "",
+		documentExpiresOn: declared?.documentExpiresOn ?? "",
+		originalInspected: false,
+		identityConfirmed: false,
+		employeeDeclaration: false,
+		verifierConfirmed: false,
+		failureScope: "classes" as FailureScope,
+		selected: LICENCE_CLASSES.filter((code) => declaredCodes.has(code)) as string[],
+		classes: DEFAULT_CLASSES.map((row) =>
+			declaredCodes.has(row.code)
+				? { ...row, expiryDate: declaredExpiry.get(row.code) ?? null }
+				: row,
+		),
+	};
+}
+
+function OriginalCheckHeader({ name }: { name: string }) {
+	const { t } = useTranslate();
+	return (
+		<CardHeader>
+			<CardTitle>
+				<h2 className="text-lg font-semibold">
+					{t(
+						"drivingLicence.check.title",
+						"Inspect {name}'s original licence",
+						{ name },
+					)}
+				</h2>
+			</CardTitle>
+			<CardDescription>
+				{t(
+					"drivingLicence.check.privacy",
+					"Record only document dates, inspected classes and necessary driving restrictions. Do not enter a licence number, address, medical explanations or personal background.",
+				)}
+			</CardDescription>
+		</CardHeader>
+	);
+}
+
+function DeclaredClassesAlert({
+	name,
+	codes,
+}: {
+	name: string;
+	codes: ReadonlySet<string>;
+}) {
+	const { t } = useTranslate();
+	const { className: nameOf } = useLicenceClassNames();
+	return (
+		<Alert className="mb-6">
+			<IconUserCheck aria-hidden="true" />
+			<AlertTitle>
+				{t(
+					"drivingLicence.check.declaredTitle",
+					"{name} declared {classes}",
+					{
+						name,
+						classes: [...codes]
+							.map((code) => `${code} (${nameOf(code)})`)
+							.join(", "),
+					},
+				)}
+			</AlertTitle>
+			<AlertDescription>
+				{t(
+					"drivingLicence.check.declaredHelp",
+					"These classes and any dates the employee entered are preselected. Compare them with the original licence and correct anything that differs.",
+				)}
+			</AlertDescription>
+		</Alert>
+	);
+}
+
+function InspectionClassGrid({
+	classes,
+	selected,
+	declaredCodes,
+	onSelectedChange,
+	onClassesChange,
+}: {
+	classes: DrivingCheckClass[];
+	selected: string[];
+	declaredCodes: ReadonlySet<string>;
+	onSelectedChange: (selected: string[]) => void;
+	onClassesChange: (classes: DrivingCheckClass[]) => void;
+}) {
+	const selectedCodes = new Set(selected);
+	return (
+		<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+			{classes.map((inspected, index) => (
+				<InspectionClassRow
+					key={inspected.code}
+					inspected={inspected}
+					declared={declaredCodes.has(inspected.code)}
+					chosen={selectedCodes.has(inspected.code)}
+					onSelect={(chosen) =>
+						onSelectedChange(
+							chosen
+								? [...selected, inspected.code]
+								: selected.filter((code) => code !== inspected.code),
+						)
+					}
+					onChange={(values) =>
+						onClassesChange(
+							classes.map((row, i) =>
+								i === index ? { ...row, ...values } : row,
+							),
+						)
+					}
+				/>
+			))}
+		</div>
+	);
+}
+
+function RecordCheckButton({ isSubmitting }: { isSubmitting: boolean }) {
+	const { t } = useTranslate();
+	return (
+		<Button type="submit" disabled={isSubmitting}>
+			{isSubmitting
+				? t("drivingLicence.check.saving", "Recording check…")
+				: t("drivingLicence.check.submit", "Record original check")}
+		</Button>
 	);
 }
 

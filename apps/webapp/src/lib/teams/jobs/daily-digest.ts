@@ -550,9 +550,6 @@ export async function buildDigestDataForManager(
 		}
 
 		// Count clocked-in employees by the shifts they're assigned to
-		const _scheduledEmployeeIds = [
-			...new Set(scheduledShifts.flatMap((s) => (s.employeeId ? [s.employeeId] : []))),
-		] as string[];
 		const clockedInEmployeeIds = new Set(activeWorkPeriods?.map((wp) => wp.employeeId) || []);
 
 		// Calculate gaps per subarea

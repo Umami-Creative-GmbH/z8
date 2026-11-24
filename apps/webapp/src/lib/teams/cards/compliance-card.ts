@@ -30,17 +30,6 @@ export interface ComplianceCardInput {
 // HELPER FUNCTIONS
 // ============================================
 
-function _getSeverityColor(severity: "warning" | "critical" | "violation"): string {
-	switch (severity) {
-		case "violation":
-			return "attention"; // Red
-		case "critical":
-			return "warning"; // Yellow/Orange
-		default:
-			return "default";
-	}
-}
-
 function getSeverityIcon(severity: "warning" | "critical" | "violation"): string {
 	switch (severity) {
 		case "violation":

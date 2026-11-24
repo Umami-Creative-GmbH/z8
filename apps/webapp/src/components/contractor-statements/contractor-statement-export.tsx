@@ -24,7 +24,7 @@ import {
 import { downloadBase64File } from "./download-file";
 
 /** How every refusal of the statement export reads. */
-export const CONTRACTOR_STATEMENT_REFUSALS = {
+const CONTRACTOR_STATEMENT_REFUSALS = {
 	not_contractor: [
 		"common:contractorStatement.errors.notContractor",
 		"This person had no External Contractor engagement in this period.",

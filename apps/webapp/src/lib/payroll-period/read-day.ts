@@ -60,39 +60,42 @@ async function readPeriodDayForEmployee(
 	const day = localDayRange(query.date, timezone);
 	// Payroll shows employee time only (#1997): none of an External Contractor stint, and of a
 	// record across a conversion only its employee part. A day without any is an empty day.
-	const scope = await loadPayrollScope(db, organizationId, [person.id], {
-		startDate: query.date,
-		endDate: query.date,
-	});
-	const rows = await db
-		.select({
-			id: timeRecord.id,
-			kind: timeRecord.recordKind,
-			approvalState: timeRecord.approvalState,
-			startAt: timeRecord.startAt,
-			endAt: timeRecord.endAt,
-			durationMinutes: timeRecord.durationMinutes,
-			isPaid: timeRecordBreak.isPaid,
-		})
-		.from(timeRecord)
-		.leftJoin(
-			timeRecordBreak,
-			and(
-				eq(timeRecordBreak.recordId, timeRecord.id),
-				eq(timeRecordBreak.organizationId, organizationId),
-			),
-		)
-		.where(
-			and(
-				eq(timeRecord.organizationId, organizationId),
-				eq(timeRecord.employeeId, person.id),
-				inArray(timeRecord.recordKind, ["work", "break"]),
-				ne(timeRecord.approvalState, "rejected"),
-				lt(timeRecord.startAt, dateFromInstant(day.endExclusive)),
-				or(isNull(timeRecord.endAt), gt(timeRecord.endAt, dateFromInstant(day.start))),
-			),
-		)
-		.orderBy(asc(timeRecord.startAt), asc(timeRecord.id));
+	// Both reads go through the pool, so they run together.
+	const [scope, rows] = await Promise.all([
+		loadPayrollScope(db, organizationId, [person.id], {
+			startDate: query.date,
+			endDate: query.date,
+		}),
+		db
+			.select({
+				id: timeRecord.id,
+				kind: timeRecord.recordKind,
+				approvalState: timeRecord.approvalState,
+				startAt: timeRecord.startAt,
+				endAt: timeRecord.endAt,
+				durationMinutes: timeRecord.durationMinutes,
+				isPaid: timeRecordBreak.isPaid,
+			})
+			.from(timeRecord)
+			.leftJoin(
+				timeRecordBreak,
+				and(
+					eq(timeRecordBreak.recordId, timeRecord.id),
+					eq(timeRecordBreak.organizationId, organizationId),
+				),
+			)
+			.where(
+				and(
+					eq(timeRecord.organizationId, organizationId),
+					eq(timeRecord.employeeId, person.id),
+					inArray(timeRecord.recordKind, ["work", "break"]),
+					ne(timeRecord.approvalState, "rejected"),
+					lt(timeRecord.startAt, dateFromInstant(day.endExclusive)),
+					or(isNull(timeRecord.endAt), gt(timeRecord.endAt, dateFromInstant(day.start))),
+				),
+			)
+			.orderBy(asc(timeRecord.startAt), asc(timeRecord.id)),
+	]);
 
 	const localTime = (value: Instant) =>
 		value.toZonedDateTimeISO(timezone).toPlainDateTime().toString({ smallestUnit: "minute" });

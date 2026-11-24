@@ -657,7 +657,13 @@ describe("ordinary canonical inbox reads", () => {
 		await loadOrdinaryCanonicalApprovals(
 			input as unknown as Parameters<typeof loadOrdinaryCanonicalApprovals>[0],
 		);
-		const { cursor: _cursor, limit: _limit, ...countInput } = input;
+		const countInput = {
+			database: input.database,
+			organizationId: input.organizationId,
+			approverId: input.approverId,
+			now: input.now,
+			filters: input.filters,
+		};
 		await countOrdinaryCanonicalApprovals(
 			countInput as unknown as Parameters<
 				typeof countOrdinaryCanonicalApprovals

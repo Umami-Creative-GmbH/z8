@@ -2,6 +2,7 @@
 
 import { IconAlertCircle, IconArrowRight, IconClock, IconUserShare } from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
+import { useMemo } from "react";
 import {
 	getApprovalItemTypeLabels,
 	getApprovalTypeLabels,
@@ -161,33 +162,21 @@ function PreviewRow({
 	);
 }
 
-export function PendingApprovalsWidget({
-	initialSnapshot,
-}: {
-	initialSnapshot?: DashboardWidgetSnapshot<DashboardWidgetData["pending-approvals"]>;
-} = {}) {
+/** Each kind of failure in its own words, as the inbox tells its warnings apart (#1978). */
+function usePartialFailureText(
+	locale: string,
+	labels: Record<ApprovalInboxType, string>,
+	notLoadedTypes: ApprovalInboxType[],
+	notCountedTypes: ApprovalInboxType[],
+) {
 	const { t } = useTranslate();
-	const tolgee = useTolgee();
-	const locale = tolgee.getLanguage() || "en";
-	const { data, loading, refreshing, refetch, error } = useDashboardWidget(
-		"pending-approvals",
-		initialSnapshot,
+	const listFormat = useMemo(
+		() => new Intl.ListFormat(locale, { type: "conjunction" }),
+		[locale],
 	);
-	const typeLabels = getApprovalTypeLabels(t);
-	const itemTypeLabels = getApprovalItemTypeLabels(t);
-	// List summaries never name a per diem place (#1978): no travel expense catalog here.
-	const text = useApprovalInboxSummaryText(locale);
-	const preview = data?.preview ?? [];
-	// A failed count leaves its listed rows out of the total: never state fewer than are shown.
-	const total = Math.max(data?.total ?? 0, preview.length);
 	const typeList = (types: ApprovalInboxType[]) =>
-		new Intl.ListFormat(locale, { type: "conjunction" }).format(
-			types.map((type) => typeLabels[type]),
-		);
-	const notLoadedTypes = data?.notLoadedTypes ?? [];
-	const notCountedTypes = data?.notCountedTypes ?? [];
-	// A source failed: what loaded still shows, as the inbox tells its warnings apart (#1978).
-	const partialFailure = [
+		listFormat.format(types.map((type) => labels[type]));
+	return [
 		notLoadedTypes.length > 0
 			? t(
 					"dashboard.pending-approvals.not-loaded",
@@ -205,8 +194,11 @@ export function PendingApprovalsWidget({
 	]
 		.filter((sentence) => sentence !== null)
 		.join(" ");
-	const title = t("dashboard.pending-approvals.title", "Pending Approvals");
-	const reviewAll = (
+}
+
+function ReviewAllApprovals() {
+	const { t } = useTranslate();
+	return (
 		<Button className="w-full group" asChild>
 			<Link href="/approvals/inbox">
 				{t("dashboard.pending-approvals.review-all", "Review All Approvals")}
@@ -217,6 +209,73 @@ export function PendingApprovalsWidget({
 			</Link>
 		</Button>
 	);
+}
+
+function PendingApprovalsSummary({
+	data,
+	total,
+	preview,
+	incomplete,
+	typeLabels,
+	text,
+}: {
+	data: PendingApprovalsData;
+	total: number;
+	preview: PendingApprovalPreviewItem[];
+	incomplete: boolean;
+	typeLabels: Record<ApprovalInboxType, string>;
+	text: (value: string | ApprovalInboxLocalizedText) => string;
+}) {
+	const { t } = useTranslate();
+	const itemTypeLabels = getApprovalItemTypeLabels(t);
+	return (
+		<>
+			<UrgencyIndicator total={total} coveringCount={data.coveringCount} incomplete={incomplete} />
+			<TypePills typeCounts={data.typeCounts} labels={typeLabels} />
+			<ul
+				aria-label={t("dashboard.pending-approvals.most-urgent", "Most urgent pending approvals")}
+				className="space-y-2"
+			>
+				{preview.map((item) => (
+					<PreviewRow
+						key={`${item.type}:${item.id}`}
+						item={item}
+						typeLabel={itemTypeLabels[item.type]}
+						text={text}
+					/>
+				))}
+			</ul>
+			<ReviewAllApprovals />
+		</>
+	);
+}
+
+export function PendingApprovalsWidget({
+	initialSnapshot,
+}: {
+	initialSnapshot?: DashboardWidgetSnapshot<DashboardWidgetData["pending-approvals"]>;
+} = {}) {
+	const { t } = useTranslate();
+	const tolgee = useTolgee();
+	const locale = tolgee.getLanguage() || "en";
+	const { data, loading, refreshing, refetch, error } = useDashboardWidget(
+		"pending-approvals",
+		initialSnapshot,
+	);
+	const typeLabels = getApprovalTypeLabels(t);
+	// List summaries never name a per diem place (#1978): no travel expense catalog here.
+	const text = useApprovalInboxSummaryText(locale);
+	const preview = data?.preview ?? [];
+	// A failed count leaves its listed rows out of the total: never state fewer than are shown.
+	const total = Math.max(data?.total ?? 0, preview.length);
+	// A source failed: what loaded still shows, as the inbox tells its warnings apart (#1978).
+	const partialFailure = usePartialFailureText(
+		locale,
+		typeLabels,
+		data?.notLoadedTypes ?? [],
+		data?.notCountedTypes ?? [],
+	);
+	const title = t("dashboard.pending-approvals.title", "Pending Approvals");
 
 	return (
 		<DashboardWidget id="pending-approvals">
@@ -249,35 +308,18 @@ export function PendingApprovalsWidget({
 						/>
 					) : total === 0 && partialFailure ? (
 						// Nothing counted or listed, but not nothing pending: the inbox may still list some.
-						reviewAll
+						<ReviewAllApprovals />
 					) : !data || total === 0 ? (
 						<p role="status">{t("dashboard.pending-approvals.empty", "No pending approvals")}</p>
 					) : (
-						<>
-							<UrgencyIndicator
-								total={total}
-								coveringCount={data.coveringCount}
-								incomplete={partialFailure !== ""}
-							/>
-							<TypePills typeCounts={data.typeCounts} labels={typeLabels} />
-							<ul
-								aria-label={t(
-									"dashboard.pending-approvals.most-urgent",
-									"Most urgent pending approvals",
-								)}
-								className="space-y-2"
-							>
-								{preview.map((item) => (
-									<PreviewRow
-										key={`${item.type}:${item.id}`}
-										item={item}
-										typeLabel={itemTypeLabels[item.type]}
-										text={text}
-									/>
-								))}
-							</ul>
-							{reviewAll}
-						</>
+						<PendingApprovalsSummary
+							data={data}
+							total={total}
+							preview={preview}
+							incomplete={partialFailure !== ""}
+							typeLabels={typeLabels}
+							text={text}
+						/>
 					)}
 				</div>
 			</WidgetCard>

@@ -25,7 +25,7 @@ import { employeeScheduleWeek, employeeShiftEvent } from "./employee-schedule-ut
 import { EmployeeShiftAgenda } from "./employee-shift-agenda";
 import { ScheduleReadFailure } from "./schedule-read-failure";
 import { ScheduleXPortalCalendar } from "./schedule-x-portal-calendar";
-import { shiftCalendarEventComponents } from "./shift-calendar-event";
+import { shiftCalendarEventComponents } from "./shift-calendar-event-components";
 import { SHIFT_CALENDARS } from "./shift-calendars";
 import { calendarRangeToDateRange } from "./shift-scheduler-utils";
 import { useShiftSchedulerData } from "./use-shift-scheduler-data";

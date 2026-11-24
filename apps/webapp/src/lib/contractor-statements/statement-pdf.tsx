@@ -1,3 +1,5 @@
+import "server-only";
+
 import { Document, Page, renderToBuffer, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { Temporal } from "temporal-polyfill";
 import { formatBillableAmount, formatBillableHours } from "@/lib/billable-time/format";

@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import type { ScheduleComplianceSummary } from "@/lib/scheduling/compliance/types";
 import type { ScheduleStatutoryFindings } from "@/lib/statutory/scheduling/findings-list";
 import { cn } from "@/lib/utils";
-import { outsideScopeText, StatutoryFindingsList } from "./statutory-findings-list";
+import { outsideScopeText } from "./statutory-findings-format";
+import { StatutoryFindingsList } from "./statutory-findings-list";
 
 interface ScheduleComplianceBannerProps {
 	summary?: ScheduleComplianceSummary | null;

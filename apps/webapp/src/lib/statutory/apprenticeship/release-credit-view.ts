@@ -91,19 +91,20 @@ export async function loadApprenticeReleaseCredits(
 	db: Reader,
 	input: { readonly organizationId: string; readonly employeeId: string; readonly today: string },
 ): Promise<ApprenticeReleaseCredits> {
-	const releases = await listApprenticeReleases(db, input);
-	const contracts = await loadEffectiveContractsBatch(db, {
-		organizationId: input.organizationId,
-		employeeIds: [input.employeeId],
-		dates: [parsePlainDate(input.today)],
-	});
-	const birthday =
-		(
-			await loadEmployeeBirthdays(db, {
-				organizationId: input.organizationId,
-				employeeIds: [input.employeeId],
-			})
-		).get(input.employeeId) ?? null;
+	// Independent reads on the action's pool-backed client (its only caller), so they run together.
+	const [releases, contracts, birthdays] = await Promise.all([
+		listApprenticeReleases(db, input),
+		loadEffectiveContractsBatch(db, {
+			organizationId: input.organizationId,
+			employeeIds: [input.employeeId],
+			dates: [parsePlainDate(input.today)],
+		}),
+		loadEmployeeBirthdays(db, {
+			organizationId: input.organizationId,
+			employeeIds: [input.employeeId],
+		}),
+	]);
+	const birthday = birthdays.get(input.employeeId) ?? null;
 	const days = apprenticeReleaseDays(releases);
 	return {
 		isApprentice:

@@ -94,25 +94,28 @@ export async function loadEmploymentProfileIntervals(
 			: input.untilExclusive;
 	if (employeeIds.length === 0 || comparePlainDates(from, until) >= 0) return result;
 
-	const periodsByEmployee = await loadEmploymentPeriodSnapshots(db, {
-		organizationId: input.organizationId,
-		employeeIds,
-	});
-	// Same rows and order as the batch resolver.
-	const termsRows = await db
-		.select({
-			row: employeeEmploymentHistory,
-			createdAtIso: sql<string>`to_char(${employeeEmploymentHistory.createdAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`,
-		})
-		.from(employeeEmploymentHistory)
-		.where(
-			and(
-				eq(employeeEmploymentHistory.organizationId, input.organizationId),
-				inArray(employeeEmploymentHistory.employeeId, employeeIds),
-				eq(employeeEmploymentHistory.reviewState, "confirmed"),
-			),
-		)
-		.orderBy(asc(employeeEmploymentHistory.validFrom), asc(employeeEmploymentHistory.createdAt));
+	// Every caller passes a pool-backed reader, so both reads run together.
+	const [periodsByEmployee, termsRows] = await Promise.all([
+		loadEmploymentPeriodSnapshots(db, {
+			organizationId: input.organizationId,
+			employeeIds,
+		}),
+		// Same rows and order as the batch resolver.
+		db
+			.select({
+				row: employeeEmploymentHistory,
+				createdAtIso: sql<string>`to_char(${employeeEmploymentHistory.createdAt} AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`,
+			})
+			.from(employeeEmploymentHistory)
+			.where(
+				and(
+					eq(employeeEmploymentHistory.organizationId, input.organizationId),
+					inArray(employeeEmploymentHistory.employeeId, employeeIds),
+					eq(employeeEmploymentHistory.reviewState, "confirmed"),
+				),
+			)
+			.orderBy(asc(employeeEmploymentHistory.validFrom), asc(employeeEmploymentHistory.createdAt)),
+	]);
 
 	const termsByEmployee = new Map<string, EmploymentHistorySnapshot[]>();
 	for (const { row, createdAtIso } of termsRows) {

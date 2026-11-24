@@ -184,7 +184,11 @@ describe("follow-up schemas", () => {
 			assignDepartureReplacementSchema.safeParse({ ...replacement, replacementEmployeeId: null })
 				.success,
 		).toBe(false);
-		const { handoverTaskId: _task, ...stage } = replacement;
+		const stage = {
+			departureId: replacement.departureId,
+			replacementEmployeeId: replacement.replacementEmployeeId,
+			requestId: replacement.requestId,
+		};
 		expect(assignDepartureReplacementSchema.safeParse({ ...stage, reviewId: uuid }).success).toBe(
 			true,
 		);
@@ -200,7 +204,10 @@ describe("follow-up schemas", () => {
 		expect(
 			assignDepartureReplacementSchema.safeParse({ ...target, deactivationId: uuid }).success,
 		).toBe(true);
-		const { handoverTaskId: _task, ...review } = target;
+		const review = {
+			replacementEmployeeId: target.replacementEmployeeId,
+			requestId: target.requestId,
+		};
 		expect(
 			assignDepartureReplacementSchema.safeParse({
 				...review,

@@ -8,10 +8,15 @@ import {
 	IconSchool,
 	IconUserShield,
 } from "@tabler/icons-react";
-import { useForm } from "@tanstack/react-form";
+import {
+	type FormAsyncValidateOrFn,
+	type FormValidateOrFn,
+	type ReactFormExtendedApi,
+	useForm,
+} from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTolgee, useTranslate } from "@tolgee/react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
 	getStatutorySettingsAction,
@@ -213,9 +218,9 @@ function formatValue(
 	t: Translate,
 	locale: string,
 	timeFormat: TimeFormat,
+	numberFormat: Intl.NumberFormat,
 ): string {
-	const number = (value: number) =>
-		new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(value);
+	const number = (value: number) => numberFormat.format(value);
 	switch (row.unit) {
 		case "cents":
 			return new Intl.NumberFormat(locale, {
@@ -267,6 +272,10 @@ function BaselinesCard({
 	const { t } = useTranslate();
 	const timeFormat = useTimeFormat();
 	const [showHistory, setShowHistory] = useState(false);
+	const numberFormat = useMemo(
+		() => new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }),
+		[locale],
+	);
 	const visible = baselines.filter((row) => showHistory || row.status !== "past");
 	const formatDate = (date: string) => formatPlainDate(parsePlainDate(date), locale, "dateMedium");
 
@@ -324,7 +333,7 @@ function BaselinesCard({
 									</TableCell>
 									<TableCell className="font-medium">{thresholdLabel(row.key, t)}</TableCell>
 									<TableCell className="text-right tabular-nums">
-										{formatValue(row, t, locale, timeFormat)}
+										{formatValue(row, t, locale, timeFormat, numberFormat)}
 									</TableCell>
 									<TableCell className="whitespace-nowrap text-xs tabular-nums">
 										<div className="flex flex-wrap items-center gap-2">
@@ -376,15 +385,23 @@ interface PreferencesFormValues {
 	workingStudentDaytimeEndMinute: number;
 }
 
-function PreferencesCard({
-	organizationId,
-	initial,
-}: {
-	organizationId: string;
-	initial: PreferencesFormValues;
-}) {
+type PreferencesForm = ReactFormExtendedApi<
+	PreferencesFormValues,
+	FormValidateOrFn<PreferencesFormValues> | undefined,
+	FormValidateOrFn<PreferencesFormValues> | undefined,
+	FormAsyncValidateOrFn<PreferencesFormValues> | undefined,
+	FormValidateOrFn<PreferencesFormValues> | undefined,
+	FormAsyncValidateOrFn<PreferencesFormValues> | undefined,
+	FormValidateOrFn<PreferencesFormValues> | undefined,
+	FormAsyncValidateOrFn<PreferencesFormValues> | undefined,
+	FormValidateOrFn<PreferencesFormValues> | undefined,
+	FormAsyncValidateOrFn<PreferencesFormValues> | undefined,
+	FormAsyncValidateOrFn<PreferencesFormValues> | undefined,
+	unknown
+>;
+
+function useSavePreferencesMutation(organizationId: string) {
 	const { t } = useTranslate();
-	const timeFormat = useTimeFormat();
 	const queryClient = useQueryClient();
 
 	const saveMutation = useMutation({
@@ -416,6 +433,190 @@ function PreferencesCard({
 		},
 	});
 
+	return saveMutation;
+}
+
+function JarbschgPreferenceFields({ form }: { form: PreferencesForm }) {
+	const { t } = useTranslate();
+
+	return (
+		<>
+			<form.Field name="blockJarbschgShiftPublish">
+				{(field) => (
+					<div className="flex items-start justify-between gap-4 rounded-lg border p-4">
+						<div className="space-y-1">
+							<Label htmlFor="statutory-block-jarbschg" className="font-medium">
+								{t(
+									"settings.contracts.statutory.preferences.blockJarbschg",
+									"Block publishing shifts that break youth protection limits",
+								)}
+							</Label>
+							<p className="text-muted-foreground text-sm">
+								{t(
+									"settings.contracts.statutory.preferences.blockJarbschgHelp",
+									"Shifts for employees under 18 cannot be published while they break a JArbSchG limit, unless a statutory exception is acknowledged. Recorded working time is never blocked.",
+								)}
+							</p>
+						</div>
+						<Switch
+							id="statutory-block-jarbschg"
+							checked={field.state.value}
+							onCheckedChange={(checked) => field.handleChange(checked)}
+						/>
+					</div>
+				)}
+			</form.Field>
+
+			<form.Field name="applyJarbschgToMinorContractors">
+				{(field) => (
+					<div className="flex items-start justify-between gap-4 rounded-lg border p-4">
+						<div className="space-y-1">
+							<Label
+								htmlFor="statutory-jarbschg-minor-contractors"
+								className="flex items-center gap-2 font-medium"
+							>
+								<IconUserShield className="size-4 text-primary" aria-hidden="true" />
+								{t(
+									"settings.contracts.statutory.preferences.minorContractors",
+									"Apply youth protection (JArbSchG) to minor contractors",
+								)}
+							</Label>
+							<p className="text-muted-foreground text-sm">
+								{t(
+									"settings.contracts.statutory.preferences.minorContractorsHelp",
+									"JArbSchG also covers minors whose services resemble an employee's work (§ 1 Abs. 1 Nr. 3 JArbSchG). Off: each engagement of an External Contractor under 18 is flagged in Reviews & Conflicts so you can check whether it does. On: their working time is judged like an employee's under 18 in Scheduling, Staffing, the publish block and recorded working time.",
+								)}
+							</p>
+						</div>
+						<Switch
+							id="statutory-jarbschg-minor-contractors"
+							checked={field.state.value}
+							onCheckedChange={(checked) => field.handleChange(checked)}
+						/>
+					</div>
+				)}
+			</form.Field>
+		</>
+	);
+}
+
+function DaytimeBandFieldset({ form }: { form: PreferencesForm }) {
+	const { t } = useTranslate();
+	const timeFormat = useTimeFormat();
+
+	const bandOrderError = (startMinute: number, endMinute: number) =>
+		startMinute < endMinute
+			? undefined
+			: t(
+					"settings.contracts.statutory.preferences.daytimeBandOrder",
+					"The daytime band must start before it ends.",
+				);
+
+	return (
+		<fieldset className="space-y-4 rounded-lg border p-4">
+			<legend className="sr-only">
+				{t("settings.contracts.statutory.preferences.daytimeBand", "Working-student daytime band")}
+			</legend>
+			<div className="space-y-1">
+				<p className="flex items-center gap-2 font-medium text-sm" aria-hidden="true">
+					<IconSchool className="size-4 text-primary" />
+					{t(
+						"settings.contracts.statutory.preferences.daytimeBand",
+						"Working-student daytime band",
+					)}
+				</p>
+				<p className="text-muted-foreground text-sm">
+					{t(
+						"settings.contracts.statutory.preferences.daytimeBandHelp",
+						"Weekday work inside this band during lecture periods counts against the 20-hour rule for working students (§ 6 Abs. 1 Nr. 3 SGB V). Evening and night work outside it, weekends and lecture-free periods do not count.",
+					)}
+				</p>
+				<p className="text-muted-foreground text-sm">
+					{t(
+						"settings.contracts.statutory.preferences.daytimeBandInsurer",
+						"The law names no hours. Use the band your health insurer and payroll advisor accept.",
+					)}
+				</p>
+			</div>
+			<div className="grid gap-4 sm:grid-cols-2">
+				<form.Field
+					name="workingStudentDaytimeStartMinute"
+					validators={{
+						// Changing either end re-judges the pair, so a fixed band clears the error.
+						onChange: ({ value, fieldApi }) =>
+							bandOrderError(value, fieldApi.form.getFieldValue("workingStudentDaytimeEndMinute")),
+						onChangeListenTo: ["workingStudentDaytimeEndMinute"],
+						onSubmit: ({ value, fieldApi }) =>
+							bandOrderError(value, fieldApi.form.getFieldValue("workingStudentDaytimeEndMinute")),
+					}}
+				>
+					{(field) => (
+						<TFormItem>
+							<TFormLabel hasError={fieldHasError(field)}>
+								{t("settings.contracts.statutory.preferences.daytimeStart", "Counts from")}
+							</TFormLabel>
+							<Select
+								value={field.state.value}
+								onValueChange={(value) => value !== null && field.handleChange(value)}
+							>
+								<TFormControl hasError={fieldHasError(field)}>
+									<SelectTrigger className="w-28 tabular-nums">
+										<SelectValue />
+									</SelectTrigger>
+								</TFormControl>
+								<SelectContent>
+									{BAND_STARTS.map((minute) => (
+										<SelectItem key={minute} value={minute} className="tabular-nums">
+											{formatMinuteOfDayForPreference(minute, timeFormat)}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+							<TFormMessage>{field.state.meta.errors[0]}</TFormMessage>
+						</TFormItem>
+					)}
+				</form.Field>
+				<form.Field name="workingStudentDaytimeEndMinute">
+					{(field) => (
+						<TFormItem>
+							<TFormLabel>
+								{t("settings.contracts.statutory.preferences.daytimeEnd", "Counts until")}
+							</TFormLabel>
+							<Select
+								value={field.state.value}
+								onValueChange={(value) => value !== null && field.handleChange(value)}
+							>
+								<TFormControl>
+									<SelectTrigger className="w-28 tabular-nums">
+										<SelectValue />
+									</SelectTrigger>
+								</TFormControl>
+								<SelectContent>
+									{BAND_ENDS.map((minute) => (
+										<SelectItem key={minute} value={minute} className="tabular-nums">
+											{formatMinuteOfDayForPreference(minute, timeFormat)}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</TFormItem>
+					)}
+				</form.Field>
+			</div>
+		</fieldset>
+	);
+}
+
+function PreferencesCard({
+	organizationId,
+	initial,
+}: {
+	organizationId: string;
+	initial: PreferencesFormValues;
+}) {
+	const { t } = useTranslate();
+	const saveMutation = useSavePreferencesMutation(organizationId);
+
 	const form = useForm({
 		defaultValues: initial,
 		onSubmit: async ({ value }) => {
@@ -429,14 +630,6 @@ function PreferencesCard({
 			: t(
 					"settings.contracts.statutory.preferences.percentRange",
 					"Enter whole percentages from 1 to 100.",
-				);
-
-	const bandOrderError = (startMinute: number, endMinute: number) =>
-		startMinute < endMinute
-			? undefined
-			: t(
-					"settings.contracts.statutory.preferences.daytimeBandOrder",
-					"The daytime band must start before it ends.",
 				);
 
 	return (
@@ -556,162 +749,9 @@ function PreferencesCard({
 						</form.Field>
 					</div>
 
-					<form.Field name="blockJarbschgShiftPublish">
-						{(field) => (
-							<div className="flex items-start justify-between gap-4 rounded-lg border p-4">
-								<div className="space-y-1">
-									<Label htmlFor="statutory-block-jarbschg" className="font-medium">
-										{t(
-											"settings.contracts.statutory.preferences.blockJarbschg",
-											"Block publishing shifts that break youth protection limits",
-										)}
-									</Label>
-									<p className="text-muted-foreground text-sm">
-										{t(
-											"settings.contracts.statutory.preferences.blockJarbschgHelp",
-											"Shifts for employees under 18 cannot be published while they break a JArbSchG limit, unless a statutory exception is acknowledged. Recorded working time is never blocked.",
-										)}
-									</p>
-								</div>
-								<Switch
-									id="statutory-block-jarbschg"
-									checked={field.state.value}
-									onCheckedChange={(checked) => field.handleChange(checked)}
-								/>
-							</div>
-						)}
-					</form.Field>
+					<JarbschgPreferenceFields form={form} />
 
-					<form.Field name="applyJarbschgToMinorContractors">
-						{(field) => (
-							<div className="flex items-start justify-between gap-4 rounded-lg border p-4">
-								<div className="space-y-1">
-									<Label
-										htmlFor="statutory-jarbschg-minor-contractors"
-										className="flex items-center gap-2 font-medium"
-									>
-										<IconUserShield className="size-4 text-primary" aria-hidden="true" />
-										{t(
-											"settings.contracts.statutory.preferences.minorContractors",
-											"Apply youth protection (JArbSchG) to minor contractors",
-										)}
-									</Label>
-									<p className="text-muted-foreground text-sm">
-										{t(
-											"settings.contracts.statutory.preferences.minorContractorsHelp",
-											"JArbSchG also covers minors whose services resemble an employee's work (§ 1 Abs. 1 Nr. 3 JArbSchG). Off: each engagement of an External Contractor under 18 is flagged in Reviews & Conflicts so you can check whether it does. On: their working time is judged like an employee's under 18 in Scheduling, Staffing, the publish block and recorded working time.",
-										)}
-									</p>
-								</div>
-								<Switch
-									id="statutory-jarbschg-minor-contractors"
-									checked={field.state.value}
-									onCheckedChange={(checked) => field.handleChange(checked)}
-								/>
-							</div>
-						)}
-					</form.Field>
-
-					<fieldset className="space-y-4 rounded-lg border p-4">
-						<legend className="sr-only">
-							{t(
-								"settings.contracts.statutory.preferences.daytimeBand",
-								"Working-student daytime band",
-							)}
-						</legend>
-						<div className="space-y-1">
-							<p className="flex items-center gap-2 font-medium text-sm" aria-hidden="true">
-								<IconSchool className="size-4 text-primary" />
-								{t(
-									"settings.contracts.statutory.preferences.daytimeBand",
-									"Working-student daytime band",
-								)}
-							</p>
-							<p className="text-muted-foreground text-sm">
-								{t(
-									"settings.contracts.statutory.preferences.daytimeBandHelp",
-									"Weekday work inside this band during lecture periods counts against the 20-hour rule for working students (§ 6 Abs. 1 Nr. 3 SGB V). Evening and night work outside it, weekends and lecture-free periods do not count.",
-								)}
-							</p>
-							<p className="text-muted-foreground text-sm">
-								{t(
-									"settings.contracts.statutory.preferences.daytimeBandInsurer",
-									"The law names no hours. Use the band your health insurer and payroll advisor accept.",
-								)}
-							</p>
-						</div>
-						<div className="grid gap-4 sm:grid-cols-2">
-							<form.Field
-								name="workingStudentDaytimeStartMinute"
-								validators={{
-									// Changing either end re-judges the pair, so a fixed band clears the error.
-									onChange: ({ value, fieldApi }) =>
-										bandOrderError(
-											value,
-											fieldApi.form.getFieldValue("workingStudentDaytimeEndMinute"),
-										),
-									onChangeListenTo: ["workingStudentDaytimeEndMinute"],
-									onSubmit: ({ value, fieldApi }) =>
-										bandOrderError(
-											value,
-											fieldApi.form.getFieldValue("workingStudentDaytimeEndMinute"),
-										),
-								}}
-							>
-								{(field) => (
-									<TFormItem>
-										<TFormLabel hasError={fieldHasError(field)}>
-											{t("settings.contracts.statutory.preferences.daytimeStart", "Counts from")}
-										</TFormLabel>
-										<Select
-											value={field.state.value}
-											onValueChange={(value) => value !== null && field.handleChange(value)}
-										>
-											<TFormControl hasError={fieldHasError(field)}>
-												<SelectTrigger className="w-28 tabular-nums">
-													<SelectValue />
-												</SelectTrigger>
-											</TFormControl>
-											<SelectContent>
-												{BAND_STARTS.map((minute) => (
-													<SelectItem key={minute} value={minute} className="tabular-nums">
-														{formatMinuteOfDayForPreference(minute, timeFormat)}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-										<TFormMessage>{field.state.meta.errors[0]}</TFormMessage>
-									</TFormItem>
-								)}
-							</form.Field>
-							<form.Field name="workingStudentDaytimeEndMinute">
-								{(field) => (
-									<TFormItem>
-										<TFormLabel>
-											{t("settings.contracts.statutory.preferences.daytimeEnd", "Counts until")}
-										</TFormLabel>
-										<Select
-											value={field.state.value}
-											onValueChange={(value) => value !== null && field.handleChange(value)}
-										>
-											<TFormControl>
-												<SelectTrigger className="w-28 tabular-nums">
-													<SelectValue />
-												</SelectTrigger>
-											</TFormControl>
-											<SelectContent>
-												{BAND_ENDS.map((minute) => (
-													<SelectItem key={minute} value={minute} className="tabular-nums">
-														{formatMinuteOfDayForPreference(minute, timeFormat)}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-									</TFormItem>
-								)}
-							</form.Field>
-						</div>
-					</fieldset>
+					<DaytimeBandFieldset form={form} />
 
 					<div className="flex justify-end">
 						<form.Subscribe selector={(state) => state.isDirty}>

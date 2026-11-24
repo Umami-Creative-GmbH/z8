@@ -231,7 +231,7 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 		}
 
 		// Team-specific permission flags
-		for (const [_, flags] of permissions.byTeamId) {
+		for (const flags of permissions.byTeamId.values()) {
 			applyPermissionFlags(can, flags);
 		}
 

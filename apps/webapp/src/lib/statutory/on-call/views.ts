@@ -124,6 +124,34 @@ export interface OnCallEmployeeStatus {
 	readonly method: OnCallReferenceMethod;
 }
 
+/** The employee's on-call findings in the review window, with their acknowledgement states. */
+async function loadOnCallStatusFindings(
+	db: Reader,
+	input: {
+		readonly organizationId: string;
+		readonly employeeId: string;
+		readonly timezone: string;
+		readonly now: Instant;
+		readonly audience: StatutoryAudience;
+		readonly selfView: boolean;
+	},
+) {
+	const preferences = await loadOrganizationStatutoryPreferences(db, input.organizationId);
+	return attachAcknowledgementStates(
+		db,
+		input.organizationId,
+		await evaluateOnCallFindings(db, {
+			organizationId: input.organizationId,
+			timezone: input.timezone,
+			window: reviewWindow(input.now, input.timezone),
+			employeeIds: [input.employeeId],
+			publishedShiftsOnly: input.selfView && input.audience === "restricted",
+			preferences,
+			now: input.now,
+		}),
+	);
+}
+
 /**
  * One employee's on-call status for Employee Detail, the employee's own profile and Absences.
  * The caller authorizes (org admin, a manager whose scope reaches the employee, or the employee).
@@ -168,12 +196,23 @@ export async function loadOnCallEmployeeStatus(
 	if (!anyTerms) return empty;
 
 	const today = plainDateAt(input.now, input.timezone);
-	const contract = await resolveEffectiveContractOnDay(db, {
-		organizationId: input.organizationId,
-		employeeId: input.employeeId,
-		date: today,
-		timezoneOverride: input.timezone,
-	});
+	// Independent reads on a pool-backed client: today's terms, the findings and the events.
+	const [contract, findings, referenceEvents] = await Promise.all([
+		resolveEffectiveContractOnDay(db, {
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+			date: today,
+			timezoneOverride: input.timezone,
+		}),
+		loadOnCallStatusFindings(db, input),
+		listOnCallReferenceEvents(db, {
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+			from: today.subtract({ days: ON_CALL_EVENT_LOOKBACK_DAYS }).toString(),
+			untilExclusive: today.add({ days: 1 }).toString(),
+			method: input.method,
+		}),
+	]);
 	// Terms that outlive the employment are no on-call status: as the monitor, require employment.
 	const terms =
 		contract?.isEmployedOnDay && contract.onCallTerms
@@ -183,27 +222,6 @@ export async function loadOnCallEmployeeStatus(
 					dailyMinutes: contract.onCallTerms.dailyMinutes,
 				}
 			: null;
-	const preferences = await loadOrganizationStatutoryPreferences(db, input.organizationId);
-	const findings = await attachAcknowledgementStates(
-		db,
-		input.organizationId,
-		await evaluateOnCallFindings(db, {
-			organizationId: input.organizationId,
-			timezone: input.timezone,
-			window: reviewWindow(input.now, input.timezone),
-			employeeIds: [input.employeeId],
-			publishedShiftsOnly: input.selfView && input.audience === "restricted",
-			preferences,
-			now: input.now,
-		}),
-	);
-	const referenceEvents = await listOnCallReferenceEvents(db, {
-		organizationId: input.organizationId,
-		employeeId: input.employeeId,
-		from: today.subtract({ days: ON_CALL_EVENT_LOOKBACK_DAYS }).toString(),
-		untilExclusive: today.add({ days: 1 }).toString(),
-		method: input.method,
-	});
 	return {
 		audience: input.audience,
 		terms,
@@ -294,14 +312,16 @@ export async function listOnCallPayrollReferenceRows(
 	].toSorted();
 	if (employeeIds.length === 0) return [];
 
-	const names = await employeeDisplayNames(db, input.organizationId, employeeIds);
-	const events = await listOnCallReferenceEventsBatch(db, {
-		organizationId: input.organizationId,
-		employeeIds,
-		from: input.startDate,
-		untilExclusive: until,
-		method: input.method,
-	});
+	const [names, events] = await Promise.all([
+		employeeDisplayNames(db, input.organizationId, employeeIds),
+		listOnCallReferenceEventsBatch(db, {
+			organizationId: input.organizationId,
+			employeeIds,
+			from: input.startDate,
+			untilExclusive: until,
+			method: input.method,
+		}),
+	]);
 	return [...events]
 		.flatMap(([employeeId, list]) =>
 			list.map((event) => ({

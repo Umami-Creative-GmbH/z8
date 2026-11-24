@@ -28,10 +28,10 @@ import type { OnCallAcknowledgementRefusal } from "@/lib/statutory/on-call/ackno
 import type { OnCallReviewItem } from "@/lib/statutory/on-call/views";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
+import { invalidatedItemClassName } from "./statutory-review-labels";
 import { invalidateStatutoryReviewViews } from "./statutory-review-query-keys";
 import {
 	InvalidatedAcknowledgementNotice,
-	invalidatedItemClassName,
 	StatutoryAcknowledgementHistory,
 } from "./statutory-review-shared";
 

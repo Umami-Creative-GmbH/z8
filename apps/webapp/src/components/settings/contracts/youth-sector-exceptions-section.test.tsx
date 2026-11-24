@@ -25,8 +25,8 @@ vi.mock("@/app/[locale]/(app)/settings/contracts/youth-sector-exception-actions"
 	acknowledgeYouthSectorExceptionAction: mocks.acknowledgeYouthSectorExceptionAction,
 }));
 
-const { YouthSectorExceptionsSection, youthSectorExceptionRefusals } =
-	await import("./youth-sector-exceptions-section");
+const { YouthSectorExceptionsSection } = await import("./youth-sector-exceptions-section");
+const { youthSectorExceptionRefusals } = await import("./youth-sector-exception-refusals");
 
 /** `{ a: { b: "x" } }` → `{ "a.b": "x" }`, the keys the section asks for. */
 function flatten(value: unknown, prefix = ""): Record<string, string> {

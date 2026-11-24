@@ -2,34 +2,19 @@
 
 import { useTranslate } from "@tolgee/react";
 import {
+	CapAtOneDayField,
+	CompensationBasisField,
+	CompensationCurrencyField,
+	CompensationRateField,
+	DayUnitRuleField,
+	MinutesField,
+} from "@/components/settings/contracts/contractor-compensation-fields";
+import {
 	COMPENSATION_FIELD_REFUSALS,
 	compensationFieldError,
-	DAY_UNIT_RULE_OPTIONS,
-	MinutesField,
-} from "@/components/settings/contracts/contractor-terms-form";
+} from "@/components/settings/contracts/contractor-compensation-form-values";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import {
-	TFormControl,
-	TFormDescription,
-	TFormItem,
-	TFormLabel,
-	TFormMessage,
-} from "@/components/ui/tanstack-form";
-import { fieldHasError } from "@/components/ui/tanstack-form-utils";
-import type {
-	CompensationBasis,
-	ContractorCompensationRefusal,
-	DayUnitRuleKind,
-} from "@/lib/contractor-compensation/terms";
+import type { ContractorCompensationRefusal } from "@/lib/contractor-compensation/terms";
 import type { InviteMemberFormApi, InviteMemberFormValues } from "./invite-member-form";
 
 /**
@@ -92,33 +77,7 @@ export function InvitationCompensationFields({ form }: { form: InviteMemberFormA
 						<div className="space-y-4 rounded-md border bg-muted/30 p-3">
 							<div className="grid gap-4 sm:grid-cols-2">
 								<form.Field name="contractorCompensation.basis">
-									{(field) => (
-										<TFormItem>
-											<TFormLabel>
-												{t("settings.contracts.contractors.basis", "Paid by")}
-											</TFormLabel>
-											<Select
-												value={field.state.value}
-												onValueChange={(value) =>
-													value && field.handleChange(value as CompensationBasis)
-												}
-											>
-												<TFormControl>
-													<SelectTrigger>
-														<SelectValue />
-													</SelectTrigger>
-												</TFormControl>
-												<SelectContent>
-													<SelectItem value="daily">
-														{t("settings.contracts.contractors.basisDaily", "Day")}
-													</SelectItem>
-													<SelectItem value="hourly">
-														{t("settings.contracts.contractors.basisHourly", "Hour")}
-													</SelectItem>
-												</SelectContent>
-											</Select>
-										</TFormItem>
-									)}
+									{(field) => <CompensationBasisField field={field} />}
 								</form.Field>
 								<form.Field
 									name="contractorCompensation.currency"
@@ -127,24 +86,7 @@ export function InvitationCompensationFields({ form }: { form: InviteMemberFormA
 											errorFor(fieldApi.form.state.values, COMPENSATION_FIELD_REFUSALS.currency),
 									}}
 								>
-									{(field) => (
-										<TFormItem>
-											<TFormLabel hasError={fieldHasError(field)}>
-												{t("settings.contracts.contractors.currency", "Currency")}
-											</TFormLabel>
-											<TFormControl hasError={fieldHasError(field)}>
-												<Input
-													autoComplete="off"
-													maxLength={3}
-													value={field.state.value}
-													onChange={(event) => field.handleChange(event.target.value.toUpperCase())}
-													onBlur={field.handleBlur}
-													className="uppercase"
-												/>
-											</TFormControl>
-											<TFormMessage field={field} />
-										</TFormItem>
-									)}
+									{(field) => <CompensationCurrencyField field={field} />}
 								</form.Field>
 							</div>
 							<form.Field
@@ -154,61 +96,12 @@ export function InvitationCompensationFields({ form }: { form: InviteMemberFormA
 										errorFor(fieldApi.form.state.values, COMPENSATION_FIELD_REFUSALS.rateAmount),
 								}}
 							>
-								{(field) => (
-									<TFormItem>
-										<TFormLabel hasError={fieldHasError(field)}>
-											{basis === "daily"
-												? t("settings.contracts.contractors.dailyRate", "Daily rate")
-												: t("settings.contracts.contractors.hourlyRate", "Hourly rate")}
-										</TFormLabel>
-										<TFormControl hasError={fieldHasError(field)}>
-											<Input
-												inputMode="decimal"
-												autoComplete="off"
-												value={field.state.value}
-												onChange={(event) => field.handleChange(event.target.value)}
-												onBlur={field.handleBlur}
-												className="tabular-nums"
-											/>
-										</TFormControl>
-										<TFormMessage field={field} />
-									</TFormItem>
-								)}
+								{(field) => <CompensationRateField field={field} basis={basis} />}
 							</form.Field>
 							{basis === "daily" && (
 								<>
 									<form.Field name="contractorCompensation.dayUnitRule">
-										{(field) => (
-											<TFormItem>
-												<TFormLabel>
-													{t("settings.contracts.contractors.dayUnitRule", "How days are counted")}
-												</TFormLabel>
-												<Select
-													value={field.state.value}
-													onValueChange={(value) =>
-														value && field.handleChange(value as DayUnitRuleKind)
-													}
-												>
-													<TFormControl>
-														<SelectTrigger>
-															<SelectValue />
-														</SelectTrigger>
-													</TFormControl>
-													<SelectContent>
-														{DAY_UNIT_RULE_OPTIONS.map((option) => (
-															<SelectItem key={option.value} value={option.value}>
-																{t(option.labelKey, option.label)}
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
-												<TFormDescription>
-													{DAY_UNIT_RULE_OPTIONS.filter((option) => option.value === rule).map(
-														(option) => t(option.hintKey, option.hint),
-													)}
-												</TFormDescription>
-											</TFormItem>
-										)}
+										{(field) => <DayUnitRuleField field={field} rule={rule} />}
 									</form.Field>
 									{rule === "half_and_full_day" && (
 										<form.Field
@@ -255,22 +148,7 @@ export function InvitationCompensationFields({ form }: { form: InviteMemberFormA
 												)}
 											</form.Field>
 											<form.Field name="contractorCompensation.capAtOneDay">
-												{(field) => (
-													<TFormItem className="flex flex-row items-center gap-3 sm:pt-7">
-														<TFormControl>
-															<Switch
-																checked={field.state.value}
-																onCheckedChange={(checked) => field.handleChange(checked)}
-															/>
-														</TFormControl>
-														<TFormLabel>
-															{t(
-																"settings.contracts.contractors.capAtOneDay",
-																"At most one day per day",
-															)}
-														</TFormLabel>
-													</TFormItem>
-												)}
+												{(field) => <CapAtOneDayField field={field} />}
 											</form.Field>
 										</div>
 									)}

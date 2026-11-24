@@ -33,7 +33,7 @@ import { ScheduleReadFailure } from "./schedule-read-failure";
 import { ScheduleShiftList } from "./schedule-shift-list";
 import { createScheduleXDragAndDropPlugin } from "./schedule-x-drag-and-drop";
 import { ScheduleXPortalCalendar } from "./schedule-x-portal-calendar";
-import { shiftCalendarEventComponents } from "./shift-calendar-event";
+import { shiftCalendarEventComponents } from "./shift-calendar-event-components";
 import { SHIFT_CALENDARS } from "./shift-calendars";
 import {
 	calendarRangeToDateRange,
@@ -129,17 +129,7 @@ function PlannerShiftScheduler({
 		isManager,
 		employeeFilter,
 	});
-	const {
-		pendingAcknowledgment,
-		isComplianceDialogOpen,
-		setIsComplianceDialogOpen,
-		blockedFindings,
-		isBlockedDialogOpen,
-		setIsBlockedDialogOpen,
-		publish,
-		confirmPublish,
-		isPublishing,
-	} = useShiftPublishFlow({ organizationId, dateRange });
+	const publishFlow = useShiftPublishFlow({ organizationId, dateRange });
 
 	// Fetch coverage heatmap data
 	const { hasGaps: hasCoverageGaps, readState: coverageState } = useCoverageHeatmap(
@@ -190,25 +180,16 @@ function PlannerShiftScheduler({
 					{t("scheduling:scheduling.shiftDialog.createTitle", "Create Shift")}
 				</Button>
 			</div>
-			{shiftsFailed && (
-				<ScheduleReadFailure onRetry={() => void retryShifts()} pending={shiftsFetching}>
-					{t(
-						"scheduling:scheduling.scheduler.loadFailed",
-						"Shifts could not be refreshed. Loaded shifts are retained.",
-					)}
-				</ScheduleReadFailure>
-			)}
-			{(templatesFailed || complianceFailed || supportingDataRetryPending) && (
-				<ScheduleReadFailure
-					onRetry={() => void retrySupportingData()}
-					pending={supportingDataFetching}
-				>
-					{t(
-						"scheduling:scheduling.scheduler.supportFailed",
-						"Templates or compliance information could not be refreshed. Check again before publishing.",
-					)}
-				</ScheduleReadFailure>
-			)}
+			<PlannerReadFailures
+				shiftsFailed={shiftsFailed}
+				shiftsFetching={shiftsFetching}
+				retryShifts={retryShifts}
+				templatesFailed={templatesFailed}
+				complianceFailed={complianceFailed}
+				supportingDataFetching={supportingDataFetching}
+				supportingDataRetryPending={supportingDataRetryPending}
+				retrySupportingData={retrySupportingData}
+			/>
 			<ScheduleComplianceBanner
 				summary={complianceSummary}
 				statutoryFindings={statutoryFindings}
@@ -277,8 +258,8 @@ function PlannerShiftScheduler({
 			{draftCount > 0 && (
 				<PublishFab
 					draftCount={draftCount}
-					onPublish={publish}
-					isPublishing={isPublishing}
+					onPublish={publishFlow.publish}
+					isPublishing={publishFlow.isPublishing}
 					hasCoverageGaps={coverageState === "ready" && hasCoverageGaps}
 					coverageState={coverageState}
 					hasComplianceWarnings={hasComplianceWarnings}
@@ -299,24 +280,92 @@ function PlannerShiftScheduler({
 				organizationTimezone={organizationTimezone}
 			/>
 
+			<PlannerPublishDialogs
+				publishFlow={publishFlow}
+				dateRange={dateRange}
+				shiftEmployeeIds={shiftEmployeeIds}
+			/>
+		</div>
+	);
+}
+
+/** Says which reads failed, each with its own retry. */
+function PlannerReadFailures({
+	shiftsFailed,
+	shiftsFetching,
+	retryShifts,
+	templatesFailed,
+	complianceFailed,
+	supportingDataFetching,
+	supportingDataRetryPending,
+	retrySupportingData,
+}: Pick<
+	ReturnType<typeof useShiftSchedulerData>,
+	| "shiftsFailed"
+	| "shiftsFetching"
+	| "retryShifts"
+	| "templatesFailed"
+	| "complianceFailed"
+	| "supportingDataFetching"
+	| "supportingDataRetryPending"
+	| "retrySupportingData"
+>) {
+	const { t } = useTranslate();
+	return (
+		<>
+			{shiftsFailed && (
+				<ScheduleReadFailure onRetry={() => void retryShifts()} pending={shiftsFetching}>
+					{t(
+						"scheduling:scheduling.scheduler.loadFailed",
+						"Shifts could not be refreshed. Loaded shifts are retained.",
+					)}
+				</ScheduleReadFailure>
+			)}
+			{(templatesFailed || complianceFailed || supportingDataRetryPending) && (
+				<ScheduleReadFailure
+					onRetry={() => void retrySupportingData()}
+					pending={supportingDataFetching}
+				>
+					{t(
+						"scheduling:scheduling.scheduler.supportFailed",
+						"Templates or compliance information could not be refreshed. Check again before publishing.",
+					)}
+				</ScheduleReadFailure>
+			)}
+		</>
+	);
+}
+
+function PlannerPublishDialogs({
+	publishFlow,
+	dateRange,
+	shiftEmployeeIds,
+}: {
+	publishFlow: ReturnType<typeof useShiftPublishFlow>;
+	dateRange: DateRange;
+	shiftEmployeeIds: ReturnType<typeof useShiftSchedulerData>["shiftEmployeeIds"];
+}) {
+	const { pendingAcknowledgment } = publishFlow;
+	return (
+		<>
 			<PublishComplianceDialog
-				open={isComplianceDialogOpen}
-				onOpenChange={setIsComplianceDialogOpen}
+				open={publishFlow.isComplianceDialogOpen}
+				onOpenChange={publishFlow.setIsComplianceDialogOpen}
 				summary={pendingAcknowledgment?.complianceSummary ?? null}
 				statutoryFindings={pendingAcknowledgment?.statutoryFindings ?? null}
 				dateRange={dateRange}
 				shiftEmployeeIds={shiftEmployeeIds}
-				onConfirm={confirmPublish}
-				isConfirming={isPublishing}
+				onConfirm={publishFlow.confirmPublish}
+				isConfirming={publishFlow.isPublishing}
 			/>
 
 			<PublishBlockedDialog
-				open={isBlockedDialogOpen}
-				onOpenChange={setIsBlockedDialogOpen}
-				statutoryFindings={blockedFindings}
+				open={publishFlow.isBlockedDialogOpen}
+				onOpenChange={publishFlow.setIsBlockedDialogOpen}
+				statutoryFindings={publishFlow.blockedFindings}
 				dateRange={dateRange}
 			/>
-		</div>
+		</>
 	);
 }
 

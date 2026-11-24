@@ -67,11 +67,13 @@ export async function fetchWorkPeriodsForExport(
 
 	const { startDate, endDate } = getLogicalDateRange(filters);
 	const queryEnvelope = buildPayrollQueryEnvelope(startDate, endDate);
-	const organizationTimezone = await getOrganizationTimezone(organizationId);
-
 	// Unrepaired departure timers are neither complete nor absent: block, never omit. A timer that
 	// ran in an External Contractor stint is no payroll time and blocks nothing (#1997).
-	const scope = await resolveExportScope(organizationId, filters);
+	// Both reads go through the pool, so they run together.
+	const [organizationTimezone, scope] = await Promise.all([
+		getOrganizationTimezone(organizationId),
+		resolveExportScope(organizationId, filters),
+	]);
 	await assertNoOpenDepartureClockRepairs({
 		organizationId,
 		employeeIds: scope.employeeIds,

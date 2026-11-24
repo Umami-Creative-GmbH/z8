@@ -3,7 +3,7 @@ import type {
 	FormValidateOrFn,
 	ReactFormExtendedApi,
 } from "@tanstack/react-form";
-import type { CompensationFormValues } from "@/components/settings/contracts/contractor-terms-form";
+import type { CompensationFormValues } from "@/components/settings/contracts/contractor-compensation-form-values";
 import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 
 /** The invite dialog's values: an invitation, or a kiosk-only employee (#857). */

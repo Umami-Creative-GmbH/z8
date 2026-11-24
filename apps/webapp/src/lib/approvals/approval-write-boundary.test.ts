@@ -4744,7 +4744,8 @@ export function renamedCreateTimeRecord() {
 					expect.objectContaining({ uncertainty: "dynamic_payload" }),
 				]);
 
-				const { uncertainty: _uncertainty, ...certain } = original ?? {};
+				const certain = { ...original };
+				delete certain.uncertainty;
 				capabilities[0] = certain;
 				expect(scan()).toEqual([
 					expect.objectContaining({ uncertainty: "dynamic_payload" }),

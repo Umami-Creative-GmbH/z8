@@ -53,9 +53,13 @@ export async function acknowledgeMinijobExceedance(
 			refusal: "minijob_invalid_month" satisfies MinijobExceedanceRefusal,
 		});
 	}
+	// The scope check stays first, so a refused employee triggers no other read; the timezone and
+	// preferences are independent reads on the action's pool-backed client.
 	await loadEmployeeInOrganization(db, input);
-	const timezone = await loadOrganizationTimezone(db, input.organizationId);
-	const preferences = await loadOrganizationStatutoryPreferences(db, input.organizationId);
+	const [timezone, preferences] = await Promise.all([
+		loadOrganizationTimezone(db, input.organizationId),
+		loadOrganizationStatutoryPreferences(db, input.organizationId),
+	]);
 	const { findings, employees } = await evaluateMinijobEarnings(db, {
 		organizationId: input.organizationId,
 		timezone,

@@ -16,12 +16,13 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { ContractorCompensationRecord } from "@/lib/contractor-compensation/store";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
+import { compensationInputOf } from "./contractor-compensation-form-values";
 import { CONTRACTOR_COMPENSATION_REFUSALS } from "./contractor-compensation-refusals";
 import { ContractorDetailsForm } from "./contractor-details-form";
-import { ContractorTermsForm, compensationInputOf } from "./contractor-terms-form";
+import { ContractorTermsForm } from "./contractor-terms-form";
 import { ContractorTermsHistory } from "./contractor-terms-summary";
 
-export const contractorCompensationQueryKey = (employeeId: string) =>
+const contractorCompensationQueryKey = (employeeId: string) =>
 	["contractor-compensation", employeeId] as const;
 
 export interface ContractorCompensationCardProps {

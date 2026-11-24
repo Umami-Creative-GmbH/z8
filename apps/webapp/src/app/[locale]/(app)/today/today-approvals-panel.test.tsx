@@ -2,7 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { Activity } from "react";
+import { Activity, useEffect } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { BriefingApprovalActionItem } from "@/lib/manager-daily-briefing/types";
 import { TodayApprovalsPanel } from "./today-approvals-panel";
@@ -1001,7 +1001,10 @@ type HeldReservation = ReturnType<typeof useTodayDecisionReservation>;
 /** Another /today surface sharing the panel's decision reservations. */
 function ReservationHolder({ onReady }: { onReady: (reservations: HeldReservation) => void }) {
 	const reservations = useTodayDecisionReservation();
-	onReady(reservations);
+	// Hands over the latest reservations after each commit, keeping render pure.
+	useEffect(() => {
+		onReady(reservations);
+	});
 	return null;
 }
 
