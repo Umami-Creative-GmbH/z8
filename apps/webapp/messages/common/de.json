@@ -676,6 +676,8 @@
         "sickPayExhausted": "Keine Entgeltfortzahlung in diesem Zeitraum: Die sechs Wochen endeten am {date} (§ 3 Abs. 1 EFZG)",
         "sickPayWaiting": "Keine Entgeltfortzahlung in diesem Zeitraum: Der Anspruch entsteht am {date}, nach vier Wochen Beschäftigung (§ 3 Abs. 3 EFZG)",
         "sickPayNotOwed": "Für diese Krankheit ist keine Entgeltfortzahlung geschuldet: Sie endete in den ersten vier Wochen der Beschäftigung (§ 3 Abs. 3 EFZG)",
+        "sickPayGuidanceLabel": "Hinweis für die Entgeltabrechnung",
+        "sickPayGuidanceNote": "Die Angaben zur Entgeltfortzahlung (§ 3 EFZG) sind Hinweise; ob und in welcher Höhe gezahlt wird, entscheidet das Entgeltabrechnungssystem.",
         "holidaysPaidAsHolidays": "Feiertage während der Krankheit werden in eigenen Zeilen bezahlt, nicht als Krankheitstage: {dates}",
         "hide": "Aufschlüsselung ausblenden",
         "show": "Aufschlüsselung anzeigen"
