@@ -74,10 +74,11 @@ export interface JarbschgSectorWorkHours {
  *   after notice): multi-shift operations from 05:30 or until 23:30;
  * - Abs. 6 (from 15): in workplaces with extraordinary heat, from 05:00 in the warm season.
  * So 05:00–21:00 at 15, 05:00–23:30 at 16 and 04:00–23:30 from 17. § 14 covers Jugendliche (15 to
- * 17, § 2 Abs. 2); a child under 15 (§ 5) may not be extended at all, so null. A Jugendlicher still
- * in full-time compulsory schooling counts as a child too (§ 2 Abs. 3); the data cannot tell, so the
- * acknowledging admin confirms it. Night work outside
- * it cannot be acknowledged. Abs. 7 (performances until 23:00) needs the authority's approval and is not an
+ * 17, § 2 Abs. 2). A child under 15 gets null: § 7 S. 2 would extend § 14 to a child past full-time
+ * schooling, which Z8 deliberately does not support, so that rare case stays blocked. A Jugendlicher
+ * still in full-time compulsory schooling counts as a child (§ 2 Abs. 3) except in a school-holiday
+ * job of at most four weeks a year (§ 5 Abs. 4); the data cannot tell, so the acknowledging admin
+ * confirms it. Night work outside it cannot be acknowledged. Abs. 7 (performances until 23:00) needs the authority's approval and is not an
  * employer's acknowledgement. Abs. 4 (no Abs. 2 Nr. 1–3 extension past 20:00 before a vocational
  * school day with lessons before 09:00) is not judged here: the acknowledging admin confirms it.
  */

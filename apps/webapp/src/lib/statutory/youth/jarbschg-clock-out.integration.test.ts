@@ -404,7 +404,7 @@ describe("JArbSchG at clock-out (PostgreSQL)", () => {
 				})
 			).find((finding) => finding.kind === "jarbschg_night_work");
 		const subareaId = await seed.subarea(org, owner);
-		// 15 years old until 21:30: past the 21:00 § 14 Abs. 5 S. 1 allows at any age.
+		// 15 years old until 21:30: past the 21:00 § 14 Abs. 5 S. 1 allows from 15.
 		const fifteen = await fx.employee(org, "fifteen", { birthday: "2010-06-01" });
 		await seed.shift(org, fifteen, {
 			subareaId,
