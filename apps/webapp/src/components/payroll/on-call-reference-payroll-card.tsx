@@ -212,6 +212,9 @@ export function OnCallReferencePayrollCard({
 									</div>
 									{row.paidSickDays ? (
 										<p className="text-muted-foreground mt-1 text-sm">
+											<span className="font-medium text-foreground">
+												{t("common.onCall.payroll.sickPayGuidanceLabel", "Guidance for payroll")}:
+											</span>{" "}
 											{sickPayText(sickPayNoteOf(row.paidSickDays))}
 											{row.paidSickDays.holidaysPaidAsHolidays.length > 0
 												? ` · ${t(
@@ -234,6 +237,15 @@ export function OnCallReferencePayrollCard({
 						})}
 					</ul>
 				)}
+				{rows.isSuccess && rows.data.some((row) => row.paidSickDays) ? (
+					// § 3 EFZG is guidance (#2023): Z8 never calculates or settles continued pay.
+					<p className="text-muted-foreground mt-3 text-xs">
+						{t(
+							"common.onCall.payroll.sickPayGuidanceNote",
+							"Sick-pay lines are guidance under § 3 EFZG; the payroll system decides whether and how much continued pay is paid.",
+						)}
+					</p>
+				) : null}
 			</CardContent>
 		</Card>
 	);

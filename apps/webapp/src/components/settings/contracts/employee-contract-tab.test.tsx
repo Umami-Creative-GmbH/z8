@@ -228,6 +228,46 @@ describe("EmployeeContractTab & ScopedManagerPolicyCard (#1930)", () => {
 		expect(screen.getByTestId("stale-preview-badge").textContent).toMatch(/Preview out of date/);
 	});
 
+	it("explains an effective executive exemption under the terms, and the scope field in the change form (#2023)", async () => {
+		const exemptNote =
+			/^Executive exempt \(leitende Angestellte as defined in § 5 Abs\. 3 BetrVG, § 18 Abs\. 1 Nr\. 1 ArbZG\)/;
+		mocks.getEmployeeEffectiveContractAction.mockResolvedValue({
+			success: true,
+			data: { ...sampleEffectiveContract, arbzgScope: "executive_exempt" },
+		});
+		renderWithQuery(
+			<EmployeeContractTab
+				organizationId="org-1"
+				organizationTimezone="Europe/Berlin"
+				employeeId="emp-1"
+				workPolicies={[]}
+				employmentHistory={[]}
+			/>,
+		);
+
+		expect(await screen.findByText(exemptNote)).toBeTruthy();
+
+		fireEvent.click(screen.getByRole("button", { name: "Change contract" }));
+		const scopeField = await screen.findByRole("combobox", { name: "ArbZG scope" });
+		const hint = document.getElementById(scopeField.getAttribute("aria-describedby") ?? "");
+		expect(hint?.textContent).toMatch(exemptNote);
+	});
+
+	it("shows no executive exemption note for standard ArbZG terms (#2023)", async () => {
+		renderWithQuery(
+			<EmployeeContractTab
+				organizationId="org-1"
+				organizationTimezone="Europe/Berlin"
+				employeeId="emp-1"
+				workPolicies={[]}
+				employmentHistory={[]}
+			/>,
+		);
+
+		expect(await screen.findByText("Standard (ArbZG applies)")).toBeTruthy();
+		expect(screen.queryByText(/leitende Angestellte/)).toBeNull();
+	});
+
 	it("opens Fixed-Term Extension panel with departure-sync choices", async () => {
 		renderWithQuery(
 			<EmployeeContractTab

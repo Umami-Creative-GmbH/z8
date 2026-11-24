@@ -82,6 +82,7 @@ import {
 	createDefaultCustomDays,
 	validateCustomDaysGrid,
 } from "./custom-days-grid";
+import { ExecutiveExemptNote } from "./executive-exempt-note";
 
 const INHERIT_VALUE = "__inherit__";
 
@@ -563,6 +564,8 @@ export function EmployeeContractTab({
 									</tbody>
 								</table>
 							</div>
+
+							{effective.arbzgScope === "executive_exempt" && <ExecutiveExemptNote />}
 
 							{effective.onCallTerms && (
 								<Alert role="status">
@@ -1348,7 +1351,7 @@ function EmployeeContractChangeForm({
 								value={field.state.value}
 								onValueChange={(v) => field.handleChange(v as ArbzgScope)}
 							>
-								<SelectTrigger id="emp-contract-arbzg">
+								<SelectTrigger id="emp-contract-arbzg" aria-describedby="emp-contract-arbzg-hint">
 									<SelectValue />
 								</SelectTrigger>
 								<SelectContent>
@@ -1358,6 +1361,7 @@ function EmployeeContractChangeForm({
 									</SelectItem>
 								</SelectContent>
 							</Select>
+							<ExecutiveExemptNote id="emp-contract-arbzg-hint" />
 						</div>
 					)}
 				</form.Field>
