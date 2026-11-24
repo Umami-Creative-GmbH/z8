@@ -190,18 +190,25 @@ function MinorContractorReviewItem({
 		},
 	});
 
+	// Never before the first day: a stint that starts and ends at the same midnight has one day.
 	const lastDay = review.periodEnd
-		? parsePlainDate(review.periodEnd).subtract({ days: 1 }).toString()
+		? review.periodStart && review.periodEnd <= review.periodStart
+			? review.periodStart
+			: parsePlainDate(review.periodEnd).subtract({ days: 1 }).toString()
 		: null;
 	const period = review.periodStart
-		? lastDay
-			? t("settings.contracts.reviews.minorContractors.period", "Engaged {from} – {until}", {
-					from: formatDate(review.periodStart),
-					until: formatDate(lastDay),
+		? lastDay === review.periodStart
+			? t("settings.contracts.reviews.minorContractors.onDay", "Engaged on {date}", {
+					date: formatDate(review.periodStart),
 				})
-			: t("settings.contracts.reviews.minorContractors.since", "Engaged since {from}", {
-					from: formatDate(review.periodStart),
-				})
+			: lastDay
+				? t("settings.contracts.reviews.minorContractors.period", "Engaged {from} – {until}", {
+						from: formatDate(review.periodStart),
+						until: formatDate(lastDay),
+					})
+				: t("settings.contracts.reviews.minorContractors.since", "Engaged since {from}", {
+						from: formatDate(review.periodStart),
+					})
 		: lastDay
 			? t(
 					"settings.contracts.reviews.minorContractors.untilStartUnrecorded",

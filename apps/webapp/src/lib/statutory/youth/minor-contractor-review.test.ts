@@ -87,6 +87,22 @@ describe("minorContractorEngagementFindings (#2022)", () => {
 		});
 	});
 
+	it("gives a stint that starts and ends at the same midnight its one day, not an end before its start", () => {
+		const findings = judge({
+			birthday: "2010-06-01",
+			periods: [stint("p1", "contractor", "2026-03-10", "2026-03-10")],
+		});
+
+		// Its last day is its first: the day after it is the day after the start.
+		expect(findings).toEqual([
+			expect.objectContaining({
+				subjectKey: "engagement:p1",
+				periodStart: "2026-03-10",
+				periodEnd: "2026-03-11",
+			}),
+		]);
+	});
+
 	it("raises nothing for an adult contractor, a minor employee or an unknown birthday", () => {
 		const contractor = [stint("p1", "contractor", "2026-01-01", null)];
 		expect(judge({ birthday: "2000-01-01", periods: contractor })).toEqual([]);

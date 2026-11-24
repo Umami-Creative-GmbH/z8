@@ -84,6 +84,27 @@ describe("MinorContractorReviewsSection (#2022)", () => {
 		expect(screen.getByText("Engaged Jan 4, 2027 – Mar 31, 2027")).toBeTruthy();
 	});
 
+	it("names a one-day engagement by its single date, also when it ended before it started", async () => {
+		show("en", [
+			{ ...review, periodStart: "2027-03-10", periodEnd: "2027-03-11" },
+			{
+				...review,
+				findingId: "f2",
+				employeeName: "Ben Roth",
+				periodStart: "2027-03-10",
+				periodEnd: "2027-03-10",
+				contractorAfterEnd: true,
+			},
+		]);
+
+		expect(await screen.findAllByText("Engaged on Mar 10, 2027")).toHaveLength(2);
+		expect(screen.getByText(/^After the engagement ends on Mar 10, 2027,/)).toBeTruthy();
+		cleanup();
+
+		show("de", [{ ...review, periodStart: "2027-03-10", periodEnd: "2027-03-11" }]);
+		expect(await screen.findByText("Beauftragt am 10. März 2027")).toBeTruthy();
+	});
+
 	it("names an open-ended engagement by its start, in German", async () => {
 		show("de", [{ ...review, periodEnd: null }]);
 

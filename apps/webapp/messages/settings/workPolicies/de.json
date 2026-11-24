@@ -459,6 +459,7 @@
           "kind": "Externer Dienstleister unter 18: prüfen, ob die Tätigkeit unter § 1 Abs. 1 Nr. 3 JArbSchG fällt",
           "legalNote": "Rechtlicher Hinweis (optional)",
           "loadFailed": "Externe Dienstleister unter 18 konnten nicht geladen werden.",
+          "onDay": "Beauftragt am {date}",
           "period": "Beauftragt {from} – {until}",
           "reason": "Ihre Einschätzung der Beauftragung",
           "reasonRequired": "Begründen Sie, warum die Tätigkeit unter den Jugendarbeitsschutz fällt oder nicht.",

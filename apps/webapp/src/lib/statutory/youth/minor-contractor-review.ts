@@ -66,12 +66,18 @@ interface Engagement {
 function engagementOf(period: EmploymentPeriodSnapshot, timezone: string): Engagement {
 	const startedAt =
 		period.startProvenance === "recorded" && period.startedAt ? period.startedAt : null;
+	const start = startedAt ? plainDateAt(startedAt, timezone) : null;
+	// `[startedAt, endedAt)`: the last day is the one holding the stint's last instant. A stint
+	// that starts and ends at the same midnight has none; its last day is its first, so the
+	// period never ends before it starts.
+	const lastDay = period.endedAt
+		? plainDateAt(period.endedAt.subtract({ nanoseconds: 1 }), timezone)
+		: null;
 	return {
 		key: period.id,
-		start: startedAt ? plainDateAt(startedAt, timezone) : null,
-		// `[startedAt, endedAt)`: the last day is the one holding the stint's last instant.
-		endExclusive: period.endedAt
-			? plainDateAt(period.endedAt.subtract({ nanoseconds: 1 }), timezone).add({ days: 1 })
+		start,
+		endExclusive: lastDay
+			? (start && comparePlainDates(lastDay, start) < 0 ? start : lastDay).add({ days: 1 })
 			: null,
 		fingerprintInput: {
 			engagementPeriodId: period.id,

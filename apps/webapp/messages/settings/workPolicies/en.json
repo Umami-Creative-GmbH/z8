@@ -459,6 +459,7 @@
           "kind": "Contractor under 18: check whether the work falls under § 1 Abs. 1 Nr. 3 JArbSchG",
           "legalNote": "Legal note (optional)",
           "loadFailed": "Could not load contractors under 18.",
+          "onDay": "Engaged on {date}",
           "period": "Engaged {from} – {until}",
           "reason": "Your assessment of the engagement",
           "reasonRequired": "Explain why the work does or does not fall under youth protection.",
