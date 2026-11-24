@@ -23,7 +23,17 @@ import { useSkillValidation } from "@/lib/query/use-skills";
 import { shiftCalendarDate } from "@/lib/scheduling/shift-date";
 import { SKILL_OVERRIDE_REASON_REQUIRED } from "@/lib/scheduling/skill-override-refusal";
 import { STATUTORY_PUBLICATION_BLOCKED } from "@/lib/statutory/scheduling/publication-block";
+import type { RefusalMessages } from "@/lib/organization-action/action-error-message";
+import { schedulingActionErrorMessage } from "../scheduling-action-error";
 import { assignedEmployeeIdOf } from "./shift-request-assignee";
+
+const APPROVAL_REFUSALS = {
+	// Approving reassigns a published shift: the JArbSchG publish block can refuse it (#1993).
+	[STATUTORY_PUBLICATION_BLOCKED]: [
+		"scheduling:scheduling.shiftRequests.statutoryBlocked",
+		"Approving this request would break youth protection limits (JArbSchG) for the employee taking the shift. Reject the request or ask someone else to take the shift.",
+	],
+} satisfies RefusalMessages<typeof STATUTORY_PUBLICATION_BLOCKED>;
 
 /** The server wants a skill override reason for this approval (#893). */
 class SkillOverrideReasonRequired extends Error {
@@ -75,19 +85,11 @@ export function ApproveShiftRequestForm({
 				skillOverrideReason: skillOverrideReason.trim() || undefined,
 			});
 			if (!result.success) {
+				// Flow, not wording: the form asks for the reason next to the skill warning.
 				if (result.refusal === SKILL_OVERRIDE_REASON_REQUIRED) {
 					throw new SkillOverrideReasonRequired();
 				}
-				// Approving reassigns a published shift: the JArbSchG publish block can refuse it (#1993).
-				if (result.refusal === STATUTORY_PUBLICATION_BLOCKED) {
-					throw new Error(
-						t(
-							"scheduling:scheduling.shiftRequests.statutoryBlocked",
-							"Approving this request would break youth protection limits (JArbSchG) for the employee taking the shift. Reject the request or ask someone else to take the shift.",
-						),
-					);
-				}
-				throw new Error(result.error);
+				throw new Error(schedulingActionErrorMessage(t, result, APPROVAL_REFUSALS));
 			}
 			return result.data;
 		},

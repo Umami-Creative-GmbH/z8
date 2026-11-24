@@ -6,12 +6,21 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { publishShifts } from "@/app/[locale]/(app)/scheduling/actions";
 import type { DateRange, PublishAcknowledgmentInput } from "@/app/[locale]/(app)/scheduling/types";
+import type { RefusalMessages } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query/keys";
 import { STATUTORY_PUBLICATION_BLOCKED } from "@/lib/statutory/scheduling/publication-block";
+import { schedulingActionErrorMessage } from "../scheduling-action-error";
 import {
 	getPendingPublishAcknowledgment,
 	type PendingPublishAcknowledgment,
 } from "./shift-publish-flow-utils";
+
+const PUBLISH_REFUSALS = {
+	[STATUTORY_PUBLICATION_BLOCKED]: [
+		"scheduling.scheduler.publish.statutoryBlocked",
+		"Some shifts break youth protection limits (JArbSchG). Change the shifts or acknowledge a statutory sector exception before publishing.",
+	],
+} satisfies RefusalMessages<typeof STATUTORY_PUBLICATION_BLOCKED>;
 
 interface UseShiftPublishFlowOptions {
 	organizationId: string;
@@ -29,15 +38,7 @@ export function useShiftPublishFlow({ organizationId, dateRange }: UseShiftPubli
 		mutationFn: async (acknowledgment?: PublishAcknowledgmentInput | null) => {
 			const result = await publishShifts(dateRange, acknowledgment ?? null);
 			if (!result.success) {
-				if (result.refusal === STATUTORY_PUBLICATION_BLOCKED) {
-					throw new Error(
-						t(
-							"scheduling.scheduler.publish.statutoryBlocked",
-							"Some shifts break youth protection limits (JArbSchG). Change the shifts or acknowledge a statutory sector exception before publishing.",
-						),
-					);
-				}
-				throw new Error(result.error);
+				throw new Error(schedulingActionErrorMessage(t, result, PUBLISH_REFUSALS));
 			}
 			return result.data;
 		},
