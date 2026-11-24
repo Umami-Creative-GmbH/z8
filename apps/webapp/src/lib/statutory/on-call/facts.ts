@@ -197,6 +197,64 @@ export async function loadOnCallFacts(
 	if (onCallIds.length === 0) return empty;
 
 	const bounds = shiftDateRangeBounds(input.from, input.untilExclusive, input.timezone);
+	const workRows = await db
+		.select({
+			employeeId: workPeriod.employeeId,
+			startTime: workPeriod.startTime,
+			endTime: workPeriod.endTime,
+			durationMinutes: workPeriod.durationMinutes,
+			isActive: workPeriod.isActive,
+		})
+		.from(workPeriod)
+		.where(
+			and(
+				eq(workPeriod.organizationId, input.organizationId),
+				inArray(workPeriod.employeeId, onCallIds),
+				// Completed work, and a running clock-in: work in progress must not vanish.
+				or(
+					and(completedWorkPeriodCondition(), isNotNull(workPeriod.endTime)),
+					and(eq(workPeriod.isActive, true), isNull(workPeriod.deletedAt)),
+				),
+				lt(workPeriod.startTime, bounds.endExclusive),
+				// Work started on the loaded days, and work started earlier that runs into them (a night
+				// clocked in the day before): it fulfils the loaded days' shifts.
+				or(
+					gte(workPeriod.startTime, bounds.start),
+					gt(workPeriod.endTime, bounds.start),
+					eq(workPeriod.isActive, true),
+				),
+			),
+		);
+	const piecesByEmployee = new Map<string, OnCallWorkPiece[]>();
+	let runningUntil: Instant | null = null;
+	for (const row of workRows) {
+		const start = instantFromDate(row.startTime);
+		if (row.isActive || !row.endTime) {
+			if (compareInstants(input.now, start) < 0) continue;
+			// Whole minutes since the clock-in, and the piece ends on that grid (at most a minute
+			// before now): the rest of its shift is measured from there, so worked plus still planned
+			// stays constant within the minute for a clock-in at seconds.
+			const minutes = Math.floor(start.until(input.now).total("minutes"));
+			const end = start.add({ minutes });
+			push(piecesByEmployee, row.employeeId, { start, end, minutes, running: true });
+			if (!runningUntil || compareInstants(end, runningUntil) > 0) runningUntil = end;
+			continue;
+		}
+		const end = instantFromDate(row.endTime);
+		if (compareInstants(end, start) < 0) continue;
+		const minutes = row.durationMinutes ?? Math.round(start.until(end).total("minutes"));
+		push(piecesByEmployee, row.employeeId, { start, end, minutes, running: false });
+	}
+
+	// A running clock-in's minutes inside a shift count on that shift's day, so the shifts it has run
+	// into are loaded too, also past the loaded days (a Sunday clock-in running into Monday's shift).
+	const runningDayAfter = runningUntil
+		? plainDateAt(runningUntil, input.timezone).add({ days: 1 })
+		: null;
+	const shiftBounds =
+		runningDayAfter && comparePlainDates(runningDayAfter, input.untilExclusive) > 0
+			? shiftDateRangeBounds(input.from, runningDayAfter, input.timezone)
+			: bounds;
 	const shiftRows = await db
 		.select({
 			id: shift.id,
@@ -213,8 +271,8 @@ export async function loadOnCallFacts(
 			and(
 				eq(shift.organizationId, input.organizationId),
 				inArray(shift.employeeId, onCallIds),
-				gte(shift.date, bounds.start),
-				lt(shift.date, bounds.endExclusive),
+				gte(shift.date, shiftBounds.start),
+				lt(shift.date, shiftBounds.endExclusive),
 				input.publishedShiftsOnly ? eq(shift.status, "published") : undefined,
 			),
 		);
@@ -248,51 +306,6 @@ export async function loadOnCallFacts(
 				a.startTime.localeCompare(b.startTime) ||
 				(a.id ?? "").localeCompare(b.id ?? ""),
 		);
-	}
-
-	const workRows = await db
-		.select({
-			employeeId: workPeriod.employeeId,
-			startTime: workPeriod.startTime,
-			endTime: workPeriod.endTime,
-			durationMinutes: workPeriod.durationMinutes,
-			isActive: workPeriod.isActive,
-		})
-		.from(workPeriod)
-		.where(
-			and(
-				eq(workPeriod.organizationId, input.organizationId),
-				inArray(workPeriod.employeeId, onCallIds),
-				// Completed work, and a running clock-in: work in progress must not vanish.
-				or(
-					and(completedWorkPeriodCondition(), isNotNull(workPeriod.endTime)),
-					and(eq(workPeriod.isActive, true), isNull(workPeriod.deletedAt)),
-				),
-				gte(workPeriod.startTime, bounds.start),
-				lt(workPeriod.startTime, bounds.endExclusive),
-			),
-		);
-	const piecesByEmployee = new Map<string, OnCallWorkPiece[]>();
-	for (const row of workRows) {
-		const start = instantFromDate(row.startTime);
-		if (row.isActive || !row.endTime) {
-			if (compareInstants(input.now, start) < 0) continue;
-			// Whole minutes since the clock-in, and the piece ends on that grid (at most a minute
-			// before now): the rest of its shift is measured from there, so worked plus still planned
-			// stays constant within the minute for a clock-in at seconds.
-			const minutes = Math.floor(start.until(input.now).total("minutes"));
-			push(piecesByEmployee, row.employeeId, {
-				start,
-				end: start.add({ minutes }),
-				minutes,
-				running: true,
-			});
-			continue;
-		}
-		const end = instantFromDate(row.endTime);
-		if (compareInstants(end, start) < 0) continue;
-		const minutes = row.durationMinutes ?? Math.round(start.until(end).total("minutes"));
-		push(piecesByEmployee, row.employeeId, { start, end, minutes, running: false });
 	}
 
 	const workMinutesByEmployee = new Map<string, Map<string, number>>();

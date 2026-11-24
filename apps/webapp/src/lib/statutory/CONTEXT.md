@@ -43,9 +43,11 @@ How far a finding goes past its visible limit: `used` and `limit` in the same un
 (above a ceiling, below a floor), and the work it covers (`coveredMinutes`). Only what restricted
 readers see counts: an earnings-derived finding has its tier alone. A running clock-in counts
 without the minutes it grows by (`stableDepth`, server-only): its time inside planned shifts
-counts to the shift's end, also once it runs past it; only its minutes outside them (clocked in
-early, between shifts, or past the shift's end) grow, whether or not the clock has reached the
-shift. While nobody is clocked in, a started shift still counts its rest from the end of its last
+counts to the shift's end, also once it runs past it, on the shift's own day and week (an on-call
+clock-in from Sunday evening running into Monday's shift counts that shift's time on Monday);
+only its minutes outside them (clocked in early, between shifts, or past the shift's end) grow,
+on the clock-in's start day, whether or not the clock has reached the shift. A week's figures do
+not depend on the window it is judged in. While nobody is clocked in, a started shift still counts its rest from the end of its last
 recorded work, or from its start, until it ends: a break, a late start or a missed shift holds the
 figures. A breach the rules attribute by position (a minor's rest
 period or shift span) is matched by its day or week when the running work carries it. The planner's publish acknowledgement goes stale when a finding's severity, tier,

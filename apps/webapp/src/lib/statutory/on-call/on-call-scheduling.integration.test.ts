@@ -877,6 +877,157 @@ describe("§ 12 TzBfG on-call in Scheduling and Staffing (PostgreSQL)", () => {
 		},
 	);
 
+	describe.each([
+		{
+			scenario: "a night split at midnight, clocked in across it",
+			shifts: [
+				["2026-03-15", "18:00", "00:00"],
+				["2026-03-16", "00:00", "06:00"],
+			],
+			clockIn: "18:00:42",
+		},
+		{
+			scenario: "a clock-in on Sunday evening for a shift from Monday midnight",
+			shifts: [["2026-03-16", "00:00", "06:00"]],
+			clockIn: "23:45:42",
+		},
+	] as const)(
+		"a running clock-in crossing into the next week: $scenario",
+		({ shifts, clockIn }) => {
+			// Sunday 2026-03-15 closes 2026-W11, over the deemed 20 h with 24 h worked Tuesday to Thursday
+			// (its severity does not change when the week ends at midnight); Monday 2026-03-16 opens
+			// 2026-W12, under it.
+			async function plannedNight() {
+				const org = await onCall.organization("a");
+				const worker = await fx.employee(org, "worker", { contractType: "hourly" });
+				await onCall.onCallTerms(org, worker, { kind: "unspecified" });
+				for (const date of ["2026-03-10", "2026-03-11", "2026-03-12"]) {
+					await onCall.work(org, worker, { date, startTime: "09:00", endTime: "17:00" });
+				}
+				for (const [date, startTime, endTime] of shifts) {
+					await onCall.shift(org, {
+						employeeId: worker.employeeId,
+						date,
+						startTime,
+						endTime,
+						publishedAt: localInstant("2026-03-01", "10:00", org.timezone),
+					});
+				}
+				await onCall.openWork(org, worker, { date: "2026-03-15", startTime: clockIn });
+				/** Each week's band findings, as the monitor reports them for `window`. */
+				const bandsAt = async (
+					now: Temporal.Instant,
+					window: { start: string; endExclusive: string },
+				) =>
+					Object.fromEntries(
+						(
+							await evaluateOnCallFindings(db, {
+								organizationId: org.id,
+								timezone: org.timezone,
+								window,
+								employeeIds: [worker.employeeId],
+								now,
+							})
+						)
+							.filter((f) => f.kind.startsWith("on_call_weekly_"))
+							.map((f) => [
+								f.subjectKey,
+								[f.kind, f.severity, f.summary.used?.value, f.stableDepth?.used ?? null],
+							]),
+					);
+				const fingerprintAt = async (now: Temporal.Instant) => {
+					const clock = vi.spyOn(Temporal.Now, "instant").mockReturnValue(now);
+					try {
+						return (
+							await Effect.runPromise(
+								Effect.gen(function* () {
+									const service = yield* ScheduleComplianceService;
+									return yield* service.evaluateScheduleWindow({
+										organizationId: org.id,
+										startDate: shiftStoredDate("2026-03-09", org.timezone),
+										endDateExclusive: shiftStoredDate("2026-03-23", org.timezone),
+										timezone: org.timezone,
+									});
+								}).pipe(Effect.provide(complianceLayer)),
+							)
+						).fingerprint;
+					} finally {
+						clock.mockRestore();
+					}
+				};
+				return { org, worker, bandsAt, fingerprintAt };
+			}
+			const samples = [
+				["2026-03-15", "23:50:10"],
+				["2026-03-16", "00:00:10"],
+				["2026-03-16", "00:01:10"],
+				["2026-03-16", "03:00:10"],
+				["2026-03-16", "05:59:10"],
+			] as const;
+			const bothWeeks = { start: "2026-03-09", endExclusive: "2026-03-23" };
+
+			it("keeps each week's band figures and the publish fingerprint steady while the clock runs", async () => {
+				const { org, bandsAt, fingerprintAt } = await plannedNight();
+				const at = ([date, time]: readonly [string, string]) =>
+					localInstant(date, time, org.timezone);
+
+				// The week's figures without the minutes a running clock-in grows by outside any shift.
+				const steadyAt = async (sample: readonly [string, string]) =>
+					Object.fromEntries(
+						Object.entries(await bandsAt(at(sample), bothWeeks)).map(
+							([week, [kind, severity, used, stableUsed]]) => [
+								week,
+								[kind, severity, stableUsed ?? used],
+							],
+						),
+					);
+
+				const first = await steadyAt(samples[0]);
+				expect(first).toEqual({
+					"2026-W11": [
+						"on_call_weekly_over_band",
+						"warning",
+						1_440 + (shifts.length === 2 ? 359 : 0),
+					],
+					"2026-W12": ["on_call_weekly_under_band", "info", 360],
+				});
+				const fingerprint = await fingerprintAt(at(samples[0]));
+				for (const sample of samples.slice(1)) {
+					expect(await steadyAt(sample)).toEqual(first);
+					expect(await fingerprintAt(at(sample))).toBe(fingerprint);
+				}
+			});
+
+			it("gives each week the same figures in a one-week window as in a two-week one", async () => {
+				const { org, bandsAt } = await plannedNight();
+
+				for (const [date, time] of samples) {
+					const now = localInstant(date, time, org.timezone);
+					const both = await bandsAt(now, bothWeeks);
+					expect({
+						...(await bandsAt(now, { start: "2026-03-09", endExclusive: "2026-03-16" })),
+						...(await bandsAt(now, { start: "2026-03-16", endExclusive: "2026-03-23" })),
+					}).toEqual(both);
+				}
+			});
+
+			it("makes the publish fingerprint stale when the next week is planned further", async () => {
+				const { org, worker, fingerprintAt } = await plannedNight();
+				const now = localInstant("2026-03-16", "03:00:10", org.timezone);
+				const before = await fingerprintAt(now);
+
+				await onCall.shift(org, {
+					employeeId: worker.employeeId,
+					date: "2026-03-18",
+					startTime: "09:00",
+					endTime: "13:00",
+					publishedAt: localInstant("2026-03-01", "10:00", org.timezone),
+				});
+				expect(await fingerprintAt(now)).not.toBe(before);
+			});
+		},
+	);
+
 	describe("a minimum breached further makes the publish acknowledgement stale", () => {
 		/** The publish key of the employee's `kind` finding, as the publish fingerprint hashes it. */
 		async function publishKeyOf(

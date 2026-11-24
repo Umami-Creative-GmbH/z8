@@ -390,36 +390,57 @@ function fullWeekBand(
 }
 
 /**
- * The minutes running clock-ins have added to a week as the clock ran: their minutes outside every
- * planned shift. Inside a shift a running clock-in adds nothing, as worked plus still planned is
- * the shift. Before a shift (clocked in early) and past its end every further minute adds one,
- * whether or not the clock has reached the shift yet, so the figure does not jump when it does.
- * The planner's publish acknowledgement counts the week without them (`stableDepth`), so it holds
- * while the clock runs.
+ * Where running clock-ins count, by organization-local day (`YYYY-MM-DD`). Their minutes inside a
+ * planned shift count on that shift's day, as its still-planned rest does: worked plus still
+ * planned is the shift, on its own day and week, whichever day the clock-in started (a Sunday
+ * clock-in running into Monday's shift). Their minutes outside every shift (clocked in early,
+ * between shifts, past the end) count on the clock-in's start day, as completed work does, and
+ * grow: every further minute adds one, whether or not the clock has reached a shift yet, so the
+ * figure does not jump when it does. The planner's publish acknowledgement counts each week
+ * without the growing minutes (`stableDepth`), so it holds while the clock runs.
  */
-function growingWorkOf(
+function runningAttribution(
 	running: readonly OnCallWorkPiece[],
 	shifts: readonly OnCallShift[],
 	timezone: string,
-): number {
-	// Planned time as disjoint intervals: overlapping shifts count their shared time once.
-	const planned: { start: Instant; end: Instant }[] = [];
-	for (const interval of shifts
-		.map((shift) => shiftInterval(shift, timezone))
-		.toSorted((a, b) => compareInstants(a.start, b.start))) {
-		const last = planned.at(-1);
-		if (last && compareInstants(interval.start, last.end) <= 0) {
-			if (compareInstants(interval.end, last.end) > 0) last.end = interval.end;
-		} else {
-			planned.push({ ...interval });
-		}
+): {
+	/** Minutes to move per day: off each clock-in's start day, onto the day of the shift they fill. */
+	readonly shiftedByDay: ReadonlyMap<string, number>;
+	/** Minutes outside every shift, per clock-in start day. */
+	readonly growingByDay: ReadonlyMap<string, number>;
+} {
+	// Planned time as disjoint segments: overlapping shifts count their shared time once, on the day
+	// of the shift that starts first, as the still-planned rest does.
+	const segments: { day: string; start: Instant; end: Instant }[] = [];
+	let plannedUntil: Instant | null = null;
+	for (const { shift, interval } of shifts
+		.map((shift) => ({ shift, interval: shiftInterval(shift, timezone) }))
+		.toSorted((a, b) => compareInstants(a.interval.start, b.interval.start))) {
+		const start: Instant =
+			plannedUntil && compareInstants(plannedUntil, interval.start) > 0
+				? plannedUntil
+				: interval.start;
+		if (compareInstants(start, interval.end) >= 0) continue;
+		plannedUntil = interval.end;
+		segments.push({ day: shift.date.toString(), start, end: interval.end });
 	}
-	let minutes = 0;
+	const shiftedByDay = new Map<string, number>();
+	const growingByDay = new Map<string, number>();
+	const add = (map: Map<string, number>, day: string, minutes: number) =>
+		map.set(day, (map.get(day) ?? 0) + minutes);
 	for (const piece of running) {
-		const inShifts = planned.reduce((sum, interval) => sum + overlapMinutes([piece], interval), 0);
-		minutes += Math.max(0, piece.minutes - inShifts);
+		const startDay = plainDateAt(piece.start, timezone).toString();
+		let inShifts = 0;
+		for (const segment of segments) {
+			const minutes = overlapMinutes([piece], segment);
+			if (minutes <= 0) continue;
+			inShifts += minutes;
+			add(shiftedByDay, segment.day, minutes);
+		}
+		add(shiftedByDay, startDay, -inShifts);
+		add(growingByDay, startDay, Math.max(0, piece.minutes - inShifts));
 	}
-	return minutes;
+	return { shiftedByDay, growingByDay };
 }
 
 function bandFindings(
@@ -444,7 +465,7 @@ function bandFindings(
 	const running = pieces.filter((piece) => piece.running);
 	// Each day counts what was worked plus what is still planned: the part of each of its shifts
 	// not yet worked (an unplanned call adds to a later shift; a call running on its shift counts
-	// once). A shift that has ended adds nothing; one still running adds its rest whatever day it
+	// once, on the shift's day: `runningAttribution`). A shift that has ended adds nothing; one still running adds its rest whatever day it
 	// started, such as last night's shift past midnight. A running clock-in on the shift ends on its
 	// whole-minute grid, so the rest of the shift is measured from there and the total stays
 	// constant within the minute; its unworked past part (a late start, a break before it) is not
@@ -496,8 +517,11 @@ function bandFindings(
 		const day = rest.shift.date.toString();
 		stillPlannedByDay.set(day, (stillPlannedByDay.get(day) ?? 0) + minutes);
 	}
+	const { shiftedByDay, growingByDay } = runningAttribution(running, input.shifts, input.timezone);
 	const minutesOn = (day: PlainDate) =>
-		(work?.get(day.toString()) ?? 0) + (stillPlannedByDay.get(day.toString()) ?? 0);
+		(work?.get(day.toString()) ?? 0) +
+		(shiftedByDay.get(day.toString()) ?? 0) +
+		(stillPlannedByDay.get(day.toString()) ?? 0);
 	// § 12 Abs. 4–5 TzBfG: approved absence and public holidays are paid by the reference period,
 	// not called. Unless worked anyway or still planned (a call scheduled on it counts like any
 	// other), such a day leaves the band, which is prorated to the days that could be called, as for
@@ -510,12 +534,9 @@ function bandFindings(
 	if (!band) return [];
 	const minutesByDay = callableDays.map((day) => [day.toString(), minutesOn(day)] as const);
 	const used = minutesByDay.reduce((sum, [, minutes]) => sum + minutes, 0);
-	const growing = growingWorkOf(
-		running.filter((piece) =>
-			callableDays.some((day) => plainDateAt(piece.start, input.timezone).equals(day)),
-		),
-		input.shifts,
-		input.timezone,
+	const growing = callableDays.reduce(
+		(sum, day) => sum + (growingByDay.get(day.toString()) ?? 0),
+		0,
 	);
 	const subjectKey = isoWeekKey(input.monday);
 	const weekEnded = comparePlainDates(input.monday.add({ days: 7 }), input.today) <= 0;
