@@ -230,6 +230,7 @@
         "listLabel": "Statutory findings",
         "openReviews": "Open in Reviews & Conflicts",
         "outsideScope": "{count, plural, one {# more finding concerns an employee you don't manage.} other {# more findings concern employees you don't manage.}}",
+        "outsideScopeOnly": "{count, plural, one {# finding concerns an employee you don't manage.} other {# findings concern employees you don't manage.}}",
         "severity": {
           "critical": "Critical",
           "info": "Note",

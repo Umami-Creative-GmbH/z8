@@ -230,6 +230,7 @@
         "listLabel": "Gesetzliche Befunde",
         "openReviews": "In Prüfungen & Konflikte öffnen",
         "outsideScope": "{count, plural, one {# weiterer Befund betrifft eine Person, die Sie nicht verwalten.} other {# weitere Befunde betreffen Personen, die Sie nicht verwalten.}}",
+        "outsideScopeOnly": "{count, plural, one {# Befund betrifft eine Person, die Sie nicht verwalten.} other {# Befunde betreffen Personen, die Sie nicht verwalten.}}",
         "severity": {
           "critical": "Kritisch",
           "info": "Hinweis",

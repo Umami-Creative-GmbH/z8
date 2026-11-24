@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import type { ScheduleComplianceSummary } from "@/lib/scheduling/compliance/types";
 import type { ScheduleStatutoryFindings } from "@/lib/statutory/scheduling/findings-list";
 import { cn } from "@/lib/utils";
-import { StatutoryFindingsList } from "./statutory-findings-list";
+import { outsideScopeText, StatutoryFindingsList } from "./statutory-findings-list";
 
 interface ScheduleComplianceBannerProps {
 	summary?: ScheduleComplianceSummary | null;
@@ -117,13 +117,7 @@ export function ScheduleComplianceBanner({
 					</div>
 				)}
 				{statutoryFindings && listed === 0 && outsideScope > 0 && (
-					<p>
-						{t(
-							"scheduling:scheduling.statutory.findings.outsideScope",
-							"{count, plural, one {# more finding concerns an employee you don't manage.} other {# more findings concern employees you don't manage.}}",
-							{ count: outsideScope },
-						)}
-					</p>
+					<p>{outsideScopeText(outsideScope, false, t)}</p>
 				)}
 			</AlertDescription>
 		</Alert>

@@ -169,6 +169,33 @@ describe("StatutoryFindingsList", () => {
 		expect(screen.getByText("3 more findings concern employees you don't manage.")).toBeTruthy();
 	});
 
+	it("counts findings out of reach without 'more' when none is listed", () => {
+		render(
+			<StatutoryFindingsList
+				findings={findings({ items: [], outsideScopeCount: 1 })}
+				dateRange={RANGE}
+			/>,
+		);
+
+		expect(screen.queryByRole("list")).toBeNull();
+		expect(screen.getByText("1 finding concerns an employee you don't manage.")).toBeTruthy();
+	});
+
+	it("tells its host when a shift link is followed", () => {
+		const onShiftLinkClick = vi.fn();
+		render(
+			<StatutoryFindingsList
+				findings={findings()}
+				dateRange={RANGE}
+				onShiftLinkClick={onShiftLinkClick}
+			/>,
+		);
+
+		fireEvent.click(screen.getByRole("link", { name: "Show Anna Berg's shifts" }));
+
+		expect(onShiftLinkClick).toHaveBeenCalledTimes(1);
+	});
+
 	it("writes dates in the reader's language", () => {
 		language.current = "de";
 		render(<StatutoryFindingsList findings={findings()} dateRange={RANGE} />);
@@ -215,6 +242,7 @@ describe("ScheduleComplianceBanner", () => {
 		);
 
 		expect(screen.queryByRole("button", { name: /Show statutory findings/ })).toBeNull();
-		expect(screen.getByText("2 more findings concern employees you don't manage.")).toBeTruthy();
+		expect(screen.getByText("2 findings concern employees you don't manage.")).toBeTruthy();
+		expect(screen.queryByText(/more finding/)).toBeNull();
 	});
 });

@@ -55,6 +55,24 @@ export function statutoryFindingFocusDate(
 	return item.period.start;
 }
 
+/**
+ * The count of findings the viewer may not see: "N more …" below listed findings, plain "N …" when
+ * nothing is listed above it.
+ */
+export function outsideScopeText(count: number, besideListed: boolean, t: Translate): string {
+	return besideListed
+		? t(
+				"scheduling:scheduling.statutory.findings.outsideScope",
+				"{count, plural, one {# more finding concerns an employee you don't manage.} other {# more findings concern employees you don't manage.}}",
+				{ count },
+			)
+		: t(
+				"scheduling:scheduling.statutory.findings.outsideScopeOnly",
+				"{count, plural, one {# finding concerns an employee you don't manage.} other {# findings concern employees you don't manage.}}",
+				{ count },
+			);
+}
+
 function severityLabel(severity: StatutorySeverity, t: Translate): string {
 	switch (severity) {
 		case "critical":
@@ -88,6 +106,11 @@ interface StatutoryFindingsListProps {
 	id?: string;
 	/** Collapsed behind a disclosure: kept in the document, hidden. */
 	hidden?: boolean;
+	/**
+	 * Called when a shift link is followed, e.g. to close the dialog around the list: the link may
+	 * point at the page the viewer is already on, which would leave the dialog open.
+	 */
+	onShiftLinkClick?: () => void;
 }
 
 /**
@@ -102,6 +125,7 @@ export function StatutoryFindingsList({
 	label,
 	id,
 	hidden,
+	onShiftLinkClick,
 }: StatutoryFindingsListProps) {
 	const { t } = useTranslate();
 	const locale = useTolgee(["language"]).getLanguage() || "en";
@@ -125,17 +149,14 @@ export function StatutoryFindingsList({
 							dateRange={dateRange}
 							showShiftsLink={!shiftEmployeeIds || shiftEmployeeIds.has(item.finding.employeeId)}
 							canOpenReviews={findings.canOpenReviews}
+							onShiftLinkClick={onShiftLinkClick}
 						/>
 					))}
 				</ul>
 			)}
 			{findings.outsideScopeCount > 0 && (
 				<p className="text-sm text-muted-foreground">
-					{t(
-						"scheduling:scheduling.statutory.findings.outsideScope",
-						"{count, plural, one {# more finding concerns an employee you don't manage.} other {# more findings concern employees you don't manage.}}",
-						{ count: findings.outsideScopeCount },
-					)}
+					{outsideScopeText(findings.outsideScopeCount, findings.items.length > 0, t)}
 				</p>
 			)}
 		</div>
@@ -148,12 +169,14 @@ function StatutoryFindingRow({
 	dateRange,
 	showShiftsLink,
 	canOpenReviews,
+	onShiftLinkClick,
 }: {
 	item: ScheduleStatutoryFindingItem;
 	locale: string;
 	dateRange: DateRange;
 	showShiftsLink: boolean;
 	canOpenReviews: boolean;
+	onShiftLinkClick?: () => void;
 }) {
 	const { t } = useTranslate();
 	const { finding, employeeName } = item;
@@ -184,6 +207,7 @@ function StatutoryFindingRow({
 				{showShiftsLink && (
 					<Link
 						href={shiftsHref}
+						onClick={onShiftLinkClick}
 						className="inline-flex items-center gap-1 text-primary underline-offset-4 hover:underline focus-visible:underline"
 					>
 						<IconCalendarEvent className="size-4" aria-hidden="true" />
