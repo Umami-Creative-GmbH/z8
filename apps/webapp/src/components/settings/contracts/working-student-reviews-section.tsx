@@ -39,10 +39,8 @@ import {
 	StatutoryAcknowledgementHistory,
 } from "./statutory-review-shared";
 import { AcknowledgementBadge, workingStudentFindingText } from "./working-student-monitor-card";
-import {
-	invalidateWorkingStudentFindings,
-	workingStudentQueryKeys,
-} from "./working-student-queries";
+import { workingStudentQueryKeys } from "./statutory-review-query-keys";
+import { invalidateWorkingStudentFindings } from "./working-student-queries";
 
 const ACKNOWLEDGE_REFUSALS = {
 	statutory_reason_required: [

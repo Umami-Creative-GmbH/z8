@@ -17,6 +17,7 @@ import {
 	getStatutorySettingsAction,
 	updateStatutoryPreferencesAction,
 } from "@/app/[locale]/(app)/settings/contracts/statutory-actions";
+import { useTimeFormat } from "@/components/providers/user-preferences-provider";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -55,18 +56,19 @@ import {
 	type RefusalMessages,
 } from "@/lib/organization-action/action-error-message";
 import {
-	formatMinuteOfDay,
+	formatMinuteOfDayForPreference,
 	MINUTES_PER_DAY,
 	WORKING_STUDENT_DAYTIME_STEP_MINUTES,
 } from "@/lib/statutory/daytime-band";
 import type { StatutoryPreferenceRefusal } from "@/lib/statutory/preferences";
-import { invalidateOrganizationStatutoryFindings } from "./working-student-queries";
+import { invalidateOrganizationStatutoryFindings } from "./statutory-review-query-keys";
 import type { StatutoryBaselineView } from "@/lib/statutory/settings-overview";
 import type {
 	StatutoryDomain,
 	StatutoryThresholdKey,
 	StatutoryThresholdUnit,
 } from "@/lib/statutory/threshold-catalog";
+import type { TimeFormat } from "@/lib/user-preferences/time-format";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -210,6 +212,7 @@ function formatValue(
 	row: { value: number; unit: StatutoryThresholdUnit; currency: string | null },
 	t: Translate,
 	locale: string,
+	timeFormat: TimeFormat,
 ): string {
 	const number = (value: number) =>
 		new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(value);
@@ -250,7 +253,7 @@ function formatValue(
 				value: number(row.value),
 			});
 		case "minute_of_day":
-			return formatMinuteOfDay(row.value);
+			return formatMinuteOfDayForPreference(row.value, timeFormat);
 	}
 }
 
@@ -262,6 +265,7 @@ function BaselinesCard({
 	locale: string;
 }) {
 	const { t } = useTranslate();
+	const timeFormat = useTimeFormat();
 	const [showHistory, setShowHistory] = useState(false);
 	const visible = baselines.filter((row) => showHistory || row.status !== "past");
 	const formatDate = (date: string) => formatPlainDate(parsePlainDate(date), locale, "dateMedium");
@@ -320,7 +324,7 @@ function BaselinesCard({
 									</TableCell>
 									<TableCell className="font-medium">{thresholdLabel(row.key, t)}</TableCell>
 									<TableCell className="text-right tabular-nums">
-										{formatValue(row, t, locale)}
+										{formatValue(row, t, locale, timeFormat)}
 									</TableCell>
 									<TableCell className="whitespace-nowrap text-xs tabular-nums">
 										<div className="flex flex-wrap items-center gap-2">
@@ -380,6 +384,7 @@ function PreferencesCard({
 	initial: PreferencesFormValues;
 }) {
 	const { t } = useTranslate();
+	const timeFormat = useTimeFormat();
 	const queryClient = useQueryClient();
 
 	const saveMutation = useMutation({
@@ -670,7 +675,7 @@ function PreferencesCard({
 											<SelectContent>
 												{BAND_STARTS.map((minute) => (
 													<SelectItem key={minute} value={minute} className="tabular-nums">
-														{formatMinuteOfDay(minute)}
+														{formatMinuteOfDayForPreference(minute, timeFormat)}
 													</SelectItem>
 												))}
 											</SelectContent>
@@ -697,7 +702,7 @@ function PreferencesCard({
 											<SelectContent>
 												{BAND_ENDS.map((minute) => (
 													<SelectItem key={minute} value={minute} className="tabular-nums">
-														{formatMinuteOfDay(minute)}
+														{formatMinuteOfDayForPreference(minute, timeFormat)}
 													</SelectItem>
 												))}
 											</SelectContent>

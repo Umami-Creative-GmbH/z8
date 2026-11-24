@@ -19,6 +19,7 @@ import {
 	voidWorkingStudentLectureFreePeriodAction,
 	voidWorkingStudentPriorWeeksAction,
 } from "@/app/[locale]/(app)/settings/contracts/working-student-actions";
+import { useTimeFormat } from "@/components/providers/user-preferences-provider";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -40,17 +41,15 @@ import {
 	actionErrorMessage,
 	type RefusalMessages,
 } from "@/lib/organization-action/action-error-message";
-import { formatMinuteOfDay } from "@/lib/statutory/daytime-band";
+import { formatMinuteOfDayForPreference } from "@/lib/statutory/daytime-band";
 import type { EmployeeContextRefusal } from "@/lib/statutory/employee-context";
 import type {
 	WorkingStudentFindingView,
 	WorkingStudentMonitorView,
 	WorkingStudentWeekView,
 } from "@/lib/statutory/working-student/views";
-import {
-	invalidateWorkingStudentFindings,
-	workingStudentQueryKeys,
-} from "./working-student-queries";
+import { workingStudentQueryKeys } from "./statutory-review-query-keys";
+import { invalidateWorkingStudentFindings } from "./working-student-queries";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -813,6 +812,7 @@ export function WorkingStudentMonitorCard({
 	const { t } = useTranslate();
 	const tolgee = useTolgee(["language"]);
 	const locale = tolgee.getLanguage() ?? "en";
+	const timeFormat = useTimeFormat();
 	const query = useQuery({
 		queryKey: workingStudentQueryKeys.monitor(organizationId, employeeId),
 		queryFn: async () => {
@@ -838,8 +838,11 @@ export function WorkingStudentMonitorCard({
 								"settings.contracts.workingStudent.description",
 								"In lecture periods, weekday daytime work ({start}–{end}) may not exceed 20 hours a week; evening, night, weekend and lecture-free work may. Every week above 20 hours counts toward 26 weeks in 12 months, including weeks under another employment profile. Warnings never block clocking.",
 								{
-									start: formatMinuteOfDay(query.data.daytimeBand.startMinute),
-									end: formatMinuteOfDay(query.data.daytimeBand.endMinute),
+									start: formatMinuteOfDayForPreference(
+										query.data.daytimeBand.startMinute,
+										timeFormat,
+									),
+									end: formatMinuteOfDayForPreference(query.data.daytimeBand.endMinute, timeFormat),
 								},
 							)
 						: t(
