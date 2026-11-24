@@ -7,6 +7,14 @@ import type { StatutoryAcknowledgementKind } from "@/lib/statutory/acknowledgeme
 export const statutoryMonitorFindingsQueryKey = (organizationId: string) =>
 	["contracts", "statutory-monitor-findings", organizationId] as const;
 
+/** The Youth & Apprentice review lists (#1993, #2022). */
+export const youthReviewQueryKeys = {
+	sectorExceptions: (organizationId: string) =>
+		["contracts", "youth-sector-exceptions", organizationId] as const,
+	minorContractors: (organizationId: string) =>
+		["contracts", "minor-contractor-reviews", organizationId] as const,
+};
+
 export interface StatutoryAcknowledgementHistorySubject {
 	readonly employeeId: string;
 	readonly acknowledgementKind: StatutoryAcknowledgementKind;

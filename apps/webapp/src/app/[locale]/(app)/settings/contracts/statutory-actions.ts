@@ -15,7 +15,8 @@ import { loadStatutorySettingsOverview } from "@/lib/statutory/settings-overview
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 
 // German statutory baselines (read-only) and organization warning settings (#1988), with the
-// working-student weekday daytime band (#2017).
+// working-student weekday daytime band (#2017) and whether minor contractors are judged under
+// JArbSchG (#2022).
 // Org admins only: the overview includes EUR baselines such as the Minijob cap.
 
 const percentSchema = z.number().int().min(1).max(100);
@@ -28,6 +29,7 @@ const updateStatutoryPreferencesSchema = z
 		warningThresholdPercent: percentSchema,
 		criticalThresholdPercent: percentSchema,
 		blockJarbschgShiftPublish: z.boolean(),
+		applyJarbschgToMinorContractors: z.boolean(),
 		workingStudentDaytimeStartMinute: daytimeMinuteSchema,
 		workingStudentDaytimeEndMinute: daytimeMinuteSchema,
 	})
@@ -60,6 +62,7 @@ function preferenceFields(preferences: StatutoryPreferences): StatutoryPreferenc
 		warningThresholdPercent: preferences.warningThresholdPercent,
 		criticalThresholdPercent: preferences.criticalThresholdPercent,
 		blockJarbschgShiftPublish: preferences.blockJarbschgShiftPublish,
+		applyJarbschgToMinorContractors: preferences.applyJarbschgToMinorContractors,
 		workingStudentDaytimeStartMinute: preferences.workingStudentDaytimeStartMinute,
 		workingStudentDaytimeEndMinute: preferences.workingStudentDaytimeEndMinute,
 	};

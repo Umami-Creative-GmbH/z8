@@ -52,6 +52,7 @@ const validPreferences = {
 	warningThresholdPercent: 75,
 	criticalThresholdPercent: 90,
 	blockJarbschgShiftPublish: true,
+	applyJarbschgToMinorContractors: true,
 	workingStudentDaytimeStartMinute: 420,
 	workingStudentDaytimeEndMinute: 1140,
 };
@@ -63,7 +64,12 @@ describe("statutory settings actions (#1988)", () => {
 		mocks.saveOrganizationStatutoryPreferences.mockImplementation(async (_db, input) => ({
 			...input,
 			isDefault: false,
-			previous: { ...input, workingStudentDaytimeStartMinute: 360, isDefault: true },
+			previous: {
+				...input,
+				applyJarbschgToMinorContractors: false,
+				workingStudentDaytimeStartMinute: 360,
+				isDefault: true,
+			},
 		}));
 	});
 
@@ -133,6 +139,19 @@ describe("statutory settings actions (#1988)", () => {
 		expect(mocks.logAudit).not.toHaveBeenCalled();
 	});
 
+	it("refuses a save without the minor-contractor setting (#2022)", async () => {
+		mocks.caller = orgAdmin;
+		const withoutSetting: Partial<typeof validPreferences> = { ...validPreferences };
+		delete withoutSetting.applyJarbschgToMinorContractors;
+
+		expect(
+			await actions.updateStatutoryPreferencesAction(
+				withoutSetting as unknown as typeof validPreferences,
+			),
+		).toMatchObject({ success: false, code: "ValidationError" });
+		expect(mocks.saveOrganizationStatutoryPreferences).not.toHaveBeenCalled();
+	});
+
 	it("audits a saved change with what it replaced", async () => {
 		mocks.caller = orgAdmin;
 
@@ -144,8 +163,14 @@ describe("statutory settings actions (#1988)", () => {
 				actorId: "u-admin",
 				organizationId: "org-1",
 				changes: {
-					before: expect.objectContaining({ workingStudentDaytimeStartMinute: 360 }),
-					after: expect.objectContaining({ workingStudentDaytimeStartMinute: 420 }),
+					before: expect.objectContaining({
+						workingStudentDaytimeStartMinute: 360,
+						applyJarbschgToMinorContractors: false,
+					}),
+					after: expect.objectContaining({
+						workingStudentDaytimeStartMinute: 420,
+						applyJarbschgToMinorContractors: true,
+					}),
 				},
 			}),
 		);

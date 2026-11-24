@@ -1,6 +1,9 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/query/keys";
-import { invalidateStatutoryReviewViews } from "./statutory-review-query-keys";
+import {
+	invalidateStatutoryReviewViews,
+	youthReviewQueryKeys,
+} from "./statutory-review-query-keys";
 
 /** TanStack Query keys for working-student data (#1991), always scoped to the organization. */
 export const workingStudentQueryKeys = {
@@ -48,6 +51,13 @@ export function invalidateOrganizationStatutoryFindings(
 		}),
 		queryClient.invalidateQueries({
 			queryKey: queryKeys.shifts.staffingSuggestionsScope(organizationId),
+		}),
+		// #2022: judging minor contractors under JArbSchG changes both youth review lists.
+		queryClient.invalidateQueries({
+			queryKey: youthReviewQueryKeys.sectorExceptions(organizationId),
+		}),
+		queryClient.invalidateQueries({
+			queryKey: youthReviewQueryKeys.minorContractors(organizationId),
 		}),
 	]);
 }

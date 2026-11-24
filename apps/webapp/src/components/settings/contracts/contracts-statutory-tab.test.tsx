@@ -79,6 +79,7 @@ describe("ContractsStatutoryTab (#1988)", () => {
 					warningThresholdPercent: 80,
 					criticalThresholdPercent: 95,
 					blockJarbschgShiftPublish: false,
+					applyJarbschgToMinorContractors: false,
 					workingStudentDaytimeStartMinute: 360,
 					workingStudentDaytimeEndMinute: 1080,
 					isDefault: true,
@@ -117,6 +118,7 @@ describe("ContractsStatutoryTab (#1988)", () => {
 				warningThresholdPercent: 70,
 				criticalThresholdPercent: 95,
 				blockJarbschgShiftPublish: true,
+				applyJarbschgToMinorContractors: false,
 				workingStudentDaytimeStartMinute: 360,
 				workingStudentDaytimeEndMinute: 1080,
 				isDefault: false,
@@ -142,7 +144,7 @@ describe("ContractsStatutoryTab (#1988)", () => {
 		const warning = await screen.findByLabelText("Warning at");
 
 		fireEvent.change(warning, { target: { value: "70" } });
-		fireEvent.click(screen.getByRole("switch"));
+		fireEvent.click(screen.getByRole("switch", { name: /Block publishing/ }));
 		fireEvent.click(screen.getByRole("button", { name: "Save warning settings" }));
 
 		await waitFor(() =>
@@ -150,11 +152,34 @@ describe("ContractsStatutoryTab (#1988)", () => {
 				warningThresholdPercent: 70,
 				criticalThresholdPercent: 95,
 				blockJarbschgShiftPublish: true,
+				applyJarbschgToMinorContractors: false,
 				workingStudentDaytimeStartMinute: 360,
 				workingStudentDaytimeEndMinute: 1080,
 			}),
 		);
 		await waitFor(() => expect(mocks.toastSuccess).toHaveBeenCalled());
+	});
+
+	it("applies youth protection to minor contractors only when switched on (#2022)", async () => {
+		renderTab();
+		const minorContractors = await screen.findByRole("switch", {
+			name: "Apply youth protection (JArbSchG) to minor contractors",
+		});
+
+		expect(minorContractors.getAttribute("aria-checked")).toBe("false");
+		expect(screen.getByText(/§ 1 Abs. 1 Nr. 3 JArbSchG/)).toBeTruthy();
+
+		fireEvent.click(minorContractors);
+		fireEvent.click(screen.getByRole("button", { name: "Save warning settings" }));
+
+		await waitFor(() =>
+			expect(mocks.updateStatutoryPreferencesAction).toHaveBeenCalledWith(
+				expect.objectContaining({
+					blockJarbschgShiftPublish: false,
+					applyJarbschgToMinorContractors: true,
+				}),
+			),
+		);
 	});
 
 	it("shows the working-student daytime band and saves a changed one (#2017)", async () => {
