@@ -151,6 +151,63 @@ describe("ApprenticeReleaseCard (#1993)", () => {
 		expect(screen.getByText("Unterricht 1:45 PM–5:15 PM: 210 Min. angerechnet")).toBeTruthy();
 	});
 
+	it("says why a full block week's training allowance stays outside a minor's 40-hour week (#2023)", async () => {
+		show(
+			[
+				release({
+					id: "b",
+					releaseKind: "vocational_school_block_week",
+					startsOn: "2027-03-08",
+					endsOn: "2027-03-12",
+					fullDays: 5,
+				}),
+				release({ id: "c", startsOn: "2027-03-16", endsOn: "2027-03-16" }),
+			],
+			"en",
+		);
+
+		expect(
+			await screen.findAllByText(
+				"Up to 2 hours of in-company training a week are allowed on these block days (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG). For an employee under 18, these hours come on top of the block week, which counts with the average weekly working time (§ 9 Abs. 2 Nr. 2 JArbSchG), and do not count towards the § 8 daily and weekly limits.",
+			),
+		).toHaveLength(1);
+	});
+
+	it("words the block-week training note in German", async () => {
+		show([
+			release({
+				releaseKind: "vocational_school_block_week",
+				startsOn: "2027-03-08",
+				endsOn: "2027-03-12",
+				fullDays: 5,
+			}),
+		]);
+
+		expect(
+			await screen.findByText(
+				"An diesen Blockunterrichtstagen sind bis zu 2 Stunden betriebliche Ausbildungsveranstaltungen pro Woche erlaubt (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG). Bei Beschäftigten unter 18 kommen sie zur Blockwoche hinzu, die mit der durchschnittlichen wöchentlichen Arbeitszeit angerechnet wird (§ 9 Abs. 2 Nr. 2 JArbSchG), und zählen nicht zu den Tages- und Wochenhöchstgrenzen nach § 8.",
+			),
+		).toBeTruthy();
+	});
+
+	it("adds no training note to a block week that is not released in full", async () => {
+		show(
+			[
+				release({
+					releaseKind: "vocational_school_block_week",
+					startsOn: "2027-03-08",
+					endsOn: "2027-03-10",
+					fullDays: 0,
+					creditedMinutes: 900,
+				}),
+			],
+			"en",
+		);
+
+		expect(await screen.findByText("900 min of school time credited")).toBeTruthy();
+		expect(screen.queryByText(/in-company training/)).toBeNull();
+	});
+
 	it("words a refused removal in German, not with the server's English text", async () => {
 		mocks.voidApprenticeReleaseAction.mockResolvedValue({
 			success: false,
