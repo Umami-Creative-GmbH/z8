@@ -250,6 +250,7 @@
       "apprenticeship": {
         "releaseDayShiftOn": "Freistellungstag für Auszubildende am {date}: Berufsschul-, Blockunterrichts- oder Prüfungstag",
         "blockWeekTrainingWeek": "Blockunterrichtswoche: {used} Min. Arbeit an den Schultagen dieser Woche, {limit} Min. betriebliche Ausbildungsveranstaltungen erlaubt; überschritten am {date}",
+        "blockWeekTrainingNote": "Die erlaubten Ausbildungsveranstaltungen (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 2 Nr. 3 BBiG) zählen bei Beschäftigten unter 18 nicht zur 40-Stunden-Woche, die die Blockwoche mit ihren angerechneten 40 Stunden bereits ausfüllt",
         "workplaceReturnOn": "Unter 18: keine Arbeit am {date}, dem vollen Berufsschultag der Woche"
       },
       "shortTerm": {

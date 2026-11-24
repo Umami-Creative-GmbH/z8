@@ -243,6 +243,16 @@ export function ApprenticeReleaseCard(props: ApprenticeReleaseCardProps) {
 										</span>
 									</div>
 									<p className="text-sm">{creditText(release, t, locale)}</p>
+									{release.releaseKind === "vocational_school_block_week" &&
+									release.fullDays > 0 ? (
+										// #2023: full block days allow 2 h of training a week outside the § 8 totals.
+										<p className="text-muted-foreground text-xs">
+											{t(
+												"settings.apprenticeRelease.blockWeekTrainingNote",
+												"Up to 2 h a week of in-company training are allowed on these block days (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 2 Nr. 3 BBiG). For an employee under 18 they do not count towards the 40-hour week, which the block week already fills with its credited 40 hours.",
+											)}
+										</p>
+									) : null}
 									{release.lessonCount !== null ? (
 										<p className="text-muted-foreground text-xs">
 											{t("settings.apprenticeRelease.lessons", "{count} lessons", {

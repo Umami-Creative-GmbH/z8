@@ -42,7 +42,7 @@ function textOf(finding: StatutoryComplianceFinding) {
 		return fallback.replace(/\{(\w+)\}/g, (_, name: string) => String(params?.[name] ?? ""));
 	}) as Parameters<typeof youthProtectionWarningText>[1];
 	const text = youthProtectionWarningText(finding, t, "en-US");
-	return { text, call: calls[0] };
+	return { text, call: calls[0], calls };
 }
 
 describe("youthProtectionWarningText (#1993)", () => {
@@ -72,11 +72,34 @@ describe("youthProtectionWarningText (#1993)", () => {
 		});
 		expect(call?.params).toEqual({ used: 250, limit: 120, date: "Mar 11, 2027" });
 		expect(text).toBe(
-			"Block-release week: 250 min of work on this week's school days, 120 min of in-company training allowed; past the allowance on Mar 11, 2027",
+			"Block-release week: 250 min of work on this week's school days, 120 min of in-company training allowed; past the allowance on Mar 11, 2027. The allowed training (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 2 Nr. 3 BBiG) does not count towards an under-18's 40-hour week, which the block week already fills with its credited 40 hours",
 		);
 		expect(catalogText(enCatalog, call?.key ?? "")).toBe(call?.fallback);
 		expect(typeof catalogText(deCatalog, call?.key ?? "")).toBe("string");
 		expect(catalogText(deCatalog, call?.key ?? "")).not.toBe(call?.fallback);
+	});
+
+	it("has an English and a German text for the block-week training note (#2023)", () => {
+		const { calls } = textOf({
+			...base,
+			statutoryKind: "bbig_release_day_shift",
+			domain: "apprenticeship",
+			summary: {
+				tier: "exceeded",
+				used: { unit: "minutes", value: 250 },
+				limit: { unit: "minutes", value: 120 },
+			},
+			day: undefined,
+			releaseDay: "2027-03-11",
+		});
+		const note = calls.find(
+			(entry) =>
+				entry.key === "scheduling:scheduling.statutory.apprenticeship.blockWeekTrainingNote",
+		);
+		expect(note).toBeDefined();
+		expect(catalogText(enCatalog, note?.key ?? "")).toBe(note?.fallback);
+		expect(typeof catalogText(deCatalog, note?.key ?? "")).toBe("string");
+		expect(catalogText(deCatalog, note?.key ?? "")).not.toBe(note?.fallback);
 	});
 
 	it("says how much night work no sector exception can cover (§ 14 JArbSchG)", () => {

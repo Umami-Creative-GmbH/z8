@@ -122,6 +122,63 @@ describe("ApprenticeReleaseCard (#1993)", () => {
 		expect(screen.getByText("Unterricht 07:45–11:15: 210 Min. angerechnet")).toBeTruthy();
 	});
 
+	it("says why a full block week's training allowance stays outside a minor's 40-hour week (#2023)", async () => {
+		show(
+			[
+				release({
+					id: "b",
+					releaseKind: "vocational_school_block_week",
+					startsOn: "2027-03-08",
+					endsOn: "2027-03-12",
+					fullDays: 5,
+				}),
+				release({ id: "c", startsOn: "2027-03-16", endsOn: "2027-03-16" }),
+			],
+			"en",
+		);
+
+		expect(
+			await screen.findAllByText(
+				"Up to 2 h a week of in-company training are allowed on these block days (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 2 Nr. 3 BBiG). For an employee under 18 they do not count towards the 40-hour week, which the block week already fills with its credited 40 hours.",
+			),
+		).toHaveLength(1);
+	});
+
+	it("words the block-week training note in German", async () => {
+		show([
+			release({
+				releaseKind: "vocational_school_block_week",
+				startsOn: "2027-03-08",
+				endsOn: "2027-03-12",
+				fullDays: 5,
+			}),
+		]);
+
+		expect(
+			await screen.findByText(
+				"An diesen Blockunterrichtstagen sind bis zu 2 Stunden betriebliche Ausbildungsveranstaltungen pro Woche erlaubt (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 2 Nr. 3 BBiG). Bei Beschäftigten unter 18 zählen sie nicht zur 40-Stunden-Woche, die die Blockwoche mit ihren angerechneten 40 Stunden bereits ausfüllt.",
+			),
+		).toBeTruthy();
+	});
+
+	it("adds no training note to a block week that is not released in full", async () => {
+		show(
+			[
+				release({
+					releaseKind: "vocational_school_block_week",
+					startsOn: "2027-03-08",
+					endsOn: "2027-03-10",
+					fullDays: 0,
+					creditedMinutes: 900,
+				}),
+			],
+			"en",
+		);
+
+		expect(await screen.findByText("900 min of school time credited")).toBeTruthy();
+		expect(screen.queryByText(/in-company training/)).toBeNull();
+	});
+
 	it("words a refused removal in German, not with the server's English text", async () => {
 		mocks.voidApprenticeReleaseAction.mockResolvedValue({
 			success: false,
