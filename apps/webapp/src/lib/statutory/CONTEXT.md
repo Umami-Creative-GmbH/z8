@@ -142,8 +142,12 @@ _Avoid_: one acknowledgement lifting night work at any hour or age
   profile or the person's age: every monitor reads work and shifts through `employee-time.ts`
   (over `loadEmployeeTime`), which drops contractor time and, on a conversion day, splits at the
   exact instant as payroll does. Short-term reads no terms row of a contractor stint, so a
-  contractor stint never forms, joins or bridges a short-term employment. Day-based records
-  (youth judged days, apprentice releases) apply on days with any employee time.
+  contractor stint never forms, joins or bridges a short-term employment. Staffing's proposals
+  are clipped like shifts. Youth limits judge the days with any employee time; apprentice
+  releases are credited on days the resolver gives apprentice terms, never a contractor day.
+  Monitors that pick their days by the resolver's profile (Minijob, short-term, working student,
+  on-call, releases) give a same-day employee → contractor conversion the contractor kind, as the
+  resolver does: its employee morning is not judged.
   _Avoid_: a per-monitor "is contractor" check
 - **Contracts → Statutory Compliance**: a monitor applies to an employee through the effective
   contract's employment profile, ArbZG scope and on-call terms; Statutory Compliance never changes them

@@ -34,7 +34,7 @@ import { loadEmployeeTime } from "@/lib/engagement/engagement-stints";
 import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import { shiftCalendarDate, shiftDateRangeBounds } from "@/lib/scheduling/shift-date";
 import { shiftInterval, workMatchesShift } from "@/lib/scheduling/shift-occasion";
-import { employeeShiftRows, employeeWorkRows } from "../employee-time";
+import { employeeProposedShifts, employeeShiftRows, employeeWorkRows } from "../employee-time";
 import type { StatutoryProposedShift } from "../scheduling/contributor";
 import { loadOrganizationStatutoryPreferences, type StatutoryPreferences } from "../preferences";
 import { loadStatutoryThresholds } from "../thresholds";
@@ -475,7 +475,7 @@ export async function evaluateWorkingStudents(
 	}
 	const proposedShiftsOf = (proposals: readonly StatutoryProposedShift[]) => {
 		const byEmployee = new Map<string, PlannedShift[]>();
-		for (const proposed of proposals) {
+		for (const proposed of employeeProposedShifts(employeeTime, proposals, timezone)) {
 			const interval = shiftInterval(
 				{
 					date: parsePlainDate(proposed.date),

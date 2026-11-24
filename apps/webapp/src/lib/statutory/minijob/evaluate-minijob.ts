@@ -34,7 +34,7 @@ import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import { shiftCalendarDate, shiftDateRangeBounds } from "@/lib/scheduling/shift-date";
 import { type ShiftInterval, shiftInterval } from "@/lib/scheduling/shift-occasion";
 import { loadStatutoryAcknowledgementStates } from "../acknowledgements";
-import { employeeShiftRows, employeeWorkRows } from "../employee-time";
+import { employeeProposedShifts, employeeShiftRows, employeeWorkRows } from "../employee-time";
 import type { StatutoryFinding, StatutoryFindingAcknowledgement } from "../finding";
 import type { StatutoryPreferences } from "../preferences";
 import type { StatutoryProposedShift } from "../scheduling/contributor";
@@ -397,7 +397,11 @@ export async function evaluateMinijobEarnings(
 		}
 	}
 	const inScope = new Set(employeeIds);
-	for (const proposal of input.proposedShifts ?? []) {
+	for (const proposal of employeeProposedShifts(
+		employeeTime,
+		input.proposedShifts ?? [],
+		timezone,
+	)) {
 		if (!inScope.has(proposal.employeeId)) continue;
 		if (proposal.date < rangeFrom || proposal.date >= rangeUntil) continue;
 		const interval = shiftInterval(

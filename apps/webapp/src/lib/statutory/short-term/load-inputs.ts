@@ -29,7 +29,12 @@ import {
 	type ShiftInterval,
 	shiftInterval,
 } from "@/lib/scheduling/shift-occasion";
-import { employeeShiftRows, employeeWorkRows } from "../employee-time";
+import {
+	employeeProposedShifts,
+	employeeShiftRows,
+	employeeTermRows,
+	employeeWorkRows,
+} from "../employee-time";
 import type { StatutoryProposedShift } from "../scheduling/contributor";
 import { loadStatutoryThresholds, type StatutoryThresholdTable } from "../thresholds";
 import { matchWorkToShifts, splitWorkAtShiftStarts } from "./work-shift-matching";
@@ -575,18 +580,8 @@ export async function loadShortTermInputs(
 				.map((row) => row.employeeId),
 		),
 	]);
-	const contractorStintIds = new Set(
-		confirmedTermRows.flatMap((row) =>
-			employeeTime
-				.stintsOf(row.employeeId)
-				.periods.filter((period) => period.engagementKind === "contractor")
-				.map((period) => period.id),
-		),
-	);
-	const ofEmployeeStint = (row: { employmentPeriodId: string | null }) =>
-		row.employmentPeriodId === null || !contractorStintIds.has(row.employmentPeriodId);
-	const employeeTermRows = confirmedTermRows.filter(ofEmployeeStint);
-	const termRows = employeeTermRows.filter((row) => row.employmentProfile === "short_term");
+	const employeeTerms = employeeTermRows(employeeTime, confirmedTermRows);
+	const termRows = employeeTerms.filter((row) => row.employmentProfile === "short_term");
 	let candidates = [...new Set(termRows.map((row) => row.employeeId))];
 	if (candidates.length === 0) return { employees: [], thresholds };
 
@@ -659,7 +654,7 @@ export async function loadShortTermInputs(
 					);
 	const allTermRowsByEmployee = groupBy(
 		[
-			...employeeTermRows.filter(
+			...employeeTerms.filter(
 				(row) =>
 					candidateSet.has(row.employeeId) &&
 					!fixedTermEndsOnByPeriod.has(row.employmentPeriodId ?? ""),
@@ -1062,7 +1057,11 @@ export async function loadShortTermInputs(
 		else plannedByEmployee.set(employeeId, [item]);
 	};
 	const inScope = new Set(candidates);
-	for (const proposed of input.proposedShifts) {
+	for (const proposed of employeeProposedShifts(
+		employeeTime,
+		input.proposedShifts,
+		input.timezone,
+	)) {
 		if (!inScope.has(proposed.employeeId) || !inLoadedSpan(proposed.employeeId, proposed.date)) {
 			continue;
 		}

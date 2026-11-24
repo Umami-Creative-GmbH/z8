@@ -12,12 +12,15 @@ import {
 	dateFromInstant,
 	type Instant,
 	instantFromDate,
+	type PlainDate,
+	parsePlainDate,
 	plainDateAt,
 } from "@/lib/datetime/temporal-core";
 import { clipRecordToEmployeeTime } from "@/lib/engagement/payroll-scope";
 import type { EmployeeTime } from "@/lib/engagement/engagement-stints";
 import { shiftCalendarDate } from "@/lib/scheduling/shift-date";
 import { shiftInterval } from "@/lib/scheduling/shift-occasion";
+import type { StatutoryProposedShift } from "./scheduling/contributor";
 
 /**
  * A stored work period as the monitors read it. Open while `isActive` (or, without `isActive`,
@@ -84,33 +87,71 @@ export function employeeShiftRows<T extends ShiftRow>(
 	return rows.flatMap((row) => {
 		if (!row.employeeId) return [row];
 		const date = shiftCalendarDate(row.date, timezone);
-		const interval = shiftInterval(
-			{ date, startTime: row.startTime, endTime: row.endTime },
-			timezone,
-		);
-		const parts = time.within(row.employeeId, {
-			start: interval.start,
-			endExclusive: interval.end,
-		});
-		const first = parts[0];
-		const last = parts.at(-1);
-		if (!first || !last) return [];
-		const start = ceilToMinute(first.start);
-		const end = floorToMinute(last.endExclusive);
-		if (compareInstants(start, interval.start) <= 0 && compareInstants(end, interval.end) >= 0) {
-			return [row];
+		const times = employeeWallTimes(time, row.employeeId, { ...row, date }, timezone);
+		if (times === null) return [];
+		return [times === "whole" ? row : { ...row, ...times }];
+	});
+}
+
+/** Staffing's proposed shifts in employee time only, as `employeeShiftRows` reads stored ones. */
+export function employeeProposedShifts(
+	time: EmployeeTime,
+	proposals: readonly StatutoryProposedShift[],
+	timezone: string,
+): StatutoryProposedShift[] {
+	return proposals.flatMap((proposal) => {
+		const date = parsePlainDate(proposal.date);
+		const times = employeeWallTimes(time, proposal.employeeId, { ...proposal, date }, timezone);
+		if (times === null) return [];
+		return [times === "whole" ? proposal : { ...proposal, ...times }];
+	});
+}
+
+/**
+ * The part of a planned interval that is the employee's employee time, from its first to its
+ * last employee instant; null when none of it is.
+ */
+export function employeeIntervalOf(
+	time: EmployeeTime,
+	employeeId: string,
+	interval: { readonly start: Instant; readonly end: Instant },
+): { start: Instant; end: Instant } | null {
+	const parts = time.within(employeeId, { start: interval.start, endExclusive: interval.end });
+	const first = parts[0];
+	const last = parts.at(-1);
+	return first && last ? { start: first.start, end: last.endExclusive } : null;
+}
+
+/** A confirmed terms row as the monitors read it. */
+interface TermsRow {
+	readonly employeeId: string;
+	readonly employmentPeriodId: string | null;
+	readonly validFromDate: string;
+}
+
+/**
+ * The terms rows of employee stints: a row of an External Contractor stint is no employment
+ * under any monitor, whatever its profile. A row without a stint (written before stints were
+ * recorded) is an employee's when its first day is an employee day.
+ */
+export function employeeTermRows<T extends TermsRow>(time: EmployeeTime, rows: readonly T[]): T[] {
+	return rows.filter((row) => {
+		if (row.employmentPeriodId === null) {
+			return time.isEmployeeDay(row.employeeId, row.validFromDate);
 		}
-		if (compareInstants(start, end) >= 0) return [];
-		if (!plainDateAt(start, timezone).equals(date)) return [row];
-		return [{ ...row, startTime: wallTime(start, timezone), endTime: wallTime(end, timezone) }];
+		const stint = time
+			.stintsOf(row.employeeId)
+			.periods.find((period) => period.id === row.employmentPeriodId);
+		return stint?.engagementKind !== "contractor";
 	});
 }
 
 /**
  * Whether any of the organization-local day `date` (`YYYY-MM-DD` in `timezone`) is the
- * employee's employee time: whether a day-based statutory record of it (a school or exam
- * release, a judged youth day) applies. A conversion day is an employee day for its employee
- * part.
+ * employee's employee time: whether a day-based statutory record of it (a judged youth day)
+ * applies. A conversion day is an employee day for its employee part. Unlike
+ * `EmployeeTime.hasEmployeeTimeOn`, the day is the organization's calendar day the monitors
+ * judge, not the employee's own.
  */
 export function hasEmployeeTimeOnDay(
 	time: EmployeeTime,
@@ -120,6 +161,30 @@ export function hasEmployeeTimeOnDay(
 ): boolean {
 	const day = localDayRange(date, timezone);
 	return time.within(employeeId, day).length > 0;
+}
+
+/**
+ * The wall times of a planned shift's employee part: `whole` when all of it is employee time,
+ * null when none of it is, else its employee part on the minute (kept whole when that part would
+ * start after the shift date's midnight: it cannot be written as wall times of that date).
+ */
+function employeeWallTimes(
+	time: EmployeeTime,
+	employeeId: string,
+	shift: { readonly date: PlainDate; readonly startTime: string; readonly endTime: string },
+	timezone: string,
+): { startTime: string; endTime: string } | "whole" | null {
+	const interval = shiftInterval(shift, timezone);
+	const employeePart = employeeIntervalOf(time, employeeId, interval);
+	if (!employeePart) return null;
+	const start = ceilToMinute(employeePart.start);
+	const end = floorToMinute(employeePart.end);
+	if (compareInstants(start, interval.start) <= 0 && compareInstants(end, interval.end) >= 0) {
+		return "whole";
+	}
+	if (compareInstants(start, end) >= 0) return null;
+	if (!plainDateAt(start, timezone).equals(shift.date)) return "whole";
+	return { startTime: wallTime(start, timezone), endTime: wallTime(end, timezone) };
 }
 
 function endOf(row: WorkRow, startAt: Instant): Instant | null {

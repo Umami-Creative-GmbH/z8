@@ -27,12 +27,13 @@ import type {
 import { isMinorOn } from "./age";
 import type { YouthWorkInterval } from "./jarbschg-rules";
 import {
-	contractorDaysOf,
+	daysWithoutEmployeeTime,
 	loadEmployeeBirthdays,
 	loadJarbschgLimits,
 	loadYouthShifts,
 	loadYouthWork,
 } from "./youth-facts";
+import { employeeIntervalOf } from "../employee-time";
 import { loadHolidayDateKeys } from "../holiday-days";
 import { loadYouthSchoolCredits } from "./school-credits";
 import { youthBreachScopeOf, youthFindingsOf } from "./youth-findings";
@@ -78,7 +79,7 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 	const contractorDays = new Map(
 		underage.map((employeeId) => [
 			employeeId,
-			contractorDaysOf(employeeTime, employeeId, { timezone: context.timezone, ...range }),
+			daysWithoutEmployeeTime(employeeTime, employeeId, { timezone: context.timezone, ...range }),
 		]),
 	);
 	const minors = underage.filter((employeeId) =>
@@ -134,21 +135,11 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 					{ date, startTime: proposal.startTime, endTime: proposal.endTime },
 					context.timezone,
 				);
-				// Only its employee time, as for persisted shifts (`employeeShiftRows`).
-				const parts = employeeTime.within(employeeId, {
-					start: planned.start,
-					endExclusive: planned.end,
-				});
-				const first = parts[0];
-				const last = parts.at(-1);
-				if (!first || !last) return [];
-				return [
-					plannedYouthInterval(
-						proposedShiftSubjectKey(proposal),
-						{ start: first.start, end: last.endExclusive },
-						limitsOn(date),
-					),
-				];
+				// Only its employee time, as for persisted shifts; it keeps its subject.
+				const interval = employeeIntervalOf(employeeTime, employeeId, planned);
+				return interval
+					? [plannedYouthInterval(proposedShiftSubjectKey(proposal), interval, limitsOn(date))]
+					: [];
 			});
 		const findingsOf = (withoutRunningGrowth: boolean) =>
 			youthFindingsOf({

@@ -228,5 +228,18 @@ describe("JArbSchG for External Contractors (PostgreSQL)", () => {
 				"jarbschg_uninterrupted",
 			]);
 		});
+
+		it("records the employee part of a clock-in across the conversion instant", async () => {
+			const converted = await minor("converted");
+			const contractorStint = await fx.stint(converted, "contractor", at("2026-01-01", "00:00"));
+			await fx.endStint(contractorStint, at("2026-03-03", "12:00"));
+			await fx.stint(converted, "employee", at("2026-03-03", "12:00"));
+
+			// 08:00–17:30 without a break: as a whole a 9.5 h day; its employee part 12:00–17:30
+			// is 5.5 h without a break, inside the daily maximum and the shift span.
+			await clockOut(converted, "2026-03-03", "08:00", 570);
+
+			expect(await violationTypes(converted)).toEqual(["jarbschg_break", "jarbschg_uninterrupted"]);
+		});
 	});
 });

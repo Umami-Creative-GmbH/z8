@@ -25,6 +25,7 @@ import type {
 	StatutoryScheduleContext,
 	StatutoryScheduleContributor,
 } from "../scheduling/contributor";
+import { employeeIntervalOf } from "../employee-time";
 import { isMinorOn } from "../youth/age";
 import { loadEmployeeTime } from "@/lib/engagement/engagement-stints";
 import { shiftInterval } from "@/lib/scheduling/shift-occasion";
@@ -374,9 +375,9 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 		organizationId: context.organizationId,
 		employeeIds,
 	});
-	// Only employee time conflicts with a release (#2010): a release day is credited on employee
-	// days alone (`loadApprenticeReleaseDays`), and on a conversion day the shifts of its contractor
-	// part are left out.
+	// Only employee time conflicts with a release (#2010): a release is credited only on days the
+	// contract resolver gives apprentice terms (`loadApprenticeReleaseDays`), never a contractor
+	// day, and on a conversion day the shifts and proposals of its contractor part are left out.
 	const employeeTime = await loadEmployeeTime(context.db, context.organizationId, employeeIds);
 	const shifts = await loadYouthShifts(context.db, {
 		organizationId: context.organizationId,
@@ -392,17 +393,27 @@ async function evaluate(context: StatutoryScheduleContext): Promise<StatutoryFin
 		...shifts.map((shift) => ({ ...shift, ref: `shift:${shift.id}` })),
 		...context.proposedShifts
 			.filter((proposal) => releaseDays.has(proposal.employeeId))
-			.map((proposal) => {
+			.flatMap((proposal) => {
 				const date = parsePlainDate(proposal.date);
-				return {
-					employeeId: proposal.employeeId,
-					date,
-					ref: proposedShiftSubjectKey(proposal),
-					...shiftInterval(
+				// Only its employee time, as for persisted shifts; it keeps its subject.
+				const interval = employeeIntervalOf(
+					employeeTime,
+					proposal.employeeId,
+					shiftInterval(
 						{ date, startTime: proposal.startTime, endTime: proposal.endTime },
 						context.timezone,
 					),
-				};
+				);
+				return interval
+					? [
+							{
+								employeeId: proposal.employeeId,
+								date,
+								ref: proposedShiftSubjectKey(proposal),
+								...interval,
+							},
+						]
+					: [];
 			}),
 	];
 

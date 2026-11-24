@@ -86,11 +86,11 @@ export async function loadEmployeeBirthdays(
 
 /**
  * The local days of `[from, until)` in `timezone` with none of the employee's employee time: days
- * spent wholly as an External Contractor (#1996, #2010). A contractor is no employee: youth limits
- * judge none of these days. A conversion day is judged for its employee part; the work and shifts
+ * spent wholly as an External Contractor (#1996, #2010), or outside any employment. A contractor is
+ * no employee: youth limits judge none of these days. A conversion day is judged for its employee part; the work and shifts
  * of its contractor part are left out by `loadYouthWork` and `loadYouthShifts`.
  */
-export function contractorDaysOf(
+export function daysWithoutEmployeeTime(
 	employeeTime: EmployeeTime,
 	employeeId: string,
 	range: { readonly timezone: string; readonly from: string; readonly until: string },

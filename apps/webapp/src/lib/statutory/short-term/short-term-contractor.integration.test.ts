@@ -9,6 +9,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
 import { integrationAdminPool } from "@/test/integration-database";
 import { type FixtureEmployee, statutoryFixture } from "@/test/statutory-fixtures";
+import type { StatutoryProposedShift } from "../scheduling/contributor";
 import { evaluateShortTermEmployment } from "./evaluate";
 import { shortTermFixture } from "./__tests__/short-term-fixture";
 
@@ -28,13 +29,18 @@ describe("short-term employment of External Contractors (PostgreSQL)", () => {
 	/** Monday 15 June 2026, 12:00 in Berlin. */
 	const CONVERSION = "2026-06-15T10:00:00Z";
 
-	function evaluate(org: { id: string; timezone: string }, employeeIds: string[]) {
+	function evaluate(
+		org: { id: string; timezone: string },
+		employeeIds: string[],
+		proposedShifts: StatutoryProposedShift[] = [],
+	) {
 		return evaluateShortTermEmployment(db, {
 			organizationId: org.id,
 			timezone: org.timezone,
 			employeeIds,
 			years: [2026],
 			now: NOW,
+			proposedShifts,
 		});
 	}
 
@@ -115,6 +121,23 @@ describe("short-term employment of External Contractors (PostgreSQL)", () => {
 				lastDay: "2026-06-26",
 			});
 			expect(evaluation?.findings).toEqual([]);
+		});
+
+		it("counts no Staffing proposal in the contractor morning of the conversion day", async () => {
+			const org = await fx.organization("a");
+			const worker = await converted(org, "worker");
+			const proposal = (startTime: string, endTime: string) => ({
+				employeeId: worker.employeeId,
+				date: "2026-06-15",
+				startTime,
+				endTime,
+			});
+
+			const [morning] = await evaluate(org, [worker.employeeId], [proposal("08:00", "11:00")]);
+			const [afternoon] = await evaluate(org, [worker.employeeId], [proposal("13:00", "16:00")]);
+
+			expect(morning?.allowance).toMatchObject({ used: 11, firstDay: "2026-06-16" });
+			expect(afternoon?.allowance).toMatchObject({ used: 12, firstDay: "2026-06-15" });
 		});
 
 		it("counts the conversion day for employee work after the instant", async () => {

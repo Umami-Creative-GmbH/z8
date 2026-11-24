@@ -19,7 +19,7 @@ import { deepensBreachedLimit } from "../scheduling/evaluate";
 import { isMinorOn } from "./age";
 import type { JarbschgRule } from "./jarbschg-rules";
 import {
-	contractorDaysOf,
+	daysWithoutEmployeeTime,
 	loadEmployeeBirthdays,
 	loadJarbschgLimits,
 	loadYouthShifts,
@@ -65,16 +65,11 @@ export async function recordJarbschgViolationsAfterClockOut(
 	// Contractor work records no `work_policy_violation` (#1996), youth limits included; on a
 	// conversion day only its employee part is judged (#2010).
 	const employeeTime = await loadEmployeeTime(db, input.organizationId, [input.employeeId]);
-	const contractorDays = contractorDaysOf(employeeTime, input.employeeId, {
+	const contractorDays = daysWithoutEmployeeTime(employeeTime, input.employeeId, {
 		timezone: input.timezone,
 		...range,
 	});
-	const startedAsContractor =
-		employeeTime.within(input.employeeId, {
-			start: input.workStart,
-			endExclusive: input.workStart,
-		}).length === 0;
-	if (startedAsContractor || contractorDays.has(day.toString())) return [];
+	if (contractorDays.has(day.toString())) return [];
 	const organizationTimezone = await loadOrganizationTimezone(db, input.organizationId);
 	const work = await loadYouthWork(db, {
 		...scope,
@@ -82,6 +77,10 @@ export async function recordJarbschgViolationsAfterClockOut(
 		...range,
 		employeeTime,
 	});
+	// Work wholly in a contractor stint records nothing; a clock-in across the conversion
+	// instant is judged for its employee part (`loadYouthWork`).
+	const closed = work.get(input.employeeId)?.some((record) => record.id === input.workPeriodId);
+	if (!closed) return [];
 	const shifts = await loadYouthShifts(db, {
 		...scope,
 		organizationTimezone,

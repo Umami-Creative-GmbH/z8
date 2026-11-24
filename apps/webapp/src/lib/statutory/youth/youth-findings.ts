@@ -285,7 +285,7 @@ export function youthFindingsOf(input: {
 	 */
 	readonly sectorMinutes?: "whole_subject" | "judged_days";
 	/**
-	 * Local days with none of the employee's employee time (`contractorDaysOf`): no youth limit
+	 * Local days with none of the employee's employee time (`daysWithoutEmployeeTime`): no youth limit
 	 * judges them (#1996, #2010).
 	 */
 	readonly contractorDays?: ReadonlySet<string>;

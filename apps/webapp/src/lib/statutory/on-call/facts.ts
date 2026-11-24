@@ -8,7 +8,11 @@
 import { and, eq, gt, gte, inArray, isNotNull, isNull, lt, or } from "drizzle-orm";
 import { employeeEmploymentHistory, shift, workPeriod } from "@/db/schema";
 import { loadEffectiveContractsBatch } from "@/lib/contracts/resolve-contract";
-import { loadEmployeeTime } from "@/lib/engagement/engagement-stints";
+import {
+	type EmployeeTime,
+	employeeTime,
+	loadEmployeeTime,
+} from "@/lib/engagement/engagement-stints";
 import type { ResolvedOnCallTerms } from "@/lib/contracts/types";
 import {
 	compareInstants,
@@ -95,6 +99,11 @@ export interface OnCallFacts {
 	 * Abs. 4–5 TzBfG pays them by the reference period; they are not called.
 	 */
 	readonly releasedDaysByEmployee: ReadonlyMap<string, ReadonlyMap<string, OnCallReleaseReason>>;
+	/**
+	 * The on-call employees' employee time (#2010): work and shifts above are read in it already;
+	 * Staffing's proposals are read through it too (`employeeProposedShifts`).
+	 */
+	readonly employeeTime: EmployeeTime;
 }
 
 export function daysOf(from: PlainDate, untilExclusive: PlainDate): PlainDate[] {
@@ -153,6 +162,7 @@ export async function loadOnCallFacts(
 		workCallsByEmployee: new Map(),
 		workPiecesByEmployee: new Map(),
 		releasedDaysByEmployee: new Map(),
+		employeeTime: employeeTime(new Map(), new Map(), input.timezone),
 	};
 	if (input.employeeIds?.length === 0) return empty;
 
@@ -249,8 +259,8 @@ export async function loadOnCallFacts(
 		.where(and(ofOnCallEmployees, eq(workPeriod.isActive, true), isNull(workPeriod.deletedAt)));
 	// Employee time only (#2010): an External Contractor stint's calls are no on-call work, to the
 	// instant on a conversion day.
-	const employeeTime = await loadEmployeeTime(db, input.organizationId, onCallIds);
-	const workRows = employeeWorkRows(employeeTime, [
+	const onCallEmployeeTime = await loadEmployeeTime(db, input.organizationId, onCallIds);
+	const workRows = employeeWorkRows(onCallEmployeeTime, [
 		...(await finishedRows),
 		...(await runningRows),
 	]);
@@ -274,7 +284,7 @@ export async function loadOnCallFacts(
 	}
 
 	const shiftRows = employeeShiftRows(
-		employeeTime,
+		onCallEmployeeTime,
 		await db
 			.select({
 				id: shift.id,
@@ -356,6 +366,7 @@ export async function loadOnCallFacts(
 		workCallsByEmployee,
 		workPiecesByEmployee: piecesByEmployee,
 		releasedDaysByEmployee,
+		employeeTime: onCallEmployeeTime,
 	};
 }
 
