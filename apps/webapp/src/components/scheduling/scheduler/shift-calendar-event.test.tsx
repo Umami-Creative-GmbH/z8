@@ -234,6 +234,31 @@ describe("planner shifts in Schedule-X", () => {
 		}
 	});
 
+	it("marks a shift that started in the previous week as running on from before it", async () => {
+		const removeStyles = loadShiftEventStyles();
+		try {
+			// Sunday night into Monday; the week view starts on Monday 2026-07-06.
+			const sundayNight: PlannerEvent = {
+				...NIGHT_SHIFT,
+				start: "2026-07-05T22:00",
+				end: "2026-07-06T06:00",
+			};
+			renderPlanner(createViewWeek, "24h", { events: [sundayNight] });
+
+			const event = await shiftEvent("Night watch");
+			expect(event.parentElement?.classList).toContain("sx__date-grid-event--overflow-left");
+			const style = getComputedStyle(event);
+			expect(style.marginLeft).toBe("10px");
+			expect(style.borderTopLeftRadius).toBe("0px");
+			expect(style.borderBottomLeftRadius).toBe("0px");
+			// The start border Schedule-X sets inline is dropped on the cut-off edge.
+			expect(event.getAttribute("style")).toContain("border-inline-start: 3px solid");
+			expect(style.getPropertyValue("border-inline-start")).toMatch(/^0px\b/);
+		} finally {
+			removeStyles();
+		}
+	});
+
 	it("draws an overnight shift's continuation in the next week of the month grid without a start border", async () => {
 		// Sunday night into Monday: the month grid's weeks start on Monday.
 		const sundayNight: PlannerEvent = {

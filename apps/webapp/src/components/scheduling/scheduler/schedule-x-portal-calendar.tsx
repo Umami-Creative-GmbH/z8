@@ -51,6 +51,9 @@ export function ScheduleXPortalCalendar({
 
 		calendarApp._setDestroyCustomComponentInstance((ccid: string) => {
 			setPortals((current) => {
+				// A date-grid drag copy appends "-copy" to its slot's `data-ccid` on every render, and
+				// the destroy call carries the id the slot has by then. Its entry is normally re-added
+				// under the new id, but the live dataset also catches a render that was not.
 				const remaining = current.filter(
 					(entry) => entry.ccid !== ccid && entry.wrapperElement.dataset.ccid !== ccid,
 				);
