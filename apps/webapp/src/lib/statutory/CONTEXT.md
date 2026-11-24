@@ -42,8 +42,10 @@ _Avoid_: dismissal, resolution
 How far a finding goes past its visible limit: `used` and `limit` in the same unit once past it
 (above a ceiling, below a floor), and the work it covers (`coveredMinutes`). Only what restricted
 readers see counts: an earnings-derived finding has its tier alone. A running clock-in counts
-without the minutes it grows by (`stableDepth`, server-only); within its shift it counts to the
-shift's end. The planner's publish acknowledgement goes stale when a finding's severity, tier,
+without the minutes it grows by (`stableDepth`, server-only): its time inside planned shifts
+counts to the shift's end, also once it runs past it; only its minutes outside them (clocked in
+early, or past the shift's end) grow. A breach the rules attribute by position (a minor's rest
+period or shift span) is matched by its day or week when the running work carries it. The planner's publish acknowledgement goes stale when a finding's severity, tier,
 acknowledgement, publication block or breach depth changes, not while the clock runs.
 _Avoid_: input fingerprint (that one documents an org admin's acknowledgement)
 
