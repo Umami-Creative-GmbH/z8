@@ -18,49 +18,25 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
-import {
-	actionErrorMessage,
-	type RefusalMessages,
-} from "@/lib/organization-action/action-error-message";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query/keys";
-import type { StatutoryAcknowledgementRefusal } from "@/lib/statutory/acknowledgements";
 import type {
 	JarbschgSectorExceptionKind,
 	OpenYouthSectorException,
-	YouthSectorExceptionRefusal,
 } from "@/lib/statutory/youth/sector-exception-review";
 import { cn } from "@/lib/utils";
+import { invalidatedItemClassName } from "./statutory-review-labels";
 import {
 	invalidateStatutoryReviewViews,
 	youthReviewQueryKeys,
 } from "./statutory-review-query-keys";
 import {
 	InvalidatedAcknowledgementNotice,
-	invalidatedItemClassName,
 	StatutoryAcknowledgementHistory,
 } from "./statutory-review-shared";
+import { youthSectorExceptionRefusals } from "./youth-sector-exception-refusals";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
-
-/** Every refusal recording a sector exception can return, as admins read it. */
-export const youthSectorExceptionRefusals = {
-	statutory_finding_not_found: [
-		"settings.contracts.reviews.youth.refusal.notFound",
-		"This finding is no longer open. The list shows the current findings.",
-	],
-	statutory_finding_changed: [
-		"settings.contracts.reviews.youth.refusal.changed",
-		"The shift changed since this list was loaded. Review it again before recording the exception.",
-	],
-	statutory_reason_required: [
-		"settings.contracts.reviews.youth.refusal.reasonRequired",
-		"Explain which sector exception applies.",
-	],
-	statutory_subject_required: [
-		"settings.contracts.reviews.youth.refusal.subjectRequired",
-		"This finding cannot be acknowledged. Reload the list and try again.",
-	],
-} as const satisfies RefusalMessages<YouthSectorExceptionRefusal | StatutoryAcknowledgementRefusal>;
 
 const youthSectorExceptionsKey = youthReviewQueryKeys.sectorExceptions;
 

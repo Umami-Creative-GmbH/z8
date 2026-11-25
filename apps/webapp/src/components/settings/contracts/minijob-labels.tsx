@@ -3,24 +3,11 @@
 import type { useTranslate } from "@tolgee/react";
 import { Badge } from "@/components/ui/badge";
 import type { StatutoryUsageTier } from "@/lib/statutory/finding";
-import type { MinijobExceedanceStatus } from "@/lib/statutory/minijob/minijob-months";
 
 // Shared Minijob monitor labels (#1989): Employee Detail card and Reviews & Conflicts.
+// Formatting helpers live in ./minijob-format.
 
 type Translate = ReturnType<typeof useTranslate>["t"];
-
-export function formatMinijobMonth(month: string, locale: string): string {
-	const [year, monthNumber] = month.split("-").map(Number);
-	return new Intl.DateTimeFormat(locale, {
-		month: "long",
-		year: "numeric",
-		timeZone: "UTC",
-	}).format(new Date(Date.UTC(year ?? 1970, (monthNumber ?? 1) - 1, 1)));
-}
-
-export function formatEuroCents(cents: number, locale: string, currency = "EUR"): string {
-	return new Intl.NumberFormat(locale, { style: "currency", currency }).format(cents / 100);
-}
 
 function tierLabel(tier: StatutoryUsageTier, t: Translate): string {
 	switch (tier) {
@@ -70,25 +57,4 @@ export function MinijobTierBadge({
 			{tierLabel(tier, t)}
 		</Badge>
 	);
-}
-
-export function minijobExceedanceLabel(status: MinijobExceedanceStatus, t: Translate): string {
-	switch (status) {
-		case "acknowledged":
-			return t("settings.contracts.minijob.exceedance.acknowledged", "Documented as unforeseeable");
-		case "unacknowledged":
-			return t("settings.contracts.minijob.exceedance.unacknowledged", "Not documented");
-		case "stale":
-			return t(
-				"settings.contracts.minijob.exceedance.stale",
-				"Documentation outdated: work or shifts changed",
-			);
-		case "over_double_cap":
-			return t("settings.contracts.minijob.exceedance.overDoubleCap", "More than twice the limit");
-		case "too_many_exceedances":
-			return t(
-				"settings.contracts.minijob.exceedance.tooMany",
-				"Too many exceedance months within 12 months",
-			);
-	}
 }

@@ -55,7 +55,7 @@ import {
 	type ReviewDomainFilter,
 	reviewDomainFilters,
 	reviewDomainLabel,
-} from "./statutory-review-shared";
+} from "./statutory-review-labels";
 import { WorkingStudentReviewsSection } from "./working-student-reviews-section";
 import { YouthSectorExceptionsSection } from "./youth-sector-exceptions-section";
 

@@ -40,12 +40,9 @@ import type {
 	MinijobMonitorView,
 	MinijobMonthDetail,
 } from "@/lib/statutory/minijob/minijob-monitor-view";
-import {
-	formatEuroCents,
-	formatMinijobMonth,
-	MinijobTierBadge,
-	minijobExceedanceLabel,
-} from "./minijob-labels";
+import { formatEuroCents, formatMinijobMonth, minijobExceedanceLabel } from "./minijob-format";
+import { MinijobTierBadge } from "./minijob-labels";
+import { StatutoryNoteInputField } from "./statutory-note-input-field";
 import {
 	MINIJOB_REVIEWS_QUERY_KEY,
 	minijobMonitorQueryKey,
@@ -378,24 +375,14 @@ function AddOffsetForm({ employeeId, onDone }: { employeeId: string; onDone: () 
 				}}
 			>
 				{(field) => (
-					<TFormItem>
-						<TFormLabel hasError={fieldHasError(field)}>
-							{t("settings.contracts.minijob.offsets.note", "Source")}
-						</TFormLabel>
-						<TFormControl hasError={fieldHasError(field)}>
-							<Input
-								name={field.name}
-								value={field.state.value}
-								placeholder={t(
-									"settings.contracts.minijob.offsets.notePlaceholder",
-									"For example: payslip of the other Minijob",
-								)}
-								onBlur={field.handleBlur}
-								onChange={(event) => field.handleChange(event.target.value)}
-							/>
-						</TFormControl>
-						<TFormMessage>{field.state.meta.errors[0]}</TFormMessage>
-					</TFormItem>
+					<StatutoryNoteInputField
+						field={field}
+						label={t("settings.contracts.minijob.offsets.note", "Source")}
+						placeholder={t(
+							"settings.contracts.minijob.offsets.notePlaceholder",
+							"For example: payslip of the other Minijob",
+						)}
+					/>
 				)}
 			</form.Field>
 			<div className="flex justify-end gap-2">

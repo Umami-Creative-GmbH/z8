@@ -500,7 +500,8 @@ export function payrollWorkInputDigest(
 		| Omit<CollectedPayrollWorkInputV1, "digest">
 	) & { digest?: string },
 ): string {
-	const { digest: _digest, ...facts } = input;
+	const facts = { ...input };
+	delete facts.digest;
 	return createHash("sha256").update(canonicalJson(facts)).digest("hex");
 }
 

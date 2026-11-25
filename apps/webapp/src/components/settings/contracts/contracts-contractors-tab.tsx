@@ -31,7 +31,7 @@ import type { ContractorCompensationOverviewRow } from "@/lib/contractor-compens
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import { ContractorCompensationCard } from "./contractor-compensation-card";
 import { CONTRACTOR_COMPENSATION_REFUSALS } from "./contractor-compensation-refusals";
-import { describeCompensation } from "./contractor-terms-summary";
+import { describeCompensation } from "./contractor-terms-describe";
 
 const OVERVIEW_QUERY_KEY = ["contractor-compensation", "overview"] as const;
 

@@ -286,7 +286,7 @@ export async function isManagerOf(targetEmployeeId: string): Promise<boolean> {
 
 	try {
 		return await runtime.runPromise(effect);
-	} catch (_error) {
+	} catch {
 		// If there's an error checking the relationship, return false
 		return false;
 	}

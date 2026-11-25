@@ -167,7 +167,6 @@ function getFieldError(error: unknown) {
 export function AbsenceCategoryForm({
 	open,
 	onOpenChange,
-	organizationId,
 	existingCategory,
 	onSuccess,
 }: AbsenceCategoryFormProps) {
@@ -204,7 +203,7 @@ export function AbsenceCategoryForm({
 						]),
 					);
 				}
-			} catch (_error) {
+			} catch {
 				toast.error(t("common.unexpectedError", "An unexpected error occurred"));
 			}
 

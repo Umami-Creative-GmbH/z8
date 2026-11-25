@@ -373,10 +373,9 @@ export async function changeContractorTerms(
 			compensation === null ? { kind: "end", from } : { kind: "set", from, value: compensation },
 		);
 
-		const [history, inEffect] = await Promise.all([
-			listContractorTermsHistory(tx, input.organizationId, input.employeeId),
-			termsInEffectOn(tx, input.organizationId, [input.employeeId], today),
-		]);
+		// Both reads run on `tx`, one connection: pg queues concurrent queries on a busy client.
+		const history = await listContractorTermsHistory(tx, input.organizationId, input.employeeId);
+		const inEffect = await termsInEffectOn(tx, input.organizationId, [input.employeeId], today);
 		return {
 			ok: true,
 			changed: applied.changed,

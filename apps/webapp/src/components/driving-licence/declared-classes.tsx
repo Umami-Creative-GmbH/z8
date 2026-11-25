@@ -299,8 +299,9 @@ function DeclaredClassesDialog({
 						)}
 					</form.Field>
 					<form.Subscribe selector={(state) => state.values.selected}>
-						{(selected) =>
-							selected.length ? (
+						{(selected) => {
+							const selectedCodes = new Set(selected);
+							return selected.length ? (
 								<fieldset className="space-y-3">
 									<legend className="mb-1 text-sm font-medium">
 										{t("drivingLicence.declared.expiryTitle", "Expiry dates (optional)")}
@@ -323,7 +324,7 @@ function DeclaredClassesDialog({
 											)}
 										</form.Field>
 										{LICENCE_CLASSES.filter(
-											(code) => selected.includes(code) && LICENCE_CLASS_INFO[code].expires,
+											(code) => selectedCodes.has(code) && LICENCE_CLASS_INFO[code].expires,
 										).map((code) => (
 											<form.Field key={code} name={`expiry.${code}`}>
 												{(field) => (
@@ -342,8 +343,8 @@ function DeclaredClassesDialog({
 										))}
 									</div>
 								</fieldset>
-							) : null
-						}
+							) : null;
+						}}
 					</form.Subscribe>
 					<p className="flex items-start gap-2 rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
 						<IconLock aria-hidden="true" className="mt-0.5 size-4 shrink-0" />

@@ -31,12 +31,12 @@ import type { MinijobExceedanceRefusal } from "@/lib/statutory/minijob/acknowled
 import type { MinijobExceedanceReview } from "@/lib/statutory/minijob/minijob-reviews";
 import { Link } from "@/navigation";
 import { cn } from "@/lib/utils";
-import { formatEuroCents, formatMinijobMonth, minijobExceedanceLabel } from "./minijob-labels";
+import { formatEuroCents, formatMinijobMonth, minijobExceedanceLabel } from "./minijob-format";
 import { MINIJOB_REVIEWS_QUERY_KEY, minijobMonitorQueryPrefix } from "./minijob-query-keys";
+import { invalidatedItemClassName } from "./statutory-review-labels";
 import { invalidateStatutoryReviewViews } from "./statutory-review-query-keys";
 import {
 	InvalidatedAcknowledgementNotice,
-	invalidatedItemClassName,
 	StatutoryAcknowledgementHistory,
 } from "./statutory-review-shared";
 

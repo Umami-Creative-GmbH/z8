@@ -162,10 +162,7 @@ import { mapSequentially } from "../sequential";
 import { deriveApprovalWorkflowId } from "../workflow/identity";
 import { acquirePinnedApprovalContext } from "../workflow/pinned-write-gate";
 import type { ApprovalWorkflowSnapshot } from "../workflow/ports";
-import type {
-	ApprovalWorkflowDatabase,
-	ApprovalWorkflowRepository,
-} from "../workflow/repository";
+import type { ApprovalWorkflowRepository } from "../workflow/repository";
 import { attemptApprovalRuntime } from "../workflow/work-transaction-port";
 import { startApprovalWorkflow } from "../workflow/start-workflow";
 import {

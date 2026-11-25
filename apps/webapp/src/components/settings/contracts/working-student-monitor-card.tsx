@@ -48,7 +48,9 @@ import type {
 	WorkingStudentMonitorView,
 	WorkingStudentWeekView,
 } from "@/lib/statutory/working-student/views";
+import { StatutoryNoteInputField } from "./statutory-note-input-field";
 import { workingStudentQueryKeys } from "./statutory-review-query-keys";
+import { hours, workingStudentFindingText } from "./working-student-format";
 import { invalidateWorkingStudentFindings } from "./working-student-queries";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -75,33 +77,6 @@ const CONTEXT_REFUSALS = {
 		"Check the dates: the end must not be before the start, and prior weeks start on a Monday.",
 	],
 } satisfies RefusalMessages<EmployeeContextRefusal>;
-
-function hours(minutes: number, locale: string): string {
-	return new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(minutes / 60);
-}
-
-export function workingStudentFindingText(
-	finding: WorkingStudentFindingView,
-	t: Translate,
-	locale: string,
-) {
-	const { used, limit } = finding.summary;
-	if (finding.kind === "working_student_lecture_week" && used && limit) {
-		return t(
-			"settings.contracts.workingStudent.finding.lectureWeek",
-			"{hours} h of weekday daytime work in a lecture week (limit {limit} h)",
-			{ hours: hours(used.value, locale), limit: hours(limit.value, locale) },
-		);
-	}
-	if (finding.kind === "working_student_26_week_ceiling" && used && limit) {
-		return t(
-			"settings.contracts.workingStudent.finding.ceiling",
-			"{used} of {limit} weeks above 20 h in the last 12 months",
-			{ used: used.value, limit: limit.value },
-		);
-	}
-	return t("settings.contracts.workingStudent.finding.generic", "Working-student limit at risk");
-}
 
 function SeverityBadge({ severity }: { severity: WorkingStudentFindingView["severity"] }) {
 	const { t } = useTranslate();
@@ -519,24 +494,14 @@ function PriorWeeksForm({
 				}}
 			>
 				{(field) => (
-					<TFormItem>
-						<TFormLabel hasError={fieldHasError(field)}>
-							{t("settings.contracts.workingStudent.prior.note", "Evidence")}
-						</TFormLabel>
-						<TFormControl hasError={fieldHasError(field)}>
-							<Input
-								name={field.name}
-								value={field.state.value}
-								placeholder={t(
-									"settings.contracts.workingStudent.prior.notePlaceholder",
-									"e.g. certificate of the previous employer",
-								)}
-								onBlur={field.handleBlur}
-								onChange={(event) => field.handleChange(event.target.value)}
-							/>
-						</TFormControl>
-						<TFormMessage>{field.state.meta.errors[0]}</TFormMessage>
-					</TFormItem>
+					<StatutoryNoteInputField
+						field={field}
+						label={t("settings.contracts.workingStudent.prior.note", "Evidence")}
+						placeholder={t(
+							"settings.contracts.workingStudent.prior.notePlaceholder",
+							"e.g. certificate of the previous employer",
+						)}
+					/>
 				)}
 			</form.Field>
 			<div className="flex justify-end sm:col-span-2">

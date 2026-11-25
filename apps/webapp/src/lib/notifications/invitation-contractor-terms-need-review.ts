@@ -50,25 +50,28 @@ export async function notifyInvitationContractorTermsNeedReview(
 		notice.reason === "terms_exist" ? termsExistCopy : unpricedCopy,
 		{ name: notice.name },
 	);
-	for (const userId of new Set(notice.recipientUserIds)) {
-		try {
-			await createNotification({
-				userId,
-				organizationId: notice.organizationId,
-				type: "employee_offboarding_review",
-				title: content.title,
-				message: content.message,
-				entityType: "employee",
-				entityId: notice.employeeId,
-				actionUrl: employeeSettingsUrl(notice.employeeId),
-				idempotencyKey: `invitation-contractor-terms:${notice.draftId}:${userId}`,
-				metadata: { i18n: content.i18n },
-			});
-		} catch (error) {
-			logger.error(
-				{ error, organizationId: notice.organizationId, employeeId: notice.employeeId },
-				"Failed to tell an admin that an invitation's contractor rate needs review",
-			);
-		}
-	}
+	// Each recipient's notice is independent and idempotent; one failure leaves the others.
+	await Promise.all(
+		[...new Set(notice.recipientUserIds)].map(async (userId) => {
+			try {
+				await createNotification({
+					userId,
+					organizationId: notice.organizationId,
+					type: "employee_offboarding_review",
+					title: content.title,
+					message: content.message,
+					entityType: "employee",
+					entityId: notice.employeeId,
+					actionUrl: employeeSettingsUrl(notice.employeeId),
+					idempotencyKey: `invitation-contractor-terms:${notice.draftId}:${userId}`,
+					metadata: { i18n: content.i18n },
+				});
+			} catch (error) {
+				logger.error(
+					{ error, organizationId: notice.organizationId, employeeId: notice.employeeId },
+					"Failed to tell an admin that an invitation's contractor rate needs review",
+				);
+			}
+		}),
+	);
 }

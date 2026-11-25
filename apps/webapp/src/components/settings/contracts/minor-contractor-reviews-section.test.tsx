@@ -27,8 +27,8 @@ vi.mock("@/app/[locale]/(app)/settings/contracts/minor-contractor-review-actions
 	acknowledgeMinorContractorReviewAction: mocks.acknowledgeMinorContractorReviewAction,
 }));
 
-const { MinorContractorReviewsSection, minorContractorReviewRefusals } =
-	await import("./minor-contractor-reviews-section");
+const { MinorContractorReviewsSection } = await import("./minor-contractor-reviews-section");
+const { minorContractorReviewRefusals } = await import("./minor-contractor-review-refusals");
 
 /** `{ a: { b: "x" } }` → `{ "a.b": "x" }`, the keys the section asks for. */
 function flatten(value: unknown, prefix = ""): Record<string, string> {

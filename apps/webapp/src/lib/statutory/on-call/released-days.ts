@@ -101,7 +101,7 @@ export async function loadOnCallReleasedDays(
 	if (from > last) return result;
 	const lookaheadLast = input.untilExclusive.add({ days: FOLLOW_UP_LOOKAHEAD_DAYS - 1 }).toString();
 
-	const absences = await db
+	const absencesQuery = db
 		.select({
 			employeeId: absenceEntry.employeeId,
 			startDate: absenceEntry.startDate,
@@ -131,12 +131,16 @@ export async function loadOnCallReleasedDays(
 				gte(absenceEntry.endDate, from),
 			),
 		);
-	const holidaysByEmployee = await loadHolidayDateKeys(db, {
-		organizationId: input.organizationId,
-		employeeIds: input.employeeIds,
-		from,
-		until,
-	});
+	// Independent reads on a pool-backed client (the on-call monitor and reference period).
+	const [absences, holidaysByEmployee] = await Promise.all([
+		absencesQuery,
+		loadHolidayDateKeys(db, {
+			organizationId: input.organizationId,
+			employeeIds: input.employeeIds,
+			from,
+			until,
+		}),
+	]);
 
 	const absencesByEmployee = Map.groupBy(absences, (row) => row.employeeId);
 	for (const employeeId of input.employeeIds) {

@@ -26,20 +26,14 @@ import type { ShortTermBerufsmaessigkeitReview } from "@/lib/statutory/short-ter
 import { Link } from "@/navigation";
 import { cn } from "@/lib/utils";
 import { shortTermMonitorQueryKey, shortTermReviewsQueryKey } from "./short-term-query-keys";
+import { invalidatedItemClassName } from "./statutory-review-labels";
 import { invalidateStatutoryReviewViews } from "./statutory-review-query-keys";
 import {
 	InvalidatedAcknowledgementNotice,
-	invalidatedItemClassName,
 	StatutoryAcknowledgementHistory,
 } from "./statutory-review-shared";
-import {
-	formatCents,
-	formatMonth,
-	SHORT_TERM_REFUSALS,
-	type Translate,
-	useFormattingLocale,
-	VerificationStatusBadge,
-} from "./short-term-shared";
+import { formatCents, formatMonth, SHORT_TERM_REFUSALS } from "./short-term-format";
+import { type Translate, useFormattingLocale, VerificationStatusBadge } from "./short-term-shared";
 
 function AcknowledgeForm({
 	organizationId,

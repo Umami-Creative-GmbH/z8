@@ -18,47 +18,19 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
-import {
-	actionErrorMessage,
-	type RefusalMessages,
-} from "@/lib/organization-action/action-error-message";
-import type { StatutoryAcknowledgementRefusal } from "@/lib/statutory/acknowledgements";
-import type {
-	MinorContractorReview,
-	MinorContractorReviewRefusal,
-} from "@/lib/statutory/youth/minor-contractor-review";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
+import type { MinorContractorReview } from "@/lib/statutory/youth/minor-contractor-review";
 import { cn } from "@/lib/utils";
+import { minorContractorReviewRefusals } from "./minor-contractor-review-refusals";
+import { invalidatedItemClassName } from "./statutory-review-labels";
 import {
 	invalidateStatutoryReviewViews,
 	youthReviewQueryKeys,
 } from "./statutory-review-query-keys";
 import {
 	InvalidatedAcknowledgementNotice,
-	invalidatedItemClassName,
 	StatutoryAcknowledgementHistory,
 } from "./statutory-review-shared";
-
-/** Every refusal documenting a minor contractor engagement can return, as admins read it. */
-export const minorContractorReviewRefusals = {
-	statutory_finding_not_found: [
-		"settings.contracts.reviews.minorContractors.refusal.notFound",
-		"This engagement no longer needs a review. The list shows the current ones.",
-	],
-	statutory_finding_changed: [
-		"settings.contracts.reviews.minorContractors.refusal.changed",
-		"The person's engagements or the birthday changed since this list was loaded, or the person is now on the roster as a contractor after the engagement ends. Review it again.",
-	],
-	statutory_reason_required: [
-		"settings.contracts.reviews.minorContractors.refusal.reasonRequired",
-		"Explain why the work does or does not fall under youth protection.",
-	],
-	statutory_subject_required: [
-		"settings.contracts.reviews.minorContractors.refusal.subjectRequired",
-		"This engagement cannot be documented. Reload the list and try again.",
-	],
-} as const satisfies RefusalMessages<
-	MinorContractorReviewRefusal | StatutoryAcknowledgementRefusal
->;
 
 /**
  * External Contractor engagements of minors (#2022). The youth protection monitor does not judge
@@ -142,6 +114,50 @@ export function MinorContractorReviewsSection({
 	);
 }
 
+type Translate = ReturnType<typeof useTranslate>["t"];
+
+/** The engagement's last day, never before the first day: a stint that starts and ends at the same midnight has one day. */
+function engagementLastDay(review: MinorContractorReview): string | null {
+	if (!review.periodEnd) return null;
+	return review.periodStart && review.periodEnd <= review.periodStart
+		? review.periodStart
+		: parsePlainDate(review.periodEnd).subtract({ days: 1 }).toString();
+}
+
+/** When the person is engaged, as far as the engagements record it. */
+function engagementPeriodText(
+	review: MinorContractorReview,
+	lastDay: string | null,
+	formatDate: (date: string) => string,
+	t: Translate,
+): string {
+	if (review.periodStart) {
+		if (lastDay === review.periodStart) {
+			return t("settings.contracts.reviews.minorContractors.onDay", "Engaged on {date}", {
+				date: formatDate(review.periodStart),
+			});
+		}
+		return lastDay
+			? t("settings.contracts.reviews.minorContractors.period", "Engaged {from} – {until}", {
+					from: formatDate(review.periodStart),
+					until: formatDate(lastDay),
+				})
+			: t("settings.contracts.reviews.minorContractors.since", "Engaged since {from}", {
+					from: formatDate(review.periodStart),
+				});
+	}
+	return lastDay
+		? t(
+				"settings.contracts.reviews.minorContractors.untilStartUnrecorded",
+				"Engaged until {until} (start not recorded)",
+				{ until: formatDate(lastDay) },
+			)
+		: t(
+				"settings.contracts.reviews.minorContractors.startUnrecorded",
+				"Engagement start not recorded",
+			);
+}
+
 function MinorContractorReviewItem({
 	organizationId,
 	review,
@@ -151,9 +167,122 @@ function MinorContractorReviewItem({
 }) {
 	const { t } = useTranslate();
 	const locale = useTolgee(["language"]).getLanguage() ?? "en";
+	const formatDate = (date: string) => formatPlainDate(parsePlainDate(date), locale, "dateMedium");
+	const lastDay = engagementLastDay(review);
+	const period = engagementPeriodText(review, lastDay, formatDate, t);
+
+	return (
+		<li
+			className={cn(
+				"flex flex-col gap-3 p-3",
+				invalidatedItemClassName(review.acknowledgementStatus),
+			)}
+		>
+			<MinorContractorReviewHeader review={review} period={period} />
+			<MinorContractorRosterNotes review={review} lastDay={lastDay} formatDate={formatDate} />
+			{review.acknowledgementStatus === "stale" ? <InvalidatedAcknowledgementNotice /> : null}
+			<StatutoryAcknowledgementHistory
+				organizationId={organizationId}
+				subject={{
+					employeeId: review.employeeId,
+					acknowledgementKind: "jarbschg_minor_contractor_review",
+					findingKind: "jarbschg_minor_contractor",
+					subjectKey: review.subjectKey,
+				}}
+				currentInputFingerprint={review.inputFingerprint}
+				currentStatus={review.acknowledgementStatus}
+			/>
+			<MinorContractorAssessment organizationId={organizationId} review={review} />
+		</li>
+	);
+}
+
+function MinorContractorReviewHeader({
+	review,
+	period,
+}: {
+	review: MinorContractorReview;
+	period: string;
+}) {
+	const { t } = useTranslate();
+	return (
+		<div className="flex flex-wrap items-center gap-2">
+			<span className="font-medium">{review.employeeName}</span>
+			<Badge variant="outline">
+				{t(
+					"settings.contracts.reviews.minorContractors.kind",
+					"Contractor under 18: check whether the work falls under § 1 Abs. 1 Nr. 3 JArbSchG",
+				)}
+			</Badge>
+			<span className="text-muted-foreground text-sm tabular-nums">{period}</span>
+			{review.acknowledgementStatus === "stale" ? (
+				<Badge variant="outline" className="border-warning/60 text-warning">
+					{t("settings.contracts.reviews.minorContractors.stale", "Changed since last assessed")}
+				</Badge>
+			) : null}
+			{review.acknowledgementStatus === "current" ? (
+				<Badge variant="secondary">
+					{t("settings.contracts.reviews.minorContractors.documented", "Assessment recorded")}
+				</Badge>
+			) : null}
+			<span className="text-muted-foreground text-xs">{review.legalReference}</span>
+		</div>
+	);
+}
+
+/**
+ * The flags turn true while the review window still lies partly inside the engagement: name the
+ * day rather than say it has ended or not started yet. An ended stint always has an end, and only
+ * a recorded start precedes days before it.
+ */
+function MinorContractorRosterNotes({
+	review,
+	lastDay,
+	formatDate,
+}: {
+	review: MinorContractorReview;
+	lastDay: string | null;
+	formatDate: (date: string) => string;
+}) {
+	const { t } = useTranslate();
+	return (
+		<>
+			{review.contractorAfterEnd && lastDay ? (
+				<p className="text-muted-foreground text-sm">
+					{t(
+						"settings.contracts.reviews.minorContractors.afterEnd",
+						"After the engagement ends on {date}, the person stays on the roster as a contractor. Their shifts and work after that day are not judged under youth protection either.",
+						{ date: formatDate(lastDay) },
+					)}
+				</p>
+			) : null}
+			{review.contractorBeforeStart && review.periodStart ? (
+				<p className="text-muted-foreground text-sm">
+					{t(
+						"settings.contracts.reviews.minorContractors.beforeStart",
+						"Before the engagement starts on {date}, the person is on the roster as a contractor. Their shifts and work before that day are not judged under youth protection either.",
+						{ date: formatDate(review.periodStart) },
+					)}
+				</p>
+			) : null}
+		</>
+	);
+}
+
+/**
+ * Records the admin's assessment of one engagement. Mounted with its item, so what was entered
+ * survives closing and reopening the form.
+ */
+function MinorContractorAssessment({
+	organizationId,
+	review,
+}: {
+	organizationId: string;
+	review: MinorContractorReview;
+}) {
+	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [open, setOpen] = useState(false);
-	const formatDate = (date: string) => formatPlainDate(parsePlainDate(date), locale, "dateMedium");
 	const mutation = useMutation({
 		mutationFn: async (value: { reason: string; legalNote: string }) => {
 			const result = await acknowledgeMinorContractorReviewAction({
@@ -191,185 +320,96 @@ function MinorContractorReviewItem({
 		},
 	});
 
-	// Never before the first day: a stint that starts and ends at the same midnight has one day.
-	const lastDay = review.periodEnd
-		? review.periodStart && review.periodEnd <= review.periodStart
-			? review.periodStart
-			: parsePlainDate(review.periodEnd).subtract({ days: 1 }).toString()
-		: null;
-	const period = review.periodStart
-		? lastDay === review.periodStart
-			? t("settings.contracts.reviews.minorContractors.onDay", "Engaged on {date}", {
-					date: formatDate(review.periodStart),
-				})
-			: lastDay
-				? t("settings.contracts.reviews.minorContractors.period", "Engaged {from} – {until}", {
-						from: formatDate(review.periodStart),
-						until: formatDate(lastDay),
-					})
-				: t("settings.contracts.reviews.minorContractors.since", "Engaged since {from}", {
-						from: formatDate(review.periodStart),
-					})
-		: lastDay
-			? t(
-					"settings.contracts.reviews.minorContractors.untilStartUnrecorded",
-					"Engaged until {until} (start not recorded)",
-					{ until: formatDate(lastDay) },
-				)
-			: t(
-					"settings.contracts.reviews.minorContractors.startUnrecorded",
-					"Engagement start not recorded",
-				);
-
-	return (
-		<li
-			className={cn(
-				"flex flex-col gap-3 p-3",
-				invalidatedItemClassName(review.acknowledgementStatus),
-			)}
-		>
-			<div className="flex flex-wrap items-center gap-2">
-				<span className="font-medium">{review.employeeName}</span>
-				<Badge variant="outline">
-					{t(
-						"settings.contracts.reviews.minorContractors.kind",
-						"Contractor under 18: check whether the work falls under § 1 Abs. 1 Nr. 3 JArbSchG",
-					)}
-				</Badge>
-				<span className="text-muted-foreground text-sm tabular-nums">{period}</span>
-				{review.acknowledgementStatus === "stale" ? (
-					<Badge variant="outline" className="border-warning/60 text-warning">
-						{t("settings.contracts.reviews.minorContractors.stale", "Changed since last assessed")}
-					</Badge>
-				) : null}
-				{review.acknowledgementStatus === "current" ? (
-					<Badge variant="secondary">
-						{t("settings.contracts.reviews.minorContractors.documented", "Assessment recorded")}
-					</Badge>
-				) : null}
-				<span className="text-muted-foreground text-xs">{review.legalReference}</span>
+	if (review.acknowledgementStatus === "current") return null;
+	if (!open) {
+		return (
+			<div>
+				<Button type="button" size="sm" variant="outline" onClick={() => setOpen(true)}>
+					<IconShieldCheck className="mr-1.5 size-4" aria-hidden="true" />
+					{t("settings.contracts.reviews.minorContractors.acknowledge", "Record assessment…")}
+				</Button>
 			</div>
-			{/* The flags turn true while the review window still lies partly inside the engagement:
-			    name the day rather than say it has ended or not started yet. An ended stint always
-			    has an end, and only a recorded start precedes days before it. */}
-			{review.contractorAfterEnd && lastDay ? (
-				<p className="text-muted-foreground text-sm">
-					{t(
-						"settings.contracts.reviews.minorContractors.afterEnd",
-						"After the engagement ends on {date}, the person stays on the roster as a contractor. Their shifts and work after that day are not judged under youth protection either.",
-						{ date: formatDate(lastDay) },
-					)}
-				</p>
-			) : null}
-			{review.contractorBeforeStart && review.periodStart ? (
-				<p className="text-muted-foreground text-sm">
-					{t(
-						"settings.contracts.reviews.minorContractors.beforeStart",
-						"Before the engagement starts on {date}, the person is on the roster as a contractor. Their shifts and work before that day are not judged under youth protection either.",
-						{ date: formatDate(review.periodStart) },
-					)}
-				</p>
-			) : null}
-			{review.acknowledgementStatus === "stale" ? <InvalidatedAcknowledgementNotice /> : null}
-			<StatutoryAcknowledgementHistory
-				organizationId={organizationId}
-				subject={{
-					employeeId: review.employeeId,
-					acknowledgementKind: "jarbschg_minor_contractor_review",
-					findingKind: "jarbschg_minor_contractor",
-					subjectKey: review.subjectKey,
+		);
+	}
+	return (
+		<form
+			className="grid gap-3 sm:grid-cols-2"
+			onSubmit={(event) => {
+				event.preventDefault();
+				event.stopPropagation();
+				void form.handleSubmit();
+			}}
+		>
+			<p className="text-muted-foreground text-sm sm:col-span-2">
+				{t(
+					"settings.contracts.reviews.minorContractors.hint",
+					"If the work resembles an employee's (bound by instructions, integrated into your organization, no own clients or business risk), youth protection applies: switch on “Apply youth protection (JArbSchG) to minor contractors” in the statutory limits, or employ the minor instead.",
+				)}
+			</p>
+			<form.Field
+				name="reason"
+				validators={{
+					onSubmit: ({ value }) =>
+						value.trim()
+							? undefined
+							: t(
+									"settings.contracts.reviews.minorContractors.reasonRequired",
+									"Explain why the work does or does not fall under youth protection.",
+								),
 				}}
-				currentInputFingerprint={review.inputFingerprint}
-				currentStatus={review.acknowledgementStatus}
-			/>
-			{review.acknowledgementStatus === "current" ? null : open ? (
-				<form
-					className="grid gap-3 sm:grid-cols-2"
-					onSubmit={(event) => {
-						event.preventDefault();
-						event.stopPropagation();
-						void form.handleSubmit();
-					}}
-				>
-					<p className="text-muted-foreground text-sm sm:col-span-2">
-						{t(
-							"settings.contracts.reviews.minorContractors.hint",
-							"If the work resembles an employee's (bound by instructions, integrated into your organization, no own clients or business risk), youth protection applies: switch on “Apply youth protection (JArbSchG) to minor contractors” in the statutory limits, or employ the minor instead.",
-						)}
-					</p>
-					<form.Field
-						name="reason"
-						validators={{
-							onSubmit: ({ value }) =>
-								value.trim()
-									? undefined
-									: t(
-											"settings.contracts.reviews.minorContractors.reasonRequired",
-											"Explain why the work does or does not fall under youth protection.",
-										),
-						}}
-					>
-						{(field) => (
-							<div className="space-y-1.5 sm:col-span-2">
-								<Label htmlFor={`minor-contractor-reason-${review.findingId}`}>
-									{t(
-										"settings.contracts.reviews.minorContractors.reason",
-										"Your assessment of the engagement",
-									)}
-								</Label>
-								<Textarea
-									id={`minor-contractor-reason-${review.findingId}`}
-									value={field.state.value}
-									onChange={(event) => field.handleChange(event.target.value)}
-									maxLength={1000}
-									aria-invalid={field.state.meta.errors.length > 0}
-								/>
-								{field.state.meta.errors.length > 0 ? (
-									<p className="text-destructive text-xs">{field.state.meta.errors.join(" ")}</p>
-								) : null}
-							</div>
-						)}
-					</form.Field>
-					<form.Field name="legalNote">
-						{(field) => (
-							<div className="space-y-1.5 sm:col-span-2">
-								<Label htmlFor={`minor-contractor-legal-${review.findingId}`}>
-									{t(
-										"settings.contracts.reviews.minorContractors.legalNote",
-										"Legal note (optional)",
-									)}
-								</Label>
-								<Input
-									id={`minor-contractor-legal-${review.findingId}`}
-									value={field.state.value}
-									onChange={(event) => field.handleChange(event.target.value)}
-									maxLength={500}
-								/>
-							</div>
-						)}
-					</form.Field>
-					<div className="flex gap-2 sm:col-span-2">
-						<Button type="submit" size="sm" disabled={mutation.isPending}>
-							{mutation.isPending ? (
-								<IconLoader2 className="mr-1.5 size-4 animate-spin" aria-hidden="true" />
-							) : (
-								<IconShieldCheck className="mr-1.5 size-4" aria-hidden="true" />
+			>
+				{(field) => (
+					<div className="space-y-1.5 sm:col-span-2">
+						<Label htmlFor={`minor-contractor-reason-${review.findingId}`}>
+							{t(
+								"settings.contracts.reviews.minorContractors.reason",
+								"Your assessment of the engagement",
 							)}
-							{t("settings.contracts.reviews.minorContractors.confirm", "Record assessment")}
-						</Button>
-						<Button type="button" size="sm" variant="ghost" onClick={() => setOpen(false)}>
-							{t("common.cancel", "Cancel")}
-						</Button>
+						</Label>
+						<Textarea
+							id={`minor-contractor-reason-${review.findingId}`}
+							value={field.state.value}
+							onChange={(event) => field.handleChange(event.target.value)}
+							maxLength={1000}
+							aria-invalid={field.state.meta.errors.length > 0}
+						/>
+						{field.state.meta.errors.length > 0 ? (
+							<p className="text-destructive text-xs">{field.state.meta.errors.join(" ")}</p>
+						) : null}
 					</div>
-				</form>
-			) : (
-				<div>
-					<Button type="button" size="sm" variant="outline" onClick={() => setOpen(true)}>
+				)}
+			</form.Field>
+			<form.Field name="legalNote">
+				{(field) => (
+					<div className="space-y-1.5 sm:col-span-2">
+						<Label htmlFor={`minor-contractor-legal-${review.findingId}`}>
+							{t(
+								"settings.contracts.reviews.minorContractors.legalNote",
+								"Legal note (optional)",
+							)}
+						</Label>
+						<Input
+							id={`minor-contractor-legal-${review.findingId}`}
+							value={field.state.value}
+							onChange={(event) => field.handleChange(event.target.value)}
+							maxLength={500}
+						/>
+					</div>
+				)}
+			</form.Field>
+			<div className="flex gap-2 sm:col-span-2">
+				<Button type="submit" size="sm" disabled={mutation.isPending}>
+					{mutation.isPending ? (
+						<IconLoader2 className="mr-1.5 size-4 animate-spin" aria-hidden="true" />
+					) : (
 						<IconShieldCheck className="mr-1.5 size-4" aria-hidden="true" />
-						{t("settings.contracts.reviews.minorContractors.acknowledge", "Record assessment…")}
-					</Button>
-				</div>
-			)}
-		</li>
+					)}
+					{t("settings.contracts.reviews.minorContractors.confirm", "Record assessment")}
+				</Button>
+				<Button type="button" size="sm" variant="ghost" onClick={() => setOpen(false)}>
+					{t("common.cancel", "Cancel")}
+				</Button>
+			</div>
+		</form>
 	);
 }

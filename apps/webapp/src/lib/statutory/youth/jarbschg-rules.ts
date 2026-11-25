@@ -571,9 +571,13 @@ export function evaluateJarbschg(input: JarbschgEvaluationInput): JarbschgBreach
 		// Credited school time is fixed, so it counts first and the work on top of it breaks the cap.
 		let running = weekCredit;
 		const daysSoFar: string[] = [...creditedDays];
+		const seenDays = new Set(daysSoFar);
 		for (const interval of weekIntervals) {
 			running += countedMinutes(interval);
-			if (!daysSoFar.includes(interval.dayKey)) daysSoFar.push(interval.dayKey);
+			if (!seenDays.has(interval.dayKey)) {
+				seenDays.add(interval.dayKey);
+				daysSoFar.push(interval.dayKey);
+			}
 			const limits = youthLimits(interval);
 			if (limits && running > limits.maxWeeklyMinutes) {
 				breach(

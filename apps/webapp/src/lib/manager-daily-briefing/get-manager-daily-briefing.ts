@@ -149,8 +149,10 @@ async function isSessionEmployee(
 		);
 	}
 	if (!principal.isPlatformAdmin) return false;
-	const { db, employee } = await import("@/db");
-	const { onCurrentRoster } = await import("@/lib/employee-lifecycle/current-roster");
+	const [{ db, employee }, { onCurrentRoster }] = await Promise.all([
+		import("@/db"),
+		import("@/lib/employee-lifecycle/current-roster"),
+	]);
 	const own = await db.query.employee.findFirst({
 		where: and(
 			eq(employee.id, input.viewer.id),

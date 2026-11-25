@@ -68,7 +68,7 @@ function colorStyle(calendarId: string | undefined, { startBorder = true } = {})
  * Schedule-X draws event times with its locale alone (`toLocaleTimeString`), so an English planner
  * on the 24-hour clock would read "2:00 PM". These components draw the times themselves.
  */
-function ShiftTimeGridEvent({ calendarEvent }: ShiftCalendarEventProps) {
+export function ShiftTimeGridEvent({ calendarEvent }: ShiftCalendarEventProps) {
 	const timeFormat = useTimeFormat();
 	const start = wallTime(calendarEvent.start, timeFormat);
 	const end = wallTime(calendarEvent.end, timeFormat);
@@ -104,7 +104,7 @@ function ShiftTimeGridEvent({ calendarEvent }: ShiftCalendarEventProps) {
  * `hasStartDate` is false on the part of an event that continues from an earlier week, which
  * Schedule-X draws without the start border.
  */
-function ShiftMonthGridEvent({
+export function ShiftMonthGridEvent({
 	calendarEvent,
 	hasStartDate = true,
 }: ShiftCalendarEventProps & { hasStartDate?: boolean }) {
@@ -128,7 +128,7 @@ function ShiftMonthGridEvent({
  * `shift-calendar-event.css` draws Schedule-X's continuation arrows, which it leaves out for custom
  * components.
  */
-function ShiftDateGridEvent({ calendarEvent }: ShiftCalendarEventProps) {
+export function ShiftDateGridEvent({ calendarEvent }: ShiftCalendarEventProps) {
 	const timeFormat = useTimeFormat();
 	const start = wallTime(calendarEvent.start, timeFormat);
 	return (
@@ -142,9 +142,3 @@ function ShiftDateGridEvent({ calendarEvent }: ShiftCalendarEventProps) {
 		</div>
 	);
 }
-
-export const shiftCalendarEventComponents = {
-	timeGridEvent: ShiftTimeGridEvent,
-	dateGridEvent: ShiftDateGridEvent,
-	monthGridEvent: ShiftMonthGridEvent,
-};

@@ -216,12 +216,9 @@ import { approvalWriteGateResult } from "@/lib/approvals/authority";
 import { answerObservedWorkflowLookup } from "@/lib/approvals/domain-adapters/observed-workflow-lookup.test-fixture";
 import { createTimeCorrectionApprovalAdapter } from "@/lib/approvals/domain-adapters/time-correction.adapter";
 import type { TimeCorrectionWorkflowPayload } from "@/lib/approvals/domain-adapters/time-correction-contract";
-import { normalizeTimeCorrectionOriginalWorkMetadata } from "@/lib/approvals/domain-adapters/time-correction-contract";
 import { captureTimeCorrectionLegacyApprovalState } from "@/lib/approvals/domain-adapters/time-correction-legacy-state";
-import { ApprovalAssignmentReassignedError } from "@/lib/approvals/escalation/decision-authority";
 import { ApprovalAuditLogger } from "@/lib/approvals/infrastructure/audit-logger";
 import { resolvePolicyAndCreateApproval } from "@/lib/approvals/policies/chain-service";
-import { processApprovalWithCurrentEmployee } from "@/lib/approvals/server/shared";
 import {
 	approveTimeCorrectionWithCurrentApproverEffect,
 	bindTimeCorrectionWorkflowToWorkPeriod,
@@ -254,16 +251,7 @@ import type {
 	ApprovalWorkflowSnapshot,
 	TransactionalWorkflowRepository,
 } from "@/lib/approvals/workflow/ports";
-import {
-	createApprovalTransitionResultBuilder,
-	createApprovalWorkflowAuthorization,
-	createDatabaseApprovalCommandActorResolver,
-	createRegistryApprovalSourceLoader,
-} from "@/lib/approvals/workflow/runtime";
-import {
-	ApprovalTransitionEngineError,
-	createApprovalTransitionEngine,
-} from "@/lib/approvals/workflow/transition-engine";
+import { ApprovalTransitionEngineError } from "@/lib/approvals/workflow/transition-engine";
 import { parseInstant, systemClock } from "@/lib/datetime/temporal-core";
 import {
 	AuthorizationError,
@@ -406,7 +394,6 @@ describe("time correction transaction boundaries", () => {
 		reviewersByStage?: string[][];
 		autoApprove?: boolean;
 		tamperTerminalActivationMode?: string;
-		transitionError?: Error;
 	}) {
 		const ids = {
 			period: "21000000-0000-4000-8000-000000000801",
@@ -1082,95 +1069,6 @@ describe("time correction transaction boundaries", () => {
 			outboxWriter,
 			compatibilityWriter,
 		} as never;
-		const workflowRepository = {
-			withTransaction: async <T>(
-				operation: (transactionContext: typeof context) => Promise<T>,
-			) => {
-				const priorSnapshots = [...snapshots.entries()];
-				const priorSubmissions = [...submissionWorkflows.entries()];
-				const priorEventCount = canonicalEvents.length;
-				const priorReceipts = [...receipts.entries()].map(
-					([key, value]) => [key, { ...value }] as const,
-				);
-				const priorCompatibility = structuredClone(compatibilityRows);
-				const priorCompatibilityChains = structuredClone(compatibilityChains);
-				const priorCompatibilityStages = structuredClone(compatibilityStages);
-				const priorSource = structuredClone(sourceRow);
-				const priorSourceWorkflowId = sourceWorkflowId;
-				const priorNextBindingWorkflowLoaded = nextBindingWorkflowLoaded;
-				const priorOriginal = structuredClone(originalRow);
-				const priorCorrection = structuredClone(correctionRow);
-				const priorCanonical = structuredClone(canonicalRecord);
-				const priorCanonicalWork = structuredClone(canonicalWork);
-				const priorProjectionCount = projections.length;
-				const priorOutboxCount = outbox.length;
-				const priorLegacyCount = legacyWrites.length;
-				const priorFinalizations = terminalFinalizations;
-				try {
-					return await operation(context);
-				} catch (error) {
-					snapshots.clear();
-					for (const [key, value] of priorSnapshots) snapshots.set(key, value);
-					submissionWorkflows.clear();
-					for (const [key, value] of priorSubmissions) {
-						submissionWorkflows.set(key, value);
-					}
-					canonicalEvents.splice(priorEventCount);
-					receipts.clear();
-					for (const [key, value] of priorReceipts) receipts.set(key, value);
-					compatibilityRows.splice(
-						0,
-						compatibilityRows.length,
-						...priorCompatibility,
-					);
-					compatibilityChains.splice(
-						0,
-						compatibilityChains.length,
-						...priorCompatibilityChains,
-					);
-					compatibilityStages.splice(
-						0,
-						compatibilityStages.length,
-						...priorCompatibilityStages,
-					);
-					restoreRecord(sourceRow, priorSource);
-					sourceWorkflowId = priorSourceWorkflowId;
-					nextBindingWorkflowLoaded = priorNextBindingWorkflowLoaded;
-					restoreRecord(originalRow, priorOriginal);
-					restoreRecord(correctionRow, priorCorrection);
-					restoreRecord(canonicalRecord, priorCanonical);
-					restoreRecord(canonicalWork, priorCanonicalWork);
-					projections.splice(priorProjectionCount);
-					outbox.splice(priorOutboxCount);
-					legacyWrites.splice(priorLegacyCount);
-					terminalFinalizations = priorFinalizations;
-					throw error;
-				}
-			},
-		};
-		const transitionEngine = createApprovalTransitionEngine({
-			repository: workflowRepository,
-			actorResolver: createDatabaseApprovalCommandActorResolver(),
-			authorization: createApprovalWorkflowAuthorization({
-				canManageApproval: async () => false,
-			}),
-			sourceLoader: createRegistryApprovalSourceLoader(adapterRegistry),
-			resultBuilder: createApprovalTransitionResultBuilder(),
-			clock: systemClock,
-		});
-		const runtime = {
-			repository: workflowRepository,
-			transitionEngine: input.transitionError
-				? {
-						executeInTransaction: async () => {
-							throw input.transitionError;
-						},
-						executeInTransactionWithDisposition: async () => {
-							throw input.transitionError;
-						},
-					}
-				: transitionEngine,
-		};
 		const execute = (
 			overrides: {
 				submissionKey?: string;
@@ -3320,8 +3218,8 @@ describe("time correction transaction boundaries", () => {
 			const key = `${mode}-markerless-exact-binding`;
 			const submitted = await fixture.execute({ submissionKey: key });
 			const snapshot = requiredValue([...fixture.snapshots.values()][0]);
-			const { submission: _submission, ...contextSnapshot } =
-				snapshot.contextSnapshot;
+			const contextSnapshot = { ...snapshot.contextSnapshot };
+			delete contextSnapshot.submission;
 			fixture.setSnapshot({ ...snapshot, contextSnapshot });
 
 			const replay = await fixture.execute({ submissionKey: key });
@@ -6030,15 +5928,6 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 				? [candidate.config.name]
 				: []),
 			...(candidate.queryChunks?.flatMap(collectSqlColumnNames) ?? []),
-		];
-	}
-
-	function collectTerminalBoundValues(value: unknown): unknown[] {
-		if (!value || typeof value !== "object") return [];
-		const candidate = value as { value?: unknown; queryChunks?: unknown[] };
-		return [
-			...(Object.hasOwn(candidate, "value") ? [candidate.value] : []),
-			...(candidate.queryChunks?.flatMap(collectTerminalBoundValues) ?? []),
 		];
 	}
 

@@ -38,70 +38,14 @@ import type { ApprenticeReleaseKind } from "@/db/schema";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { formatPlainDateRange } from "@/lib/datetime/temporal-format";
 import { formatTimeStringForPreference, type TimeFormat } from "@/lib/user-preferences/time-format";
-import {
-	actionErrorMessage,
-	type RefusalMessages,
-} from "@/lib/organization-action/action-error-message";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import type {
 	ApprenticeReleaseCreditView,
 	ApprenticeReleaseCredits,
-	ApprenticeReleaseRefusal,
 } from "@/lib/statutory/apprenticeship/release-credit-view";
-import type { EmployeeContextRefusal } from "@/lib/statutory/employee-context";
+import { apprenticeReleaseRefusals } from "./apprentice-release-refusals";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
-
-/** Every refusal recording or removing a release day can return, as admins read it. */
-export const apprenticeReleaseRefusals = {
-	apprentice_release_not_apprentice: [
-		"settings.apprenticeRelease.refusal.notApprentice",
-		"Release days can only be recorded while the employee's terms make them an apprentice.",
-	],
-	apprentice_release_lessons_required: [
-		"settings.apprenticeRelease.refusal.lessonsRequired",
-		"Enter the number of lessons.",
-	],
-	apprentice_release_school_minutes_required: [
-		"settings.apprenticeRelease.refusal.schoolMinutesRequired",
-		"Enter the planned school hours of the block week.",
-	],
-	apprentice_release_no_preceding_working_day: [
-		"settings.apprenticeRelease.refusal.noPrecedingWorkingDay",
-		"There is no working day in the week before the exam to release.",
-	],
-	apprentice_release_exam_time_invalid: [
-		"settings.apprenticeRelease.refusal.examTimeInvalid",
-		"Enter when the exam starts and ends, or neither. It must end after it starts.",
-	],
-	apprentice_release_school_time_invalid: [
-		"settings.apprenticeRelease.refusal.schoolTimeInvalid",
-		"Enter when school starts and ends, or neither. It must end after it starts.",
-	],
-	apprentice_release_day_already_released: [
-		"settings.apprenticeRelease.refusal.dayAlreadyReleased",
-		"This day is already released. Remove the release recorded on it first.",
-	],
-	statutory_period_overlap: [
-		"settings.apprenticeRelease.refusal.overlap",
-		"This release overlaps a release already recorded.",
-	],
-	statutory_invalid_range: [
-		"settings.apprenticeRelease.refusal.invalidRange",
-		"Check the dates: the last day must not be before the first.",
-	],
-	statutory_invalid_value: [
-		"settings.apprenticeRelease.refusal.invalidValue",
-		"Check the lessons and school hours.",
-	],
-	statutory_note_required: [
-		"settings.apprenticeRelease.refusal.reasonRequired",
-		"Explain why the release day is removed.",
-	],
-	statutory_release_single_day: [
-		"settings.apprenticeRelease.refusal.singleDay",
-		"Only a block-release week spans several days.",
-	],
-} as const satisfies RefusalMessages<ApprenticeReleaseRefusal | EmployeeContextRefusal>;
 
 /** A recorded `HH:MM` wall time in the reader's chosen time format (12- or 24-hour). */
 function wallTimeText(value: string, timeFormat: TimeFormat): string {
@@ -386,6 +330,91 @@ function VoidReleaseForm({
 	);
 }
 
+type RecordReleaseValues = {
+	releaseKind: ApprenticeReleaseKind;
+	startsOn: string;
+	endsOn: string;
+	lessonCount: string;
+	schoolHours: string;
+	examStartTime: string;
+	examEndTime: string;
+	schoolStartTime: string;
+	schoolEndTime: string;
+	note: string;
+	includePreExamDay: boolean;
+};
+
+const releaseKinds = [
+	"vocational_school_day",
+	"vocational_school_block_week",
+	"exam_day",
+	"pre_exam_day",
+] as const;
+
+/** What the record action receives: only the fields the chosen release kind uses. */
+function recordReleaseInput(employeeId: string, value: RecordReleaseValues) {
+	const blockWeek = value.releaseKind === "vocational_school_block_week";
+	const schoolDay = value.releaseKind === "vocational_school_day";
+	const examDay = value.releaseKind === "exam_day";
+	return {
+		employeeId,
+		releaseKind: value.releaseKind,
+		startsOn: value.startsOn,
+		endsOn: blockWeek ? value.endsOn : value.startsOn,
+		lessonCount: schoolDay && value.lessonCount !== "" ? Number(value.lessonCount) : null,
+		schoolMinutes:
+			blockWeek && value.schoolHours !== "" ? Math.round(Number(value.schoolHours) * 60) : null,
+		examStartTime: examDay && value.examStartTime !== "" ? value.examStartTime : null,
+		examEndTime: examDay && value.examEndTime !== "" ? value.examEndTime : null,
+		schoolStartTime: schoolDay && value.schoolStartTime !== "" ? value.schoolStartTime : null,
+		schoolEndTime: schoolDay && value.schoolEndTime !== "" ? value.schoolEndTime : null,
+		note: value.note.trim() || null,
+		includePreExamDay: examDay && value.includePreExamDay,
+	};
+}
+
+/** A labelled input of the record form. */
+function ReleaseInputField({
+	id,
+	label,
+	value,
+	onChange,
+	className = "space-y-1.5",
+	...inputProps
+}: {
+	id: string;
+	label: string;
+	value: string;
+	onChange: (value: string) => void;
+	className?: string;
+	type?: "date" | "number" | "time";
+	required?: boolean;
+	min?: number;
+	max?: number;
+	step?: number;
+	"aria-describedby"?: string;
+}) {
+	return (
+		<div className={className}>
+			<Label htmlFor={id}>{label}</Label>
+			<Input
+				id={id}
+				{...inputProps}
+				value={value}
+				onChange={(event) => onChange(event.target.value)}
+			/>
+		</div>
+	);
+}
+
+function ReleaseFieldHint({ id, children }: { id: string; children: string }) {
+	return (
+		<p id={id} className="text-muted-foreground text-xs sm:col-span-2">
+			{children}
+		</p>
+	);
+}
+
 function RecordReleaseForm({
 	organizationId,
 	employeeId,
@@ -396,37 +425,8 @@ function RecordReleaseForm({
 	const { t } = useTranslate();
 	const invalidate = useInvalidate(organizationId, employeeId);
 	const mutation = useMutation({
-		mutationFn: async (value: {
-			releaseKind: ApprenticeReleaseKind;
-			startsOn: string;
-			endsOn: string;
-			lessonCount: string;
-			schoolHours: string;
-			examStartTime: string;
-			examEndTime: string;
-			schoolStartTime: string;
-			schoolEndTime: string;
-			note: string;
-			includePreExamDay: boolean;
-		}) => {
-			const blockWeek = value.releaseKind === "vocational_school_block_week";
-			const schoolDay = value.releaseKind === "vocational_school_day";
-			const examDay = value.releaseKind === "exam_day";
-			const result = await recordApprenticeReleaseAction({
-				employeeId,
-				releaseKind: value.releaseKind,
-				startsOn: value.startsOn,
-				endsOn: blockWeek ? value.endsOn : value.startsOn,
-				lessonCount: schoolDay && value.lessonCount !== "" ? Number(value.lessonCount) : null,
-				schoolMinutes:
-					blockWeek && value.schoolHours !== "" ? Math.round(Number(value.schoolHours) * 60) : null,
-				examStartTime: examDay && value.examStartTime !== "" ? value.examStartTime : null,
-				examEndTime: examDay && value.examEndTime !== "" ? value.examEndTime : null,
-				schoolStartTime: schoolDay && value.schoolStartTime !== "" ? value.schoolStartTime : null,
-				schoolEndTime: schoolDay && value.schoolEndTime !== "" ? value.schoolEndTime : null,
-				note: value.note.trim() || null,
-				includePreExamDay: examDay && value.includePreExamDay,
-			});
+		mutationFn: async (value: RecordReleaseValues) => {
+			const result = await recordApprenticeReleaseAction(recordReleaseInput(employeeId, value));
 			if (!result.success) {
 				throw new Error(actionErrorMessage(t, result, apprenticeReleaseRefusals));
 			}
@@ -481,14 +481,7 @@ function RecordReleaseForm({
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent>
-								{(
-									[
-										"vocational_school_day",
-										"vocational_school_block_week",
-										"exam_day",
-										"pre_exam_day",
-									] as const
-								).map((kind) => (
+								{releaseKinds.map((kind) => (
 									<SelectItem key={kind} value={kind}>
 										{kindLabel(kind, t)}
 									</SelectItem>
@@ -500,18 +493,14 @@ function RecordReleaseForm({
 			</form.Field>
 			<form.Field name="startsOn">
 				{(field) => (
-					<div className="space-y-1.5">
-						<Label htmlFor="apprentice-release-starts">
-							{t("settings.apprenticeRelease.fields.date", "Date")}
-						</Label>
-						<Input
-							id="apprentice-release-starts"
-							type="date"
-							required
-							value={field.state.value}
-							onChange={(event) => field.handleChange(event.target.value)}
-						/>
-					</div>
+					<ReleaseInputField
+						id="apprentice-release-starts"
+						label={t("settings.apprenticeRelease.fields.date", "Date")}
+						type="date"
+						required
+						value={field.state.value}
+						onChange={field.handleChange}
+					/>
 				)}
 			</form.Field>
 			<form.Subscribe selector={(state) => state.values.releaseKind}>
@@ -521,39 +510,31 @@ function RecordReleaseForm({
 							<>
 								<form.Field name="endsOn">
 									{(field) => (
-										<div className="space-y-1.5">
-											<Label htmlFor="apprentice-release-ends">
-												{t("settings.apprenticeRelease.fields.endsOn", "Last day")}
-											</Label>
-											<Input
-												id="apprentice-release-ends"
-												type="date"
-												required
-												value={field.state.value}
-												onChange={(event) => field.handleChange(event.target.value)}
-											/>
-										</div>
+										<ReleaseInputField
+											id="apprentice-release-ends"
+											label={t("settings.apprenticeRelease.fields.endsOn", "Last day")}
+											type="date"
+											required
+											value={field.state.value}
+											onChange={field.handleChange}
+										/>
 									)}
 								</form.Field>
 								<form.Field name="schoolHours">
 									{(field) => (
-										<div className="space-y-1.5">
-											<Label htmlFor="apprentice-release-hours">
-												{t(
-													"settings.apprenticeRelease.fields.schoolHoursPerWeek",
-													"School hours per week (clock hours)",
-												)}
-											</Label>
-											<Input
-												id="apprentice-release-hours"
-												type="number"
-												min={0}
-												step={0.25}
-												required
-												value={field.state.value}
-												onChange={(event) => field.handleChange(event.target.value)}
-											/>
-										</div>
+										<ReleaseInputField
+											id="apprentice-release-hours"
+											label={t(
+												"settings.apprenticeRelease.fields.schoolHoursPerWeek",
+												"School hours per week (clock hours)",
+											)}
+											type="number"
+											min={0}
+											step={0.25}
+											required
+											value={field.state.value}
+											onChange={field.handleChange}
+										/>
 									)}
 								</form.Field>
 							</>
@@ -562,114 +543,88 @@ function RecordReleaseForm({
 							<>
 								<form.Field name="lessonCount">
 									{(field) => (
-										<div className="space-y-1.5">
-											<Label htmlFor="apprentice-release-lessons">
-												{t("settings.apprenticeRelease.fields.lessons", "Lessons (45 min each)")}
-											</Label>
-											<Input
-												id="apprentice-release-lessons"
-												type="number"
-												min={0}
-												max={20}
-												required
-												value={field.state.value}
-												onChange={(event) => field.handleChange(event.target.value)}
-											/>
-										</div>
+										<ReleaseInputField
+											id="apprentice-release-lessons"
+											label={t("settings.apprenticeRelease.fields.lessons", "Lessons (45 min each)")}
+											type="number"
+											min={0}
+											max={20}
+											required
+											value={field.state.value}
+											onChange={field.handleChange}
+										/>
 									)}
 								</form.Field>
 								<form.Field name="schoolStartTime">
 									{(field) => (
-										<div className="space-y-1.5">
-											<Label htmlFor="apprentice-release-school-start">
-												{t("settings.apprenticeRelease.fields.schoolStartTime", "School starts")}
-											</Label>
-											<Input
-												id="apprentice-release-school-start"
-												type="time"
-												value={field.state.value}
-												onChange={(event) => field.handleChange(event.target.value)}
-												aria-describedby="apprentice-release-school-hint"
-											/>
-										</div>
+										<ReleaseInputField
+											id="apprentice-release-school-start"
+											label={t("settings.apprenticeRelease.fields.schoolStartTime", "School starts")}
+											type="time"
+											value={field.state.value}
+											onChange={field.handleChange}
+											aria-describedby="apprentice-release-school-hint"
+										/>
 									)}
 								</form.Field>
 								<form.Field name="schoolEndTime">
 									{(field) => (
-										<div className="space-y-1.5">
-											<Label htmlFor="apprentice-release-school-end">
-												{t(
-													"settings.apprenticeRelease.fields.schoolEndTime",
-													"School ends (including breaks)",
-												)}
-											</Label>
-											<Input
-												id="apprentice-release-school-end"
-												type="time"
-												value={field.state.value}
-												onChange={(event) => field.handleChange(event.target.value)}
-												aria-describedby="apprentice-release-school-hint"
-											/>
-										</div>
+										<ReleaseInputField
+											id="apprentice-release-school-end"
+											label={t(
+												"settings.apprenticeRelease.fields.schoolEndTime",
+												"School ends (including breaks)",
+											)}
+											type="time"
+											value={field.state.value}
+											onChange={field.handleChange}
+											aria-describedby="apprentice-release-school-hint"
+										/>
 									)}
 								</form.Field>
-								<p
-									id="apprentice-release-school-hint"
-									className="text-muted-foreground text-xs sm:col-span-2"
-								>
+								<ReleaseFieldHint id="apprentice-release-school-hint">
 									{t(
 										"settings.apprenticeRelease.fields.schoolTimeHint",
 										"A short school day credits its school time including breaks. Leave both empty to credit 45 minutes per lesson.",
 									)}
-								</p>
+								</ReleaseFieldHint>
 							</>
 						) : null}
 						{kind === "exam_day" ? (
 							<>
 								<form.Field name="examStartTime">
 									{(field) => (
-										<div className="space-y-1.5">
-											<Label htmlFor="apprentice-release-exam-start">
-												{t("settings.apprenticeRelease.fields.examStartTime", "Exam starts")}
-											</Label>
-											<Input
-												id="apprentice-release-exam-start"
-												type="time"
-												value={field.state.value}
-												onChange={(event) => field.handleChange(event.target.value)}
-												aria-describedby="apprentice-release-exam-hint"
-											/>
-										</div>
+										<ReleaseInputField
+											id="apprentice-release-exam-start"
+											label={t("settings.apprenticeRelease.fields.examStartTime", "Exam starts")}
+											type="time"
+											value={field.state.value}
+											onChange={field.handleChange}
+											aria-describedby="apprentice-release-exam-hint"
+										/>
 									)}
 								</form.Field>
 								<form.Field name="examEndTime">
 									{(field) => (
-										<div className="space-y-1.5">
-											<Label htmlFor="apprentice-release-exam-end">
-												{t(
-													"settings.apprenticeRelease.fields.examEndTime",
-													"Exam ends (including breaks)",
-												)}
-											</Label>
-											<Input
-												id="apprentice-release-exam-end"
-												type="time"
-												value={field.state.value}
-												onChange={(event) => field.handleChange(event.target.value)}
-												aria-describedby="apprentice-release-exam-hint"
-											/>
-										</div>
+										<ReleaseInputField
+											id="apprentice-release-exam-end"
+											label={t(
+												"settings.apprenticeRelease.fields.examEndTime",
+												"Exam ends (including breaks)",
+											)}
+											type="time"
+											value={field.state.value}
+											onChange={field.handleChange}
+											aria-describedby="apprentice-release-exam-hint"
+										/>
 									)}
 								</form.Field>
-								<p
-									id="apprentice-release-exam-hint"
-									className="text-muted-foreground text-xs sm:col-span-2"
-								>
+								<ReleaseFieldHint id="apprentice-release-exam-hint">
 									{t(
 										"settings.apprenticeRelease.fields.examTimeHint",
 										"The exam frees and credits its time only. Leave both empty to release the whole day.",
 									)}
-								</p>
+								</ReleaseFieldHint>
 							</>
 						) : null}
 						{kind === "exam_day" ? (
@@ -696,16 +651,13 @@ function RecordReleaseForm({
 			</form.Subscribe>
 			<form.Field name="note">
 				{(field) => (
-					<div className="space-y-1.5 sm:col-span-2">
-						<Label htmlFor="apprentice-release-note">
-							{t("settings.apprenticeRelease.fields.note", "Note (optional)")}
-						</Label>
-						<Input
-							id="apprentice-release-note"
-							value={field.state.value}
-							onChange={(event) => field.handleChange(event.target.value)}
-						/>
-					</div>
+					<ReleaseInputField
+						id="apprentice-release-note"
+						className="space-y-1.5 sm:col-span-2"
+						label={t("settings.apprenticeRelease.fields.note", "Note (optional)")}
+						value={field.state.value}
+						onChange={field.handleChange}
+					/>
 				)}
 			</form.Field>
 			<div className="sm:col-span-2">

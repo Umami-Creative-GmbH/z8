@@ -16,7 +16,7 @@ import { scheduleXTimeAxisFormat } from "@/lib/calendar/schedule-x-locale";
 import type { TimeFormat } from "@/lib/user-preferences/time-format";
 import { createScheduleXDragAndDropPlugin } from "./schedule-x-drag-and-drop";
 import { ScheduleXPortalCalendar } from "./schedule-x-portal-calendar";
-import { shiftCalendarEventComponents } from "./shift-calendar-event";
+import { shiftCalendarEventComponents } from "./shift-calendar-event-components";
 import { SHIFT_CALENDARS } from "./shift-calendars";
 
 const BERLIN = "Europe/Berlin";

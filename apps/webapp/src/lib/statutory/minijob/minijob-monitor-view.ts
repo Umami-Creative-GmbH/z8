@@ -161,9 +161,13 @@ export async function loadEmployeeMinijobMonitor(
 		readonly now: Instant;
 	},
 ): Promise<MinijobMonitorView> {
+	// The scope check stays first, so a refused employee triggers no other read; the timezone and
+	// preferences are independent reads on the action's pool-backed client.
 	await loadEmployeeInOrganization(db, input);
-	const timezone = await loadOrganizationTimezone(db, input.organizationId);
-	const preferences = await loadOrganizationStatutoryPreferences(db, input.organizationId);
+	const [timezone, preferences] = await Promise.all([
+		loadOrganizationTimezone(db, input.organizationId),
+		loadOrganizationStatutoryPreferences(db, input.organizationId),
+	]);
 	const currentMonth = monthOfDate(plainDateAt(input.now, timezone).toString());
 	const from = addMonths(currentMonth, -MINIJOB_VIEW_PAST_MONTHS);
 	const until = addMonths(currentMonth, MINIJOB_VIEW_FUTURE_MONTHS + 1);

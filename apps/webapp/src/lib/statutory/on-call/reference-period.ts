@@ -30,6 +30,7 @@
  */
 import { and, eq, gt, gte, inArray, isNotNull, isNull, lt, min, ne, or } from "drizzle-orm";
 import { absenceCategory, absenceEntry, workPeriod } from "@/db/schema";
+import { mapConcurrently } from "@/lib/async/map-concurrently";
 import { loadEffectiveContractsBatch } from "@/lib/contracts/resolve-contract";
 import { loadEmployeeTime } from "@/lib/engagement/engagement-stints";
 import type { EffectiveContractOnDay } from "@/lib/contracts/types";
@@ -48,6 +49,9 @@ import { loadEmployeeInOrganization } from "../employee-scope";
 import { employeeWorkRows } from "../employee-time";
 import { daysOf } from "./facts";
 import { loadOnCallReleasedDays, type OnCallReleaseReason } from "./released-days";
+
+/** Reference-period batches loaded at once for distinct first events. */
+const REFERENCE_GROUP_CONCURRENCY = 2;
 
 /** Select and relational reads only: the calculator never writes. */
 export type OnCallReferenceReader = Pick<DatabaseClient, "select" | "query">;
@@ -313,20 +317,24 @@ async function loadReferenceFactsBatch(
 	const last = input.untilExclusive.subtract({ days: 1 }).toString();
 	const days = daysOf(input.from, input.untilExclusive);
 
-	const contractsByEmployee = await loadEffectiveContractsBatch(db, {
-		organizationId: input.organizationId,
-		employeeIds: input.employeeIds,
-		dates: days,
-	});
+	// Independent reads on a pool-backed client. Employee time only (#2010): work of an External
+	// Contractor stint pays no on-call reference.
+	const [contractsByEmployee, released, employeeTime] = await Promise.all([
+		loadEffectiveContractsBatch(db, {
+			organizationId: input.organizationId,
+			employeeIds: input.employeeIds,
+			dates: days,
+		}),
+		loadOnCallReleasedDays(db, {
+			organizationId: input.organizationId,
+			employeeIds: input.employeeIds,
+			from: input.from,
+			untilExclusive: input.untilExclusive,
+		}),
+		loadEmployeeTime(db, input.organizationId, input.employeeIds),
+	]);
 	const timezoneOf = (employeeId: string) =>
 		contractsByEmployee.get(employeeId)?.get(last)?.calendarTimezone ?? "UTC";
-
-	const released = await loadOnCallReleasedDays(db, {
-		organizationId: input.organizationId,
-		employeeIds: input.employeeIds,
-		from: input.from,
-		untilExclusive: input.untilExclusive,
-	});
 
 	// One read spanning every employee's local window; the allocator clips to each one.
 	const windows = [...new Set(input.employeeIds.map(timezoneOf))].map((timezone) =>
@@ -338,8 +346,6 @@ async function loadReferenceFactsBatch(
 	const windowEnd = windows
 		.map((w) => w.endExclusive)
 		.reduce((a, b) => (compareInstants(a, b) >= 0 ? a : b));
-	// Employee time only (#2010): work of an External Contractor stint pays no on-call reference.
-	const employeeTime = await loadEmployeeTime(db, input.organizationId, input.employeeIds);
 	const storedPeriods = await db
 		.select({
 			employeeId: workPeriod.employeeId,
@@ -613,13 +619,20 @@ export async function listOnCallReferenceEventsBatch(
 		const start = sickSince.get(employeeId);
 		return start && start < input.from ? start : input.from;
 	});
-	for (const [firstEvent, employeeIds] of byFirstEvent) {
-		const facts = await loadReferenceFactsBatch(db, {
-			organizationId: input.organizationId,
-			employeeIds,
-			from: referenceStartOf(parsePlainDate(firstEvent), input.method),
-			untilExclusive: until,
-		});
+	// A few groups at a time: each batch itself runs its reads concurrently on the pool. Results
+	// are kept in group order.
+	const factsByGroup = await mapConcurrently(
+		[...byFirstEvent],
+		REFERENCE_GROUP_CONCURRENCY,
+		([firstEvent, employeeIds]) =>
+			loadReferenceFactsBatch(db, {
+				organizationId: input.organizationId,
+				employeeIds,
+				from: referenceStartOf(parsePlainDate(firstEvent), input.method),
+				untilExclusive: until,
+			}),
+	);
+	for (const facts of factsByGroup) {
 		for (const [employeeId, own] of facts) {
 			result.set(employeeId, eventsOf(own, { ...input, employeeId }));
 		}

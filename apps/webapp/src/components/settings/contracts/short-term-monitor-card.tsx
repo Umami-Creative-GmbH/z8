@@ -41,15 +41,9 @@ import type {
 } from "@/lib/statutory/short-term/monitor";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
+import { formatCents, formatMonth, SHORT_TERM_REFUSALS } from "./short-term-format";
 import { shortTermMonitorQueryKey } from "./short-term-query-keys";
-import {
-	formatCents,
-	formatMonth,
-	SHORT_TERM_REFUSALS,
-	useFormattingLocale,
-	type Translate,
-	VerificationStatusBadge,
-} from "./short-term-shared";
+import { type Translate, useFormattingLocale, VerificationStatusBadge } from "./short-term-shared";
 
 type PriorKind = ShortTermPriorEmployment["kind"];
 

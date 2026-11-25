@@ -299,33 +299,42 @@ export async function evaluateWorkingStudents(
 	const rangeStart = from.toZonedDateTime(timezone).toInstant();
 	const rangeEnd = until.toZonedDateTime(timezone).toInstant();
 
-	// Employee time only (#2010): an External Contractor stint is no working-student work, to the
-	// instant on a conversion day, and no other profile's work either.
-	const employeeTime = await loadEmployeeTime(db, request.organizationId, inScope);
-	const storedWorkRows = await db
-		.select({
-			id: workPeriod.id,
-			employeeId: workPeriod.employeeId,
-			startTime: workPeriod.startTime,
-			endTime: workPeriod.endTime,
-			durationMinutes: workPeriod.durationMinutes,
-		})
-		.from(workPeriod)
-		.where(
-			and(
-				eq(workPeriod.organizationId, request.organizationId),
-				inArray(workPeriod.employeeId, inScope),
-				completedWorkPeriodCondition(),
-				isNotNull(workPeriod.endTime),
-				lt(workPeriod.startTime, dateFromInstant(rangeEnd)),
-				gt(workPeriod.endTime, dateFromInstant(rangeStart)),
+	// Independent reads on a pool-backed client (views, the review inbox, Scheduling's compliance
+	// window and Staffing): never a transaction, since working students block no publication.
+	const [
+		employeeTime,
+		storedWorkRows,
+		storedOpenRows,
+		studyRows,
+		offsetRows,
+		thresholds,
+		preferences,
+	] = await Promise.all([
+		// Employee time only (#2010): an External Contractor stint is no working-student work, to
+		// the instant on a conversion day, and no other profile's work either.
+		loadEmployeeTime(db, request.organizationId, inScope),
+		db
+			.select({
+				id: workPeriod.id,
+				employeeId: workPeriod.employeeId,
+				startTime: workPeriod.startTime,
+				endTime: workPeriod.endTime,
+				durationMinutes: workPeriod.durationMinutes,
+			})
+			.from(workPeriod)
+			.where(
+				and(
+					eq(workPeriod.organizationId, request.organizationId),
+					inArray(workPeriod.employeeId, inScope),
+					completedWorkPeriodCondition(),
+					isNotNull(workPeriod.endTime),
+					lt(workPeriod.startTime, dateFromInstant(rangeEnd)),
+					gt(workPeriod.endTime, dateFromInstant(rangeStart)),
+				),
 			),
-		);
-	const workRows = employeeWorkRows(employeeTime, storedWorkRows);
-	// Running clock-ins count up to `now`.
-	const storedOpenRows =
+		// Running clock-ins count up to `now`.
 		compareInstants(request.now, rangeStart) > 0
-			? await db
+			? db
 					.select({
 						id: workPeriod.id,
 						employeeId: workPeriod.employeeId,
@@ -343,7 +352,50 @@ export async function evaluateWorkingStudents(
 							lt(workPeriod.startTime, dateFromInstant(rangeEnd)),
 						),
 					)
-			: [];
+			: [],
+		db
+			.select({
+				id: employeeStudyPeriod.id,
+				employeeId: employeeStudyPeriod.employeeId,
+				startsOn: employeeStudyPeriod.startsOn,
+				endsOn: employeeStudyPeriod.endsOn,
+			})
+			.from(employeeStudyPeriod)
+			.where(
+				and(
+					eq(employeeStudyPeriod.organizationId, request.organizationId),
+					inArray(employeeStudyPeriod.employeeId, inScope),
+					isNull(employeeStudyPeriod.voidedAt),
+					lt(employeeStudyPeriod.startsOn, until.toString()),
+					gte(employeeStudyPeriod.endsOn, from.toString()),
+				),
+			),
+		db
+			.select({
+				id: employeeStatutoryOffset.id,
+				employeeId: employeeStatutoryOffset.employeeId,
+				validFromDate: employeeStatutoryOffset.validFromDate,
+				validUntilDate: employeeStatutoryOffset.validUntilDate,
+			})
+			.from(employeeStatutoryOffset)
+			.where(
+				and(
+					eq(employeeStatutoryOffset.organizationId, request.organizationId),
+					inArray(employeeStatutoryOffset.employeeId, inScope),
+					eq(employeeStatutoryOffset.offsetKind, "prior_working_student_over_20h_weeks"),
+					isNull(employeeStatutoryOffset.voidedAt),
+					lt(employeeStatutoryOffset.validFromDate, until.toString()),
+					gt(employeeStatutoryOffset.validUntilDate, from.toString()),
+				),
+			),
+		loadStatutoryThresholds(db, {
+			keys: [WEEKLY_LIMIT_KEY, CEILING_KEY],
+			from: from.toString(),
+			until: until.toString(),
+		}),
+		request.preferences ?? loadOrganizationStatutoryPreferences(db, request.organizationId),
+	]);
+	const workRows = employeeWorkRows(employeeTime, storedWorkRows);
 	const openRows = employeeWorkRows(
 		employeeTime,
 		storedOpenRows.map((row) => ({ ...row, endTime: null, durationMinutes: null })),
@@ -407,51 +459,6 @@ export async function evaluateWorkingStudents(
 	};
 	// Once the whole range is over, no shift in it can still count.
 	const shiftRows = comparePlainDates(earliestShiftsFrom, until) < 0 ? await loadShifts() : [];
-
-	const studyRows = await db
-		.select({
-			id: employeeStudyPeriod.id,
-			employeeId: employeeStudyPeriod.employeeId,
-			startsOn: employeeStudyPeriod.startsOn,
-			endsOn: employeeStudyPeriod.endsOn,
-		})
-		.from(employeeStudyPeriod)
-		.where(
-			and(
-				eq(employeeStudyPeriod.organizationId, request.organizationId),
-				inArray(employeeStudyPeriod.employeeId, inScope),
-				isNull(employeeStudyPeriod.voidedAt),
-				lt(employeeStudyPeriod.startsOn, until.toString()),
-				gte(employeeStudyPeriod.endsOn, from.toString()),
-			),
-		);
-
-	const offsetRows = await db
-		.select({
-			id: employeeStatutoryOffset.id,
-			employeeId: employeeStatutoryOffset.employeeId,
-			validFromDate: employeeStatutoryOffset.validFromDate,
-			validUntilDate: employeeStatutoryOffset.validUntilDate,
-		})
-		.from(employeeStatutoryOffset)
-		.where(
-			and(
-				eq(employeeStatutoryOffset.organizationId, request.organizationId),
-				inArray(employeeStatutoryOffset.employeeId, inScope),
-				eq(employeeStatutoryOffset.offsetKind, "prior_working_student_over_20h_weeks"),
-				isNull(employeeStatutoryOffset.voidedAt),
-				lt(employeeStatutoryOffset.validFromDate, until.toString()),
-				gt(employeeStatutoryOffset.validUntilDate, from.toString()),
-			),
-		);
-
-	const thresholds = await loadStatutoryThresholds(db, {
-		keys: [WEEKLY_LIMIT_KEY, CEILING_KEY],
-		from: from.toString(),
-		until: until.toString(),
-	});
-	const preferences =
-		request.preferences ?? (await loadOrganizationStatutoryPreferences(db, request.organizationId));
 
 	// Shifts (persisted and proposed) that may still count: one that has not ended, or an ended one a
 	// clock-in still open on it stands in for (`inProgressContributions`). Only an open clock-in can

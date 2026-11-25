@@ -53,25 +53,28 @@ export async function notifyPlannedEngagementEndNeedsReview(
 			? { leavingDate: { kind: "plainDate", date: notice.leavingDate } as const }
 			: {}),
 	});
-	for (const userId of new Set(notice.recipientUserIds)) {
-		try {
-			await createNotification({
-				userId,
-				organizationId: notice.organizationId,
-				type: "employee_offboarding_review",
-				title: content.title,
-				message: content.message,
-				entityType: "employee",
-				entityId: notice.employeeId,
-				actionUrl: employeeSettingsUrl(notice.employeeId),
-				idempotencyKey: `planned-engagement-end:${notice.draftId}:${userId}`,
-				metadata: { i18n: content.i18n },
-			});
-		} catch (error) {
-			logger.error(
-				{ error, organizationId: notice.organizationId, employeeId: notice.employeeId },
-				"Failed to tell an admin that a planned engagement end needs review",
-			);
-		}
-	}
+	// Each recipient's notice is independent and idempotent; one failure leaves the others.
+	await Promise.all(
+		[...new Set(notice.recipientUserIds)].map(async (userId) => {
+			try {
+				await createNotification({
+					userId,
+					organizationId: notice.organizationId,
+					type: "employee_offboarding_review",
+					title: content.title,
+					message: content.message,
+					entityType: "employee",
+					entityId: notice.employeeId,
+					actionUrl: employeeSettingsUrl(notice.employeeId),
+					idempotencyKey: `planned-engagement-end:${notice.draftId}:${userId}`,
+					metadata: { i18n: content.i18n },
+				});
+			} catch (error) {
+				logger.error(
+					{ error, organizationId: notice.organizationId, employeeId: notice.employeeId },
+					"Failed to tell an admin that a planned engagement end needs review",
+				);
+			}
+		}),
+	);
 }

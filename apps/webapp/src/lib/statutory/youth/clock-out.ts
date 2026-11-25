@@ -80,7 +80,6 @@ export async function recordJarbschgViolationsAfterClockOut(
 		...range,
 	});
 	if (contractorDays.has(day.toString())) return [];
-	const organizationTimezone = await loadOrganizationTimezone(db, input.organizationId);
 	const work = await loadYouthWork(db, {
 		...scope,
 		timezone: input.timezone,
@@ -91,15 +90,20 @@ export async function recordJarbschgViolationsAfterClockOut(
 	// instant is judged for its employee part (`loadYouthWork`).
 	const closed = work.get(input.employeeId)?.some((record) => record.id === input.workPeriodId);
 	if (!closed) return [];
-	const shifts = await loadYouthShifts(db, {
-		...scope,
-		organizationTimezone,
-		...range,
-		employeeTime,
-	});
-	const holidays = await loadHolidayDateKeys(db, { ...scope, ...range });
-	const limitsOn = await loadJarbschgLimits(db, range);
-	const credits = await loadYouthSchoolCredits(db, { ...scope, ...range });
+	// Independent reads on the pool after the closure committed (no transaction).
+	const [shifts, holidays, limitsOn, credits] = await Promise.all([
+		loadOrganizationTimezone(db, input.organizationId).then((organizationTimezone) =>
+			loadYouthShifts(db, {
+				...scope,
+				organizationTimezone,
+				...range,
+				employeeTime,
+			}),
+		),
+		loadHolidayDateKeys(db, { ...scope, ...range }),
+		loadJarbschgLimits(db, range),
+		loadYouthSchoolCredits(db, { ...scope, ...range }),
+	]);
 
 	const findings = await attachAcknowledgementStates(
 		db,
@@ -162,32 +166,27 @@ export async function recordJarbschgViolationsAfterClockOut(
 				lt(workPolicyViolation.violationDate, dateFromInstant(dayRange.endExclusive)),
 			),
 		);
-	for (const row of existing) {
-		if (row.acknowledgedAt) continue;
-		const rule = row.violationType as JarbschgRule;
-		const finding = byRule.get(rule);
-		// An open break violation follows the day's work; the others only deepen.
-		if (finding && (rule === "jarbschg_break" || deepensRecorded(row.details, finding))) {
-			await db
-				.update(workPolicyViolation)
-				.set({ workPeriodId: input.workPeriodId, details: violationDetails(finding) })
-				.where(
-					and(
-						eq(workPolicyViolation.id, row.id),
-						eq(workPolicyViolation.organizationId, input.organizationId),
-					),
-				);
-		} else if (!finding && rule === "jarbschg_break") {
-			await db
-				.delete(workPolicyViolation)
-				.where(
-					and(
-						eq(workPolicyViolation.id, row.id),
-						eq(workPolicyViolation.organizationId, input.organizationId),
-					),
-				);
-		}
-	}
+	// Each statement touches its own row (at most a few per day), outside any transaction.
+	await Promise.all(
+		existing.map(async (row) => {
+			if (row.acknowledgedAt) return;
+			const rule = row.violationType as JarbschgRule;
+			const finding = byRule.get(rule);
+			const ownRow = and(
+				eq(workPolicyViolation.id, row.id),
+				eq(workPolicyViolation.organizationId, input.organizationId),
+			);
+			// An open break violation follows the day's work; the others only deepen.
+			if (finding && (rule === "jarbschg_break" || deepensRecorded(row.details, finding))) {
+				await db
+					.update(workPolicyViolation)
+					.set({ workPeriodId: input.workPeriodId, details: violationDetails(finding) })
+					.where(ownRow);
+			} else if (!finding && rule === "jarbschg_break") {
+				await db.delete(workPolicyViolation).where(ownRow);
+			}
+		}),
+	);
 	for (const row of existing) byRule.delete(row.violationType as JarbschgRule);
 	if (byRule.size === 0) return [];
 

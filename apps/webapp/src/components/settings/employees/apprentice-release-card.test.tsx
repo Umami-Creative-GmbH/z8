@@ -30,8 +30,8 @@ vi.mock("@/app/[locale]/(app)/settings/employees/apprentice-release-actions", ()
 	voidApprenticeReleaseAction: mocks.voidApprenticeReleaseAction,
 }));
 
-const { ApprenticeReleaseCard, apprenticeReleaseRefusals } =
-	await import("./apprentice-release-card");
+const { ApprenticeReleaseCard } = await import("./apprentice-release-card");
+const { apprenticeReleaseRefusals } = await import("./apprentice-release-refusals");
 
 /** `{ a: { b: "x" } }` → `{ "a.b": "x" }`, the keys the card asks for. */
 function flatten(value: unknown, prefix = ""): Record<string, string> {

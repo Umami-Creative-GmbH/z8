@@ -266,8 +266,10 @@ describe("final overtime payout in the offboarding review on PostgreSQL", () => 
 
 		// The balance is information only: the departure's state, follow-up and
 		// capabilities are the same whatever it is.
-		const { workBalance: _before, ...lifecycleBefore } = before;
-		const { workBalance: _after, ...lifecycleAfter } = after;
+		const lifecycleBefore = { ...before };
+		delete lifecycleBefore.workBalance;
+		const lifecycleAfter = { ...after };
+		delete lifecycleAfter.workBalance;
 		expect(lifecycleAfter).toEqual(lifecycleBefore);
 	});
 

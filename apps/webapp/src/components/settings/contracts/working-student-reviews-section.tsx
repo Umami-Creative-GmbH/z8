@@ -33,12 +33,13 @@ import type {
 } from "@/lib/statutory/working-student/views";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
+import { invalidatedItemClassName } from "./statutory-review-labels";
 import {
 	InvalidatedAcknowledgementNotice,
-	invalidatedItemClassName,
 	StatutoryAcknowledgementHistory,
 } from "./statutory-review-shared";
-import { AcknowledgementBadge, workingStudentFindingText } from "./working-student-monitor-card";
+import { workingStudentFindingText } from "./working-student-format";
+import { AcknowledgementBadge } from "./working-student-monitor-card";
 import { workingStudentQueryKeys } from "./statutory-review-query-keys";
 import { invalidateWorkingStudentFindings } from "./working-student-queries";
 

@@ -309,22 +309,13 @@ function PayrollWorkspaceContent({
 							/>
 						),
 						absences: (
-							<>
-								<PayrollAbsencesTab
-									filtersHaveNoMatches={filtersHaveNoMatches}
-									refreshedAt={summary.generatedAt}
-									request={request}
-									t={t}
-								/>
-								{/* § 12 TzBfG reference hours for on-call sick leave and holidays (#1992): for
-								    every reader of the workspace, scoped by the action to their payroll access. */}
-								<OnCallReferencePayrollCard
-									organizationId={summary.organizationId}
-									startDate={request.startDate}
-									endDate={request.endDate}
-									employeeIds={request.employeeIds}
-								/>
-							</>
+							<PayrollAbsencesPanel
+								filtersHaveNoMatches={filtersHaveNoMatches}
+								organizationId={summary.organizationId}
+								refreshedAt={summary.generatedAt}
+								request={request}
+								t={t}
+							/>
 						),
 						settlement: (
 							<PayrollSettlementTab
@@ -348,30 +339,71 @@ function PayrollWorkspaceContent({
 								t={t}
 							/>
 						),
-						...(closedMonthsOverview
-							? {
-									"closed-months": <ClosedMonthsSettings overview={closedMonthsOverview} />,
-								}
-							: closedMonthsError
-								? {
-										"closed-months": (
-											<Alert variant="destructive">
-												<IconAlertTriangle aria-hidden="true" />
-												<AlertTitle>
-													{t(
-														"settings.closedMonths.loadErrorTitle",
-														"Closed months could not be loaded",
-													)}
-												</AlertTitle>
-												<AlertDescription>{closedMonthsError}</AlertDescription>
-											</Alert>
-										),
-									}
-								: {}),
+						...closedMonthsPanels(closedMonthsOverview, closedMonthsError, t),
 					}}
 				/>
 			</div>
 		</PayrollSettlementRefreshProvider>
+	);
+}
+
+function PayrollAbsencesPanel({
+	filtersHaveNoMatches,
+	organizationId,
+	refreshedAt,
+	request,
+	t,
+}: {
+	filtersHaveNoMatches: boolean;
+	organizationId: string;
+	refreshedAt: PayrollWorkspaceSummary["generatedAt"];
+	request: PayrollPeriodRequest;
+	t: PayrollTranslate;
+}) {
+	return (
+		<>
+			<PayrollAbsencesTab
+				filtersHaveNoMatches={filtersHaveNoMatches}
+				refreshedAt={refreshedAt}
+				request={request}
+				t={t}
+			/>
+			{/* § 12 TzBfG reference hours for on-call sick leave and holidays (#1992): for
+			    every reader of the workspace, scoped by the action to their payroll access. */}
+			<OnCallReferencePayrollCard
+				organizationId={organizationId}
+				startDate={request.startDate}
+				endDate={request.endDate}
+				employeeIds={request.employeeIds}
+			/>
+		</>
+	);
+}
+
+/** The Closed Months tab, when the actor may manage closed months (#1957). */
+function closedMonthsPanels(
+	overview: ClosedMonthsOverview | null,
+	error: string | null,
+	t: PayrollTranslate,
+) {
+	if (overview) {
+		return { "closed-months": <ClosedMonthsSettings overview={overview} /> };
+	}
+	if (error) {
+		return { "closed-months": <ClosedMonthsLoadError error={error} t={t} /> };
+	}
+	return {};
+}
+
+function ClosedMonthsLoadError({ error, t }: { error: string; t: PayrollTranslate }) {
+	return (
+		<Alert variant="destructive">
+			<IconAlertTriangle aria-hidden="true" />
+			<AlertTitle>
+				{t("settings.closedMonths.loadErrorTitle", "Closed months could not be loaded")}
+			</AlertTitle>
+			<AlertDescription>{error}</AlertDescription>
+		</Alert>
 	);
 }
 

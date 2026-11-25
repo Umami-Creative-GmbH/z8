@@ -40,7 +40,7 @@ import {
 import {
 	compensationInputOf,
 	defaultCompensationValues,
-} from "@/components/settings/contracts/contractor-terms-form";
+} from "@/components/settings/contracts/contractor-compensation-form-values";
 import { useSession } from "@/lib/auth-client";
 import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";

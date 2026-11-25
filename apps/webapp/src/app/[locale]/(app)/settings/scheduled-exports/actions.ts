@@ -317,7 +317,8 @@ function toSummary(schedule: ScheduledExport, owner: ScheduleOwner): ScheduledEx
 	};
 }
 
-function auditedSettings(schedule: ScheduledExport): AuditedSchedule {
+/** A schedule's audited settings, apart from whether it is active. */
+function scheduleSettings(schedule: ScheduledExport): Omit<AuditedSchedule, "isActive"> {
 	return {
 		name: schedule.name,
 		description: schedule.description ?? null,
@@ -333,14 +334,16 @@ function auditedSettings(schedule: ScheduledExport): AuditedSchedule {
 		deliveryMethod: schedule.deliveryMethod,
 		emailRecipients: [...(schedule.emailRecipients ?? [])],
 		emailSubjectTemplate: schedule.emailSubjectTemplate ?? null,
-		isActive: schedule.isActive,
 	};
+}
+
+function auditedSettings(schedule: ScheduledExport): AuditedSchedule {
+	return { ...scheduleSettings(schedule), isActive: schedule.isActive };
 }
 
 /** What a schedule was, for the entries that outlive it or describe it whole. */
 function scheduleSnapshot(schedule: ScheduledExport) {
-	const { isActive: _isActive, ...settings } = auditedSettings(schedule);
-	return { ...settings, ownerId: schedule.ownerId };
+	return { ...scheduleSettings(schedule), ownerId: schedule.ownerId };
 }
 
 // ============================================

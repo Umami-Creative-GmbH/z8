@@ -46,8 +46,9 @@ export function engagementPickerRows<T extends PickerRow>(
 	filter: EngagementFilter,
 	chosenIds: readonly string[],
 ): T[] {
+	const chosen = new Set(chosenIds);
 	return rows.filter(
-		(row) => matchesEngagementFilter(row.engagementKind, filter) || chosenIds.includes(row.id),
+		(row) => matchesEngagementFilter(row.engagementKind, filter) || chosen.has(row.id),
 	);
 }
 
