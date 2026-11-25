@@ -18,7 +18,11 @@ Aim for active cache storage below 7 GiB after cleanup and warming, leaving appr
 
 ## 1. Remove closed-PR caches
 
-Use a trusted cleanup workflow on PR closure, with scheduled reconciliation for the existing backlog and late cache uploads. Filter precisely to `refs/pull/N/merge`, verify that PR N is closed, and wait for its active producer runs to finish before deleting its entries. Leave branch caches, tag caches and open-PR caches outside this cleanup rule. A reopened PR may need a cold rebuild; caches are disposable acceleration data.
+Queue a storage sweep on PR closure, Desktop Windows completion (including failed or cancelled runs), and every successful core Publish Docker Images push or manual build. A skipped post-publish sweep in Actions history means the publisher was ineligible. The maintenance run has its own status and links to the triggering workflow attempt. The listener activates on the default branch (`dev`). Tag and manual builds use the cache settings in their own publishing revision.
+
+Apply jobs share one queue with room for 100 pending jobs. If GitHub cancels a job at capacity, the next sweep reconciles the current inventory. The nightly run starts at 03:17 UTC. For earlier recovery, open [CI storage maintenance](https://github.com/Umami-Creative-GmbH/z8/actions/workflows/ci-maintenance.yml), choose **Run workflow** on the default branch and enable **apply**. Leaving **apply** off runs a read-only preview outside the queue. The sweep covers PR caches and unsigned Desktop review installers. GitHub manages expiry of publisher mount caches.
+
+Filter precisely to `refs/pull/N/merge`, verify that PR N is closed, and wait for its active producer runs to finish before deleting its entries. Leave branch caches, tag caches and open-PR caches outside this cleanup rule. A reopened PR may need a cold rebuild; caches are disposable acceleration data.
 
 The cleaner only calls metadata/list/delete APIs. Its implementation comes from the trusted default branch and never executes PR code. Give `actions: write` only to the cleanup job, with read access to PR metadata. Paginate inventory, serialize sweeps, and report deleted entry count and bytes. Failures remain visible and scheduled reconciliation retries missed entries.
 

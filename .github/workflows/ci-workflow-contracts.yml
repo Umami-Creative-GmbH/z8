@@ -1,0 +1,39 @@
+name: CI workflow contracts
+on:
+  pull_request:
+    branches: [dev, main]
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
+    paths:
+      - ".github/workflows/**"
+      - ".github/scripts/**"
+      - "scripts/ci/**"
+      - "docker/Dockerfile.webapp"
+      - "docker/scripts/**"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ci-workflow-contracts-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  contracts:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Verify maintenance and publish contracts
+        run: |
+          node --test .github/scripts/*.test.mjs docker/scripts/cache-mounts.test.mjs
+          node scripts/ci/verify-publish-images-workflow.mjs
+      - name: Verify workflow syntax and queue configuration
+        run: |
+          archive="$RUNNER_TEMP/actionlint.tar.gz"
+          curl -fsSL --retry 2 -o "$archive" https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz
+          echo "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8  $archive" | sha256sum --check
+          tar -xzf "$archive" -C "$RUNNER_TEMP" actionlint
+          export ACTIONLINT="$RUNNER_TEMP/actionlint"
+          node scripts/ci/verify-maintenance-workflows.mjs
+          node --test scripts/ci/verify-maintenance-workflows.test.mjs
