@@ -52,6 +52,8 @@ vitest.config.*
 # Local fixture operators depend on repository-only helpers and test data.
 apps/webapp/scripts/initialize-performance-projections.ts
 apps/webapp/scripts/performance-fixture.ts
+apps/webapp/scripts/seed-statutory-verification.ts
+apps/webapp/src/lib/statutory/youth/testing/youth-seed.ts
 
 # Logs
 *.log
