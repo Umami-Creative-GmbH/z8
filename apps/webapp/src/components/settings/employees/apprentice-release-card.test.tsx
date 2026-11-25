@@ -126,7 +126,7 @@ describe("ApprenticeReleaseCard (#1993)", () => {
 		expect(screen.getByText("16. März 2027")).toBeTruthy();
 		expect(screen.queryByText(/2027-03/)).toBeNull();
 		expect(screen.getByText("Prüfung ab 09:00: 180 Min. angerechnet")).toBeTruthy();
-		expect(screen.getByText("Unterricht 07:45–11:15: 210 Min. angerechnet")).toBeTruthy();
+		expect(screen.getByText("Schule 07:45–11:15: 210 Min. angerechnet")).toBeTruthy();
 	});
 
 	it("writes school and exam times in the reader's time format, not the language's (#2018)", async () => {
@@ -148,7 +148,7 @@ describe("ApprenticeReleaseCard (#1993)", () => {
 
 		show(releases, "de", "12h");
 		expect(await screen.findByText("Prüfung ab 9:00 AM: 180 Min. angerechnet")).toBeTruthy();
-		expect(screen.getByText("Unterricht 1:45 PM–5:15 PM: 210 Min. angerechnet")).toBeTruthy();
+		expect(screen.getByText("Schule 1:45 PM–5:15 PM: 210 Min. angerechnet")).toBeTruthy();
 	});
 
 	it("says why a full block week's training allowance stays outside a minor's 40-hour week (#2023)", async () => {
@@ -185,7 +185,7 @@ describe("ApprenticeReleaseCard (#1993)", () => {
 
 		expect(
 			await screen.findByText(
-				"An diesen Blockunterrichtstagen sind bis zu 2 Stunden betriebliche Ausbildungsveranstaltungen pro Woche erlaubt (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG). Bei Beschäftigten unter 18 kommen sie zur Blockwoche hinzu, die mit der durchschnittlichen wöchentlichen Arbeitszeit angerechnet wird (§ 9 Abs. 2 Nr. 2 JArbSchG), und zählen nicht zu den Tages- und Wochenhöchstgrenzen nach § 8.",
+				"An diesen Blocktagen sind bis zu 2 Stunden betriebliche Ausbildung pro Woche zulässig (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG). Bei Beschäftigten unter 18 Jahren kommen diese Stunden zur Blockwoche hinzu, die mit der durchschnittlichen wöchentlichen Arbeitszeit angerechnet wird (§ 9 Abs. 2 Nr. 2 JArbSchG), und zählen nicht zu den täglichen und wöchentlichen Grenzen nach § 8.",
 			),
 		).toBeTruthy();
 	});
