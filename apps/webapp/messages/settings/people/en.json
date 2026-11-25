@@ -981,10 +981,14 @@
       },
       "allTeams": "All Teams (Organization-wide)",
       "allTeamsHelp": "Permissions apply to all teams in the organization",
+      "approveTeamRequests": "Approve Team Requests",
+      "approveTeamRequestsDescription": "Allow approving vacation and time-off requests",
       "badge": {
         "allPermissions": "All Permissions",
         "permissionCount": "{count} permission(s)"
       },
+      "createTeams": "Create Teams",
+      "createTeamsDescription": "Allow creating new teams within the organization",
       "description": "Manage employee permissions for team operations",
       "editor": {
         "description": "Configure permissions for {employeeName}. Admins automatically have all permissions.",
@@ -997,6 +1001,10 @@
       "emptyState": "No employees found",
       "loadFailed": "Employee permissions could not be loaded.",
       "loading": "Loading employee permissions",
+      "manageTeamMembers": "Manage Team Members",
+      "manageTeamMembersDescription": "Allow adding and removing team members",
+      "manageTeamSettings": "Manage Team Settings",
+      "manageTeamSettingsDescription": "Allow editing team information and settings",
       "noPermissions": "No permissions",
       "permissions": "Permissions",
       "refresh": "Refresh",
