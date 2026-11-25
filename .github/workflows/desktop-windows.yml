@@ -10,7 +10,6 @@ on:
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
       - '.github/workflows/desktop-windows.yml'
-      - '.github/workflows/ci-debounce.yml'
   workflow_dispatch:
 permissions:
   contents: read
@@ -18,12 +17,8 @@ concurrency:
   group: desktop-windows-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 jobs:
-  debounce:
-    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
-    uses: ./.github/workflows/ci-debounce.yml
   windows:
     if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
-    needs: debounce
     runs-on: windows-latest
     timeout-minutes: 45
     steps:

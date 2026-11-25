@@ -1,6 +1,6 @@
 # CI resource policy
 
-The user accepted the recommended priorities, debounce and review-installer policy on 2026-10-10 during the `grill-with-docs` interview. This document records the accepted policy and its implementation in issue #962. Workflows become active when their changes merge into `dev`; the initial storage sweep is independently validated and applied from the same implementation.
+This document describes the current CI resource policy. The October 2026 evidence and initial sweep record the conditions that informed issue #962.
 
 ## Priorities and success criteria
 
@@ -18,21 +18,21 @@ Aim for active cache storage below 7 GiB after cleanup and warming, leaving appr
 
 ## 1. Remove closed-PR caches
 
-Use a trusted cleanup workflow on PR closure, with scheduled reconciliation for the existing backlog and late cache uploads. Filter precisely to `refs/pull/N/merge`, verify that PR N is closed, and wait for its active producer runs to finish before deleting its entries. Leave branch caches, tag caches and open-PR caches outside this cleanup rule. A reopened PR may need a cold rebuild; caches are disposable acceleration data.
+Queue a storage sweep on PR closure, Desktop Windows completion (including failed or cancelled runs), and every successful core Publish Docker Images push or manual build. A skipped post-publish sweep in Actions history means the publisher was ineligible. The maintenance run has its own status and links to the triggering workflow attempt. The listener activates on the default branch (`dev`). Tag and manual builds use the cache settings in their own publishing revision.
+
+Apply jobs share one queue with room for 100 pending jobs. If GitHub cancels a job at capacity, the next sweep reconciles the current inventory. The nightly run starts at 03:17 UTC. For earlier recovery, open [CI storage maintenance](https://github.com/Umami-Creative-GmbH/z8/actions/workflows/ci-maintenance.yml), choose **Run workflow** on the default branch and enable **apply**. Leaving **apply** off runs a read-only preview outside the queue. The sweep covers PR caches and unsigned Desktop review installers. GitHub manages expiry of publisher mount caches.
+
+Filter precisely to `refs/pull/N/merge`, verify that PR N is closed, and wait for its active producer runs to finish before deleting its entries. Leave branch caches, tag caches and open-PR caches outside this cleanup rule. A reopened PR may need a cold rebuild; caches are disposable acceleration data.
 
 The cleaner only calls metadata/list/delete APIs. Its implementation comes from the trusted default branch and never executes PR code. Give `actions: write` only to the cleanup job, with read access to PR metadata. Paginate inventory, serialize sweeps, and report deleted entry count and bytes. Failures remain visible and scheduled reconciliation retries missed entries.
 
 The first sweep must address old entries, not just future closure events. Verify actual headroom afterward rather than promising the entire snapshot will still be reclaimable.
 
-## 2. Debounce expensive PR validation
+## 2. Cancel superseded PR validation
 
-Allow scope selection and cheap correctness checks to start immediately. Hold expensive unit shards, PostgreSQL and the Windows runner behind a 90-second Ubuntu debounce. Use the same reusable debounce implementation in Tests and Desktop Windows, while keeping their independent superseded-run cancellation groups. Never spend the delay on an allocated Windows runner.
+Start selected unit shards as soon as scope selection finishes. Eligible Desktop Windows builds can start immediately. Keep independent cancellation groups so a newer PR update cancels its superseded Tests and Desktop Windows runs.
 
-Scope detection must still inspect every PR file, including old names for renames, and fall back to full coverage on incomplete metadata or API failures. An obsolete run cancelled during the delay must not launch its heavy jobs. A manual diagnostic dispatch may bypass the delay; it still executes the selected suites and remains subject to cancellation.
-
-The delay applies to PR validation generally, including the long-lived release PR. It is a small resource-saving delay, not a guarantee that only stable heads run: updates spaced three to six minutes apart will still start expensive jobs. Do not replace the full PR diff with only the newest commit to improve apparent selectivity.
-
-Measure cancelled runner time and passing-run wall time over a comparable set of pushes. Count the Ubuntu delay runners in the totals. Do not attribute every previously short cancellation to avoidable work because queueing and setup differ between runs.
+Scope detection inspects the full PR diff, including old names for renames, and falls back to full coverage on incomplete metadata or API failures. Measure cancelled runner time and passing-run wall time over a comparable set of pushes.
 
 ## 3. Retain unsigned review installers
 
@@ -57,8 +57,6 @@ This chooses lower wasted computation over the earliest possible passing result 
 | Selected | Fail, cancel or missing result | Skipped by prerequisite | Cannot pass |
 | Selected, manual diagnostic override | Fail | Executes for diagnosis | Cannot pass |
 
-The 90-second debounce runs before the selected shards; PostgreSQL must not wait another 90 seconds afterward. Together, debounce and sequencing may add approximately 6.5-8.5 minutes to passing-path wall time compared with the current parallel pipeline. This is an estimate, not a measured green-run result. Measure a green run before making a quantified end-to-end speed claim.
-
 ## 5. Seed reusable base-branch dependency caches
 
 Seed pnpm stores first, from trusted `dev` code in an independent workflow. Start with one measured warm-up, then seed only after dependency inputs change: the root lockfile, workspace configuration or relevant package manifests. Consolidate rapid updates with concurrency. A matching exact cache hit should avoid a redundant seed install. PR validation must not depend on the seed job succeeding.
@@ -74,12 +72,12 @@ Measure archive restore/upload time, dependency install time, hit rates and adde
 - Test retention selection with multiple PRs, no current-head installer, an old-head rerun, signed candidates, age expiry, pagination and fresh uploads during cleanup.
 - Test cache cleanup with open, closed and reopened PRs, active producer runs, branch/tag refs, incomplete inventory and API errors.
 - Test every selected/unselected scope and prerequisite-failure combination. Required checks must fail on unexpected skips or missing results.
-- Lint workflows and verify permissions and reusable-workflow cancellation behavior. Keep cleaners independent of PR code execution.
+- Lint workflows and verify permissions and superseded-run cancellation behavior. Keep cleaners independent of PR code execution.
 - Record a comparable green full run, a scoped desktop run and a short superseded burst. Report cumulative runner time, wall time and storage separately; no invented percentage savings.
 
 ## Implementation and initial sweep
 
-Issue [#962](https://github.com/Umami-Creative-GmbH/z8/issues/962) implements the five policies with dependency-free Node maintenance scripts, a shared Linux debounce, strict required-check handling and an independent base-cache seed. The seed workflow first runs when its workflow file merges into `dev`, then only on dependency changes or manual recovery.
+Issue [#962](https://github.com/Umami-Creative-GmbH/z8/issues/962) introduced the maintenance scripts, the original 90-second Linux debounce, strict required-check handling and an independent base-cache seed. The seed workflow first runs when its workflow file merges into `dev`, then only on dependency changes or manual recovery.
 
 The user-approved initial sweep on 2026-10-10 deleted 18 closed-PR merge-ref caches (7,620,673,636 bytes, 7.10 GiB) and 14 excess unsigned installers (43,749,111 bytes, 41.72 MiB). Verified cache inventory fell from 66 entries / 9.97 GiB to 48 entries / 2.88 GiB. Unsigned installer inventory fell from 19 entries to five, occupying 14.93 MiB. Concurrent CI activity changed the inventory since the earlier analysis; these are measured sweep results. The [audit record](ci-storage-cleanup-2026-10-10.json) includes individual deleted IDs, protected installers and before/after inventory. No deletion was skipped by a state recheck.
 

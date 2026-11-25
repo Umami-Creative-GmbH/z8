@@ -161,3 +161,40 @@ test("deleted fork metadata cannot allow deletion during an ambiguous active pro
   const producer = run(9, { status: "in_progress", head_repository: { id: 42 }, head_branch: "branch-1" });
   assert.equal(canDeleteCache(cache(), closed, [producer]), false);
 });
+test("empty or expired installer inventories and open or non-PR caches avoid metadata scans", async () => {
+  const api = fakeApi({
+    caches: [cache(1, "refs/heads/main"), cache(2)],
+    pulls: [pull()],
+    artifacts: [artifact(1, 2, { expired: true, workflow_run: null }), artifact(2, 1, { name: "other" })],
+    runs: [],
+  });
+  for (const method of ["activeRuns", "workflow", "openPulls", "run"]) {
+    api[method] = () => assert.fail("unexpected " + method);
+  }
+  const report = await maintainCi({ api, now, apply: true });
+  assert.deepEqual(report.protectedArtifacts, []);
+  assert.deepEqual(api.deleted, []);
+});
+
+test("closed-PR caches share one initial producer scan and obtain a fresh scan for each delete", async () => {
+  for (const apply of [false, true]) {
+    const api = fakeApi({ caches: [cache(1), cache(2)], pulls: [pull(1, "closed")] });
+    let calls = 0;
+    api.activeRuns = async () => { calls++; return []; };
+    await maintainCi({ api, now, apply });
+    assert.equal(calls, apply ? 3 : 1);
+  }
+});
+
+test("expired producer IDs are ignored and live IDs are validated", async () => {
+  const api = fakeApi({ artifacts: [artifact(1, 1, { expired: true, workflow_run: null }), artifact(2)], runs: [] });
+  const calls = [];
+  api.run = async id => { calls.push(id); return run(id); };
+  await maintainCi({ api, now });
+  assert.deepEqual(calls, [2]);
+  api.artifacts = async () => [artifact(3, 1, { workflow_run: { id: 0 } })];
+  await assert.rejects(maintainCi({ api, now, apply: true }), /Missing producer identity/);
+  api.artifacts = async () => [artifact(3, 1, { expired: "true" })];
+  await assert.rejects(maintainCi({ api, now, apply: true }), /Incomplete artifact metadata/);
+  assert.deepEqual(api.deleted, []);
+});

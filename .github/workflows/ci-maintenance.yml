@@ -1,9 +1,13 @@
 name: CI storage maintenance
+run-name: >-
+  ${{ github.event_name == 'workflow_run' && format('CI storage after {0} / run {1}, attempt {2}', github.event.workflow_run.name, github.event.workflow_run.run_number, github.event.workflow_run.run_attempt)
+      || (github.event_name == 'workflow_dispatch' && !inputs.apply && 'CI storage dry run')
+      || format('CI storage maintenance / {0}', github.event_name) }}
 on:
   pull_request_target:
     types: [closed]
   workflow_run:
-    workflows: [Desktop Windows]
+    workflows: [Desktop Windows, Publish Docker Images]
     types: [completed]
   schedule:
     - cron: '17 3 * * *'
@@ -14,20 +18,43 @@ on:
         type: boolean
         default: false
 permissions: {}
-concurrency:
-  group: ci-storage-maintenance
-  cancel-in-progress: false
 jobs:
-  cleanup:
+  apply:
+    if: >-
+      (github.event_name != 'workflow_dispatch' || inputs.apply) &&
+      (github.event_name != 'workflow_run' ||
+       github.event.workflow_run.path == '.github/workflows/desktop-windows.yml' ||
+       (github.event.workflow_run.path == '.github/workflows/publish-images.yml' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch') &&
+        github.event.workflow_run.head_repository != null &&
+        github.event.workflow_run.head_repository.id > 0 &&
+        github.event.workflow_run.head_repository.id == github.event.repository.id))
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    concurrency:
+      group: ci-storage-maintenance
+      queue: max
+      cancel-in-progress: false
     permissions:
       contents: read
       actions: write
       pull-requests: read
-    steps:
-      # Never checkout producer/PR code or download artifacts in this privileged job.
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+    env:
+      MAINTENANCE_MODE: --apply
+    steps: &maintenance_steps
+      - name: Link triggering workflow attempt
+        if: github.event_name == 'workflow_run'
+        env:
+          SOURCE_RUN: ${{ github.event.workflow_run.id }}
+          SOURCE_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+        run: |
+          if [[ "$SOURCE_RUN" =~ ^[1-9][0-9]*$ && "$SOURCE_ATTEMPT" =~ ^[1-9][0-9]*$ ]]; then
+            printf 'Triggered by [run %s, attempt %s](%s/%s/actions/runs/%s/attempts/%s).\n' \
+              "$SOURCE_RUN" "$SOURCE_ATTEMPT" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$SOURCE_RUN" "$SOURCE_ATTEMPT" >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Checkout trusted maintenance scripts
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ github.event.repository.default_branch }}
           sparse-checkout: .github/scripts
@@ -37,10 +64,15 @@ jobs:
       - name: Reconcile CI storage
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          APPLY: ${{ github.event_name != 'workflow_dispatch' || inputs.apply }}
-        run: |
-          if [[ "$APPLY" == true ]]; then
-            node .github/scripts/ci-maintenance.mjs --apply
-          else
-            node .github/scripts/ci-maintenance.mjs --dry-run
-          fi
+        run: node .github/scripts/ci-maintenance.mjs "$MAINTENANCE_MODE"
+  dry-run:
+    if: github.event_name == 'workflow_dispatch' && !inputs.apply
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+    env:
+      MAINTENANCE_MODE: --dry-run
+    steps: *maintenance_steps

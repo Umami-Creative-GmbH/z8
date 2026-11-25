@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { isMaintenanceProducer } from "./ci-maintenance.mjs";
 const workflow = name => readFileSync(new URL(`../workflows/${name}.yml`, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 const tests = workflow("tests");
 const desktop = workflow("desktop-windows");
@@ -20,18 +21,9 @@ test("actual PostgreSQL condition requires successful combined shards except exp
     assert.equal(Boolean(evaluate(needs, { event_name: event, event: { pull_request: { draft } } }, { diagnose_integration: override }, () => cancelled, { POSTGRES_INTEGRATION_TESTS_ENABLED: enabled })), expected, JSON.stringify({ enabled, webapp, unit, changes, event, override, cancelled, draft }));
   }
 });
-test("expensive PR jobs wait on shared Linux debounce once, with independent cancellation", () => {
-  const debounce = workflow("ci-debounce");
-  assert.match(debounce, /runs-on: ubuntu-latest/);
-  assert.match(debounce, /if: github.event_name == 'pull_request'\s+run: sleep 90/);
-  assert.doesNotMatch(debounce, /concurrency:/);
-  for (const source of [tests, desktop]) {
-    assert.match(source, /uses: \.\/\.github\/workflows\/ci-debounce.yml/);
-    assert.match(source, /cancel-in-progress: true/);
-  }
-  assert.match(tests, /needs: \[changes, debounce\]/);
-  assert.match(desktop.split("  windows:\n")[1].split("    runs-on:")[0], /needs: debounce/);
-  assert.match(tests, /needs: \[changes, debounce, unit-tests, integration-tests\]/);
+test("the required summary receives scope selection and both test results", () => {
+  const summary = tests.split("  tests:\n")[1].split("    runs-on:")[0];
+  assert.match(summary, /needs: \[changes, unit-tests, integration-tests\]/);
 });
 test("privileged cleanup executes trusted default-branch code with no producer checkout", () => {
   assert.match(maintenance, /pull_request_target:\s+types: \[closed\]/);
@@ -41,13 +33,65 @@ test("privileged cleanup executes trusted default-branch code with no producer c
   assert.match(maintenance, /persist-credentials: false/);
   assert.match(maintenance, /actions: write/);
   assert.match(maintenance, /cancel-in-progress: false/);
-  assert.doesNotMatch(maintenance, /download-artifact|workflow_run.head|pull_request.head|secrets: inherit|pnpm install/);
+  assert.doesNotMatch(maintenance, /download-artifact|workflow_run\.head_(?:sha|branch)|pull_request\.head|secrets: inherit|pnpm install/);
+});
+test("successful core publishes and desktop completions select apply; only a manual preview selects dry-run", async () => {
+  const publisherPath = ".github/workflows/publish-images.yml";
+  const desktopPath = ".github/workflows/desktop-windows.yml";
+  const publisherName = workflow("publish-images").split("\n")[0].slice("name: ".length);
+  const desktopName = desktop.split("\n")[0].slice("name: ".length);
+  assert.ok(maintenance.includes("workflows: [" + desktopName + ", " + publisherName + "]\n    types: [completed]"));
+  const applyIf = maintenance.match(/  apply:\n    if: >-\n([\s\S]*?)\n    runs-on:/)[1];
+  const dryIf = maintenance.match(/  dry-run:\n    if: (.+)/)[1];
+  const apply = new Function("github", "inputs", "return (" + applyIf + ")");
+  const dryRun = new Function("github", "inputs", "return (" + dryIf + ")");
+  const repo = { id: 42 };
+  const run = { id: 5, name: publisherName, path: publisherPath, workflow_id: 7,
+    event: "push", conclusion: "success", repository: repo, head_repository: repo };
+  const api = { workflow: async file => {
+    assert.equal(file, "publish-images.yml");
+    return { id: 7, path: publisherPath };
+  } };
+  // The Actions prefilter ignores case and loosely compares IDs. The script reads the original JSON.
+  for (const [overrides, queued, verified] of [
+    [{ head_branch: "main" }, true, true],
+    [{ head_branch: "v1.0.0" }, true, true],
+    [{ event: "workflow_dispatch", head_branch: "feature" }, true, true],
+    ...["failure", "cancelled", "skipped", "timed_out", "neutral"].map(conclusion => [{ conclusion }, false, false]),
+    [{ event: "pull_request" }, false, false],
+    [{ head_repository: null }, false, false],
+    [{ head_repository: { id: 99 } }, false, false],
+    [{ path: ".github/workflows/publish-docs-image.yml" }, false, false],
+    [{ path: publisherPath.toUpperCase() }, true, false],
+    [{ head_repository: { id: "42" } }, true, false],
+    [{ workflow_id: 8 }, true, false],
+    [{ id: 0 }, true, false],
+    [{ name: desktopName, path: desktopPath, head_repository: null, conclusion: "failure", event: "pull_request" }, true, true],
+  ]) {
+    const event = { action: "completed", repository: repo, workflow_run: { ...run, ...overrides } };
+    const github = { event_name: "workflow_run", event: { ...event,
+      workflow_run: { ...event.workflow_run, path: event.workflow_run.path.toLowerCase() } } };
+    assert.equal(Boolean(apply(github, {})), queued, JSON.stringify(overrides));
+    assert.equal(Boolean(dryRun(github, {})), false);
+    assert.equal(await isMaintenanceProducer(event, api), verified, JSON.stringify(overrides));
+  }
+  await assert.rejects(isMaintenanceProducer({ action: "completed", repository: repo, workflow_run: run }, {
+    workflow: async () => { throw new Error("workflow lookup failed"); },
+  }), /workflow lookup failed/);
+  for (const [event_name, input, expectedApply] of [
+    ["schedule", false, true], ["pull_request_target", false, true],
+    ["workflow_dispatch", false, false], ["workflow_dispatch", true, true],
+  ]) {
+    const github = { event_name, event: {} };
+    assert.equal(Boolean(apply(github, { apply: input })), expectedApply);
+    assert.equal(Boolean(dryRun(github, { apply: input })), !expectedApply);
+  }
 });
 test("installer uploads carry identity and 14-day expiry; signed release remains separate", () => {
   assert.match(desktop, /name: desktop-windows-unsigned-review-only\s+retention-days: 14/);
   assert.match(desktop, /review-build.json/);
   assert.match(desktop, /REVIEW_HEAD_SHA: \$\{\{ github.event.pull_request.head.sha \|\| github.sha \}\}/);
-  assert.doesNotMatch(workflow("desktop-release"), /desktop-windows-unsigned-review-only|ci-debounce|ci-maintenance/);
+  assert.doesNotMatch(workflow("desktop-release"), /desktop-windows-unsigned-review-only|ci-maintenance/);
 });
 test("base dependency warming cannot execute arbitrary PR refs or repeat an exact-hit install", () => {
   assert.match(warm, /branches: \[dev\]/);
@@ -61,15 +105,13 @@ test("base dependency warming cannot execute arbitrary PR refs or repeat an exac
     assert.match(source, /node-version: 26\s+cache: pnpm/);
   }
 });
-test("draft PRs skip every validation job, including setup, summary and reusable debounce", () => {
-  const guardJobs = ["tests", "desktop-windows", "check-package-lock-sync", "react-doctor", "ci-debounce", "work-records-integration", "next-runtime"];
+test("draft PRs skip every validation job, including setup and summary", () => {
+  const guardJobs = ["ci-workflow-contracts", "tests", "desktop-windows", "check-package-lock-sync", "react-doctor", "work-records-integration", "next-runtime"];
   for (const name of guardJobs) {
     const source = workflow(name);
-    if (name !== "ci-debounce") {
-      assert.match(source, /types: \[opened, synchronize, reopened, ready_for_review, converted_to_draft\]/);
-      assert.match(source, /group: .*github.event.pull_request.number/);
-      assert.match(source, /cancel-in-progress: true/);
-    }
+    assert.match(source, /types: \[opened, synchronize, reopened, ready_for_review, converted_to_draft\]/);
+    assert.match(source, /group: .*github.event.pull_request.number/);
+    assert.match(source, /cancel-in-progress: true/);
     const blocks = source.split("\njobs:\n")[1].split(/(?=^  [\w-]+:\s*$)/m).filter(block => /^  [\w-]+:/.test(block));
     assert.ok(blocks.length > 0, name);
     for (const block of blocks) {

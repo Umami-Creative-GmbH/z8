@@ -1,9 +1,32 @@
-import { appendFileSync } from "node:fs";
+import { appendFileSync, readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { createGitHubApi } from "./github-api.mjs";
 
 export const REVIEW_ARTIFACT = "desktop-windows-unsigned-review-only";
 const maxAgeMs = 14 * 24 * 60 * 60 * 1000;
+function positiveId(id) {
+  return Number.isSafeInteger(id) && id > 0;
+}
+
+// Called only for workflow_run, before inventory or deletion. The Actions job
+// condition is case-insensitive; compare the actual JSON and registered producer here.
+export async function isMaintenanceProducer(event, api) {
+  const run = event.workflow_run;
+  if (event.action !== "completed" || !run) return false;
+  if (run.path === ".github/workflows/desktop-windows.yml" && run.name === "Desktop Windows") return true;
+  if (run.path !== ".github/workflows/publish-images.yml" || run.name !== "Publish Docker Images" ||
+      run.conclusion !== "success" || !["push", "workflow_dispatch"].includes(run.event)) return false;
+  const repoId = event.repository?.id;
+  if (!positiveId(repoId) || run.repository?.id !== repoId || run.head_repository?.id !== repoId ||
+      !positiveId(run.workflow_id) || !positiveId(run.id)) return false;
+  const registered = await api.workflow("publish-images.yml");
+  return registered.path === run.path && registered.id === run.workflow_id;
+}
+
+function matchesPullHead(source, pull) {
+  return positiveId(source.head_repository_id) && source.head_repository_id === pull.head?.repo?.id &&
+    typeof source.head_sha === "string" && source.head_sha.length > 0 && source.head_sha === pull.head?.sha;
+}
 function outranks(rank, previous) {
   if (!previous) return true;
   const index = rank.findIndex((value, i) => value !== previous[i]);
@@ -46,11 +69,11 @@ export function reviewArtifactPlan({ artifacts, runs, openPulls, workflowId, now
     const run = byRun.get(artifact.workflow_run.id);
     const numbers = new Set((run.pull_requests ?? []).filter(item => open.has(item.number)).map(item => item.number));
     for (const pull of openPulls) {
-      if (artifact.workflow_run.head_sha === pull.head?.sha && artifact.workflow_run.head_repository_id === pull.head?.repo?.id) numbers.add(pull.number);
+      if (matchesPullHead(artifact.workflow_run, pull)) numbers.add(pull.number);
     }
     for (const number of numbers) {
       const pull = open.get(number);
-      const currentHead = artifact.workflow_run.head_sha === pull.head?.sha && artifact.workflow_run.head_repository_id === pull.head?.repo?.id;
+      const currentHead = matchesPullHead(artifact.workflow_run, pull);
       const rank = [Number(currentHead), Date.parse(run.created_at), Date.parse(artifact.created_at), artifact.id];
       if (rank.some(value => !Number.isFinite(value))) throw new Error("Invalid producer timestamp");
       const existing = associated.get(number);
@@ -64,25 +87,45 @@ export function reviewArtifactPlan({ artifacts, runs, openPulls, workflowId, now
     protected: recent.filter(artifact => protectedIds.has(artifact.id)),
   };
 }
-async function artifactSnapshot(api, workflowId, now) {
-  const [artifacts, openPulls] = await Promise.all([api.artifacts(), api.openPulls()]);
-  const ids = [...new Set(artifacts.map(artifact => artifact.workflow_run?.id))];
-  if (ids.some(id => !Number.isSafeInteger(id))) throw new Error("Missing producer identity");
+async function liveReviewInstallers(api) {
+  const artifacts = await api.artifacts();
+  if (artifacts.some(item => typeof item.name !== "string" || typeof item.expired !== "boolean")) {
+    throw new Error("Incomplete artifact metadata");
+  }
+  return artifacts.filter(item => item.name === REVIEW_ARTIFACT && !item.expired);
+}
+async function producerRuns(api, ids) {
   const runs = [];
-  // Bound API concurrency while reading potentially hundreds of historical producers.
-  for (let index = 0; index < ids.length; index += 8) runs.push(...await Promise.all(ids.slice(index, index + 8).map(id => api.run(id))));
-  return { artifacts, runs, openPulls, workflowId, now };
+  for (let index = 0; index < ids.length; index += 8) {
+    const batch = ids.slice(index, index + 8);
+    const records = await Promise.all(batch.map(id => api.run(id)));
+    if (records.some((run, i) => run?.id !== batch[i] || !positiveId(run.workflow_id))) {
+      throw new Error("Unexpected artifact producer identity");
+    }
+    runs.push(...records);
+  }
+  return runs;
+}
+async function installerPlan(api, artifacts, workflowId, now) {
+  if (!artifacts.length) return { remove: [], protected: [] };
+  const ids = [...new Set(artifacts.map(item => item.workflow_run?.id))];
+  if (!ids.every(positiveId)) throw new Error("Missing producer identity");
+  const [openPulls, runs] = await Promise.all([api.openPulls(), producerRuns(api, ids)]);
+  return reviewArtifactPlan({ artifacts, runs, openPulls, workflowId, now });
 }
 export async function maintainCi({ api, apply = false, now = Date.now(), ownRunId, onDelete = () => {} }) {
-  const report = { mode: apply ? "apply" : "dry-run", cacheCandidates: [], artifactCandidates: [], deletedCaches: [], deletedArtifacts: [], skipped: [] };
+  const report = { mode: apply ? "apply" : "dry-run", cacheCandidates: [], artifactCandidates: [], deletedCaches: [], deletedArtifacts: [], protectedArtifacts: [], skipped: [] };
   const caches = await api.caches();
-  const runs = await api.activeRuns();
+  let runs;
   const pulls = new Map();
   for (const cache of caches) {
     const number = cachePullNumber(cache.ref);
     if (!number) continue;
     if (!pulls.has(number)) pulls.set(number, await api.pull(number));
-    if (!canDeleteCache(cache, pulls.get(number), runs, ownRunId)) continue;
+    const pullState = pulls.get(number);
+    if (pullState.state !== "closed") continue;
+    runs ??= await api.activeRuns();
+    if (!canDeleteCache(cache, pullState, runs, ownRunId)) continue;
     report.cacheCandidates.push({ id: cache.id, ref: cache.ref, bytes: cache.size_in_bytes });
     if (!apply) continue;
     const [pull, currentRuns, currentCaches] = await Promise.all([api.pull(number), api.activeRuns(), api.caches(cache.ref)]);
@@ -94,15 +137,17 @@ export async function maintainCi({ api, apply = false, now = Date.now(), ownRunI
       onDelete({ storage: "cache", ...deleted });
     }
   }
+  const artifacts = await liveReviewInstallers(api);
+  if (!artifacts.length) return report;
   const workflow = await api.workflow("desktop-windows.yml");
-  if (workflow.path !== ".github/workflows/desktop-windows.yml" || !Number.isSafeInteger(workflow.id)) throw new Error("Unexpected desktop producer workflow");
-  const plan = reviewArtifactPlan(await artifactSnapshot(api, workflow.id, now));
+  if (workflow.path !== ".github/workflows/desktop-windows.yml" || !positiveId(workflow.id)) throw new Error("Unexpected desktop producer workflow");
+  const plan = await installerPlan(api, artifacts, workflow.id, now);
   report.artifactCandidates = plan.remove.map(artifact => ({ id: artifact.id, bytes: artifact.size_in_bytes }));
   report.protectedArtifacts = plan.protected.map(artifact => artifact.id);
   for (const artifact of plan.remove) {
     if (!apply) break;
     // Refresh the keep set before every delete to handle uploads, reopened PRs and reruns.
-    const currentPlan = reviewArtifactPlan(await artifactSnapshot(api, workflow.id, now));
+    const currentPlan = await installerPlan(api, await liveReviewInstallers(api), workflow.id, now);
     const current = currentPlan.remove.find(item => item.id === artifact.id);
     if (!current) { report.skipped.push(`artifact ${artifact.id}: state changed`); continue; }
     if (await api.deleteArtifact(artifact.id)) {
@@ -121,6 +166,15 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const args = process.argv.slice(2);
   if (args.some(arg => !["--apply", "--dry-run"].includes(arg)) || args.length > 1) throw new Error("Use --dry-run (default) or --apply");
   const api = createGitHubApi({ repository: process.env.GITHUB_REPOSITORY, token: process.env.GH_TOKEN || process.env.GITHUB_TOKEN });
+  if (process.env.GITHUB_EVENT_NAME === "workflow_run") {
+    const event = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, "utf8"));
+    if (!await isMaintenanceProducer(event, api)) {
+      const reason = "Skipped cleanup because the triggering run did not match an eligible registered producer.";
+      console.log(reason);
+      if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, reason + "\n");
+      process.exit(0);
+    }
+  }
   const report = await maintainCi({
     api, apply: args.includes("--apply"), ownRunId: Number(process.env.GITHUB_RUN_ID) || undefined,
     // Keep successful deletions observable even if a later API request fails.

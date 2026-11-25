@@ -217,12 +217,46 @@ if (publishTargetsJob) {
 			"name: Import webapp build mounts",
 			"name: Export webapp build mounts",
 			"name: Save bounded webapp build mounts",
-			"matrix.repository == 'z8-webapp' && (inputs.persist_build_cache || vars.NEXT_BUILD_CACHE_ENABLED == 'true')",
 			"webapp-mounts-v1-${{ matrix.arch }}-",
-			"if: steps.export_mounts.outputs.cacheable == 'true'",
 		],
 		"bounded opt-in build mounts",
 	);
+	// Verify the flag from the actual workflow, including the empty inputs on a push.
+	const mountFlag = publishTargetsJob.match(/PERSIST_WEBAPP_MOUNTS: >-\n\s+\$\{\{([\s\S]*?)\}\}/);
+	expect(mountFlag, "missing job-level webapp mount flag");
+	if (mountFlag) {
+		const enabled = new Function("matrix", "github", "vars", "inputs", "return (" + mountFlag[1] + ")");
+		const cases = [
+			// event, ref, repository flag, manual input, expected for webapp
+			["push", "refs/heads/main", "true", undefined, true],
+			["push", "refs/heads/main", "false", undefined, false],
+			["push", "refs/heads/main", "", undefined, false],
+			["push", "refs/tags/v1.0.0", "true", undefined, false],
+			["workflow_dispatch", "refs/heads/main", "true", false, false],
+			["workflow_dispatch", "refs/heads/main", "false", true, true],
+			["workflow_dispatch", "refs/heads/feature", "false", true, true],
+			["workflow_dispatch", "refs/tags/v1.0.0", "true", false, false],
+			["workflow_dispatch", "refs/tags/v1.0.0", "false", true, true],
+		];
+		for (const [event_name, ref, globalFlag, manual, expected] of cases) {
+			const inputs = manual === undefined ? {} : { persist_build_cache: manual };
+			for (const repository of ["z8-webapp", "z8-worker", "z8-migration"]) {
+				const actual = enabled({ repository }, { event_name, ref }, { NEXT_BUILD_CACHE_ENABLED: globalFlag }, inputs);
+				expect(Boolean(actual) === (repository === "z8-webapp" && expected),
+					"unexpected build mount selection: " + [repository, event_name, ref, globalFlag, manual].join(" "));
+			}
+		}
+	}
+	const mountsEnabled = "env.PERSIST_WEBAPP_MOUNTS == 'true'";
+	for (const [step, condition] of [
+		["Restore webapp build mounts", mountsEnabled],
+		["Import webapp build mounts", mountsEnabled],
+		["Export webapp build mounts", mountsEnabled + " && steps.build_mounts.outputs.cache-hit != 'true'"],
+		["Save bounded webapp build mounts", mountsEnabled + " && steps.export_mounts.outcome == 'success' && steps.export_mounts.outputs.cacheable == 'true'"],
+	]) {
+		expect(getStepBlock(publishTargetsJob, step)?.split("\n").includes("        if: " + condition),
+			step + " must respect mount selection and cache state");
+	}
 	const mountRestore = getStepBlock(publishTargetsJob, "Restore webapp build mounts");
 	expect(
 		mountRestore?.includes("actions/cache/restore@"),
