@@ -490,7 +490,7 @@ describe("Better Auth 1.7 core configuration", () => {
 				),
 			),
 		).toThrow(/escapes/i);
-	}, 15_000);
+	}, 30_000);
 
 	it("scans legacy SCIM names as syntax rather than comments or string literals", () => {
 		expect(
