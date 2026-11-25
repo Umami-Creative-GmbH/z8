@@ -8,7 +8,14 @@
 
 import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
-import { complianceException, employeeManagers, workPolicyViolation } from "@/db/schema";
+import { complianceException, employee, workPolicyViolation } from "@/db/schema";
+import {
+	type ComplianceExceptionScopeCondition,
+	complianceExceptionInboxScopesFor,
+	complianceExceptionScopeCondition,
+} from "@/lib/approvals/inbox/compliance-exception-inbox";
+import { getEligibleApprovalScopesForManager } from "@/lib/approvals/policies/manager-eligibility-db";
+import { awaitingComplianceExceptionDecision } from "@/lib/compliance/pending-compliance-exception";
 import {
 	dateFromInstant,
 	instantFromDate,
@@ -77,10 +84,13 @@ export class TeamsComplianceService extends Context.Service<
 		}) => Effect.Effect<ComplianceAlert[], DatabaseError>;
 
 		/**
-		 * Get pending exception requests for a manager to approve
+		 * The pending exception requests the recipient decides in the Approval inbox: the
+		 * organization's with `manage Compliance`, else those of their eligible-manager scope.
 		 */
 		readonly getPendingExceptionsForManager: (params: {
 			managerId: string;
+			/** The recipient's user, whose permissions decide the scope. */
+			userId: string;
 			organizationId: string;
 		}) => Effect.Effect<ComplianceExceptionSummary[], DatabaseError>;
 
@@ -89,16 +99,18 @@ export class TeamsComplianceService extends Context.Service<
 		 */
 		readonly getComplianceSummary: (params: {
 			managerId: string;
+			userId: string;
 			organizationId: string;
 			daysBack?: number;
 			timezone: string;
 		}) => Effect.Effect<ComplianceSummary, DatabaseError, any>;
 
 		/**
-		 * Get count of pending compliance exceptions for digest
+		 * Get count of pending compliance exceptions, in the scope `getPendingExceptionsForManager` lists
 		 */
 		readonly getPendingExceptionsCount: (params: {
 			managerId: string;
+			userId: string;
 			organizationId: string;
 		}) => Effect.Effect<number, DatabaseError>;
 	}
@@ -156,32 +168,69 @@ export const TeamsComplianceServiceLive = Layer.effect(
 		const dbService = yield* DatabaseService;
 
 		/**
-		 * Get managed employee IDs with their names
+		 * The employees this manager is responsible for, with their names: those they are an
+		 * eligible manager of, as the Approval inbox the card links to scopes them (#1977), so a
+		 * team's primary manager also sees a member who has no active direct manager.
 		 */
 		const getManagedEmployeesWithNames = (
 			managerId: string,
 			organizationId: string,
 		): Effect.Effect<Map<string, string>, DatabaseError> =>
 			dbService.query("getManagedEmployeesWithNames", async () => {
-				const managed = await dbService.db.query.employeeManagers.findMany({
-					where: eq(employeeManagers.managerId, managerId),
-					with: {
-						employee: {
-							columns: { id: true, organizationId: true },
-							with: {
-								user: { columns: { name: true } },
-							},
-						},
-					},
+				const scopes = await getEligibleApprovalScopesForManager({
+					db: dbService.db,
+					managerEmployeeId: managerId,
+					organizationId,
+				});
+				const employeeIds = scopes.map((scope) => scope.requesterEmployeeId);
+				if (employeeIds.length === 0) return new Map<string, string>();
+				const managed = await dbService.db.query.employee.findMany({
+					where: and(
+						eq(employee.organizationId, organizationId),
+						inArray(employee.id, employeeIds),
+					),
+					columns: { id: true },
+					with: { user: { columns: { name: true } } },
 				});
 
-				const map = new Map<string, string>();
-				for (const m of managed) {
-					if (m.employee.organizationId === organizationId) {
-						map.set(m.employeeId, m.employee.user?.name || "Unknown");
-					}
-				}
-				return map;
+				return new Map(managed.map((m) => [m.id, m.user?.name || "Unknown"]));
+			});
+
+		/**
+		 * The pending exceptions the recipient's Approval inbox lists (#1977): every one of the
+		 * organization with `manage Compliance`, else those of their eligible-manager scope.
+		 */
+		const pendingExceptionScope = (params: {
+			managerId: string;
+			userId: string;
+			organizationId: string;
+		}): Effect.Effect<ComplianceExceptionScopeCondition, DatabaseError> =>
+			dbService.query("getComplianceExceptionScope", async () =>
+				complianceExceptionScopeCondition(
+					await complianceExceptionInboxScopesFor({
+						organizationId: params.organizationId,
+						userIds: [params.userId],
+						database: dbService.db,
+					}).of({ userId: params.userId, employeeId: params.managerId }),
+				),
+			);
+
+		/** The names of these employees of the organization. */
+		const employeeNames = (
+			organizationId: string,
+			employeeIds: readonly string[],
+		): Effect.Effect<Map<string, string>, DatabaseError> =>
+			dbService.query("getEmployeeNames", async () => {
+				if (employeeIds.length === 0) return new Map<string, string>();
+				const rows = await dbService.db.query.employee.findMany({
+					where: and(
+						eq(employee.organizationId, organizationId),
+						inArray(employee.id, [...new Set(employeeIds)]),
+					),
+					columns: { id: true },
+					with: { user: { columns: { name: true } } },
+				});
+				return new Map(rows.map((row) => [row.id, row.user?.name || "Unknown"]));
 			});
 
 		return TeamsComplianceService.of({
@@ -275,33 +324,32 @@ export const TeamsComplianceServiceLive = Layer.effect(
 
 			getPendingExceptionsForManager: (params) =>
 				Effect.gen(function* () {
-					const { managerId, organizationId } = params;
-
-					// Get managed employees
-					const managedEmployees = yield* getManagedEmployeesWithNames(managerId, organizationId);
-					if (managedEmployees.size === 0) {
-						return [];
-					}
-
-					const managedEmployeeIds = [...managedEmployees.keys()];
+					const { organizationId } = params;
+					const inScope = yield* pendingExceptionScope(params);
+					if (inScope.kind === "none") return [];
 
 					// Get pending exceptions
 					const exceptions = yield* dbService.query("getPendingExceptions", async () => {
 						return await dbService.db.query.complianceException.findMany({
 							where: and(
 								eq(complianceException.organizationId, organizationId),
-								inArray(complianceException.employeeId, managedEmployeeIds),
-								eq(complianceException.status, "pending"),
+								inScope.kind === "condition" ? inScope.sql : undefined,
+								// A lapsed exception is expired, as in the Approval inbox the card links to (#1977).
+								awaitingComplianceExceptionDecision(systemClock.nowInstant()),
 							),
 							orderBy: [desc(complianceException.createdAt)],
 							limit: 20,
 						});
 					});
+					const names = yield* employeeNames(
+						organizationId,
+						exceptions.map((ex) => ex.employeeId),
+					);
 
 					return exceptions.map((ex) => ({
 						id: ex.id,
 						employeeId: ex.employeeId,
-						employeeName: managedEmployees.get(ex.employeeId) || "Unknown",
+						employeeName: names.get(ex.employeeId) || "Unknown",
 						exceptionType: ex.exceptionType,
 						status: ex.status,
 						requestedAt: ex.createdAt,
@@ -313,7 +361,7 @@ export const TeamsComplianceServiceLive = Layer.effect(
 
 			getComplianceSummary: (params) =>
 				Effect.gen(function* () {
-					const { managerId, organizationId, daysBack = 7, timezone } = params;
+					const { managerId, userId, organizationId, daysBack = 7, timezone } = params;
 
 					// Get alerts and exceptions in parallel
 					const [alerts, pendingExceptions] = yield* Effect.all([
@@ -331,6 +379,7 @@ export const TeamsComplianceServiceLive = Layer.effect(
 							Effect.flatMap((service) =>
 								service.getPendingExceptionsForManager({
 									managerId,
+									userId,
 									organizationId,
 								}),
 							),
@@ -351,15 +400,9 @@ export const TeamsComplianceServiceLive = Layer.effect(
 
 			getPendingExceptionsCount: (params) =>
 				Effect.gen(function* () {
-					const { managerId, organizationId } = params;
-
-					// Get managed employees
-					const managedEmployees = yield* getManagedEmployeesWithNames(managerId, organizationId);
-					if (managedEmployees.size === 0) {
-						return 0;
-					}
-
-					const managedEmployeeIds = [...managedEmployees.keys()];
+					const { organizationId } = params;
+					const inScope = yield* pendingExceptionScope(params);
+					if (inScope.kind === "none") return 0;
 
 					const result = yield* dbService.query("countPendingExceptions", async () => {
 						const [countResult] = await dbService.db
@@ -368,8 +411,8 @@ export const TeamsComplianceServiceLive = Layer.effect(
 							.where(
 								and(
 									eq(complianceException.organizationId, organizationId),
-									inArray(complianceException.employeeId, managedEmployeeIds),
-									eq(complianceException.status, "pending"),
+									inScope.kind === "condition" ? inScope.sql : undefined,
+									awaitingComplianceExceptionDecision(systemClock.nowInstant()),
 								),
 							);
 						return Number(countResult?.count) || 0;

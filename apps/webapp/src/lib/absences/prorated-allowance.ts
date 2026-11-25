@@ -215,6 +215,35 @@ function utcCalendarDate(date: Date): PlainDate {
 	return plainDateAt(instantFromDate(date), "UTC");
 }
 
+/** The employments with at least one day in the year; an unknown start or end is open. */
+export function employmentsInYear<Employment extends EmploymentStint>(
+	employments: readonly Employment[],
+	year: number,
+): Employment[] {
+	const yearStart = Temporal.PlainDate.from({ year, month: 1, day: 1 });
+	const yearEnd = Temporal.PlainDate.from({ year, month: 12, day: 31 });
+	return employments.filter(
+		(employment) =>
+			(employment.lastWorkingDay === null ||
+				comparePlainDates(employment.lastWorkingDay, yearStart) >= 0) &&
+			(employment.startDate === null || comparePlainDates(employment.startDate, yearEnd) <= 0),
+	);
+}
+
+/**
+ * Whether someone is outside vacation for a year (#1996): they were never an employee, or they
+ * were an External Contractor at some point and have no employee day in the year. Such a year
+ * has no allowance, no carry-over in or out and no balance, whatever the policy. Someone who was
+ * only ever an employee keeps the policy's rules for every year, also one without employment.
+ */
+export function outsideVacationInYear(
+	person: { employments: readonly EmploymentStint[]; wasContractor: boolean },
+	year: number,
+): boolean {
+	if (person.employments.length === 0) return true;
+	return person.wasContractor && employmentsInYear(person.employments, year).length === 0;
+}
+
 /** The first year that is prorated (#1104 rule 11). */
 export const FIRST_PRORATED_YEAR = 2026;
 
@@ -236,8 +265,21 @@ export function resolveVacationAllowance(input: {
 	customAnnualDays?: string | null;
 	/** Every employment of the employee, in any order. */
 	employments: readonly EmploymentStint[];
+	/** Whether they were an External Contractor at some point (`outsideVacationInYear`). */
+	wasContractor?: boolean;
 	year: number;
 }): ProratedAllowance {
+	const yearStart = Temporal.PlainDate.from({ year: input.year, month: 1, day: 1 });
+	const yearEnd = Temporal.PlainDate.from({ year: input.year, month: 12, day: 31 });
+	// Before any policy rule: a year outside vacation earns nothing, even when the policy does
+	// not prorate or a custom allowance is set (#1996).
+	if (input.wasContractor && employmentsInYear(input.employments, input.year).length === 0) {
+		const yearRate = averageRate(allowanceRatesOf(input.policy, yearStart, yearEnd), [
+			[yearStart, yearEnd],
+		]);
+		return { fullAllowance: yearRate.annual, days: 0, reason: { kind: "not_employed" } };
+	}
+
 	if (input.customAnnualDays != null && input.customAnnualDays !== "") {
 		const custom = Number.parseFloat(input.customAnnualDays);
 		return full(custom, "custom_allowance");
@@ -247,14 +289,7 @@ export function resolveVacationAllowance(input: {
 		return full(Number.parseFloat(input.policy.defaultAnnualDays), "before_rollout");
 	}
 
-	const yearStart = Temporal.PlainDate.from({ year: input.year, month: 1, day: 1 });
-	const yearEnd = Temporal.PlainDate.from({ year: input.year, month: 12, day: 31 });
-	const inYear = input.employments.filter(
-		(employment) =>
-			(employment.lastWorkingDay === null ||
-				comparePlainDates(employment.lastWorkingDay, yearStart) >= 0) &&
-			(employment.startDate === null || comparePlainDates(employment.startDate, yearEnd) <= 0),
-	);
+	const inYear = employmentsInYear(input.employments, input.year);
 	// The converted rates average over the dates employed in the year (Absences ADR 0003).
 	const rates = allowanceRatesOf(input.policy, yearStart, yearEnd);
 	const employedDates = inYear.map((employment) => employedRange(employment, yearStart, yearEnd));

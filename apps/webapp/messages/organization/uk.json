@@ -423,7 +423,6 @@
         "descriptionPlaceholder": "Короткий опис цієї команди",
         "fallbackManagerHelp": "Використовується для погоджень, коли учасник команди не має безпосереднього керівника.",
         "fallbackManagerLabel": "Резервний керівник",
-        "fallbackManagerPlaceholder": "Оберіть резервного керівника",
         "nameLabel": "Назва команди",
         "namePlaceholder": "Розробка, Продажі, Маркетинг...",
         "noFallbackManager": "Немає резервного керівника",

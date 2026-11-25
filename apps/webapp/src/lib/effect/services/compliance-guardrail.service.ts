@@ -1,11 +1,10 @@
-import { and, desc, eq, gte, inArray, lte, ne, sql } from "drizzle-orm";
+import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import {
 	type ComplianceAlert,
 	type ComplianceStatus,
 	complianceException,
 	employee,
-	employeeManagers,
 	type OvertimeStats,
 	type RestPeriodCheckResult,
 	workPeriod,
@@ -141,33 +140,6 @@ export class ComplianceGuardrailService extends Context.Service<
 		}) => Effect.Effect<void, NotFoundError | DatabaseError>;
 
 		/**
-		 * Approve an exception request
-		 */
-		readonly approveException: (params: {
-			exceptionId: string;
-			approverId: string;
-			organizationId: string;
-		}) => Effect.Effect<void, NotFoundError | DatabaseError>;
-
-		/**
-		 * Reject an exception request
-		 */
-		readonly rejectException: (params: {
-			exceptionId: string;
-			approverId: string;
-			organizationId: string;
-			reason?: string;
-		}) => Effect.Effect<void, NotFoundError | DatabaseError>;
-
-		/**
-		 * Get pending exception requests for approval
-		 */
-		readonly getPendingExceptions: (params: {
-			organizationId: string;
-			managerId?: string;
-		}) => Effect.Effect<ExceptionWithDetails[], DatabaseError>;
-
-		/**
 		 * Expire old pre-approval exceptions (for cron job)
 		 */
 		readonly expireOldExceptions: (
@@ -215,6 +187,13 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 	Effect.gen(function* () {
 		const dbService = yield* DatabaseService;
 		const workPolicyService = yield* WorkPolicyService;
+
+		/**
+		 * The policy as adult ArbZG applies it now: without its regulation for executive-exempt
+		 * employees (#1993), so they are never held to the adult rest period, limits or alerts.
+		 */
+		const adultArbzgPolicyOf = (employeeId: string) =>
+			workPolicyService.getAdultArbzgPolicyAt({ employeeId, at: systemClock.nowInstant() });
 
 		/**
 		 * Get last clock-out time for an employee
@@ -267,7 +246,7 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 			timezone: string;
 		}): Effect.Effect<OvertimeStats, NotFoundError | DatabaseError> =>
 			Effect.gen(function* () {
-				const policy = yield* workPolicyService.getEffectivePolicy(params.employeeId);
+				const policy = yield* adultArbzgPolicyOf(params.employeeId);
 
 				const timezone = parseTimeZone(params.timezone);
 				const todayKey = plainDateAt(systemClock.nowInstant(), timezone).toString();
@@ -334,7 +313,7 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 			checkRestPeriod: (params) =>
 				Effect.gen(function* () {
 					// Get effective policy for this employee
-					const policy = yield* workPolicyService.getEffectivePolicy(params.employeeId);
+					const policy = yield* adultArbzgPolicyOf(params.employeeId);
 
 					// If no policy or no rest period requirement, allow clock-in
 					if (!policy?.regulation?.minRestPeriodMinutes) {
@@ -439,7 +418,7 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 
 			getProactiveAlerts: (input) =>
 				Effect.gen(function* () {
-					const policy = yield* workPolicyService.getEffectivePolicy(input.employeeId);
+					const policy = yield* adultArbzgPolicyOf(input.employeeId);
 
 					if (!policy?.regulation) {
 						return [];
@@ -559,7 +538,7 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 			getComplianceStatus: (params) =>
 				Effect.gen(function* () {
 					// Get policy for alerts
-					const policy = yield* workPolicyService.getEffectivePolicy(params.employeeId);
+					const policy = yield* adultArbzgPolicyOf(params.employeeId);
 
 					const alerts: ComplianceAlert[] = [];
 
@@ -736,146 +715,6 @@ export const ComplianceGuardrailServiceLive = Layer.effect(
 							}),
 						);
 					}
-				}),
-
-			approveException: (params) =>
-				Effect.gen(function* () {
-					const updated = yield* dbService.query("approveException", async () => {
-						const result = await dbService.db
-							.update(complianceException)
-							.set({
-								status: "approved",
-								approverId: params.approverId,
-								approvedAt: new Date(),
-							})
-							.where(
-								and(
-									eq(complianceException.id, params.exceptionId),
-									eq(complianceException.organizationId, params.organizationId),
-									ne(complianceException.employeeId, params.approverId),
-									eq(complianceException.status, "pending"),
-								),
-							)
-							.returning({ id: complianceException.id });
-
-						return result.length > 0;
-					});
-
-					if (!updated) {
-						yield* Effect.fail(
-							new NotFoundError({
-								message: "Exception not found or already processed",
-								entityType: "complianceException",
-								entityId: params.exceptionId,
-							}),
-						);
-					}
-				}),
-
-			rejectException: (params) =>
-				Effect.gen(function* () {
-					const updated = yield* dbService.query("rejectException", async () => {
-						const result = await dbService.db
-							.update(complianceException)
-							.set({
-								status: "rejected",
-								approverId: params.approverId,
-								rejectedAt: new Date(),
-								rejectionReason: params.reason,
-							})
-							.where(
-								and(
-									eq(complianceException.id, params.exceptionId),
-									eq(complianceException.organizationId, params.organizationId),
-									ne(complianceException.employeeId, params.approverId),
-									eq(complianceException.status, "pending"),
-								),
-							)
-							.returning({ id: complianceException.id });
-
-						return result.length > 0;
-					});
-
-					if (!updated) {
-						yield* Effect.fail(
-							new NotFoundError({
-								message: "Exception not found or already processed",
-								entityType: "complianceException",
-								entityId: params.exceptionId,
-							}),
-						);
-					}
-				}),
-
-			getPendingExceptions: (params) =>
-				dbService.query("getPendingExceptions", async () => {
-					const managedEmployeeIds = params.managerId
-						? (
-								await dbService.db.query.employeeManagers.findMany({
-									where: eq(employeeManagers.managerId, params.managerId),
-									columns: { employeeId: true },
-								})
-							).map((row) => row.employeeId)
-						: null;
-					if (managedEmployeeIds?.length === 0) {
-						return [];
-					}
-
-					const exceptions = await dbService.db.query.complianceException.findMany({
-						where: and(
-							eq(complianceException.organizationId, params.organizationId),
-							eq(complianceException.status, "pending"),
-							...(managedEmployeeIds
-								? [inArray(complianceException.employeeId, managedEmployeeIds)]
-								: []),
-						),
-						with: {
-							employee: {
-								columns: {
-									id: true,
-									userId: true,
-								},
-								with: {
-									user: { columns: { firstName: true, lastName: true } },
-								},
-							},
-							approver: {
-								columns: {
-									id: true,
-								},
-								with: {
-									user: { columns: { firstName: true, lastName: true } },
-								},
-							},
-						},
-						orderBy: [desc(complianceException.createdAt)],
-					});
-
-					return exceptions.map((e) => ({
-						id: e.id,
-						exceptionType: e.exceptionType,
-						status: e.status,
-						reason: e.reason,
-						plannedDurationMinutes: e.plannedDurationMinutes,
-						validFrom: e.validFrom,
-						validUntil: e.validUntil,
-						wasUsed: e.wasUsed,
-						employee: e.employee
-							? {
-									...e.employee,
-									firstName: e.employee.user?.firstName ?? null,
-									lastName: e.employee.user?.lastName ?? null,
-								}
-							: e.employee!,
-						approver: e.approver
-							? {
-									...e.approver,
-									firstName: e.approver.user?.firstName ?? null,
-									lastName: e.approver.user?.lastName ?? null,
-								}
-							: undefined,
-						createdAt: e.createdAt,
-					})) as ExceptionWithDetails[];
 				}),
 
 			expireOldExceptions: (organizationId) =>

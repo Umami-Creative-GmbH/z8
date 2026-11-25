@@ -41,6 +41,12 @@ vi.mock("drizzle-orm", async (importOriginal) => {
 });
 
 vi.mock("@/db", () => ({ db: mockState.db }));
+// Everyone is an employee all the time here; conversions are covered on PostgreSQL
+// (`engagement/contractor-same-day-conversion.integration.test.ts`).
+vi.mock("@/lib/engagement/engagement-stints", async () => ({
+	loadEmployeeTime: async () =>
+		(await import("@/lib/engagement/testing/all-employee-time")).allEmployeeTime(),
+}));
 
 vi.mock("@/lib/calendar/work-policy-requirements", () => ({
 	getDailyWorkRequirementsForEmployee: mockState.getDailyWorkRequirementsForEmployee,

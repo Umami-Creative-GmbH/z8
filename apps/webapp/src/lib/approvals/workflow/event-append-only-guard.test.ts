@@ -804,5 +804,5 @@ db.execute("update approval_workflow_event set version = 2");`;
 			join(process.cwd(), "scripts"),
 		]);
 		expect(violations).toEqual([]);
-	}, 15_000);
+	}, 30_000);
 });

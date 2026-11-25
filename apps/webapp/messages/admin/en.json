@@ -441,7 +441,9 @@
       "description": "View and manage all users on the platform",
       "filters": {
         "allUsers": "All Users",
-        "banned": "Banned"
+        "banned": "Banned",
+        "clearOrganization": "Clear organization filter",
+        "organization": "Organization: {name}"
       },
       "pagination": {
         "showing": "Showing {from} to {to} of {total} users"

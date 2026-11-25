@@ -231,7 +231,7 @@ export function defineAbilityFor(principal: PrincipalContext): AppAbility {
 		}
 
 		// Team-specific permission flags
-		for (const [_, flags] of permissions.byTeamId) {
+		for (const flags of permissions.byTeamId.values()) {
 			applyPermissionFlags(can, flags);
 		}
 
@@ -375,7 +375,45 @@ export function canAccessApprovalInbox(
 	ability: AppAbility,
 	employee: Pick<EmployeeInfo, "id" | "organizationId" | "role">,
 ): boolean {
-	const hasEmployeePrincipal =
+	return (
+		hasEmployeePrincipal(ability, employee) &&
+		(employee.role === "manager" ||
+			employee.role === "admin" ||
+			ability.cannot("approve", "Approval") === false ||
+			ability.cannot("manage", "Approval") === false)
+	);
+}
+
+/**
+ * Who may open the Approval inbox page and its navigation entry: approvers
+ * (`canAccessApprovalInbox`) and, for the organization's compliance exceptions (#1977,
+ * Approvals ADR-0005), whoever manages Compliance. It grants no approval: every ordinary
+ * source, decision and bulk action still requires `canAccessApprovalInbox`, and approver
+ * selection (deputies, escalation) keeps it too.
+ */
+export function canOpenApprovalInbox(
+	ability: AppAbility,
+	employee: Pick<EmployeeInfo, "id" | "organizationId" | "role">,
+): boolean {
+	return (
+		canAccessApprovalInbox(ability, employee) ||
+		(hasEmployeePrincipal(ability, employee) && canManageCompliance(ability))
+	);
+}
+
+/**
+ * Whether the ability manages Compliance: it sees and decides every compliance exception of
+ * the organization, not only those of the employees it manages (#1977).
+ */
+export function canManageCompliance(ability: Pick<AppAbility, "cannot">): boolean {
+	return ability.cannot("manage", "Compliance") === false;
+}
+
+function hasEmployeePrincipal(
+	ability: AppAbility,
+	employee: Pick<EmployeeInfo, "id" | "organizationId">,
+): boolean {
+	return (
 		ability.cannot(
 			"read",
 			asAppSubject("Employee", {
@@ -383,14 +421,7 @@ export function canAccessApprovalInbox(
 				employeeId: employee.id,
 				organizationId: employee.organizationId,
 			}),
-		) === false;
-
-	return (
-		hasEmployeePrincipal &&
-		(employee.role === "manager" ||
-			employee.role === "admin" ||
-			ability.cannot("approve", "Approval") === false ||
-			ability.cannot("manage", "Approval") === false)
+		) === false
 	);
 }
 

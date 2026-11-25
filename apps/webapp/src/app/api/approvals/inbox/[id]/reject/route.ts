@@ -11,13 +11,17 @@ import { db } from "@/db";
 import { employee } from "@/db/schema";
 import { coversCurrentApprover } from "@/lib/approvals/deputy/deputy-decision-store";
 import {
+	decideComplianceExceptionForActor,
+	findComplianceExceptionDecisionTarget,
+} from "@/lib/approvals/inbox/compliance-exception-inbox";
+import {
 	type ApprovalDecisionDiagnosticStage,
+	type ApprovalDecisionDiagnosticTarget,
 	buildApprovalDecisionFailureLog,
 } from "@/lib/approvals/inbox/decision-diagnostics";
 import {
 	canAttemptApprovalInboxDecisionTarget,
 	loadApprovalInboxDecisionTarget,
-	type PersistedApprovalRequestForDecision,
 	rejectApprovalInboxItem,
 } from "@/lib/approvals/inbox/decision-service";
 import { isSupportedInboxType } from "@/lib/approvals/inbox/source-adapters";
@@ -26,6 +30,8 @@ import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
 import {
 	canAccessApprovalInbox,
+	canManageCompliance,
+	canOpenApprovalInbox,
 	ForbiddenError,
 	toHttpError,
 } from "@/lib/authorization";
@@ -69,7 +75,7 @@ export async function POST(
 ) {
 	let approvalId: string | null = null;
 	let decisionStage: ApprovalDecisionDiagnosticStage = "route";
-	let decisionTarget: PersistedApprovalRequestForDecision | null = null;
+	let decisionTarget: ApprovalDecisionDiagnosticTarget | null = null;
 	try {
 		const { id } = await params;
 		approvalId = id;
@@ -115,13 +121,54 @@ export async function POST(
 		}
 
 		const canManageApprovals = ability.cannot("manage", "Approval") === false;
+		if (!canOpenApprovalInbox(ability, currentEmployee)) {
+			const error = new ForbiddenError("approve", "Approval");
+			const httpError = toHttpError(error);
+			return NextResponse.json(httpError.body, { status: httpError.status });
+		}
+
+		// A compliance exception is decided by its own adapter (#1977, ADR-0005).
+		decisionStage = "target_lookup";
+		const complianceException = await findComplianceExceptionDecisionTarget({
+			organizationId: currentEmployee.organizationId,
+			id,
+		});
+		if (complianceException) {
+			decisionTarget = complianceException;
+			const body = await request.json().catch(() => ({}));
+			const reason = typeof body.reason === "string" ? body.reason : "";
+			// The adapter checks scope, self-decision and staleness before the reason, so a
+			// blank reason never tells which ids are compliance exceptions.
+			decisionStage = "decision";
+			const result = await decideComplianceExceptionForActor({
+				organizationId: currentEmployee.organizationId,
+				exceptionId: id,
+				actorEmployeeId: currentEmployee.id,
+				canManageCompliance: canManageCompliance(ability),
+				action: "reject",
+				reason,
+			});
+			logger.info(
+				{
+					approvalId: id,
+					entityType: "compliance_exception",
+					entityId: id,
+					approverId: currentEmployee.id,
+					// Never the reason's text: a manager's reason may carry personal data.
+					reasonLength: reason.length,
+				},
+				"Compliance exception rejected via unified inbox",
+			);
+			return NextResponse.json({ success: true, result });
+		}
+
+		// Managing Compliance alone decides compliance exceptions, never an approval (#1977).
 		if (!canAccessApprovalInbox(ability, currentEmployee)) {
 			const error = new ForbiddenError("approve", "Approval");
 			const httpError = toHttpError(error);
 			return NextResponse.json(httpError.body, { status: httpError.status });
 		}
 
-		decisionStage = "target_lookup";
 		const approvalReq = await loadApprovalInboxDecisionTarget({
 			approvalId: id,
 			organizationId: currentEmployee.organizationId,
@@ -228,7 +275,7 @@ export async function POST(
 				entityType: approvalReq.entityType,
 				entityId: approvalReq.entityId,
 				approverId: currentEmployee.id,
-				reason,
+				reasonLength: reason.length,
 			},
 			"Approval rejected via unified inbox",
 		);

@@ -230,6 +230,7 @@
         "employeeDescription": "Die internen Vollkosten pro Stunde dieses Mitarbeiters, verwendet für die Marge. Getrennt vom Lohn.",
         "employeeTitle": "Kostensatz",
         "empty": "Noch kein Kostensatz vorhanden. Die Marge für die Arbeit dieses Mitarbeiters wird als Kosten unbekannt angezeigt.",
+        "emptyContractor": "Noch kein Kostensatz vorhanden. Für die Arbeit dieser Person als Externer Dienstleister verwendet die Marge ihren Dienstleistersatz; andere Arbeit und Dienstleisterarbeit ohne Satz werden als Kosten unbekannt angezeigt.",
         "history": "Verlauf",
         "historyAction": "Verlauf des Kostensatzes für {name}",
         "hourly": "Stündlich",
@@ -334,10 +335,12 @@
           "unknownCustomer": "Unbekannter Kunde",
           "unknownProject": "Unbekanntes Projekt"
         },
+        "configureSettings": "Einstellungen für abrechenbare Zeiten",
         "confirmed": "Der Rechnungsentwurf wurde erstellt",
         "csv": {
           "download": "Abgleichs-CSV herunterladen"
         },
+        "description": "Erstellen Sie Rechnungsentwürfe aus abrechenbarer Arbeit, prüfen Sie den Tool-Status, laden Sie Stundenzettel herunter und klären Sie Änderungen nach der Rechnungsstellung.",
         "detail": {
           "checking": "Entwurf im Tool wird überprüft…",
           "gone": "Das Buchhaltungstool verfügt nicht mehr über diesen Entwurf. Wenn er absichtlich gelöscht wurde, geben Sie die Übergabe frei, damit die Arbeit erneut übergeben werden kann.",
@@ -489,7 +492,6 @@
       "nav": {
         "accounting": "Buchhaltung",
         "costRates": "Kostensätze",
-        "currency": "Abrechenbare Währung",
         "handOff": "Übergabe",
         "label": "Einstellungen für abrechenbare Zeiten",
         "rates": "Abrechnungssätze"
@@ -637,6 +639,7 @@
         "teams": "Teams"
       },
       "scopeLabel": "Schließen für",
+      "selectEmployees": "Mitarbeitende auswählen",
       "teamNotFound": "Dieses Team existiert nicht mehr.",
       "title": "Abgeschlossene Monate",
       "warning": {
@@ -1006,7 +1009,7 @@
         "newExport": "Neuer Export",
         "storageSettings": "Speichereinstellungen"
       },
-      "title": "Datenexport"
+      "title": "Daten Export"
     },
     "drivingLicence": {
       "verifiers": {
@@ -1729,6 +1732,7 @@
         "search": "Mitarbeiter suchen…",
         "selected": "Ausgewählte Teams und Mitarbeiter",
         "selectedHelp": "Umfasst Mitglieder der ausgewählten Teams und die ausgewählten Mitarbeiter.",
+        "selectEmployees": "Mitarbeitende auswählen",
         "teams": "Teams",
         "title": "Gerätebeauftragte"
       },
@@ -1779,7 +1783,6 @@
         "unavailableHelp": "Dieser Artikel wird für Neuausgaben gesperrt, bis er ausdrücklich freigegeben wird. Verwahrung und Empfangsnachweise bleiben unverändert.",
         "unchanged": "Dieser Verfügbarkeitsstatus ist bereits erfasst. Laden Sie die Ausrüstung neu, um ihren Verlauf einzusehen."
       },
-      "reload": "Setup neu laden",
       "retention": {
         "activity": "Letzte Aktivität",
         "badgeDue": "Bereinigung ausstehend",
@@ -2002,8 +2005,7 @@
     "group": {
       "account": "Konto",
       "data": "Daten",
-      "integrations": "Integrationen",
-      "notifications": "Benachrichtigungen",
+      "integrationsChannels": "Integrationen & Kanäle",
       "organization": "Organisation"
     },
     "implementationChecklist": {
@@ -2061,7 +2063,6 @@
           "skipNoCategoryRequiresApproval": "Abwesenheitsanträge erfordern keine Genehmigung, da keine Abwesenheitskategorie dies verlangt.",
           "skipNoChangePolicy": "{count, plural, one {{kind, select, absence {Abwesenheitsanträge} timeCorrection {Zeitkorrekturen} workPeriod {Arbeitsperioden-Einreichungen} periodSubmission {Periodeneinreichungen} expenseReport {Spesenabrechnungen} other {Schichtanfragen}}: # Mitarbeiter benötigt keine Genehmigung, da keine Änderungsrichtlinie gilt.} other {{kind, select, absence {Abwesenheitsanträge} timeCorrection {Zeitkorrekturen} workPeriod {Arbeitsperioden-Einreichungen} periodSubmission {Periodeneinreichungen} expenseReport {Spesenabrechnungen} other {Schichtanfragen}}: # Mitarbeiter benötigen keine Genehmigung, da keine Änderungsrichtlinie gilt.}}",
           "skipOwnApprover": "{count, plural, one {{kind, select, absence {Abwesenheitsanträge} timeCorrection {Zeitkorrekturen} workPeriod {Arbeitsperioden-Einreichungen} periodSubmission {Periodeneinreichungen} expenseReport {Spesenabrechnungen} other {Schichtanfragen}}: # Mitarbeiter ist die eigene genehmigende Person.} other {{kind, select, absence {Abwesenheitsanträge} timeCorrection {Zeitkorrekturen} workPeriod {Arbeitsperioden-Einreichungen} periodSubmission {Periodeneinreichungen} expenseReport {Spesenabrechnungen} other {Schichtanfragen}}: # Mitarbeiter sind die eigene genehmigende Person.}}",
-          "skipOwnDecider": "{count, plural, one {{kind, select, absence {Abwesenheitsanträge} timeCorrection {Zeitkorrekturen} workPeriod {Arbeitsperioden-Einreichungen} periodSubmission {Periodeneinreichungen} expenseReport {Spesenabrechnungen} other {Schichtanfragen}}: # Mitarbeiter kann als Einzige(r) darüber entscheiden, sodass eigene Anträge auf die eigene Genehmigung warten.} other {{kind, select, absence {Abwesenheitsanträge} timeCorrection {Zeitkorrekturen} workPeriod {Arbeitsperioden-Einreichungen} periodSubmission {Periodeneinreichungen} expenseReport {Spesenabrechnungen} other {Schichtanfragen}}: # Mitarbeiter können als Einzige darüber entscheiden, sodass eigene Anträge auf die eigene Genehmigung warten.}}",
           "skipOwnerAdmin": "{count, plural, one {{kind, select, absence {Abwesenheitsanträge} timeCorrection {Zeitkorrekturen} workPeriod {Arbeitsperioden-Einreichungen} periodSubmission {Periodeneinreichungen} expenseReport {Spesenabrechnungen} other {Schichtanfragen}}: # Mitarbeiter benötigt keine Genehmigung, da Eigentümer und Admins ihre eigene Arbeit direkt erfassen.} other {{kind, select, absence {Abwesenheitsanträge} timeCorrection {Zeitkorrekturen} workPeriod {Arbeitsperioden-Einreichungen} periodSubmission {Periodeneinreichungen} expenseReport {Spesenabrechnungen} other {Schichtanfragen}}: # Mitarbeiter benötigen keine Genehmigung, da Eigentümer und Admins ihre eigene Arbeit direkt erfassen.}}",
           "skipOwnerSelfApproval": "{kind, select, absence {Abwesenheitsanträge} timeCorrection {Zeitkorrekturen} workPeriod {Arbeitsperioden-Einreichungen} periodSubmission {Periodeneinreichungen} expenseReport {Spesenabrechnungen} other {Schichtanfragen}}: Der Eigentümer genehmigt eigene Berichte selbst, da niemand sonst dazu berechtigt ist.",
           "skipTrustMode": "{count, plural, one {{kind, select, absence {Abwesenheitsanträge} timeCorrection {Zeitkorrekturen} workPeriod {Arbeitsperioden-Einreichungen} periodSubmission {Periodeneinreichungen} expenseReport {Spesenabrechnungen} other {Schichtanfragen}}: # Mitarbeiter benötigt keine Genehmigung, da die Änderungsrichtlinie im Vertrauensmodus ist.} other {{kind, select, absence {Abwesenheitsanträge} timeCorrection {Zeitkorrekturen} workPeriod {Arbeitsperioden-Einreichungen} periodSubmission {Periodeneinreichungen} expenseReport {Spesenabrechnungen} other {Schichtanfragen}}: # Mitarbeiter benötigen keine Genehmigung, da die Änderungsrichtlinie im Vertrauensmodus ist.}}",
@@ -2118,6 +2119,7 @@
         "payrollSetup": {
           "fixEmployees": "Mitarbeiter überprüfen",
           "fixPayrollExport": "Einstellungen für Lohnexport öffnen",
+          "externalContractorsSkipped": "{count, plural, one {# Externer Dienstleister wird bei Anstellungsbedingungen und Personalnummern übersprungen: Lohnexporte enthalten Externe Dienstleister nie.} other {# Externe Dienstleister werden bei Anstellungsbedingungen und Personalnummern übersprungen: Lohnexporte enthalten Externe Dienstleister nie.}}",
           "inviteesSkipped": "{count, plural, one {# eingeladene Person wird bei Anstellungsbedingungen und Personalnummern übersprungen, bis sie beitritt.} other {# eingeladene Personen werden bei Anstellungsbedingungen und Personalnummern übersprungen, bis sie beitreten.}}",
           "missingEmploymentTerms": "{count, plural, other {Keine bestätigten Anstellungsbedingungen für heute: # Mitarbeiter} }",
           "noWageTypeMappings": "{count, plural, one {Keine aktiven Lohnartenzuordnungen, sodass Lohnexporte Stunden nicht klassifizieren können: # Mitglied} other {Keine aktiven Lohnartenzuordnungen, sodass Lohnexporte Stunden nicht klassifizieren können: # Mitglieder}}",
@@ -2191,7 +2193,6 @@
             "noCategoryRequiresApproval": "Keine Abwesenheitskategorie erfordert eine Genehmigung.",
             "noChangePolicy": "Für diese Person gilt keine Änderungsrichtlinie.",
             "ownApprover": "Die Person genehmigt eigene Anfragen selbst, daher werden diese sofort abgeschlossen.",
-            "ownDecider": "Die Person ist die einzige Führungskraft oder Admin, die über Schichtanfragen entscheiden kann, daher bleiben eigene Anfragen ausstehend, bis sie selbst genehmigt werden.",
             "ownerAdmin": "Inhaber und Admins erfassen ihre eigene Arbeitszeit direkt.",
             "ownerSelfApproval": "Als Inhaber genehmigt die Person eigene Berichte selbst, da niemand sonst dazu berechtigt ist.",
             "trustMode": "Die Änderungsrichtlinie befindet sich im Vertrauensmodus."
@@ -2224,6 +2225,7 @@
           "mappingsMissing": "Keine aktiven Lohnartenzuordnungen",
           "mappingsPresent": "{count, plural, one {# Exportziel, Lohnarten zugeordnet} other {# Exportziele, Lohnarten zugeordnet}}",
           "notExported": "Die Organisation hat kein aktives Lohnabrechnungs-Exportziel, daher gibt es keine Voraussetzungen für die Lohnabrechnung.",
+          "notNeededExternalContractor": "Nicht nötig: Externer Dienstleister",
           "notYetInvited": "Noch nicht: Einladung noch ausstehend",
           "personnelIdentifier": "Personalnummer",
           "termsConfirmed": "Für heute bestätigt",
@@ -2259,6 +2261,7 @@
           "name": "Richtlinie",
           "none": "Heute keine gültige Arbeitsrichtlinie: Weder der Person noch ihrem Team oder der Organisation ist eine zugewiesen.",
           "noSchedule": "Kein Arbeitszeitplan",
+          "notApplicable": "Keine Arbeitsrichtlinie nötig: Die Person arbeitet als Externer Dienstleister.",
           "noWorkingDays": "Keine Arbeitstage",
           "title": "Arbeitsrichtlinie",
           "workingDays": "Arbeitstage"
@@ -2901,9 +2904,9 @@
           "descriptionPlaceholder": "Eine kurze Beschreibung dieses Teams",
           "fallbackManagerHelp": "Wird für Genehmigungen verwendet, wenn ein Teammitglied keinen direkten Vorgesetzten hat.",
           "fallbackManagerLabel": "Fallback-Vorgesetzter",
-          "fallbackManagerPlaceholder": "Wählen Sie einen Fallback-Vorgesetzten aus",
           "nameLabel": "Teamname",
           "namePlaceholder": "Engineering, Vertrieb, Marketing...",
+          "nameRequired": "Teamname ist erforderlich",
           "noFallbackManager": "Kein Fallback-Vorgesetzter",
           "submit": "Team erstellen",
           "title": "Team erstellen"
@@ -3086,7 +3089,15 @@
       "updateProfile": "Profil aktualisieren",
       "updateSuccess": "Profil erfolgreich aktualisiert",
       "uploading": "Wird hochgeladen",
-      "uploadProfilePicture": "Profilbild hochladen"
+      "uploadProfilePicture": "Profilbild hochladen",
+      "workingStudent": {
+        "title": "Status als Werkstudierende/r",
+        "description": "Als Werkstudierende/r dürfen Sie in höchstens 26 Wochen innerhalb von 12 Monaten mehr als 20 Stunden arbeiten.",
+        "noBaseline": "Für diese Woche gilt keine gesetzliche Grenze.",
+        "balance": "{remaining} von {limit} Wochen über 20 Stunden verbleibend ({used} in den letzten 12 Monaten genutzt).",
+        "lectureFree": "Erfasste vorlesungsfreie Zeiten",
+        "lectureFreeEmpty": "Keine vorlesungsfreien Zeiten erfasst. Bitten Sie die Personalabteilung, Ihre Semesterferien zu erfassen."
+      }
     },
     "projects": {
       "budgetUsed": "Verbrauchtes Budget",
@@ -3388,8 +3399,8 @@
       "description": "Alle Links einsehen und widerrufen, über die ein Projekt- oder Kundenbericht geteilt wird",
       "pageDescription": "Links, die Personen außerhalb von Z8 einen statischen Snapshot eines Projekt- oder Kundenberichts anzeigen. Das Widerrufen eines Links deaktiviert ihn sofort und löscht seinen Snapshot.",
       "projectsDisabledNotice": {
-        "description": "Projekte sind für diese Organisation derzeit deaktiviert, sodass keine neuen Berichtsfreigabe-Links erstellt werden können. Bestehende Links können Sie hier weiterhin einsehen und widerrufen.",
-        "title": "Projekte sind deaktiviert"
+        "description": "„Projekte“ ist derzeit für diese Organisation deaktiviert, daher können keine neuen Freigabelinks für Berichte erstellt werden. Sie können bestehende Links hier weiterhin überprüfen und widerrufen.",
+        "title": "„Projekte“ ist deaktiviert"
       },
       "title": "Berichtsfreigabe-Links"
     },
@@ -3509,34 +3520,56 @@
       "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten"
     },
     "statistics": {
-      "cards": {
-        "activeSessions": "Aktive Sitzungen",
-        "activeSessionsDescription": "Aktuelle Datenbanksitzungen",
-        "approvalRequests": "Genehmigungsanfragen",
-        "approvedAbsences": "Genehmigte Abwesenheiten",
-        "employees": "Mitarbeiter",
-        "employeesDescription": "{active} aktiv, {inactive} inaktiv",
-        "pendingAbsences": "Ausstehende Abwesenheiten",
-        "pendingCount": "{count} ausstehend",
-        "rejectedAbsences": "Abgelehnte Abwesenheiten",
+      "allClear": "Alles im grünen Bereich: Aktuell erfordert nichts Ihre Aufmerksamkeit.",
+      "groupLoadError": "Diese Zahlen konnten nicht geladen werden. Laden Sie die Seite neu, um es erneut zu versuchen.",
+      "kpi": {
+        "absenceDays": "Abwesenheitstage",
+        "clockedIn": "Aktuell eingestempelt",
+        "clockedInCaption": "Mitarbeitende mit aktiver Zeiterfassung",
+        "comparisonDetail": "{days}: {previous}",
+        "completedWorkPeriods": "Abgeschlossene Arbeitszeiträume",
+        "daysUnit": "Tage",
+        "employees": "Mitarbeitende",
+        "employeesCaption": "+{joined} beigetreten, −{left} ausgeschieden in diesem Monat",
+        "failed": "Konnte nicht geladen werden",
+        "hoursUnit": "Std.",
+        "hoursWorked": "Geleistete Arbeitsstunden",
+        "incompleteSetup": "Unvollständige Einrichtung",
+        "incompleteSetupCaption": "Mitarbeitende ohne primäres Team oder ohne Arbeitsrichtlinie",
+        "incompleteSetupManagerCaption": "Mitarbeitende ohne Arbeitsrichtlinie",
+        "manualEntryShare": "Anteil manueller Einträge",
+        "manualEntryShareCaption": "{manual} Std. von {total} Std. als manuelle Einträge erfasst",
+        "manualEntryShareNone": "In diesem Monat noch keine abgeschlossene Arbeit",
+        "openInbox": "Posteingang öffnen",
+        "openPayrollReadiness": "In der Lohnabrechnungsvorbereitung prüfen",
+        "openViolations": "Offene Richtlinienverstöße",
+        "openViolationsCaption": "Diesen Monat noch nicht bestätigt",
+        "openWorkPolicies": "In Arbeitsrichtlinien prüfen",
+        "pendingApprovals": "Ausstehende Genehmigungen",
+        "pendingApprovalsCaption": "{count, plural, =0 {Keine Abwesenheitsanträge} one {Einschließlich # Abwesenheitsantrag} other {Einschließlich # Abwesenheitsanträge}}",
+        "staleLiveWork": "Veraltete aktive Zeiterfassungen",
+        "staleLiveWorkCaption": "Mitarbeitende, die seit mehr als 24 Stunden eingestempelt sind",
         "teams": "Teams",
-        "thisMonth": "Diesen Monat",
-        "timeEntries": "Zeiteinträge",
-        "totalAbsences": "Gesamte Abwesenheiten",
-        "totalTimeEntries": "Gesamte Zeiteinträge",
-        "vsLastMonth": "vs. letzter Monat"
+        "trackingCoverage": "Erfassungsquote",
+        "trackingCoverageCaption": "{tracked} von {expected} Mitarbeitenden mit Sollzeit haben Arbeitszeit erfasst",
+        "trackingCoverageNone": "In diesem Monat hat noch niemand eine Sollzeit",
+        "trackingCoverageProgress": "Mitarbeitende, die diesen Monat Arbeitszeit erfasst haben",
+        "usersSignedIn": "Angemeldete Benutzer",
+        "usersSignedInCaption": "Eindeutige Benutzer mit einer nicht abgelaufenen Sitzung",
+        "vsComparison": "{change} vs. {days}"
       },
-      "description": "Statistiken und Metriken zu Ihrer Instanz anzeigen",
       "lastUpdated": "Zuletzt aktualisiert",
       "loadError": "Statistiken konnten nicht geladen werden",
       "loadErrorRetry": "Laden Sie die Seite neu, um es erneut zu versuchen.",
-      "managerDescription": "Analysen für die von Ihnen verwalteten Teams (schreibgeschützt) einsehen.",
+      "scope": {
+        "organization": "Gesamte Organisation",
+        "teams": "{count, plural, =0 {Keine von Ihnen verwalteten Teams} one {# von Ihnen verwaltetes Team} other {# von Ihnen verwaltete Teams}}"
+      },
       "sections": {
-        "absenceBreakdown": "Abwesenheitsaufschlüsselung",
-        "activityMetrics": "Aktivitätsmetriken",
-        "coreCounts": "Kernzahlen",
-        "managedScope": "Verwalteter Teambereich",
-        "systemHealth": "Systemstatus"
+        "adoption": "Nutzung nachverfolgen",
+        "attention": "Handlungsbedarf",
+        "thisMonth": "Diesen Monat",
+        "workforce": "Belegschaft & Einrichtung"
       },
       "title": "Statistiken"
     },
@@ -4277,6 +4310,61 @@
       "visibleLocationsDescription": "Leer lassen, um alle Standorte einzuschließen.",
       "visibleTeams": "Sichtbare Teams",
       "visibleTeamsDescription": "Leer lassen, um alle Teams einzuschließen."
+    },
+    "apprenticeRelease": {
+      "title": "Berufsschul- und Prüfungsfreistellung",
+      "description": "Berufsschultage, Blockunterricht und Prüfungstage sind bezahlte Freistellung (§ 15 BBiG): Sie werden als Arbeitszeit angerechnet, nie vom Urlaub abgezogen und führen nie zu einem negativen Arbeitszeitsaldo.",
+      "empty": "Noch keine Freistellungstage erfasst.",
+      "blockWeekTrainingNote": "An diesen Blockunterrichtstagen sind bis zu 2 Stunden betriebliche Ausbildungsveranstaltungen pro Woche erlaubt (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG). Bei Beschäftigten unter 18 kommen sie zur Blockwoche hinzu, die mit der durchschnittlichen wöchentlichen Arbeitszeit angerechnet wird (§ 9 Abs. 2 Nr. 2 JArbSchG), und zählen nicht zu den Tages- und Wochenhöchstgrenzen nach § 8.",
+      "kind": {
+        "schoolDay": "Berufsschultag",
+        "blockWeek": "Blockunterrichtswoche",
+        "examDay": "Prüfungstag",
+        "preExamDay": "Arbeitstag vor der Prüfung"
+      },
+      "credit": {
+        "fullDays": "{count, plural, one {# Arbeitstag voll angerechnet} other {# Arbeitstage voll angerechnet}}",
+        "minutes": "{minutes} Min. Unterrichtszeit angerechnet",
+        "exam": "Prüfung ab {start}: {minutes} Min. angerechnet",
+        "schoolTime": "Unterricht {start}–{end}: {minutes} Min. angerechnet"
+      },
+      "lessons": "{count} Unterrichtsstunden",
+      "workplaceReturn": "Unter 18: keine Rückkehr in den Betrieb nach diesem vollen Berufsschultag (§ 9 Abs. 1 Nr. 2 JArbSchG)",
+      "void": "Entfernen",
+      "voidReason": "Warum wird er entfernt?",
+      "voidConfirm": "Freistellungstag entfernen",
+      "voided": "Freistellungstag entfernt",
+      "recorded": "Freistellungstag erfasst",
+      "record": "Freistellungstag erfassen",
+      "fields": {
+        "kind": "Freistellung",
+        "date": "Datum",
+        "endsOn": "Letzter Tag",
+        "schoolHoursPerWeek": "Unterrichtszeit je Woche (Zeitstunden)",
+        "lessons": "Unterrichtsstunden (je 45 Min.)",
+        "includePreExamDay": "Auch den Arbeitstag vor der schriftlichen Abschlussprüfung freistellen",
+        "examStartTime": "Prüfungsbeginn",
+        "examEndTime": "Prüfungsende (inklusive Pausen)",
+        "examTimeHint": "Die Prüfung stellt nur für ihre Dauer frei und wird nur mit ihr angerechnet. Beide Felder leer lassen, um den ganzen Tag freizustellen.",
+        "schoolStartTime": "Unterrichtsbeginn",
+        "schoolEndTime": "Unterrichtsende (inklusive Pausen)",
+        "schoolTimeHint": "Ein kurzer Berufsschultag wird mit seiner Unterrichtszeit einschließlich der Pausen angerechnet. Beide Felder leer lassen, um 45 Minuten je Unterrichtsstunde anzurechnen.",
+        "note": "Notiz (optional)"
+      },
+      "refusal": {
+        "notApprentice": "Freistellungstage können nur erfasst werden, solange die Vertragsbedingungen die Person als Auszubildende ausweisen.",
+        "lessonsRequired": "Geben Sie die Zahl der Unterrichtsstunden ein.",
+        "schoolMinutesRequired": "Geben Sie die geplante Unterrichtszeit der Blockwoche ein.",
+        "noPrecedingWorkingDay": "In der Woche vor der Prüfung gibt es keinen Arbeitstag, der freigestellt werden kann.",
+        "examTimeInvalid": "Geben Sie Beginn und Ende der Prüfung an oder keines von beiden. Das Ende muss nach dem Beginn liegen.",
+        "schoolTimeInvalid": "Geben Sie Beginn und Ende des Unterrichts an oder keines von beiden. Das Ende muss nach dem Beginn liegen.",
+        "dayAlreadyReleased": "Dieser Tag ist bereits freigestellt. Entfernen Sie zuerst die dort erfasste Freistellung.",
+        "overlap": "Diese Freistellung überschneidet sich mit einer bereits erfassten Freistellung.",
+        "invalidRange": "Prüfen Sie die Daten: Der letzte Tag darf nicht vor dem ersten liegen.",
+        "invalidValue": "Prüfen Sie die Unterrichtsstunden und die Unterrichtszeit.",
+        "reasonRequired": "Begründen Sie, warum der Freistellungstag entfernt wird.",
+        "singleDay": "Nur eine Blockunterrichtswoche umfasst mehrere Tage."
+      }
     }
   }
 }

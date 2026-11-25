@@ -159,7 +159,6 @@
       "scopeFailed": "The current driving scope could not be loaded.",
       "scopeLoading": "Loading current driving scope…",
       "scopeManaged": "Employees you manage",
-      "title": "Driving details missing",
       "truncated": "Showing the newest {count} work periods. Filter by team or employee to see the rest.",
       "updating": "Updating driving details…"
     },

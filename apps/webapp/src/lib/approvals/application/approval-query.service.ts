@@ -39,6 +39,8 @@ const ZERO_APPROVAL_COUNTS: Record<ApprovalType, number> = {
 	travel_expense_claim: 0,
 	travel_expense_report: 0,
 	period_submission: 0,
+	// Listed by the Approval inbox's adapter only (#1977); this query never loads them.
+	compliance_exception: 0,
 };
 
 function compareApprovalItems(a: UnifiedApprovalItem, b: UnifiedApprovalItem) {

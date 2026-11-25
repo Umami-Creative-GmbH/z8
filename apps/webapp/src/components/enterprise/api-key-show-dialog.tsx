@@ -122,6 +122,7 @@ function ApiKeyReveal({
 								autoComplete="off"
 								spellCheck={false}
 								onFocus={(event) => event.currentTarget.select()}
+								onClick={(event) => event.currentTarget.select()}
 								className="h-11 bg-muted pr-12 font-mono text-sm"
 							/>
 							<Button

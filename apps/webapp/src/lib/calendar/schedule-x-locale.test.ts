@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { toScheduleXLocale } from "./schedule-x-locale";
+import { scheduleXTimeAxisFormat, toScheduleXLocale } from "./schedule-x-locale";
 
 describe("toScheduleXLocale", () => {
 	it.each([
@@ -37,5 +37,23 @@ describe("toScheduleXLocale", () => {
 	it("falls back to en-US for unsupported or missing languages", () => {
 		expect(toScheduleXLocale(undefined)).toBe("en-US");
 		expect(toScheduleXLocale("ab")).toBe("en-US");
+	});
+});
+
+describe("scheduleXTimeAxisFormat", () => {
+	const twoPm = new Date(Date.UTC(2026, 10, 24, 14, 0));
+	const axisLabel = (locale: string, timeFormat: "24h" | "12h") =>
+		new Intl.DateTimeFormat(locale, {
+			...scheduleXTimeAxisFormat(timeFormat),
+			timeZone: "UTC",
+		}).format(twoPm);
+
+	it("labels the hour axis on the 24-hour clock in an English calendar", () => {
+		expect(axisLabel("en-US", "24h")).toBe("14:00");
+	});
+
+	it("labels the hour axis on the 12-hour clock in a German calendar", () => {
+		// ICU separates the period with a (narrow) no-break space.
+		expect(axisLabel("de-DE", "12h")).toMatch(/^2\sPM$/);
 	});
 });

@@ -230,6 +230,7 @@
         "employeeDescription": "This employee's fully loaded internal cost per hour, used for margin. Separate from the wage.",
         "employeeTitle": "Cost rate",
         "empty": "No cost rate yet. Margin for this employee's work shows as cost unknown.",
+        "emptyContractor": "No cost rate yet. Margin uses this person's External Contractor rate for their contractor work; other work, and contractor work without a rate, shows as cost unknown.",
         "history": "History",
         "historyAction": "History of the cost rate for {name}",
         "hourly": "Hourly",
@@ -334,10 +335,12 @@
           "unknownCustomer": "Unknown customer",
           "unknownProject": "Unknown project"
         },
+        "configureSettings": "Billable Time settings",
         "confirmed": "The invoice draft was created",
         "csv": {
           "download": "Download reconciliation CSV"
         },
+        "description": "Create invoice drafts from billable work, check tool status, download timesheets, and resolve post-invoicing changes.",
         "detail": {
           "checking": "Checking the draft in the tool…",
           "gone": "The accounting tool no longer has this draft. If it was deleted on purpose, release the hand-off so its work can be handed off again.",
@@ -489,7 +492,6 @@
       "nav": {
         "accounting": "Accounting",
         "costRates": "Cost rates",
-        "currency": "Billable currency",
         "handOff": "Hand-off",
         "label": "Billable Time settings",
         "rates": "Billable rates"
@@ -637,6 +639,7 @@
         "teams": "Teams"
       },
       "scopeLabel": "Close for",
+      "selectEmployees": "Select employees",
       "teamNotFound": "This team no longer exists.",
       "title": "Closed months",
       "warning": {
@@ -1729,6 +1732,7 @@
         "search": "Search employees…",
         "selected": "Selected teams and employees",
         "selectedHelp": "Covers members of the selected teams and the selected employees.",
+        "selectEmployees": "Select employees",
         "teams": "Teams",
         "title": "Equipment officers"
       },
@@ -1779,7 +1783,6 @@
         "unavailableHelp": "This item will be blocked from new issuance until explicitly cleared. Custody and receipt evidence stay unchanged.",
         "unchanged": "This availability state is already recorded. Reload equipment to review its history."
       },
-      "reload": "Reload setup",
       "retention": {
         "activity": "Latest activity",
         "badgeDue": "Awaiting cleanup",
@@ -2002,8 +2005,7 @@
     "group": {
       "account": "Account",
       "data": "Data",
-      "integrations": "Integrations",
-      "notifications": "Notifications",
+      "integrationsChannels": "Integrations & Channels",
       "organization": "Organization"
     },
     "implementationChecklist": {
@@ -2061,7 +2063,6 @@
           "skipNoCategoryRequiresApproval": "Absence requests need no approval, because no absence category requires it.",
           "skipNoChangePolicy": "{count, plural, one {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: # employee need no approval, because no change policy applies.} other {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: # employees need no approval, because no change policy applies.}}",
           "skipOwnApprover": "{count, plural, one {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: # employee are their own approver.} other {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: # employees are their own approver.}}",
-          "skipOwnDecider": "{count, plural, one {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: # employee is the only one who can decide them, so their own requests wait for their own approval.} other {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: # employees are the only one who can decide them, so their own requests wait for their own approval.}}",
           "skipOwnerAdmin": "{count, plural, one {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: # employee need no approval, because owners and admins record their own work directly.} other {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: # employees need no approval, because owners and admins record their own work directly.}}",
           "skipOwnerSelfApproval": "{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: the owner approves their own reports, because nobody else can.",
           "skipTrustMode": "{count, plural, one {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: # employee need no approval, because their change policy is in trust mode.} other {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: # employees need no approval, because their change policy is in trust mode.}}",
@@ -2118,6 +2119,7 @@
         "payrollSetup": {
           "fixEmployees": "Review employees",
           "fixPayrollExport": "Open payroll export settings",
+          "externalContractorsSkipped": "{count, plural, one {# External Contractor is skipped for employment terms and personnel identifiers: payroll exports never include External Contractors.} other {# External Contractors are skipped for employment terms and personnel identifiers: payroll exports never include External Contractors.}}",
           "inviteesSkipped": "{count, plural, one {# invited person is skipped for employment terms and personnel identifiers until they join.} other {# invited people are skipped for employment terms and personnel identifiers until they join.}}",
           "missingEmploymentTerms": "{count, plural, one {No confirmed employment terms covering today: # employee} other {No confirmed employment terms covering today: # employees}}",
           "noWageTypeMappings": "{count, plural, one {No active wage-type mappings, so payroll exports can't classify hours: # member} other {No active wage-type mappings, so payroll exports can't classify hours: # members}}",
@@ -2191,7 +2193,6 @@
             "noCategoryRequiresApproval": "No absence category requires approval.",
             "noChangePolicy": "No change policy applies to them.",
             "ownApprover": "They are their own approver, so their requests complete at once.",
-            "ownDecider": "They are the only manager or admin who can decide shift requests, so theirs stay pending until they approve them.",
             "ownerAdmin": "Owners and admins record their own work directly.",
             "ownerSelfApproval": "As the owner, they approve their own reports, because nobody else can.",
             "trustMode": "Their change policy is in trust mode."
@@ -2224,6 +2225,7 @@
           "mappingsMissing": "No active wage-type mappings",
           "mappingsPresent": "{count, plural, one {# export target, wage types mapped} other {# export targets, wage types mapped}}",
           "notExported": "The organization has no active payroll export target, so there are no payroll prerequisites.",
+          "notNeededExternalContractor": "Not needed: External Contractor",
           "notYetInvited": "Not yet: they're still invited",
           "personnelIdentifier": "Personnel number",
           "termsConfirmed": "Confirmed for today",
@@ -2259,6 +2261,7 @@
           "name": "Policy",
           "none": "No effective work policy today: none is assigned to them, their team or the organization.",
           "noSchedule": "No schedule",
+          "notApplicable": "No work policy applies: they work as an External Contractor.",
           "noWorkingDays": "No working days",
           "title": "Work policy",
           "workingDays": "Working days"
@@ -2901,9 +2904,9 @@
           "descriptionPlaceholder": "A brief description of this team",
           "fallbackManagerHelp": "Used for approvals when a team member has no direct manager.",
           "fallbackManagerLabel": "Fallback Manager",
-          "fallbackManagerPlaceholder": "Select a fallback manager",
           "nameLabel": "Team Name",
           "namePlaceholder": "Engineering, Sales, Marketing...",
+          "nameRequired": "Team name is required",
           "noFallbackManager": "No fallback manager",
           "submit": "Create Team",
           "title": "Create Team"
@@ -3086,7 +3089,15 @@
       "updateProfile": "Update Profile",
       "updateSuccess": "Profile updated successfully",
       "uploading": "Uploading",
-      "uploadProfilePicture": "Upload profile picture"
+      "uploadProfilePicture": "Upload profile picture",
+      "workingStudent": {
+        "title": "Working student status",
+        "description": "As a working student, you may work more than 20 hours in at most 26 weeks within 12 months.",
+        "noBaseline": "No statutory limit applies to this week.",
+        "balance": "{remaining} of {limit} weeks above 20 hours remaining ({used} used in the last 12 months).",
+        "lectureFree": "Recorded lecture-free periods",
+        "lectureFreeEmpty": "No lecture-free periods recorded. Ask HR to record your semester breaks."
+      }
     },
     "projects": {
       "budgetUsed": "Budget used",
@@ -3509,34 +3520,56 @@
       "unexpectedError": "An unexpected error occurred"
     },
     "statistics": {
-      "cards": {
-        "activeSessions": "Active Sessions",
-        "activeSessionsDescription": "Current database sessions",
-        "approvalRequests": "Approval Requests",
-        "approvedAbsences": "Approved Absences",
+      "allClear": "All clear: nothing needs your attention right now.",
+      "groupLoadError": "Couldn't load these figures. Reload the page to try again.",
+      "kpi": {
+        "absenceDays": "Absence days",
+        "clockedIn": "Clocked in now",
+        "clockedInCaption": "Employees with live work",
+        "comparisonDetail": "{days}: {previous}",
+        "completedWorkPeriods": "Completed work periods",
+        "daysUnit": "days",
         "employees": "Employees",
-        "employeesDescription": "{active} active, {inactive} inactive",
-        "pendingAbsences": "Pending Absences",
-        "pendingCount": "{count} pending",
-        "rejectedAbsences": "Rejected Absences",
+        "employeesCaption": "+{joined} joined, −{left} left this month",
+        "failed": "Couldn't load",
+        "hoursUnit": "h",
+        "hoursWorked": "Hours worked",
+        "incompleteSetup": "Incomplete setup",
+        "incompleteSetupCaption": "Employees with no primary team or no work policy",
+        "incompleteSetupManagerCaption": "Employees with no work policy",
+        "manualEntryShare": "Manual entry share",
+        "manualEntryShareCaption": "{manual} h of {total} h recorded as manual entries",
+        "manualEntryShareNone": "No completed work this month yet",
+        "openInbox": "Open inbox",
+        "openPayrollReadiness": "Review in payroll readiness",
+        "openViolations": "Open policy violations",
+        "openViolationsCaption": "Not yet acknowledged this month",
+        "openWorkPolicies": "Review in work policies",
+        "pendingApprovals": "Pending approvals",
+        "pendingApprovalsCaption": "{count, plural, =0 {No absence requests} one {Including # absence request} other {Including # absence requests}}",
+        "staleLiveWork": "Stale live work",
+        "staleLiveWorkCaption": "Employees clocked in for more than 24 hours",
         "teams": "Teams",
-        "thisMonth": "This Month",
-        "timeEntries": "Time entries",
-        "totalAbsences": "Total Absences",
-        "totalTimeEntries": "Total Time Entries",
-        "vsLastMonth": "vs last month"
+        "trackingCoverage": "Tracking coverage",
+        "trackingCoverageCaption": "{tracked} of {expected} employees with required time recorded work",
+        "trackingCoverageNone": "No one has required time yet this month",
+        "trackingCoverageProgress": "Employees who recorded work this month",
+        "usersSignedIn": "Users signed in",
+        "usersSignedInCaption": "Distinct users with an unexpired session",
+        "vsComparison": "{change} vs. {days}"
       },
-      "description": "View statistics and metrics about your instance",
       "lastUpdated": "Last updated",
       "loadError": "Failed to load statistics",
       "loadErrorRetry": "Reload the page to try again.",
-      "managerDescription": "Review read-only analytics for the teams you manage.",
+      "scope": {
+        "organization": "Whole organization",
+        "teams": "{count, plural, =0 {No teams you manage} one {# team you manage} other {# teams you manage}}"
+      },
       "sections": {
-        "absenceBreakdown": "Absence Breakdown",
-        "activityMetrics": "Activity Metrics",
-        "coreCounts": "Core Counts",
-        "managedScope": "Managed Team Scope",
-        "systemHealth": "System Health"
+        "adoption": "Tracking adoption",
+        "attention": "Needs attention",
+        "thisMonth": "This month",
+        "workforce": "Workforce & setup"
       },
       "title": "Statistics"
     },
@@ -4277,6 +4310,61 @@
       "visibleLocationsDescription": "Leave empty to include all locations.",
       "visibleTeams": "Visible teams",
       "visibleTeamsDescription": "Leave empty to include all teams."
+    },
+    "apprenticeRelease": {
+      "title": "School and exam release",
+      "description": "Vocational school, block-release weeks and exam days are paid release (§ 15 BBiG): they are credited as working time, never deducted from vacation and never leave a negative work balance.",
+      "empty": "No release days recorded yet.",
+      "blockWeekTrainingNote": "Up to 2 hours of in-company training a week are allowed on these block days (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG). For an employee under 18, these hours come on top of the block week, which counts with the average weekly working time (§ 9 Abs. 2 Nr. 2 JArbSchG), and do not count towards the § 8 daily and weekly limits.",
+      "kind": {
+        "schoolDay": "Vocational school day",
+        "blockWeek": "Block-release school week",
+        "examDay": "Exam day",
+        "preExamDay": "Working day before the exam"
+      },
+      "credit": {
+        "fullDays": "{count, plural, one {# working day credited in full} other {# working days credited in full}}",
+        "minutes": "{minutes} min of school time credited",
+        "exam": "Exam from {start}: {minutes} min credited",
+        "schoolTime": "School {start}–{end}: {minutes} min credited"
+      },
+      "lessons": "{count} lessons",
+      "workplaceReturn": "Under 18: no return to work after this full school day (§ 9 Abs. 1 Nr. 2 JArbSchG)",
+      "void": "Remove",
+      "voidReason": "Why is it removed?",
+      "voidConfirm": "Remove release day",
+      "voided": "Release day removed",
+      "recorded": "Release day recorded",
+      "record": "Record release day",
+      "fields": {
+        "kind": "Release",
+        "date": "Date",
+        "endsOn": "Last day",
+        "schoolHoursPerWeek": "School hours per week (clock hours)",
+        "lessons": "Lessons (45 min each)",
+        "includePreExamDay": "Also release the working day before the written final exam",
+        "examStartTime": "Exam starts",
+        "examEndTime": "Exam ends (including breaks)",
+        "examTimeHint": "The exam frees and credits its time only. Leave both empty to release the whole day.",
+        "schoolStartTime": "School starts",
+        "schoolEndTime": "School ends (including breaks)",
+        "schoolTimeHint": "A short school day credits its school time including breaks. Leave both empty to credit 45 minutes per lesson.",
+        "note": "Note (optional)"
+      },
+      "refusal": {
+        "notApprentice": "Release days can only be recorded while the employee's terms make them an apprentice.",
+        "lessonsRequired": "Enter the number of lessons.",
+        "schoolMinutesRequired": "Enter the planned school hours of the block week.",
+        "noPrecedingWorkingDay": "There is no working day in the week before the exam to release.",
+        "examTimeInvalid": "Enter when the exam starts and ends, or neither. It must end after it starts.",
+        "schoolTimeInvalid": "Enter when school starts and ends, or neither. It must end after it starts.",
+        "dayAlreadyReleased": "This day is already released. Remove the release recorded on it first.",
+        "overlap": "This release overlaps a release already recorded.",
+        "invalidRange": "Check the dates: the last day must not be before the first.",
+        "invalidValue": "Check the lessons and school hours.",
+        "reasonRequired": "Explain why the release day is removed.",
+        "singleDay": "Only a block-release week spans several days."
+      }
     }
   }
 }

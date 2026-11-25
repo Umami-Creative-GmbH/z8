@@ -334,10 +334,12 @@
           "unknownCustomer": "Cliente sconosciuto",
           "unknownProject": "Progetto sconosciuto"
         },
+        "configureSettings": "Impostazioni ore fatturabili",
         "confirmed": "La bozza della fattura è stata creata",
         "csv": {
           "download": "Scarica CSV di riconciliazione"
         },
+        "description": "Crea bozze di fatture dalle ore fatturabili, controlla lo stato dello strumento, scarica i fogli presenze e risolvi le modifiche successive alla fatturazione.",
         "detail": {
           "checking": "Controllo della bozza nello strumento…",
           "gone": "Lo strumento di contabilità non dispone più di questa bozza. Se è stata eliminata intenzionalmente, rilascia il trasferimento in modo che il lavoro possa essere trasferito di nuovo.",
@@ -489,7 +491,6 @@
       "nav": {
         "accounting": "Contabilità",
         "costRates": "Tariffe di costo",
-        "currency": "Valuta fatturabile",
         "handOff": "Passaggio di consegne",
         "label": "Impostazioni tempo fatturabile",
         "rates": "Tariffe fatturabili"
@@ -637,6 +638,7 @@
         "teams": "Team"
       },
       "scopeLabel": "Chiudi per",
+      "selectEmployees": "Seleziona dipendenti",
       "teamNotFound": "Questo team non esiste più.",
       "title": "Mesi chiusi",
       "warning": {
@@ -1729,6 +1731,7 @@
         "search": "Cerca dipendenti…",
         "selected": "Team e dipendenti selezionati",
         "selectedHelp": "Include i membri dei team selezionati e i dipendenti selezionati.",
+        "selectEmployees": "Seleziona dipendenti",
         "teams": "Team",
         "title": "Responsabili attrezzature"
       },
@@ -1779,7 +1782,6 @@
         "unavailableHelp": "Questo articolo sarà bloccato per nuove assegnazioni fino a esplicita autorizzazione. Le registrazioni di custodia e ricezione rimangono invariate.",
         "unchanged": "Questo stato di disponibilità è già registrato. Ricarica l'attrezzatura per visualizzarne la cronologia."
       },
-      "reload": "Ricarica configurazione",
       "retention": {
         "activity": "Ultima attività",
         "badgeDue": "In attesa di pulizia",
@@ -2002,8 +2004,7 @@
     "group": {
       "account": "Account",
       "data": "Dati",
-      "integrations": "Integrazioni",
-      "notifications": "Notifiche",
+      "integrationsChannels": "Integrazioni e canali",
       "organization": "Organizzazione"
     },
     "implementationChecklist": {
@@ -2061,7 +2062,6 @@
           "skipNoCategoryRequiresApproval": "Le richieste di assenza non richiedono approvazione, poiché nessuna categoria di assenza la prevede.",
           "skipNoChangePolicy": "{count, plural, one {{kind, select, absence {Richieste di assenza} timeCorrection {Correzioni dell'orario} workPeriod {Invii dei periodi di lavoro} periodSubmission {Invii del periodo} expenseReport {Note spese} other {Richieste di turno}}: # dipendente non richiede approvazione, poiché non si applica alcuna policy di modifica.} other {{kind, select, absence {Richieste di assenza} timeCorrection {Correzioni dell'orario} workPeriod {Invii dei periodi di lavoro} periodSubmission {Invii del periodo} expenseReport {Note spese} other {Richieste di turno}}: # dipendenti non richiedono approvazione, poiché non si applica alcuna policy di modifica.}}",
           "skipOwnApprover": "{count, plural, one {{kind, select, absence {Richieste di assenza} timeCorrection {Correzioni dell'orario} workPeriod {Invii dei periodi di lavoro} periodSubmission {Invii del periodo} expenseReport {Note spese} other {Richieste di turno}}: # dipendente è il proprio approvatore.} other {{kind, select, absence {Richieste di assenza} timeCorrection {Correzioni dell'orario} workPeriod {Invii dei periodi di lavoro} periodSubmission {Invii del periodo} expenseReport {Note spese} other {Richieste di turno}}: # dipendenti sono i propri approvatori.}}",
-          "skipOwnDecider": "{count, plural, one {{kind, select, absence {Richieste di assenza} timeCorrection {Correzioni dell'orario} workPeriod {Invii dei periodi di lavoro} periodSubmission {Invii del periodo} expenseReport {Note spese} other {Richieste di turno}}: # dipendente è l'unico in grado di approvarle, quindi le proprie richieste attendono la sua approvazione.} other {{kind, select, absence {Richieste di assenza} timeCorrection {Correzioni dell'orario} workPeriod {Invii dei periodi di lavoro} periodSubmission {Invii del periodo} expenseReport {Note spese} other {Richieste di turno}}: # dipendenti sono gli unici in grado di approvarle, quindi le proprie richieste attendono la loro approvazione.}}",
           "skipOwnerAdmin": "{count, plural, one {{kind, select, absence {Richieste di assenza} timeCorrection {Correzioni dell'orario} workPeriod {Invii dei periodi di lavoro} periodSubmission {Invii del periodo} expenseReport {Note spese} other {Richieste di turno}}: # dipendente non richiede approvazione, poiché proprietari e amministratori registrano direttamente le proprie ore di lavoro.} other {{kind, select, absence {Richieste di assenza} timeCorrection {Correzioni dell'orario} workPeriod {Invii dei periodi di lavoro} periodSubmission {Invii del periodo} expenseReport {Note spese} other {Richieste di turno}}: # dipendenti non richiedono approvazione, poiché proprietari e amministratori registrano direttamente le proprie ore di lavoro.}}",
           "skipOwnerSelfApproval": "{kind, select, absence {Richieste di assenza} timeCorrection {Correzioni dell'orario} workPeriod {Invii dei periodi di lavoro} periodSubmission {Invii del periodo} expenseReport {Note spese} other {Richieste di turno}}: il proprietario approva i propri report, poiché nessun altro può farlo.",
           "skipTrustMode": "{count, plural, one {{kind, select, absence {Richieste di assenza} timeCorrection {Correzioni dell'orario} workPeriod {Invii dei periodi di lavoro} periodSubmission {Invii del periodo} expenseReport {Note spese} other {Richieste di turno}}: # dipendente non richiede approvazione, poiché la sua policy di modifica è in modalità basata sulla fiducia.} other {{kind, select, absence {Richieste di assenza} timeCorrection {Correzioni dell'orario} workPeriod {Invii dei periodi di lavoro} periodSubmission {Invii del periodo} expenseReport {Note spese} other {Richieste di turno}}: # dipendenti non richiedono approvazione, poiché la loro policy di modifica è in modalità basata sulla fiducia.}}",
@@ -2191,7 +2191,6 @@
             "noCategoryRequiresApproval": "Nessuna categoria di assenza richiede approvazione.",
             "noChangePolicy": "Nessuna policy di modifica applicabile a questo utente.",
             "ownApprover": "Approvano autonomamente le proprie richieste, quindi vengono completate all'istante.",
-            "ownDecider": "Sono l'unico responsabile o amministratore a poter decidere sulle richieste di turno, quindi le loro richieste restano in sospeso finché non le approvano.",
             "ownerAdmin": "I proprietari e gli amministratori registrano direttamente il proprio lavoro.",
             "ownerSelfApproval": "In qualità di proprietari, approvano i propri report, poiché nessun altro può farlo.",
             "trustMode": "La loro policy di modifica è in modalità basata sulla fiducia."
@@ -2901,9 +2900,9 @@
           "descriptionPlaceholder": "Una breve descrizione di questo team",
           "fallbackManagerHelp": "Utilizzato per le approvazioni quando un membro del team non ha un responsabile diretto.",
           "fallbackManagerLabel": "Responsabile di riserva",
-          "fallbackManagerPlaceholder": "Seleziona un responsabile di riserva",
           "nameLabel": "Nome del team",
           "namePlaceholder": "Ingegneria, Vendite, Marketing...",
+          "nameRequired": "Il nome del team è obbligatorio",
           "noFallbackManager": "Nessun responsabile di riserva",
           "submit": "Crea team",
           "title": "Crea team"
@@ -3387,6 +3386,10 @@
     "reportShareLinks": {
       "description": "Visualizza e revoca tutti i link che condividono un report di progetto o cliente",
       "pageDescription": "Link che mostrano un'istantanea fissa di un report di progetto o cliente a persone esterne a Z8. La revoca di un link lo disattiva immediatamente ed elimina la relativa istantanea.",
+      "projectsDisabledNotice": {
+        "description": "Progetti è attualmente disattivato per questa organizzazione, pertanto non è possibile creare nuovi link di condivisione dei report. Qui puoi comunque verificare e revocare i link esistenti.",
+        "title": "Progetti è disattivato"
+      },
       "title": "Link di condivisione report"
     },
     "search": {
@@ -3505,34 +3508,56 @@
       "unexpectedError": "Si è verificato un errore imprevisto"
     },
     "statistics": {
-      "cards": {
-        "activeSessions": "Sessioni attive",
-        "activeSessionsDescription": "Sessioni database correnti",
-        "approvalRequests": "Richieste di approvazione",
-        "approvedAbsences": "Assenze approvate",
+      "allClear": "Tutto in ordine: non c'è nulla che richieda la tua attenzione in questo momento.",
+      "groupLoadError": "Impossibile caricare questi dati. Ricarica la pagina per riprovare.",
+      "kpi": {
+        "absenceDays": "Giorni di assenza",
+        "clockedIn": "Al lavoro adesso",
+        "clockedInCaption": "Dipendenti con attività in corso",
+        "comparisonDetail": "{days}: {previous}",
+        "completedWorkPeriods": "Periodi di lavoro completati",
+        "daysUnit": "giorni",
         "employees": "Dipendenti",
-        "employeesDescription": "{active} attivi, {inactive} inattivi",
-        "pendingAbsences": "Assenze in sospeso",
-        "pendingCount": "{count} in sospeso",
-        "rejectedAbsences": "Assenze rifiutate",
+        "employeesCaption": "+{joined} entrati, −{left} usciti questo mese",
+        "failed": "Impossibile caricare",
+        "hoursUnit": "h",
+        "hoursWorked": "Ore lavorate",
+        "incompleteSetup": "Configurazione incompleta",
+        "incompleteSetupCaption": "Dipendenti senza team principale o senza criteri di lavoro",
+        "incompleteSetupManagerCaption": "Dipendenti senza criteri di lavoro",
+        "manualEntryShare": "Quota di inserimenti manuali",
+        "manualEntryShareCaption": "{manual} h su {total} h registrate come inserimenti manuali",
+        "manualEntryShareNone": "Ancora nessun lavoro completato questo mese",
+        "openInbox": "Apri posta in arrivo",
+        "openPayrollReadiness": "Verifica nella preparazione buste paga",
+        "openViolations": "Violazioni aperte dei criteri",
+        "openViolationsCaption": "Non ancora confermate questo mese",
+        "openWorkPolicies": "Verifica nei criteri di lavoro",
+        "pendingApprovals": "Approvazioni in sospeso",
+        "pendingApprovalsCaption": "{count, plural, =0 {Nessuna richiesta di assenza} one {Inclusa # richiesta di assenza} other {Incluse # richieste di assenza}}",
+        "staleLiveWork": "Attività in corso obsolete",
+        "staleLiveWorkCaption": "Dipendenti con turno aperto da oltre 24 ore",
         "teams": "Team",
-        "thisMonth": "Questo mese",
-        "timeEntries": "Voci di tempo",
-        "totalAbsences": "Assenze totali",
-        "totalTimeEntries": "Voci temporali totali",
-        "vsLastMonth": "rispetto al mese scorso"
+        "trackingCoverage": "Copertura del monitoraggio",
+        "trackingCoverageCaption": "{tracked} su {expected} dipendenti con orario obbligatorio hanno registrato attività",
+        "trackingCoverageNone": "Nessuno ha ore obbligatorie questo mese per il momento",
+        "trackingCoverageProgress": "Dipendenti che hanno registrato attività questo mese",
+        "usersSignedIn": "Utenti connessi",
+        "usersSignedInCaption": "Utenti distinti con una sessione non scaduta",
+        "vsComparison": "{change} rispetto a {days}"
       },
-      "description": "Visualizza statistiche e metriche sulla tua istanza",
       "lastUpdated": "Ultimo aggiornamento",
       "loadError": "Caricamento statistiche non riuscito",
       "loadErrorRetry": "Ricarica la pagina per riprovare.",
-      "managerDescription": "Esamina le analisi in sola lettura per i team che gestisci.",
+      "scope": {
+        "organization": "Intera organizzazione",
+        "teams": "{count, plural, =0 {Nessun team che gestisci} other {# team che gestisci} }"
+      },
       "sections": {
-        "absenceBreakdown": "Ripartizione assenze",
-        "activityMetrics": "Metriche attività",
-        "coreCounts": "Conteggi principali",
-        "managedScope": "Ambito del team gestito",
-        "systemHealth": "Stato del sistema"
+        "adoption": "Monitoraggio adozione",
+        "attention": "Richiede attenzione",
+        "thisMonth": "Questo mese",
+        "workforce": "Personale e configurazione"
       },
       "title": "Statistiche"
     },

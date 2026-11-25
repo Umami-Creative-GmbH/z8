@@ -81,7 +81,6 @@
             "updatePolicyAssignmentFailed": "Actualizarea atribuirii politicii a eșuat"
           },
           "fallsBackToDefaultPolicy": "Revine la politica implicită a echipei sau a organizației",
-          "manageAllowances": "gestionați alocările de concediu ale angajaților",
           "managers": "Manageri",
           "overrideEffectivePolicy": "Suprascrie alocarea prevăzută de politică ({days} zile) pentru acest angajat",
           "partialSave": {
@@ -231,8 +230,7 @@
         "sourceEmployee": "Atribuire la nivel de angajat",
         "sourceOrganization": "Atribuire la nivel de organizație",
         "sourceTeam": "Atribuire la nivel de echipă",
-        "teamDescription": "Stabiliți o politică datată pentru o echipă. Atribuirile angajaților au prioritate.",
-        "title": "Istoric"
+        "teamDescription": "Stabiliți o politică datată pentru o echipă. Atribuirile angajaților au prioritate."
       },
       "next": "Înainte",
       "noDefaultPolicy": "Nicio politică implicită a companiei",

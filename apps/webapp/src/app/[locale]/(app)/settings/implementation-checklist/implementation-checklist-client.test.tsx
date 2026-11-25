@@ -208,6 +208,7 @@ const failingWorkPolicyItem = {
 							draftId: "draft-1",
 							email: "new@example.com",
 							teamId: null,
+							engagementKind: "employee",
 							displayName: "New Hire",
 						},
 						detail: {

@@ -1,0 +1,43 @@
+/*
+ * Continuation markers for shifts in Schedule-X's date grid (week and day views).
+ *
+ * With a custom `dateGridEvent`, Schedule-X 4.9 no longer draws its arrows or leaves their 10px
+ * margin, but it still marks the outer element with `sx__date-grid-event--overflow-left/right`
+ * (already flipped for right-to-left calendars). These rules give the shift inside that element
+ * the default rendering's arrow, margin and square edge on the side it runs on. The arrow takes the
+ * shift's own background, so it follows the light and dark Schedule-X colours.
+ */
+
+.sx__date-grid-event--overflow-left > [data-shift-event] {
+	/* It began before the visible days, so there is no start to mark (planners are left-to-right). */
+	border-inline-start: none !important;
+	margin-left: 10px;
+	border-top-left-radius: 0;
+	border-bottom-left-radius: 0;
+}
+
+.sx__date-grid-event--overflow-right > [data-shift-event] {
+	margin-right: 10px;
+	border-top-right-radius: 0;
+	border-bottom-right-radius: 0;
+}
+
+.sx__date-grid-event--overflow-left > [data-shift-event]::before,
+.sx__date-grid-event--overflow-right > [data-shift-event]::after {
+	content: "";
+	position: absolute;
+	top: 0;
+	width: 10px;
+	height: 100%;
+	background-color: inherit;
+}
+
+.sx__date-grid-event--overflow-left > [data-shift-event]::before {
+	left: -10px;
+	clip-path: polygon(100% 0, 0 50%, 100% 100%);
+}
+
+.sx__date-grid-event--overflow-right > [data-shift-event]::after {
+	right: -10px;
+	clip-path: polygon(0 0, 100% 50%, 0 100%);
+}

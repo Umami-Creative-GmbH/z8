@@ -14,6 +14,7 @@ import {
 	parsePlainDate,
 	plainDateAt,
 } from "@/lib/datetime/temporal-core";
+import { loadEmployeeTime } from "@/lib/engagement/engagement-stints";
 import { createLogger } from "@/lib/logger";
 import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
 import { closedMonthTouchedByDays } from "@/lib/time-tracking/closed-months/rules";
@@ -143,12 +144,18 @@ export async function recordOvertimePayout(
 		// Checked under the ledger lock, so two payouts recorded at once cannot
 		// together exceed the balance, and no opening balance slips in between.
 		const today = plainDateAt(input.now, subject.timezone);
+		// Payroll exports only payouts on employee days (#1997): one on an External Contractor
+		// day would lower the balance and never be paid.
+		const externalContractorDay = !(
+			await loadEmployeeTime(tx, input.organizationId, [input.employeeId])
+		).isEmployeeDay(input.employeeId, input.day);
 		const closedMonth = await closedMonthOfDay(tx, input);
 		const openingBalance = await readOpeningBalanceInEffect(tx, input);
 		const openingBalanceDay = openingBalance ? parsePlainDate(openingBalance.day) : null;
 		const needsBalance =
 			input.amountMinutes > 0 &&
 			comparePlainDates(day, today) <= 0 &&
+			!externalContractorDay &&
 			!closedMonth &&
 			(!openingBalanceDay || comparePlainDates(day, openingBalanceDay) > 0);
 		const balanceAtEndOf = (balanceDay: string) =>
@@ -178,6 +185,7 @@ export async function recordOvertimePayout(
 			laterPayoutBalancesMinutes,
 			openingBalanceDay,
 			closedMonth,
+			externalContractorDay,
 		});
 		if (refused === "month_closed" && closedMonth) throw monthClosed(closedMonth);
 		if (refused) throw refusal(refused, `Overtime payout refused: ${refused}`);
@@ -565,7 +573,9 @@ async function inLedgerTransaction<T>(
 	write: (tx: WorkBalanceDbClient) => Promise<T>,
 ): Promise<T> {
 	try {
-		return await database.transaction(write);
+		// The explicit type argument spares TypeScript inferring T through the database's
+		// relational types, which can exceed its instantiation depth (TS2589).
+		return await database.transaction<T>(write);
 	} catch (error) {
 		throw asMonthClosedRefusal(error);
 	}

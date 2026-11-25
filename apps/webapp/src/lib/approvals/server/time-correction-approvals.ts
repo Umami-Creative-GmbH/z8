@@ -83,7 +83,6 @@ import {
 	correctOpenWorkRecord,
 	orRefuse,
 	refusalError,
-	type ToleratedDrift,
 	type WorkApprovalDecision,
 	type WorkRecordChange,
 	type WorkRecordExpected,
@@ -163,10 +162,7 @@ import { mapSequentially } from "../sequential";
 import { deriveApprovalWorkflowId } from "../workflow/identity";
 import { acquirePinnedApprovalContext } from "../workflow/pinned-write-gate";
 import type { ApprovalWorkflowSnapshot } from "../workflow/ports";
-import type {
-	ApprovalWorkflowDatabase,
-	ApprovalWorkflowRepository,
-} from "../workflow/repository";
+import type { ApprovalWorkflowRepository } from "../workflow/repository";
 import { attemptApprovalRuntime } from "../workflow/work-transaction-port";
 import { startApprovalWorkflow } from "../workflow/start-workflow";
 import {
@@ -2626,27 +2622,9 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 		);
 	}
 
-	// Committed history can disagree on minutes alone: before #388 the legacy
-	// clock-out floored the canonical minutes and rounded the period's, and
-	// that history was kept. The legacy automatic break enforcement and the
-	// legacy calendar split also move the first period's end without its
-	// record's, so a legacy decision may meet a stale canonical interval too.
-	// The period's endpoints were checked against the ledger above, and work
-	// records rewrites the canonical interval and minutes from the work period,
-	// so only a cancellation snapshot still pins them. Completed work's record
-	// agreement is checked by work records alone (`toleratedDrift`); the field
-	// names tolerate the same drift in live work's open record. #1229 removes
-	// this once production shows no divergence.
-	const toleratedCanonicalDrift: ReadonlySet<string> =
-		expectedSource !== undefined
-			? new Set()
-			: expectedApprovalWorkflowId === null
-				? new Set(["startAt", "endAt", "durationMinutes"])
-				: new Set(["durationMinutes"]);
-	const toleratedDrift: ToleratedDrift[] = [
-		...(toleratedCanonicalDrift.has("startAt") ? (["interval"] as const) : []),
-		...(toleratedCanonicalDrift.has("durationMinutes") ? (["duration"] as const) : []),
-	];
+	// A pair whose canonical record disagrees with its period is refused for
+	// review (#1229): live work's open record is
+	// checked here, completed work's agreement by work records.
 	let canonical: LockedCanonicalWorkRecord | null = null;
 	let canonicalWork: LockedCanonicalWorkMetadata | null = null;
 	if (period.canonicalRecordId) {
@@ -2675,13 +2653,10 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 		const canonicalMismatches = canonical
 			? canonicalRecordSourceMismatches(canonical, period, input.organizationId)
 			: [];
-		const blockingCanonicalMismatches = canonicalMismatches.filter(
-			(field) => !toleratedCanonicalDrift.has(field),
-		);
 		if (
 			canonicalRows.length !== 1 ||
 			!canonical ||
-			blockingCanonicalMismatches.length > 0
+			canonicalMismatches.length > 0
 		) {
 			throw timeCorrectionFinalizationConflict(
 				"canonical_record_source_mismatch",
@@ -3093,7 +3068,6 @@ async function finalizeTimeCorrectionTerminalDetailedInTransaction(
 						}
 					: undefined,
 				approval: rejectedLegacyResubmission ? "approved" : undefined,
-				toleratedDrift,
 			});
 	// The refresh intent commits with the work that needs it, in either admission:
 	// work records marked completed work; a corrected start of live work is marked here.
@@ -3200,7 +3174,6 @@ async function applyCompletedWorkCorrection(change: {
 	isDeletion: boolean;
 	attribution: AmendAttributionPatch | undefined;
 	approval: WorkApprovalDecision | undefined;
-	toleratedDrift: readonly ToleratedDrift[];
 }): Promise<AppliedCorrection> {
 	const { input, period, corrections } = change;
 	const key = { organizationId: input.organizationId, employeeId: period.employeeId };
@@ -3266,7 +3239,6 @@ async function applyCompletedWorkCorrection(change: {
 				reason: input.transition.reason,
 				approvalRequestId: input.legacyApprovalRequestId,
 			},
-			toleratedDrift: change.toleratedDrift,
 			actorUserId: input.actorUserId,
 		});
 		if (deleted.kind !== "deleted") throw correctionWorkRefusal(deleted);
@@ -3295,7 +3267,6 @@ async function applyCompletedWorkCorrection(change: {
 			: {}),
 		...(change.attribution ? { attribution: change.attribution } : {}),
 		...(change.approval ? { approval: change.approval } : {}),
-		toleratedDrift: change.toleratedDrift,
 		actorUserId: input.actorUserId,
 	});
 	// A decision that changes nothing leaves the work as it is.

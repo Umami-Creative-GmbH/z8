@@ -105,7 +105,6 @@
     },
     "deputy": {
       "away": "Odsutan/na {dates}",
-      "awayOption": "{name} · Odsutan/na {dates}",
       "awayWarning": "{name} je odsutan/na tokom ovih datuma. I dalje možete odabrati ovu osobu.",
       "changeAction": "Promijeni zamjenika",
       "changed": "Zamjenik je spremljen",

@@ -571,4 +571,37 @@ describe("assessPayrollWorkCollection with a custom field as personnel identifie
 			},
 		]);
 	});
+
+	it("asks a selected person without employee time in the period for a value when a payroll run carries their expense lines (#1997)", () => {
+		const request = {
+			...july,
+			selectedEmployeeIds: [...july.employeeIds, "converted", "unselected-contractor"],
+			personnelIdentifier: {
+				customFieldId: "field-1",
+				employeesWithOtherRows: ["converted", "outsider"],
+			},
+		};
+		const missing = assessPayrollWorkCollection(
+			snapshot({ records: [work("a")], personnelIdentifiers: { [berlin.id]: "LOHN-7" } }),
+			request,
+		);
+		const frozen = assessPayrollWorkCollection(
+			snapshot({
+				records: [work("a")],
+				personnelIdentifiers: { [berlin.id]: "LOHN-7", converted: "LOHN-9" },
+			}),
+			request,
+		);
+
+		expect(missing.blockers.map((blocker) => [blocker.kind, blocker.employeeId])).toEqual([
+			["missing_identifier", "converted"],
+		]);
+		expect(frozen.blockers).toEqual([]);
+		expect(frozen.input.personnelIdentifier?.values).toEqual({
+			[berlin.id]: "LOHN-7",
+			converted: "LOHN-9",
+		});
+		// The scope itself is unchanged: they have no work to collect.
+		expect(frozen.input.scope.employeeIds).toEqual(july.employeeIds.toSorted());
+	});
 });

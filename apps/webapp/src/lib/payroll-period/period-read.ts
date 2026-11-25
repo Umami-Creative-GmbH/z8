@@ -25,6 +25,11 @@ export interface PayrollPeriodSources {
 	holidays?: ReadonlyMap<string, readonly PayrollPeriodHolidaySource[]>;
 	/** Active settlements of the employees' period days (#1896). */
 	settledDays?: readonly PayrollSettledDaySource[];
+	/**
+	 * Whether an employee's day carries payroll (`PayrollScope.isPayrollDay`, #1997); every day
+	 * when absent. Only payroll days can be settled, so only they count as unsettled.
+	 */
+	isPayrollDay?: (employeeId: string, date: string) => boolean;
 }
 
 /**
@@ -50,9 +55,16 @@ export function buildPayrollPeriodRead(input: {
 		settledDays: sources.settledDays,
 	});
 	const days = rows.employees.flatMap((row) => row.days);
-	const settledDays = days.filter(
-		(day) => day.settlement !== undefined && day.settlement.state !== "unsettled",
-	).length;
+	const isSettled = (day: (typeof days)[number]) =>
+		day.settlement !== undefined && day.settlement.state !== "unsettled";
+	const settledDays = days.filter(isSettled).length;
+	// A converted person's External Contractor days are shown but never settled (#1997).
+	const isPayrollDay = sources.isPayrollDay ?? (() => true);
+	const unsettledDays = rows.employees.reduce(
+		(count, row) =>
+			count + row.days.filter((day) => !isSettled(day) && isPayrollDay(row.id, day.date)).length,
+		0,
+	);
 	const changedBlockers = changedSinceSettledBlockers(rows.employees);
 	const summary = buildPayrollSummaryFromRows({
 		organizationId: input.organizationId,
@@ -82,7 +94,7 @@ export function buildPayrollPeriodRead(input: {
 		settlement: {
 			settledDays,
 			changedSinceSettledDays: changedBlockers.length,
-			unsettledDays: days.length - settledDays,
+			unsettledDays,
 		},
 		blockers: summary.blockers,
 		summary,

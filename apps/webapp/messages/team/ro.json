@@ -159,7 +159,6 @@
       "scopeFailed": "Domeniul curent de conducere nu a putut fi încărcat.",
       "scopeLoading": "Se încarcă domeniul curent de conducere…",
       "scopeManaged": "Angajații pe care îi gestionați",
-      "title": "Lipsesc detalii despre deplasare",
       "truncated": "Se afișează cele mai recente {count} perioade de lucru. Filtrați după echipă sau angajat pentru a le vedea pe restul.",
       "updating": "Se actualizează detaliile de conducere…"
     },

@@ -39,9 +39,13 @@ vi.mock("@/navigation", () => ({
 	),
 }));
 
+const catalog = vi.hoisted(() => ({ messages: {} as Record<string, string> }));
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (_key: string, fallback?: string) => fallback ?? _key,
+		t: (key: string, fallback?: string, params?: Record<string, unknown>) =>
+			(catalog.messages[key] ?? fallback ?? key).replace(/\{(\w+)\}/g, (match, name: string) =>
+				params && name in params ? String(params[name]) : match,
+			),
 	}),
 }));
 
@@ -53,7 +57,10 @@ vi.mock("@tabler/icons-react", () => {
 	const Icon = () => <span aria-hidden="true" />;
 	return {
 		IconAlertTriangle: Icon,
+		IconArrowBackUp: Icon,
 		IconBan: Icon,
+		IconHourglassEmpty: Icon,
+		IconShieldCheck: Icon,
 		IconCalendarEvent: Icon,
 		IconCheck: Icon,
 		IconClock: Icon,
@@ -82,12 +89,76 @@ vi.mock("./actions", () => ({
 	cancelMyTimeCorrectionRequest: cancelMyTimeCorrectionRequestMock,
 }));
 
+import englishMyRequests from "../../../../../messages/myRequests/en.json";
 import { MyRequestsClient } from "./my-requests-client";
+
+/** The shipped English catalog, keyed as the page asks for it ("myRequests:myRequests.title"). */
+function myRequestsCatalog(
+	value: unknown = englishMyRequests,
+	prefix = "",
+): Record<string, string> {
+	if (typeof value === "string") return { [`myRequests:${prefix}`]: value };
+	return Object.entries(value as Record<string, unknown>).reduce<Record<string, string>>(
+		(messages, [key, child]) =>
+			Object.assign(messages, myRequestsCatalog(child, prefix ? `${prefix}.${key}` : key)),
+		{},
+	);
+}
+
+type RequestItem = SelfServiceRequestResult["items"][number];
+
+function expenseReport(overrides: Partial<RequestItem> = {}): RequestItem {
+	return {
+		id: "travel_expense_report:report-1",
+		sourceType: "travel_expense_report",
+		sourceId: "report-1",
+		organizationId: "org-1",
+		employeeId: "employee-1",
+		status: "pending",
+		submittedAt: new Date("2026-04-23T08:00:00.000Z"),
+		resolvedAt: null,
+		title: "Customer workshop",
+		subtitle: "2026-04-20 to 2026-04-22",
+		decisionReason: null,
+		availableActions: ["view"],
+		sourceHref: "/travel-expenses/reports/report-1",
+		details: { kind: "expense_report", reportKind: "trip", itemType: null },
+		...overrides,
+	};
+}
+
+function complianceException(overrides: Partial<RequestItem> = {}): RequestItem {
+	return {
+		id: "compliance_exception:exception-1",
+		sourceType: "compliance_exception",
+		sourceId: "exception-1",
+		organizationId: "org-1",
+		employeeId: "employee-1",
+		status: "pending",
+		submittedAt: new Date("2026-04-26T18:00:00.000Z"),
+		resolvedAt: null,
+		title: "overtime_daily",
+		subtitle: "",
+		decisionReason: null,
+		availableActions: ["view"],
+		sourceHref: "/time-tracking",
+		details: {
+			kind: "compliance_exception",
+			exceptionType: "overtime_daily",
+			plannedDurationMinutes: 90,
+			validFrom: new Date("2026-04-27T06:00:00.000Z"),
+			validUntil: new Date("2026-04-28T06:00:00.000Z"),
+			timeZone: "Europe/Berlin",
+		},
+		...overrides,
+	};
+}
 
 function createResult(overrides: Partial<SelfServiceRequestResult> = {}): SelfServiceRequestResult {
 	return {
 		counts: { pending: 1, requiredFixes: 1, recentDecisions: 2, total: 3 },
 		sourceErrors: [],
+		timeZone: "UTC",
 		items: [
 			{
 				id: "absence-1",
@@ -133,6 +204,7 @@ function createResult(overrides: Partial<SelfServiceRequestResult> = {}): SelfSe
 				decisionReason: null,
 				availableActions: ["view"],
 				sourceHref: "/travel-expenses",
+				details: { kind: "earlier_claim", claimType: "per_diem" },
 			},
 		],
 		...overrides,
@@ -218,14 +290,20 @@ describe("MyRequestsClient", () => {
 		const recentlyDecided = screen.getByRole("region", {
 			name: "Recently decided",
 		});
-		expect(within(recentlyDecided).getByText("Travel expense claim")).toBeTruthy();
+		expect(
+			within(recentlyDecided).getByRole("heading", { name: "Earlier per diem claim" }),
+		).toBeTruthy();
 		// The rejection to fix is a recent decision too, but is shown once, under "Needs attention".
 		expect(within(recentlyDecided).queryByText("Vacation")).toBeNull();
 
 		const allRequests = screen.getByRole("region", { name: "All requests" });
 		expect(within(allRequests).getByText("Vacation")).toBeTruthy();
 		expect(within(allRequests).getByText("Time correction request")).toBeTruthy();
-		expect(within(allRequests).getByText("Travel expense claim")).toBeTruthy();
+		// Its title names the claim's type, as the finance list does; its type names it an earlier claim.
+		expect(within(allRequests).getByText("Earlier per diem claim")).toBeTruthy();
+		expect(within(allRequests).getByText("Earlier claim")).toBeTruthy();
+		// An earlier claim is never named like the travel expense report that replaced it.
+		expect(document.body.textContent).not.toMatch(/Travel expense claim/);
 	});
 
 	it("keeps a rejection without a fix out of the attention list, matching the fix count", () => {
@@ -267,6 +345,36 @@ describe("MyRequestsClient", () => {
 		expect(vacationCard).not.toBeNull();
 		expect(within(vacationCard as HTMLElement).getByText("Submitted: 18. Apr. 2026")).toBeTruthy();
 		expect(within(vacationCard as HTMLElement).getByText("Decision: 22. Apr. 2026")).toBeTruthy();
+	});
+
+	it("reads submission and decision instants in the viewer's effective zone, like a validity window", () => {
+		const [rejected] = createResult().items;
+		render(
+			<MyRequestsClient
+				initialResult={createResult({
+					timeZone: "Europe/Berlin",
+					items: [
+						{
+							...rejected,
+							// Late evening in UTC is already the next day in Berlin.
+							submittedAt: new Date("2026-04-18T22:30:00.000Z"),
+							resolvedAt: new Date("2026-04-22T23:00:00.000Z"),
+						},
+					],
+				})}
+			/>,
+		);
+
+		const card = within(screen.getByRole("region", { name: "Needs attention" }))
+			.getByText("Vacation")
+			.closest("article") as HTMLElement;
+		expect(within(card).getByText("Submitted: 19. Apr. 2026")).toBeTruthy();
+		expect(within(card).getByText("Decision: 23. Apr. 2026")).toBeTruthy();
+		const row = within(screen.getByRole("region", { name: "All requests" }))
+			.getByText("Vacation")
+			.closest("tr") as HTMLElement;
+		expect(within(row).getByText("19. Apr. 2026")).toBeTruthy();
+		expect(within(row).getByText("23. Apr. 2026")).toBeTruthy();
 	});
 
 	it("applies filters consistently to grouped sections and all-request history", () => {
@@ -326,7 +434,7 @@ describe("MyRequestsClient", () => {
 					sourceErrors: [
 						{
 							sourceType: "travel_expense",
-							message: "Travel expense requests could not be loaded.",
+							message: "Earlier claims could not be loaded.",
 						},
 					],
 				})}
@@ -334,7 +442,8 @@ describe("MyRequestsClient", () => {
 		);
 
 		expect(screen.getByText("Some requests could not be loaded.")).toBeTruthy();
-		expect(screen.getByText("Travel expense requests could not be loaded.")).toBeTruthy();
+		// Says which list failed, so the employee knows their expense reports did load.
+		expect(screen.getByText("Earlier claims could not be loaded.")).toBeTruthy();
 	});
 
 	it("distinguishes empty and filtered-empty states", () => {
@@ -624,6 +733,366 @@ describe("MyRequestsClient", () => {
 			const { invalidate } = renderFocused("absence:<script>");
 			expect(screen.queryByRole("status")).toBeNull();
 			expect(invalidate).not.toHaveBeenCalled();
+		});
+	});
+
+	describe("expense reports and compliance exceptions (#1979)", () => {
+		afterEach(() => {
+			catalog.messages = {};
+		});
+
+		it("asks for a fix of a returned report, with the reviewer's note, and never of a rejected one", () => {
+			render(
+				<MyRequestsClient
+					initialResult={createResult({
+						counts: { pending: 1, requiredFixes: 1, recentDecisions: 1, total: 3 },
+						items: [
+							expenseReport({
+								id: "travel_expense_report:report-returned",
+								sourceId: "report-returned",
+								status: "returned",
+								resolvedAt: new Date("2026-04-25T08:00:00.000Z"),
+								decisionReason: "Add the hotel receipt",
+								availableActions: ["fix", "view"],
+								sourceHref: "/travel-expenses/reports/report-returned",
+								title: "Returned trip",
+							}),
+							expenseReport({
+								id: "travel_expense_report:report-rejected",
+								sourceId: "report-rejected",
+								status: "rejected",
+								resolvedAt: new Date("2026-04-27T08:00:00.000Z"),
+								decisionReason: "Not a business trip",
+								sourceHref: "/travel-expenses/reports/report-rejected",
+								title: "Rejected trip",
+							}),
+							expenseReport({ title: "Submitted trip" }),
+						],
+					})}
+				/>,
+			);
+
+			const summary = screen.getByRole("region", { name: "Request summary" });
+			expect(within(summary).getByText("Required fixes").closest("div")?.textContent).toContain(
+				"1",
+			);
+
+			const needsAttention = screen.getByRole("region", { name: "Needs attention" });
+			const returned = within(needsAttention)
+				.getByText(/^Returned trip/)
+				.closest("article");
+			expect(returned).not.toBeNull();
+			expect(within(returned as HTMLElement).getByText("Expense report")).toBeTruthy();
+			expect(within(returned as HTMLElement).getByText("Returned")).toBeTruthy();
+			expect(within(returned as HTMLElement).getByText("Add the hotel receipt")).toBeTruthy();
+			expect(
+				within(returned as HTMLElement)
+					.getByRole("link", { name: "Fix" })
+					.getAttribute("href"),
+			).toBe("/travel-expenses/reports/report-returned");
+			expect(within(needsAttention).queryByText(/^Rejected trip/)).toBeNull();
+
+			const recentlyDecided = screen.getByRole("region", { name: "Recently decided" });
+			const rejected = within(recentlyDecided)
+				.getByText(/^Rejected trip/)
+				.closest("article");
+			expect(within(rejected as HTMLElement).getByText("Not a business trip")).toBeTruthy();
+			expect(within(rejected as HTMLElement).queryByRole("link", { name: "Fix" })).toBeNull();
+			expect(
+				within(rejected as HTMLElement)
+					.getByRole("link", { name: "View" })
+					.getAttribute("href"),
+			).toBe("/travel-expenses/reports/report-rejected");
+			expect(within(recentlyDecided).queryByText(/^Returned trip/)).toBeNull();
+
+			const inReview = screen.getByRole("region", { name: "In review" });
+			const submitted = within(inReview)
+				.getByText(/^Submitted trip/)
+				.closest("article");
+			expect(
+				within(submitted as HTMLElement)
+					.getByRole("link", { name: "View" })
+					.getAttribute("href"),
+			).toBe("/travel-expenses/reports/report-1");
+			expect(
+				within(submitted as HTMLElement).queryByRole("button", { name: "Cancel request" }),
+			).toBeNull();
+
+			const history = screen.getByRole("region", { name: "All requests" });
+			expect(within(history).getAllByRole("row")).toHaveLength(4);
+		});
+
+		it("labels a returned report's return date as returned, not as a decision", () => {
+			render(
+				<MyRequestsClient
+					initialResult={createResult({
+						counts: { pending: 0, requiredFixes: 1, recentDecisions: 0, total: 1 },
+						items: [
+							expenseReport({
+								id: "travel_expense_report:report-returned",
+								sourceId: "report-returned",
+								status: "returned",
+								resolvedAt: new Date("2026-04-25T08:00:00.000Z"),
+								availableActions: ["fix", "view"],
+								title: "Returned trip",
+							}),
+						],
+					})}
+				/>,
+			);
+
+			const card = within(screen.getByRole("region", { name: "Needs attention" }))
+				.getByText(/^Returned trip/)
+				.closest("article") as HTMLElement;
+			expect(within(card).getByText("Returned: 25. Apr. 2026")).toBeTruthy();
+			expect(within(card).queryByText(/^Decision:/)).toBeNull();
+			const row = within(screen.getByRole("region", { name: "All requests" }))
+				.getByText(/^Returned trip/)
+				.closest("tr") as HTMLElement;
+			expect(within(row).getByText("Returned: 25. Apr. 2026")).toBeTruthy();
+			expect(screen.queryByRole("region", { name: "Recently decided" })).toBeNull();
+		});
+
+		it("shows compliance exceptions view-only with their window, and expired ones only in history", () => {
+			render(
+				<MyRequestsClient
+					initialResult={createResult({
+						counts: { pending: 1, requiredFixes: 0, recentDecisions: 1, total: 3 },
+						items: [
+							complianceException(),
+							complianceException({
+								id: "compliance_exception:exception-rejected",
+								sourceId: "exception-rejected",
+								title: "rest_period",
+								status: "rejected",
+								resolvedAt: new Date("2026-04-26T20:00:00.000Z"),
+								decisionReason: "Team is fully staffed",
+								details: {
+									kind: "compliance_exception",
+									exceptionType: "rest_period",
+									plannedDurationMinutes: null,
+									validFrom: new Date("2026-04-27T06:00:00.000Z"),
+									validUntil: new Date("2026-04-28T06:00:00.000Z"),
+									timeZone: "Europe/Berlin",
+								},
+							}),
+							complianceException({
+								id: "compliance_exception:exception-expired",
+								sourceId: "exception-expired",
+								title: "overtime_weekly",
+								status: "expired",
+								details: {
+									kind: "compliance_exception",
+									exceptionType: "overtime_weekly",
+									plannedDurationMinutes: 120,
+									validFrom: new Date("2026-04-20T06:00:00.000Z"),
+									validUntil: new Date("2026-04-21T06:00:00.000Z"),
+									timeZone: "Europe/Berlin",
+								},
+							}),
+						],
+					})}
+				/>,
+			);
+
+			const inReview = screen.getByRole("region", { name: "In review" });
+			const pending = within(inReview).getByText("Daily overtime exception").closest("article");
+			expect(pending).not.toBeNull();
+			const pendingCard = pending as HTMLElement;
+			expect(within(pendingCard).getByText("In review")).toBeTruthy();
+			expect(within(pendingCard).getByText("Compliance exception")).toBeTruthy();
+			// The window is read in the viewer's effective zone: 06:00 UTC is 08:00 in Berlin.
+			expect(pendingCard.textContent).toMatch(/Planned: 1 h 30 min/);
+			expect(pendingCard.textContent).toMatch(/Valid: [^·]*08:00[^·]*08:00/);
+			expect(pendingCard.textContent).toContain("Europe/Berlin");
+			expect(within(pendingCard).getByRole("link", { name: "View" }).getAttribute("href")).toBe(
+				"/time-tracking",
+			);
+			expect(within(pendingCard).queryByRole("button", { name: "Cancel request" })).toBeNull();
+
+			const recentlyDecided = screen.getByRole("region", { name: "Recently decided" });
+			const rejected = within(recentlyDecided)
+				.getByText("Rest period exception")
+				.closest("article") as HTMLElement;
+			expect(within(rejected).getByText("Team is fully staffed")).toBeTruthy();
+			expect(within(rejected).queryByRole("link", { name: "Fix" })).toBeNull();
+			expect(screen.queryByRole("region", { name: "Needs attention" })).toBeNull();
+
+			expect(within(inReview).queryByText("Weekly overtime exception")).toBeNull();
+			expect(within(recentlyDecided).queryByText("Weekly overtime exception")).toBeNull();
+			const history = screen.getByRole("region", { name: "All requests" });
+			const expiredRow = within(history).getByText("Weekly overtime exception").closest("tr");
+			expect(within(expiredRow as HTMLElement).getByText("Expired")).toBeTruthy();
+		});
+
+		it("filters by the returned and expired statuses and the new request types", () => {
+			render(
+				<MyRequestsClient
+					initialResult={createResult({
+						items: [
+							expenseReport({
+								status: "returned",
+								availableActions: ["fix", "view"],
+								resolvedAt: new Date("2026-04-25T08:00:00.000Z"),
+							}),
+							complianceException({ status: "expired" }),
+						],
+					})}
+				/>,
+			);
+
+			const status = screen.getByLabelText("Status") as HTMLSelectElement;
+			expect([...status.options].map((option) => option.textContent)).toEqual([
+				"All statuses",
+				"In review",
+				"Returned",
+				"Approved",
+				"Rejected",
+				"Expired",
+				"Cancelled",
+			]);
+			const type = screen.getByLabelText("Type") as HTMLSelectElement;
+			expect([...type.options].map((option) => option.textContent)).toEqual([
+				"All types",
+				"Absence",
+				"Time correction",
+				"Expense report",
+				"Earlier claim",
+				"Compliance exception",
+			]);
+
+			fireEvent.change(status, { target: { value: "expired" } });
+			const history = screen.getByRole("region", { name: "All requests" });
+			expect(within(history).getByText("Daily overtime exception")).toBeTruthy();
+			expect(within(history).queryByText("Expense report")).toBeNull();
+
+			fireEvent.change(status, { target: { value: "returned" } });
+			expect(
+				within(screen.getByRole("region", { name: "Needs attention" })).getByRole("link", {
+					name: "Fix",
+				}),
+			).toBeTruthy();
+		});
+
+		it("names expense reports as reportName and reportKindLabel do, under the Expense report type", () => {
+			render(
+				<MyRequestsClient
+					initialResult={createResult({
+						items: [
+							expenseReport(),
+							expenseReport({
+								id: "travel_expense_report:report-receipt",
+								sourceId: "report-receipt",
+								title: "Hotel Hamburg",
+								subtitle: "",
+								details: { kind: "expense_report", reportKind: "standalone", itemType: "receipt" },
+							}),
+							expenseReport({
+								id: "travel_expense_report:report-mileage",
+								sourceId: "report-mileage",
+								title: "",
+								subtitle: "",
+								details: { kind: "expense_report", reportKind: "standalone", itemType: "mileage" },
+							}),
+						],
+					})}
+				/>,
+			);
+
+			const inReview = screen.getByRole("region", { name: "In review" });
+			const card = (name: string) =>
+				within(inReview).getByRole("heading", { level: 3, name }).closest("article") as HTMLElement;
+			expect(card("Customer workshop").textContent).toMatch(/Trip report · 20\.–22\. Apr\. 2026/);
+			expect(within(card("Hotel Hamburg")).getByText("Standalone receipt")).toBeTruthy();
+			expect(within(card("Untitled mileage")).getByText("Standalone mileage")).toBeTruthy();
+			for (const name of ["Customer workshop", "Hotel Hamburg", "Untitled mileage"]) {
+				expect(within(card(name)).getByText("Expense report")).toBeTruthy();
+			}
+			expect(document.body.textContent).not.toMatch(/Travel expense report|without a trip/);
+		});
+
+		it("shows the one stored date of a trip report with only a start or end date", () => {
+			render(
+				<MyRequestsClient
+					initialResult={createResult({
+						items: [
+							expenseReport({
+								id: "travel_expense_report:report-single-date",
+								sourceId: "report-single-date",
+								title: "Trade fair",
+								subtitle: "2026-11-06",
+							}),
+						],
+					})}
+				/>,
+			);
+
+			const card = within(screen.getByRole("region", { name: "In review" }))
+				.getByRole("heading", { level: 3, name: "Trade fair" })
+				.closest("article") as HTMLElement;
+			expect(card.textContent).toMatch(/Trip report · 6\. Nov\. 2026/);
+		});
+
+		it("tells an adjustment report apart from the report it adjusts", () => {
+			render(
+				<MyRequestsClient
+					initialResult={createResult({
+						items: [
+							expenseReport(),
+							// Adjustments copy their original's purpose and dates.
+							expenseReport({
+								id: "travel_expense_report:report-adjustment",
+								sourceId: "report-adjustment",
+								details: {
+									kind: "expense_report",
+									reportKind: "trip",
+									itemType: null,
+									adjustmentOf: { reportId: "report-1", title: "Customer workshop" },
+								},
+							}),
+							expenseReport({
+								id: "travel_expense_report:report-adjustment-untitled",
+								sourceId: "report-adjustment-untitled",
+								title: "Hotel Hamburg",
+								subtitle: "",
+								details: {
+									kind: "expense_report",
+									reportKind: "standalone",
+									itemType: "receipt",
+									adjustmentOf: { reportId: "report-gone", title: null },
+								},
+							}),
+						],
+					})}
+				/>,
+			);
+
+			const inReview = screen.getByRole("region", { name: "In review" });
+			const [original, adjustment] = within(inReview)
+				.getAllByRole("heading", { level: 3, name: "Customer workshop" })
+				.map((heading) => heading.closest("article") as HTMLElement);
+			expect(original?.textContent).not.toMatch(/Adjustment/);
+			expect(adjustment?.textContent).toMatch(
+				/Adjustment of “Customer workshop” · Trip report · 20\.–22\. Apr\. 2026/,
+			);
+			const untitled = within(inReview)
+				.getByRole("heading", { level: 3, name: "Hotel Hamburg" })
+				.closest("article") as HTMLElement;
+			expect(untitled.textContent).toMatch(/Adjustment of an earlier report · Standalone receipt/);
+		});
+
+		it("never calls a request legacy, with the shipped English copy", () => {
+			catalog.messages = myRequestsCatalog();
+			render(
+				<MyRequestsClient
+					initialResult={createResult({
+						items: [...createResult().items, expenseReport(), complianceException()],
+					})}
+				/>,
+			);
+
+			expect(screen.getByText(/expense requests in the active organization/)).toBeTruthy();
+			expect(document.body.textContent).not.toMatch(/legacy/i);
 		});
 	});
 

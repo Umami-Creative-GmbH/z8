@@ -73,6 +73,11 @@
     "portalOpenFailed": "Failed to open billing portal",
     "priceSeatMonth": "€{price}/seat/mo",
     "priceSeatMonthYearly": "€{price}/seat/mo (billed yearly)",
+    "recovery": {
+      "billingAndSubscription": "Billing & Subscription",
+      "navigationLabel": "Billing recovery navigation",
+      "suspensionNotice": "Suspension notice"
+    },
     "seatBilledAnnually": "€{price}/seat billed annually",
     "seatLines": {
       "full": "Full seats",

@@ -16,6 +16,7 @@ import {
 import { createLogger } from "@/lib/logger";
 import {
 	type EmploymentStint,
+	outsideVacationInYear,
 	REFERENCE_WORKING_DAYS_PER_WEEK,
 } from "./prorated-allowance";
 import {
@@ -141,10 +142,10 @@ export function policyPeriodMonthlyAccrualDays(input: {
 			continue;
 		const policy = resolution.policy;
 		if (!policy || !isAccrualPolicy(policy)) continue;
-		const weeks =
+		const weeks: WorkingWeekPeriod[] =
 			custom === null
 				? workingWeeksWithin(input.workingWeeks ?? [], period)
-				: [{ ...period, workingDaysPerWeek: REFERENCE_WORKING_DAYS_PER_WEEK }];
+				: [{ ...period, workingDaysPerWeek: REFERENCE_WORKING_DAYS_PER_WEEK, workPolicyId: null }];
 		for (const week of weeks) {
 			const employments = input.employments.map((employment) => ({
 				startDate: latest(
@@ -160,8 +161,11 @@ export function policyPeriodMonthlyAccrualDays(input: {
 				accrualType: policy.accrualType,
 				annualDays:
 					custom ??
-					(Number(policy.defaultAnnualDays) * week.workingDaysPerWeek) /
-						REFERENCE_WORKING_DAYS_PER_WEEK,
+					// Days without employment accrue nothing (#2009).
+					(week.notEmployed
+						? 0
+						: (Number(policy.defaultAnnualDays) * week.workingDaysPerWeek) /
+							REFERENCE_WORKING_DAYS_PER_WEEK),
 				year: input.year,
 				month: input.month,
 				employments,
@@ -205,7 +209,7 @@ export function requiredAccrualConfiguration(
 			startDate: from.toString(),
 			endDate: through.toString(),
 		})) {
-			if (week.workingDaysPerWeek !== 0) continue;
+			if (week.notEmployed || week.workingDaysPerWeek !== 0) continue;
 			conflict = true;
 			problems.push({
 				startDate: week.startDate,
@@ -291,6 +295,8 @@ export async function accrueVacationPeriods(
 	const employees = [
 		...(await loadEmployeeEmployments(db, { organizationId })),
 	].flatMap(([id, employee]) => {
+		// A year outside vacation accrues nothing (#1996).
+		if (outsideVacationInYear(employee, input.year)) return [];
 		const employments = accruingEmployments(employee);
 		return employments.length > 0 ? [{ id, employments }] : [];
 	});

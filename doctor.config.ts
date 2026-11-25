@@ -5,6 +5,7 @@ export default {
 		minScore: 0.46,
 	},
 	ignore: {
+		files: [".tmp/**"],
 		rules: [
 			"react-doctor/nextjs-no-img-element",
 			"react-doctor/server-auth-actions",
@@ -65,6 +66,7 @@ export default {
 					"**/components/scheduling/shifts/shift-dialog.tsx",
 					// The shared equipment form frame calls each form's `form.handleSubmit()`.
 					"**/components/equipment/equipment-handovers.tsx",
+					"**/components/settings/contracts/on-call-reviews-section.tsx",
 				],
 				rules: ["react-doctor/no-prevent-default"],
 			},
@@ -430,6 +432,70 @@ export default {
 				// kiosk actions; @react-pdf/renderer never ships to clients.
 				files: ["**/src/lib/time-tracking/kiosk/badge-pdf.tsx"],
 				rules: ["react-doctor/prefer-dynamic-import"],
+			},
+			{
+				// Server-only contractor statement PDF renderer (`import "server-only"`), loaded on demand
+				// through `await import(...)` by the "use server" contractor-statements actions.
+				files: ["**/src/lib/contractor-statements/statement-pdf.tsx"],
+				rules: ["react-doctor/prefer-dynamic-import"],
+			},
+			{
+				// Calculating an on-call reference period is read-only (the action checks view access, then
+				// computes a breakdown); its result lives only in `mutation.data`, so no cached query goes stale.
+				files: ["**/components/statutory/on-call/on-call-status-card.tsx"],
+				rules: ["react-doctor/query-mutation-missing-invalidation"],
+			},
+			{
+				// The statutory-foundation installer checks out a pooled client only after the SQL file is
+				// read, so a read failure cannot leak a connection.
+				// The other readers run on the caller's `database`/`executor`/`reader`, which may be one
+				// transaction connection: vacation reconciliation and change-request proposals pass their tx
+				// to the working-day and engagement-kind loaders, PrincipalLoaderExecutor is
+				// `typeof db | DatabaseTransaction`, the statement loader's Reader is a transaction pick, and
+				// the billable hand-off reads report work inside its transaction. Contractor terms are written
+				// on `tx` and then read back on it (read-your-writes).
+				files: [
+					"**/src/db/install-statutory-foundation.ts",
+					"**/src/lib/absences/absence-days-resolver.ts",
+					"**/src/lib/absences/absence-engagement.ts",
+					"**/src/lib/approvals/inbox/compliance-exception-inbox.ts",
+					"**/src/lib/authorization/principal-loader.ts",
+					"**/src/lib/contractor-compensation/store.ts",
+					"**/src/lib/contractor-statements/loader.ts",
+					"**/src/lib/reports/project-report-work.ts",
+				],
+				rules: ["react-doctor/server-sequential-independent-await"],
+			},
+			{
+				// Statutory monitors read through the schedule seam's `db`, which the publish and shift-save
+				// guards pass as their transaction (one connection, shift rows locked FOR UPDATE), so
+				// `runContributors` runs them one after another; the release-conflict employee-time read
+				// feeds loadYouthShifts. The published-shift edit judges, writes, then judges again on that
+				// tx and compares exactly that order. Minijob and short-term monitors keep their large batched
+				// reads serial because the review inbox already loads its domains concurrently on one pool;
+				// each short-term round's linked-years groups come from the previous round.
+				files: [
+					"**/src/lib/statutory/apprenticeship/release-conflict-contributor.ts",
+					"**/src/lib/statutory/minijob/evaluate-minijob.ts",
+					"**/src/lib/statutory/minijob/minijob-terms.ts",
+					"**/src/lib/statutory/scheduling/evaluate.ts",
+					"**/src/lib/statutory/scheduling/published-shift-edit.ts",
+					"**/src/lib/statutory/short-term/evaluate.ts",
+					"**/src/lib/statutory/short-term/load-inputs.ts",
+					"**/src/lib/statutory/youth/jarbschg-contributor.ts",
+				],
+				rules: [
+					"react-doctor/async-await-in-loop",
+					"react-doctor/async-parallel",
+					"react-doctor/server-sequential-independent-await",
+				],
+			},
+			{
+				// Recording and voiding apprentice releases runs on one `tx` in order: each loop voids a
+				// release before it links or restores what it replaced, and restoreReplaced reads its own
+				// earlier restores to find still-free days while recursing through the replacement chain.
+				files: ["**/src/lib/statutory/apprenticeship/release-credit-view.ts"],
+				rules: ["react-doctor/async-await-in-loop"],
 			},
 		],
 	},

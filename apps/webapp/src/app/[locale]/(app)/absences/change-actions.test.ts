@@ -91,6 +91,18 @@ describe("absence change actions", () => {
 			code: "already_pending",
 		});
 		vi.mocked(requestAbsenceChange).mockRejectedValueOnce(
+			new AbsenceChangeError(
+				"engagement_category",
+				"These dates span a change between employment and External Contractor work.",
+				"absence_spans_engagement_change",
+			),
+		);
+		expect(await submitAbsenceChangeAction(input)).toMatchObject({
+			success: false,
+			code: "engagement_category",
+			refusal: "absence_spans_engagement_change",
+		});
+		vi.mocked(requestAbsenceChange).mockRejectedValueOnce(
 			new Error("SQL and sensitive query parameters"),
 		);
 		const result = await submitAbsenceChangeAction(input);

@@ -312,6 +312,19 @@ function WorkPolicySection({ rehearsal }: { rehearsal: GoLiveRehearsal }) {
 	const policy = rehearsal.workPolicy;
 	const title = t("settings.implementationChecklist.rehearsal.workPolicy.title", "Work policy");
 
+	if (policy.status === "not_applicable") {
+		return (
+			<Section title={title}>
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"settings.implementationChecklist.rehearsal.workPolicy.notApplicable",
+						"No work policy applies: they work as an External Contractor.",
+					)}
+				</p>
+			</Section>
+		);
+	}
+
 	if (policy.status === "none") {
 		return (
 			<Section title={title}>
@@ -600,6 +613,8 @@ function StageTrace({ stage }: { stage: GoLiveRehearsalStage }) {
 	);
 }
 
+type PayrollPrerequisites = NonNullable<GoLiveRehearsal["payroll"]>["prerequisites"];
+
 function PayrollSection({ rehearsal }: { rehearsal: GoLiveRehearsal }) {
 	const { t } = useTranslate();
 	const title = t("settings.implementationChecklist.rehearsal.payroll.title", "Payroll");
@@ -618,13 +633,9 @@ function PayrollSection({ rehearsal }: { rehearsal: GoLiveRehearsal }) {
 	}
 
 	const { prerequisites } = payroll;
-	const invited = t(
-		"settings.implementationChecklist.rehearsal.payroll.notYetInvited",
-		"Not yet: they're still invited",
-	);
-	const identifier = prerequisites.personnelIdentifier;
 	const needsEmployeesFix =
-		prerequisites.employmentTerms === "missing" || identifier.status === "shared";
+		prerequisites.employmentTerms === "missing" ||
+		prerequisites.personnelIdentifier.status === "shared";
 	return (
 		<Section title={title}>
 			<Facts
@@ -635,25 +646,7 @@ function PayrollSection({ rehearsal }: { rehearsal: GoLiveRehearsal }) {
 							"settings.implementationChecklist.rehearsal.payroll.personnelIdentifier",
 							"Personnel number",
 						),
-						value:
-							identifier.status === "unique" ? (
-								t("settings.implementationChecklist.rehearsal.payroll.unique", "Unique")
-							) : identifier.status === "shared" ? (
-								<Problem>
-									{t(
-										"settings.implementationChecklist.goLive.payrollSetup.sharedPersonnelIdentifierDetail",
-										"{identifier}, shared with {others}",
-										{ identifier: identifier.identifier, others: identifier.sharedWith.join(", ") },
-									)}
-								</Problem>
-							) : identifier.status === "unavailable" ? (
-								t(
-									"settings.implementationChecklist.rehearsal.payroll.unavailable",
-									"Couldn't be checked",
-								)
-							) : (
-								invited
-							),
+						value: <PersonnelIdentifierValue identifier={prerequisites.personnelIdentifier} />,
 					},
 					{
 						id: "terms",
@@ -661,22 +654,7 @@ function PayrollSection({ rehearsal }: { rehearsal: GoLiveRehearsal }) {
 							"settings.implementationChecklist.rehearsal.payroll.employmentTerms",
 							"Employment terms",
 						),
-						value:
-							prerequisites.employmentTerms === "confirmed" ? (
-								t(
-									"settings.implementationChecklist.rehearsal.payroll.termsConfirmed",
-									"Confirmed for today",
-								)
-							) : prerequisites.employmentTerms === "missing" ? (
-								<Problem advisory>
-									{t(
-										"settings.implementationChecklist.rehearsal.payroll.termsMissing",
-										"No confirmed terms covering today",
-									)}
-								</Problem>
-							) : (
-								invited
-							),
+						value: <EmploymentTermsValue terms={prerequisites.employmentTerms} />,
 					},
 					{
 						id: "mapping",
@@ -684,21 +662,7 @@ function PayrollSection({ rehearsal }: { rehearsal: GoLiveRehearsal }) {
 							"settings.implementationChecklist.rehearsal.payroll.exportTargetMapping",
 							"Export target mapping",
 						),
-						value:
-							prerequisites.wageTypeMappings === "present" ? (
-								t(
-									"settings.implementationChecklist.rehearsal.payroll.mappingsPresent",
-									"{count, plural, one {# export target} other {# export targets}}, wage types mapped",
-									{ count: prerequisites.exportTargetCount },
-								)
-							) : (
-								<Problem>
-									{t(
-										"settings.implementationChecklist.rehearsal.payroll.mappingsMissing",
-										"No active wage-type mappings",
-									)}
-								</Problem>
-							),
+						value: <WageTypeMappingValue prerequisites={prerequisites} />,
 					},
 				]}
 			/>
@@ -709,6 +673,97 @@ function PayrollSection({ rehearsal }: { rehearsal: GoLiveRehearsal }) {
 				{needsEmployeesFix ? <FixLink fix={payroll.employeesFix} /> : null}
 			</div>
 		</Section>
+	);
+}
+
+function NotYetInvited() {
+	const { t } = useTranslate();
+	return t(
+		"settings.implementationChecklist.rehearsal.payroll.notYetInvited",
+		"Not yet: they're still invited",
+	);
+}
+
+/** An External Contractor has no employee payroll (#1997): nothing to set up for them. */
+function NotNeededForExternalContractor() {
+	const { t } = useTranslate();
+	return t(
+		"settings.implementationChecklist.rehearsal.payroll.notNeededExternalContractor",
+		"Not needed: External Contractor",
+	);
+}
+
+function PersonnelIdentifierValue({
+	identifier,
+}: {
+	identifier: PayrollPrerequisites["personnelIdentifier"];
+}) {
+	const { t } = useTranslate();
+	switch (identifier.status) {
+		case "unique":
+			return t("settings.implementationChecklist.rehearsal.payroll.unique", "Unique");
+		case "shared":
+			return (
+				<Problem>
+					{t(
+						"settings.implementationChecklist.goLive.payrollSetup.sharedPersonnelIdentifierDetail",
+						"{identifier}, shared with {others}",
+						{ identifier: identifier.identifier, others: identifier.sharedWith.join(", ") },
+					)}
+				</Problem>
+			);
+		case "unavailable":
+			return t(
+				"settings.implementationChecklist.rehearsal.payroll.unavailable",
+				"Couldn't be checked",
+			);
+		case "external-contractor":
+			return <NotNeededForExternalContractor />;
+		default:
+			return <NotYetInvited />;
+	}
+}
+
+function EmploymentTermsValue({ terms }: { terms: PayrollPrerequisites["employmentTerms"] }) {
+	const { t } = useTranslate();
+	switch (terms) {
+		case "confirmed":
+			return t(
+				"settings.implementationChecklist.rehearsal.payroll.termsConfirmed",
+				"Confirmed for today",
+			);
+		case "missing":
+			return (
+				<Problem advisory>
+					{t(
+						"settings.implementationChecklist.rehearsal.payroll.termsMissing",
+						"No confirmed terms covering today",
+					)}
+				</Problem>
+			);
+		case "external-contractor":
+			return <NotNeededForExternalContractor />;
+		default:
+			return <NotYetInvited />;
+	}
+}
+
+function WageTypeMappingValue({ prerequisites }: { prerequisites: PayrollPrerequisites }) {
+	const { t } = useTranslate();
+	if (prerequisites.wageTypeMappings === "present") {
+		return t(
+			"settings.implementationChecklist.rehearsal.payroll.mappingsPresent",
+			"{count, plural, one {# export target} other {# export targets}}, wage types mapped",
+			{ count: prerequisites.exportTargetCount },
+		);
+	}
+	return (
+		<Problem>
+			{t(
+				"settings.implementationChecklist.rehearsal.payroll.mappingsMissing",
+				"No active wage-type mappings",
+			)}
+		</Problem>
 	);
 }
 

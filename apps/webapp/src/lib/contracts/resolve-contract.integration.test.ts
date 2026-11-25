@@ -357,6 +357,134 @@ describe("unified read-only contract resolver & clock-out snapshot v2 (PostgreSQ
 		expect(conflicts).toHaveLength(0);
 	});
 
+	it("resolves an External Contractor period without Org or Primary Team defaults and with balance excluded (#1996)", async () => {
+		const teamId = await seedTeam("Delivery");
+		await seedDefaultContract({
+			name: "Org default",
+			scope: "organization",
+			effectiveFromDate: "2026-01-01",
+			weeklyContractMinutes: 2400,
+			scheduleMode: "hours_only",
+			workModel: "onsite",
+			presenceOverride: "require_onsite",
+		});
+		const teamDefault = await seedDefaultContract({
+			name: "Team default",
+			scope: "team",
+			teamId,
+			effectiveFromDate: "2026-01-01",
+			weeklyContractMinutes: 2000,
+			scheduleMode: "hours_only",
+		});
+		const employeeRow = await seedUserAndEmployee({ userKey: "t1996-employee", teamId });
+		const contractor = await seedUserAndEmployee({ userKey: "t1996-contractor", teamId });
+		await admin.query(
+			`UPDATE employee_team_history SET effective_from = '2026-01-01T00:00:00Z'
+			 WHERE employee_id = ANY($1::uuid[])`,
+			[[employeeRow.employeeId, contractor.employeeId]],
+		);
+		await admin.query(
+			`INSERT INTO employee_employment_period
+			 (organization_id, employee_id, status, started_at, start_provenance, engagement_kind)
+			 VALUES ($1, $2, 'open', '2026-01-01T00:00:00Z', 'recorded', 'employee'),
+			        ($1, $3, 'open', '2026-01-01T00:00:00Z', 'recorded', 'contractor')`,
+			[ORG_ID, employeeRow.employeeId, contractor.employeeId],
+		);
+		await admin.query("UPDATE employee SET engagement_kind = 'contractor' WHERE id = $1", [
+			contractor.employeeId,
+		]);
+
+		const resolved = await resolveEffectiveContractOnDay(db, {
+			organizationId: ORG_ID,
+			employeeId: contractor.employeeId,
+			date: "2026-06-15",
+		});
+		expect(resolved).toMatchObject({
+			engagementKind: "contractor",
+			isEmployedOnDay: true,
+			primaryTeamId: teamId,
+			contractDefaultId: null,
+			contractDefaultScope: null,
+			workPolicy: null,
+			weeklyContractMinutes: null,
+			presenceStatus: "not_configured",
+			balanceMode: "excluded",
+			requiredMinutes: 0,
+			contributesZeroBalanceDelta: true,
+			employmentProfile: null,
+		});
+
+		const batch = await loadEffectiveContractsBatch(db, {
+			organizationId: ORG_ID,
+			employeeIds: [employeeRow.employeeId, contractor.employeeId],
+			dates: ["2026-06-15"],
+		});
+		expect(batch.get(contractor.employeeId)?.get("2026-06-15")).toEqual(resolved);
+		// The control: the employee of the same team inherits the Primary Team default.
+		expect(batch.get(employeeRow.employeeId)?.get("2026-06-15")).toMatchObject({
+			engagementKind: "employee",
+			contractDefaultId: teamDefault.defaultId,
+			balanceMode: "tracked",
+			requiredMinutes: 400,
+			employmentProfile: "regular",
+		});
+	});
+
+	it("gives statutory monitors no profile, on-call terms or wage on a converted person's contractor days, though the employee terms never ended (#1997)", async () => {
+		const person = await seedUserAndEmployee({ userKey: "t1997-converted" });
+		const {
+			rows: [employeeStint],
+		} = await admin.query<{ id: string }>(
+			`INSERT INTO employee_employment_period
+			 (organization_id, employee_id, status, started_at, start_provenance, ended_at, engagement_kind)
+			 VALUES ($1, $2, 'closed', '2026-01-01T00:00:00Z', 'recorded', '2026-06-10T00:00:00Z', 'employee')
+			 RETURNING id`,
+			[ORG_ID, person.employeeId],
+		);
+		await admin.query(
+			`INSERT INTO employee_employment_period
+			 (organization_id, employee_id, status, started_at, start_provenance, engagement_kind)
+			 VALUES ($1, $2, 'open', '2026-06-10T00:00:00Z', 'recorded', 'contractor')`,
+			[ORG_ID, person.employeeId],
+		);
+		await admin.query("UPDATE employee SET engagement_kind = 'contractor' WHERE id = $1", [
+			person.employeeId,
+		]);
+		// Minijob on call (§ 12 TzBfG), terms open-ended: nothing ended them at the conversion.
+		await admin.query(
+			`INSERT INTO employee_employment_history (
+				employee_id, organization_id, employment_period_id, valid_from, valid_from_date,
+				contract_type, hourly_rate, weekly_contract_minutes, employment_profile, schedule_source,
+				on_call_hours_kind, on_call_weekly_minutes, review_state, created_by, updated_at
+			) VALUES (
+				$1, $2, $3, '2026-01-01', '2026-01-01', 'hourly', '13.50', 600, 'minijob', 'on_call',
+				'exact', 600, 'confirmed', $4, now()
+			)`,
+			[person.employeeId, ORG_ID, employeeStint.id, ADMIN_USER_ID],
+		);
+
+		const batch = await loadEffectiveContractsBatch(db, {
+			organizationId: ORG_ID,
+			employeeIds: [person.employeeId],
+			dates: ["2026-06-05", "2026-06-15"],
+		});
+
+		// The control: an employee day carries the statutory profile the monitors key on.
+		expect(batch.get(person.employeeId)?.get("2026-06-05")).toMatchObject({
+			engagementKind: "employee",
+			employmentProfile: "minijob",
+			hourlyRate: 13.5,
+			onCallTerms: expect.objectContaining({ hoursKind: "exact" }),
+		});
+		expect(batch.get(person.employeeId)?.get("2026-06-15")).toMatchObject({
+			engagementKind: "contractor",
+			employmentHistoryId: null,
+			employmentProfile: null,
+			hourlyRate: null,
+			onCallTerms: null,
+		});
+	});
+
 	it("honors 0120 team-history non-inference (no backward extrapolation, between-0120-and-0132 foreign-org team isolation, multi-employee same-transaction moves)", async () => {
 		const orgTeam = await seedTeam("Home Team", ORG_ID);
 		const orgTeam2 = await seedTeam("Second Team", ORG_ID);
@@ -442,6 +570,25 @@ describe("unified read-only contract resolver & clock-out snapshot v2 (PostgreSQ
 		// Foreign-org team row from between 0120 and 0132 is ignored -> falls back to Org Default (480m)
 		expect(batch.get(emp3.employeeId)?.get("2026-06-15")?.primaryTeamId).toBeNull();
 		expect(batch.get(emp3.employeeId)?.get("2026-06-15")?.requiredMinutes).toBe(480);
+
+		// Each employee on its own dates only, with the same terms as the full batch.
+		const own = await loadEffectiveContractsBatch(db, {
+			organizationId: ORG_ID,
+			employeeIds: [emp1.employeeId, emp2.employeeId],
+			dates: ["2026-06-12", "2026-06-15"],
+			datesByEmployee: new Map([
+				[emp1.employeeId, ["2026-06-12"]],
+				[emp2.employeeId, ["2026-06-15"]],
+			]),
+		});
+		expect([...(own.get(emp1.employeeId)?.keys() ?? [])]).toEqual(["2026-06-12"]);
+		expect([...(own.get(emp2.employeeId)?.keys() ?? [])]).toEqual(["2026-06-15"]);
+		expect(own.get(emp1.employeeId)?.get("2026-06-12")).toEqual(
+			batch.get(emp1.employeeId)?.get("2026-06-12"),
+		);
+		expect(own.get(emp2.employeeId)?.get("2026-06-15")).toEqual(
+			batch.get(emp2.employeeId)?.get("2026-06-15"),
+		);
 	});
 
 	it("handles same-day departure + rehire, cross-timezone (employeeTz != orgTz), and clock-out break snapshot v2 + v1 replay", async () => {

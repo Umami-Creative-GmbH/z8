@@ -204,7 +204,42 @@
       }
     },
     "discord": {
-      "title": "Discord"
+      "applicationId": "ID-ja e aplikacionit",
+      "botToken": "Token-i i bot-it",
+      "botTokenHelp": "Ruhet i enkriptuar në Vault dhe përdoret për të vërtetuar dhe operuar bot-in tuaj.",
+      "commandsRegistrationFailed": "Boti i Discord-it u lidh, por komandat slash nuk mund të regjistroheshin automatikisht. Verifikoni lejet e bot-it tuaj, pastaj shkëputeni dhe lidheni bot-in përsëri për të provuar sërish.",
+      "connect": "Lidh bot-in e Discord-it",
+      "connectDescription": "Vendosni kredencialet nga aplikacioni juaj në Discord në Portalin e Zhvilluesve të Discord-it.",
+      "connected": "Boti i Discord-it u lidh me sukses",
+      "connectError": "Lidhja e bot-it të Discord-it dështoi",
+      "copied": "U kopjua",
+      "copy": "Kopjo",
+      "copyInteractionUrl": "Kopjo URL-në e pikës fundore të ndërveprimit",
+      "copyInteractionUrlFailed": "URL-ja e pikës fundore të ndërveprimit nuk mund të kopjohej. Zgjidheni dhe kopjojeni manualisht.",
+      "disconnect": "Shkëput",
+      "disconnectConfirm": {
+        "description": "Kjo do të heqë token-in e ruajtur të bot-it dhe do të çaktivizojë njoftimet e Discord-it dhe komandat slash për organizatën tuaj.",
+        "title": "Të shkëputet boti i Discord-it?"
+      },
+      "disconnected": "Boti i Discord-it u shkëput",
+      "disconnectError": "Shkëputja e bot-it të Discord-it dështoi",
+      "errors": {
+        "applicationIdMismatch": "ID-ja e aplikacionit nuk përputhet me token-in e dhënë të bot-it.",
+        "invalidBotToken": "Token i pavlefshëm i bot-it. Kontrolloni kredencialet e bot-it tuaj në Discord dhe provoni përsëri.",
+        "publicKeyMismatch": "Çelësi publik nuk përputhet me aplikacionin e Discord-it."
+      },
+      "interactionEndpointHelp": "Ngjiteni këtë URL në fushën Interactions Endpoint URL në aplikacionin tuaj në Portalin e Zhvilluesve të Discord-it.",
+      "interactionEndpointUrl": "URL-ja e pikës fundore të ndërveprimit",
+      "interactionUrlCopied": "URL-ja e pikës fundore të ndërveprimit u kopjua",
+      "publicKey": "Çelësi publik",
+      "title": "Discord",
+      "validation": {
+        "applicationIdInvalid": "ID-ja e aplikacionit duhet të përmbajë vetëm shifra.",
+        "applicationIdRequired": "ID-ja e aplikacionit është e detyrueshme.",
+        "botTokenRequired": "Token-i i bot-it është i detyrueshëm.",
+        "publicKeyInvalid": "Çelësi publik duhet të jetë një varg heksadecimal prej 64 karakteresh.",
+        "publicKeyRequired": "Çelësi publik është i detyrueshëm."
+      }
     },
     "slack": {
       "title": "Slack"

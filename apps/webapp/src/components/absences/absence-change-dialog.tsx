@@ -1,5 +1,6 @@
 "use client";
 
+import { engagementRefusalText } from "./engagement-refusal";
 import { HistoricalVacationReconciliationPanel } from "./historical-vacation-reconciliation-panel";
 import type {
 	ReconciliationProof,
@@ -105,7 +106,7 @@ function useAbsenceChangeForm(
 							},
 				);
 				if (!result.success) {
-					input.onError(result.error);
+					input.onError(engagementRefusalText(t, result.refusal) ?? result.error);
 					return;
 				}
 				toast.success(

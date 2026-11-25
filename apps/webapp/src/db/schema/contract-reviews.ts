@@ -99,10 +99,34 @@ export const contractReviewAcknowledgement = pgTable(
 		acknowledgedAt: timestamp("acknowledged_at", { withTimezone: true }).defaultNow().notNull(),
 		note: text("note"),
 		metadata: jsonb("metadata").$type<JsonObject>().default({}).notNull(),
+		/**
+		 * Statutory acknowledgements (#1988): what was evaluated (e.g. a month `2026-03`), the monitor
+		 * finding kind it documents, the deterministic fingerprint of the evaluated inputs, and an
+		 * optional legal note. A row with a fingerprint is immutable and cannot be deleted directly; a
+		 * changed fingerprint makes it stale rather than editing it.
+		 */
+		subjectKey: text("subject_key"),
+		findingKind: text("finding_kind"),
+		inputFingerprint: text("input_fingerprint"),
+		legalNote: text("legal_note"),
 	},
 	(table) => [
 		uniqueIndex("contractReviewAck_org_dedupe_uidx").on(table.organizationId, table.dedupeKey),
 		index("contractReviewAck_org_employee_idx").on(table.organizationId, table.employeeId),
+		index("contractReviewAck_statutory_subject_idx")
+			.on(
+				table.organizationId,
+				table.employeeId,
+				table.reviewKind,
+				table.findingKind,
+				table.subjectKey,
+				table.acknowledgedAt,
+			)
+			.where(sql`"input_fingerprint" IS NOT NULL`),
+		check(
+			"contract_review_ack_statutory_shape_check",
+			sql`("subject_key" IS NULL) = ("input_fingerprint" IS NULL) AND ("finding_kind" IS NULL) = ("input_fingerprint" IS NULL) AND ("input_fingerprint" IS NULL OR ("note" IS NOT NULL AND length(btrim("note")) > 0 AND length(btrim("subject_key")) > 0 AND length(btrim("finding_kind")) > 0 AND length(btrim("input_fingerprint")) > 0 AND "employment_history_id" IS NULL AND "agreement_id" IS NULL))`,
+		),
 		foreignKey({
 			name: "contract_review_ack_employee_fk",
 			columns: [table.employeeId, table.organizationId],

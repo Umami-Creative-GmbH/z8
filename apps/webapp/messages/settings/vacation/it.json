@@ -81,7 +81,6 @@
             "updatePolicyAssignmentFailed": "Impossibile aggiornare l'assegnazione della policy"
           },
           "fallsBackToDefaultPolicy": "Ripristina la policy predefinita del team o dell'organizzazione",
-          "manageAllowances": "gestisci i permessi ferie dei dipendenti",
           "managers": "Manager",
           "overrideEffectivePolicy": "Sostituisci la quota prevista dalla politica ({days} giorni) per questo dipendente",
           "partialSave": {
@@ -231,8 +230,7 @@
         "sourceEmployee": "Assegnazione dipendente",
         "sourceOrganization": "Assegnazione organizzazione",
         "sourceTeam": "Assegnazione team",
-        "teamDescription": "Imposta una policy con data per un team. Le assegnazioni dei dipendenti hanno la precedenza.",
-        "title": "Cronologia"
+        "teamDescription": "Imposta una policy con data per un team. Le assegnazioni dei dipendenti hanno la precedenza."
       },
       "next": "Avanti",
       "noDefaultPolicy": "Nessuna policy aziendale predefinita",

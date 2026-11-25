@@ -73,6 +73,11 @@
     "portalOpenFailed": "Det gick inte att öppna faktureringsportalen",
     "priceSeatMonth": "€{price}/plats/mån",
     "priceSeatMonthYearly": "€{price}/plats/mån (faktureras årligen)",
+    "recovery": {
+      "billingAndSubscription": "Fakturering & prenumeration",
+      "navigationLabel": "Navigering för betalningsåterställning",
+      "suspensionNotice": "Meddelande om avstängning"
+    },
     "seatBilledAnnually": "€{price}/plats faktureras årligen",
     "seatLines": {
       "full": "Fullständiga platser",

@@ -33,7 +33,11 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { findAbsenceCategoryRuleConflict } from "@/lib/absences/category-rules";
+import {
+	CONTRACTOR_UNAVAILABILITY_RULES,
+	findAbsenceCategoryRuleConflict,
+	isContractorUnavailabilityType,
+} from "@/lib/absences/category-rules";
 import { canRequireDeputy } from "@/lib/absences/deputy";
 import { LANGUAGE_CONFIG } from "@/lib/language-config";
 import {
@@ -106,6 +110,11 @@ const absenceCategoryTypeOptions: Array<{
 		labelKey: "settings.absenceCategories.form.typeTimeOffInLieu",
 		fallback: "Time Off in Lieu",
 	},
+	{
+		value: "contractor_unavailability",
+		labelKey: "settings.absenceCategories.form.typeContractorUnavailability",
+		fallback: "External Contractor unavailability",
+	},
 ];
 
 /**
@@ -122,13 +131,24 @@ const SAVE_REFUSALS: RefusalOverrides = {
 /** The form-side refusal of a rule combination the server refuses too (#1000). */
 function drawsOnWorkBalanceError(
 	drawsOnWorkBalance: boolean,
-	form: { getFieldValue(name: "countsAgainstVacation" | "requiresWorkTime"): boolean },
+	form: {
+		state: {
+			values: {
+				countsAgainstVacation: boolean;
+				requiresWorkTime: boolean;
+				type: AbsenceCategoryType;
+			};
+		};
+	},
 ) {
+	const { values } = form.state;
+	// Unavailability saves none of these rules (#1996), so there is no combination to refuse.
+	if (isContractorUnavailabilityType(values.type)) return undefined;
 	return (
 		findAbsenceCategoryRuleConflict({
 			drawsOnWorkBalance,
-			countsAgainstVacation: form.getFieldValue("countsAgainstVacation"),
-			requiresWorkTime: form.getFieldValue("requiresWorkTime"),
+			countsAgainstVacation: values.countsAgainstVacation,
+			requiresWorkTime: values.requiresWorkTime,
 		}) ?? undefined
 	);
 }
@@ -147,7 +167,6 @@ function getFieldError(error: unknown) {
 export function AbsenceCategoryForm({
 	open,
 	onOpenChange,
-	organizationId,
 	existingCategory,
 	onSuccess,
 }: AbsenceCategoryFormProps) {
@@ -184,7 +203,7 @@ export function AbsenceCategoryForm({
 						]),
 					);
 				}
-			} catch (_error) {
+			} catch {
 				toast.error(t("common.unexpectedError", "An unexpected error occurred"));
 			}
 
@@ -306,6 +325,17 @@ export function AbsenceCategoryForm({
 													translationDrafts.current.get(type) ??
 													getAbsenceCategoryTranslationValues(type);
 												field.handleChange(type);
+												// External Contractor unavailability never deducts anything (#1996).
+												if (isContractorUnavailabilityType(type)) {
+													for (const [rule, value] of Object.entries(
+														CONTRACTOR_UNAVAILABILITY_RULES,
+													)) {
+														form.setFieldValue(
+															rule as keyof typeof CONTRACTOR_UNAVAILABILITY_RULES,
+															value,
+														);
+													}
+												}
 												form.setFieldValue("nameTranslations", translations.nameTranslations);
 												form.setFieldValue(
 													"descriptionTranslations",
@@ -488,111 +518,135 @@ export function AbsenceCategoryForm({
 								)}
 							</form.Field>
 
-							<form.Field name="countsAgainstVacation">
-								{(field) => (
-									<div className="flex items-start gap-3 rounded-lg border p-4">
-										<Checkbox
-											id="absenceCategoryCountsAgainstVacation"
-											checked={field.state.value}
-											onCheckedChange={(checked) => field.handleChange(checked === true)}
-										/>
-										<div className="space-y-1 leading-none">
-											<Label
-												htmlFor="absenceCategoryCountsAgainstVacation"
-												className="cursor-pointer"
-											>
-												{t(
-													"settings.absenceCategories.form.countsAgainstVacation",
-													"Counts Against Vacation Balance",
-												)}
-											</Label>
-											<p className="text-sm text-muted-foreground">
-												{t(
-													"settings.absenceCategories.form.countsAgainstVacationHelp",
-													"Deduct approved days from the employee vacation allowance.",
-												)}
-											</p>
-										</div>
-									</div>
-								)}
-							</form.Field>
-
-							<form.Field name="requiresWorkTime">
-								{(field) => (
-									<div className="flex items-start gap-3 rounded-lg border p-4">
-										<Checkbox
-											id="absenceCategoryRequiresWorkTime"
-											checked={field.state.value}
-											onCheckedChange={(checked) => field.handleChange(checked === true)}
-										/>
-										<div className="space-y-1 leading-none">
-											<Label htmlFor="absenceCategoryRequiresWorkTime" className="cursor-pointer">
-												{t(
-													"settings.absenceCategories.form.requiresWorkTime",
-													"Requires Work Time",
-												)}
-											</Label>
-											<p className="text-sm text-muted-foreground">
-												{t(
-													"settings.absenceCategories.form.requiresWorkTimeHelp",
-													"Employees must record work time for this absence category.",
-												)}
-											</p>
-										</div>
-									</div>
-								)}
-							</form.Field>
-
-							<form.Field
-								name="drawsOnWorkBalance"
-								validators={{
-									onChangeListenTo: ["countsAgainstVacation", "requiresWorkTime"],
-									onChange: ({ value, fieldApi }) => drawsOnWorkBalanceError(value, fieldApi.form),
-									onSubmit: ({ value, fieldApi }) => drawsOnWorkBalanceError(value, fieldApi.form),
-								}}
+							<form.Subscribe
+								selector={(state) => isContractorUnavailabilityType(state.values.type)}
 							>
-								{(field) => (
-									<div className="space-y-2 rounded-lg border p-4">
-										<div className="flex items-start gap-3">
-											<Checkbox
-												id="absenceCategoryDrawsOnWorkBalance"
-												checked={field.state.value}
-												onCheckedChange={(checked) => field.handleChange(checked === true)}
-												aria-invalid={field.state.meta.errors.length > 0}
-												aria-describedby="absenceCategoryDrawsOnWorkBalanceHelp"
-											/>
-											<div className="space-y-1 leading-none">
-												<Label
-													htmlFor="absenceCategoryDrawsOnWorkBalance"
-													className="cursor-pointer"
-												>
-													{t(
-														"settings.absenceCategories.form.drawsOnWorkBalance",
-														"Draws on Work Balance",
+								{(unavailability) => (
+									<>
+										<form.Field name="countsAgainstVacation">
+											{(field) => (
+												<div className="flex items-start gap-3 rounded-lg border p-4">
+													<Checkbox
+														id="absenceCategoryCountsAgainstVacation"
+														checked={!unavailability && field.state.value}
+														disabled={unavailability}
+														onCheckedChange={(checked) => field.handleChange(checked === true)}
+													/>
+													<div className="space-y-1 leading-none">
+														<Label
+															htmlFor="absenceCategoryCountsAgainstVacation"
+															className={unavailability ? undefined : "cursor-pointer"}
+														>
+															{t(
+																"settings.absenceCategories.form.countsAgainstVacation",
+																"Counts Against Vacation Balance",
+															)}
+														</Label>
+														<p className="text-sm text-muted-foreground">
+															{t(
+																"settings.absenceCategories.form.countsAgainstVacationHelp",
+																"Deduct approved days from the employee vacation allowance.",
+															)}
+														</p>
+													</div>
+												</div>
+											)}
+										</form.Field>
+
+										<form.Field name="requiresWorkTime">
+											{(field) => (
+												<div className="flex items-start gap-3 rounded-lg border p-4">
+													<Checkbox
+														id="absenceCategoryRequiresWorkTime"
+														checked={!unavailability && field.state.value}
+														disabled={unavailability}
+														onCheckedChange={(checked) => field.handleChange(checked === true)}
+													/>
+													<div className="space-y-1 leading-none">
+														<Label
+															htmlFor="absenceCategoryRequiresWorkTime"
+															className={unavailability ? undefined : "cursor-pointer"}
+														>
+															{t(
+																"settings.absenceCategories.form.requiresWorkTime",
+																"Requires Work Time",
+															)}
+														</Label>
+														<p className="text-sm text-muted-foreground">
+															{t(
+																"settings.absenceCategories.form.requiresWorkTimeHelp",
+																"Employees must record work time for this absence category.",
+															)}
+														</p>
+													</div>
+												</div>
+											)}
+										</form.Field>
+
+										<form.Field
+											name="drawsOnWorkBalance"
+											validators={{
+												onChangeListenTo: ["countsAgainstVacation", "requiresWorkTime", "type"],
+												onChange: ({ value, fieldApi }) =>
+													drawsOnWorkBalanceError(value, fieldApi.form),
+												onSubmit: ({ value, fieldApi }) =>
+													drawsOnWorkBalanceError(value, fieldApi.form),
+											}}
+										>
+											{(field) => (
+												<div className="space-y-2 rounded-lg border p-4">
+													<div className="flex items-start gap-3">
+														<Checkbox
+															id="absenceCategoryDrawsOnWorkBalance"
+															checked={!unavailability && field.state.value}
+															disabled={unavailability}
+															onCheckedChange={(checked) => field.handleChange(checked === true)}
+															aria-invalid={field.state.meta.errors.length > 0}
+															aria-describedby="absenceCategoryDrawsOnWorkBalanceHelp"
+														/>
+														<div className="space-y-1 leading-none">
+															<Label
+																htmlFor="absenceCategoryDrawsOnWorkBalance"
+																className={unavailability ? undefined : "cursor-pointer"}
+															>
+																{t(
+																	"settings.absenceCategories.form.drawsOnWorkBalance",
+																	"Draws on Work Balance",
+																)}
+															</Label>
+															<p
+																id="absenceCategoryDrawsOnWorkBalanceHelp"
+																className="text-sm text-muted-foreground"
+															>
+																{t(
+																	"settings.absenceCategories.form.drawsOnWorkBalanceHelp",
+																	"Time off in lieu: approved days keep their required time, so the employee's work balance falls by it. Vacation is not used.",
+																)}
+															</p>
+														</div>
+													</div>
+													{field.state.meta.errors.length > 0 && (
+														<p className="text-sm text-destructive" role="alert" aria-live="polite">
+															{t(
+																"settings.absenceCategories.form.drawsOnWorkBalanceConflict",
+																'"Draws on work balance" cannot be combined with "Counts against vacation" or "Requires work time".',
+															)}
+														</p>
 													)}
-												</Label>
-												<p
-													id="absenceCategoryDrawsOnWorkBalanceHelp"
-													className="text-sm text-muted-foreground"
-												>
-													{t(
-														"settings.absenceCategories.form.drawsOnWorkBalanceHelp",
-														"Time off in lieu: approved days keep their required time, so the employee's work balance falls by it. Vacation is not used.",
-													)}
-												</p>
-											</div>
-										</div>
-										{field.state.meta.errors.length > 0 && (
-											<p className="text-sm text-destructive" role="alert" aria-live="polite">
+												</div>
+											)}
+										</form.Field>
+										{unavailability && (
+											<p className="text-sm text-muted-foreground">
 												{t(
-													"settings.absenceCategories.form.drawsOnWorkBalanceConflict",
-													'"Draws on work balance" cannot be combined with "Counts against vacation" or "Requires work time".',
+													"settings.absenceCategories.form.contractorUnavailabilityRules",
+													"External Contractor unavailability is a calendar marker only: it never uses vacation, work time or the work balance.",
 												)}
 											</p>
 										)}
-									</div>
+									</>
 								)}
-							</form.Field>
+							</form.Subscribe>
 							<form.Subscribe selector={(state) => state.values.type}>
 								{(type) => (
 									<form.Field name="deputyRequired">

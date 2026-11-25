@@ -441,7 +441,9 @@
       "description": "Προβολή και διαχείριση όλων των χρηστών στην πλατφόρμα",
       "filters": {
         "allUsers": "Όλοι οι χρήστες",
-        "banned": "Αποκλεισμένοι"
+        "banned": "Αποκλεισμένοι",
+        "clearOrganization": "Εκκαθάριση φίλτρου οργανισμού",
+        "organization": "Οργανισμός: {name}"
       },
       "pagination": {
         "showing": "Εμφάνιση {from} έως {to} από {total} χρήστες"

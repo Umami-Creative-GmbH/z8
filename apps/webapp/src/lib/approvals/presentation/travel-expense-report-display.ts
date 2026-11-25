@@ -27,6 +27,16 @@ export function travelExpenseReportDisplay(
 			subtitle: "Submitted facts unavailable",
 			summary: "",
 			icon: "receipt",
+			// List rows show title and detail, the sprint card all three: the detail says it,
+			// once, and the subtitle stays empty (#1978).
+			localized: {
+				title: text("approvals:approvals.reportSummary.title", "Expense report"),
+				subtitle: text("approvals:approvals.reportSummary.subtitleName", "{name}", { name: "" }),
+				summary: text(
+					"approvals:approvals.reportSummary.factsUnavailable",
+					"Submitted facts unavailable",
+				),
+			},
 		};
 	}
 	const { trip, totals, items } = facts;

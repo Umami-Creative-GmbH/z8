@@ -216,12 +216,9 @@ import { approvalWriteGateResult } from "@/lib/approvals/authority";
 import { answerObservedWorkflowLookup } from "@/lib/approvals/domain-adapters/observed-workflow-lookup.test-fixture";
 import { createTimeCorrectionApprovalAdapter } from "@/lib/approvals/domain-adapters/time-correction.adapter";
 import type { TimeCorrectionWorkflowPayload } from "@/lib/approvals/domain-adapters/time-correction-contract";
-import { normalizeTimeCorrectionOriginalWorkMetadata } from "@/lib/approvals/domain-adapters/time-correction-contract";
 import { captureTimeCorrectionLegacyApprovalState } from "@/lib/approvals/domain-adapters/time-correction-legacy-state";
-import { ApprovalAssignmentReassignedError } from "@/lib/approvals/escalation/decision-authority";
 import { ApprovalAuditLogger } from "@/lib/approvals/infrastructure/audit-logger";
 import { resolvePolicyAndCreateApproval } from "@/lib/approvals/policies/chain-service";
-import { processApprovalWithCurrentEmployee } from "@/lib/approvals/server/shared";
 import {
 	approveTimeCorrectionWithCurrentApproverEffect,
 	bindTimeCorrectionWorkflowToWorkPeriod,
@@ -254,16 +251,7 @@ import type {
 	ApprovalWorkflowSnapshot,
 	TransactionalWorkflowRepository,
 } from "@/lib/approvals/workflow/ports";
-import {
-	createApprovalTransitionResultBuilder,
-	createApprovalWorkflowAuthorization,
-	createDatabaseApprovalCommandActorResolver,
-	createRegistryApprovalSourceLoader,
-} from "@/lib/approvals/workflow/runtime";
-import {
-	ApprovalTransitionEngineError,
-	createApprovalTransitionEngine,
-} from "@/lib/approvals/workflow/transition-engine";
+import { ApprovalTransitionEngineError } from "@/lib/approvals/workflow/transition-engine";
 import { parseInstant, systemClock } from "@/lib/datetime/temporal-core";
 import {
 	AuthorizationError,
@@ -406,7 +394,6 @@ describe("time correction transaction boundaries", () => {
 		reviewersByStage?: string[][];
 		autoApprove?: boolean;
 		tamperTerminalActivationMode?: string;
-		transitionError?: Error;
 	}) {
 		const ids = {
 			period: "21000000-0000-4000-8000-000000000801",
@@ -1082,95 +1069,6 @@ describe("time correction transaction boundaries", () => {
 			outboxWriter,
 			compatibilityWriter,
 		} as never;
-		const workflowRepository = {
-			withTransaction: async <T>(
-				operation: (transactionContext: typeof context) => Promise<T>,
-			) => {
-				const priorSnapshots = [...snapshots.entries()];
-				const priorSubmissions = [...submissionWorkflows.entries()];
-				const priorEventCount = canonicalEvents.length;
-				const priorReceipts = [...receipts.entries()].map(
-					([key, value]) => [key, { ...value }] as const,
-				);
-				const priorCompatibility = structuredClone(compatibilityRows);
-				const priorCompatibilityChains = structuredClone(compatibilityChains);
-				const priorCompatibilityStages = structuredClone(compatibilityStages);
-				const priorSource = structuredClone(sourceRow);
-				const priorSourceWorkflowId = sourceWorkflowId;
-				const priorNextBindingWorkflowLoaded = nextBindingWorkflowLoaded;
-				const priorOriginal = structuredClone(originalRow);
-				const priorCorrection = structuredClone(correctionRow);
-				const priorCanonical = structuredClone(canonicalRecord);
-				const priorCanonicalWork = structuredClone(canonicalWork);
-				const priorProjectionCount = projections.length;
-				const priorOutboxCount = outbox.length;
-				const priorLegacyCount = legacyWrites.length;
-				const priorFinalizations = terminalFinalizations;
-				try {
-					return await operation(context);
-				} catch (error) {
-					snapshots.clear();
-					for (const [key, value] of priorSnapshots) snapshots.set(key, value);
-					submissionWorkflows.clear();
-					for (const [key, value] of priorSubmissions) {
-						submissionWorkflows.set(key, value);
-					}
-					canonicalEvents.splice(priorEventCount);
-					receipts.clear();
-					for (const [key, value] of priorReceipts) receipts.set(key, value);
-					compatibilityRows.splice(
-						0,
-						compatibilityRows.length,
-						...priorCompatibility,
-					);
-					compatibilityChains.splice(
-						0,
-						compatibilityChains.length,
-						...priorCompatibilityChains,
-					);
-					compatibilityStages.splice(
-						0,
-						compatibilityStages.length,
-						...priorCompatibilityStages,
-					);
-					restoreRecord(sourceRow, priorSource);
-					sourceWorkflowId = priorSourceWorkflowId;
-					nextBindingWorkflowLoaded = priorNextBindingWorkflowLoaded;
-					restoreRecord(originalRow, priorOriginal);
-					restoreRecord(correctionRow, priorCorrection);
-					restoreRecord(canonicalRecord, priorCanonical);
-					restoreRecord(canonicalWork, priorCanonicalWork);
-					projections.splice(priorProjectionCount);
-					outbox.splice(priorOutboxCount);
-					legacyWrites.splice(priorLegacyCount);
-					terminalFinalizations = priorFinalizations;
-					throw error;
-				}
-			},
-		};
-		const transitionEngine = createApprovalTransitionEngine({
-			repository: workflowRepository,
-			actorResolver: createDatabaseApprovalCommandActorResolver(),
-			authorization: createApprovalWorkflowAuthorization({
-				canManageApproval: async () => false,
-			}),
-			sourceLoader: createRegistryApprovalSourceLoader(adapterRegistry),
-			resultBuilder: createApprovalTransitionResultBuilder(),
-			clock: systemClock,
-		});
-		const runtime = {
-			repository: workflowRepository,
-			transitionEngine: input.transitionError
-				? {
-						executeInTransaction: async () => {
-							throw input.transitionError;
-						},
-						executeInTransactionWithDisposition: async () => {
-							throw input.transitionError;
-						},
-					}
-				: transitionEngine,
-		};
 		const execute = (
 			overrides: {
 				submissionKey?: string;
@@ -3320,8 +3218,8 @@ describe("time correction transaction boundaries", () => {
 			const key = `${mode}-markerless-exact-binding`;
 			const submitted = await fixture.execute({ submissionKey: key });
 			const snapshot = requiredValue([...fixture.snapshots.values()][0]);
-			const { submission: _submission, ...contextSnapshot } =
-				snapshot.contextSnapshot;
+			const contextSnapshot = { ...snapshot.contextSnapshot };
+			delete contextSnapshot.submission;
 			fixture.setSnapshot({ ...snapshot, contextSnapshot });
 
 			const replay = await fixture.execute({ submissionKey: key });
@@ -6033,15 +5931,6 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 		];
 	}
 
-	function collectTerminalBoundValues(value: unknown): unknown[] {
-		if (!value || typeof value !== "object") return [];
-		const candidate = value as { value?: unknown; queryChunks?: unknown[] };
-		return [
-			...(Object.hasOwn(candidate, "value") ? [candidate.value] : []),
-			...(candidate.queryChunks?.flatMap(collectTerminalBoundValues) ?? []),
-		];
-	}
-
 	function createFinalizerDb(
 		options: {
 			period?: Record<string, unknown> | null;
@@ -6777,8 +6666,6 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 					clockOutId: ids.originalOut,
 				},
 				attribution: { workLocationType: "remote", workCategoryId: null },
-				// A canonical workflow tolerates only historical minutes drift (#1229 removes it).
-				toleratedDrift: ["duration"],
 				actorUserId: "user-manager",
 			},
 		]);
@@ -7642,8 +7529,8 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 					workLocationType: "office",
 					workCategoryId: terminalPeriod.workCategoryId,
 				},
-				toleratedDrift: ["interval", "duration"],
 			});
+			expect(amend).not.toHaveProperty("toleratedDrift");
 			expect(amend?.times).not.toHaveProperty("clockIn");
 		});
 
@@ -7707,62 +7594,99 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 		});
 	});
 
-	describe("pure-legacy correction whose canonical record drifted from the period (#388, legacy break or split)", () => {
-		const legacyDriftDb = (canonical: Record<string, unknown>) =>
-			createFinalizerDb({
-				period: { ...terminalPeriod, approvalWorkflowId: null },
-				canonical: { ...canonicalRecord, ...canonical },
-				legacyRequest,
-				workflow: null,
-			});
+	// Finalization tolerates no drift between the records (#1229): a pair whose
+	// minutes or interval disagree is refused for review.
+	describe("correction over a pair whose canonical record disagrees with its period", () => {
 		const legacyDecision = {
 			expectedApprovalWorkflowId: null,
 			expectedApprovalWorkflowVersion: null,
 		};
-
-		it("approves through work records, which tolerates and rewrites the minutes drift", async () => {
-			const { dbService } = legacyDriftDb({ durationMinutes: 479 });
-
-			await expect(
-				finalizeTimeCorrectionTerminalInTransaction(
-					approveInput(dbService, legacyDecision),
-				),
-			).resolves.toMatchObject({ transition: "approved" });
-			expect(workRecordChanges()).toEqual([
-				expect.objectContaining({
-					kind: "amend",
-					times: expect.objectContaining({
-						clockIn: { adopt: ids.correctionIn },
-						clockOut: { adopt: ids.correctionOut },
-					}),
-					toleratedDrift: ["interval", "duration"],
-				}),
-			]);
-		});
-
-		// The legacy automatic break (or calendar split) moved the first period's
-		// end and left its canonical record spanning the whole original work.
 		const staleCanonicalInterval = {
 			endAt: new Date("2026-07-19T10:00:00.000Z"),
 			durationMinutes: 690,
 		};
+		const divergence = {
+			kind: "canonical_divergence",
+			found: "locked_pair",
+			disagreements: ["interval", "duration"],
+		};
 
-		it("approves over a canonical interval a legacy break left stale, tolerating the interval", async () => {
-			testEnv.NODE_ENV = "production";
-			const { dbService } = legacyDriftDb(staleCanonicalInterval);
+		it.each([
+			["legacy", "minutes", { durationMinutes: 479 }],
+			["legacy", "interval", staleCanonicalInterval],
+			["legacy", "approval state", { ...staleCanonicalInterval, approvalState: "pending" }],
+			["canonical", "minutes", { durationMinutes: 479 }],
+			["canonical", "interval", staleCanonicalInterval],
+		] as const)(
+			"asks work records for the %s approval over disagreeing %s without tolerating it, and refuses its divergence",
+			async (decision, _facet, canonical) => {
+				const { dbService } = createFinalizerDb({
+					...(decision === "legacy"
+						? { period: { ...terminalPeriod, approvalWorkflowId: null }, legacyRequest, workflow: null }
+						: {}),
+					canonical: { ...canonicalRecord, ...canonical },
+				});
+				workRecords.refusal = { ...divergence };
+
+				await expect(
+					finalizeTimeCorrectionTerminalInTransaction(
+						approveInput(dbService, decision === "legacy" ? legacyDecision : {}),
+					),
+				).rejects.toMatchObject({
+					details: { reason: "canonical_record_source_mismatch" },
+				});
+				const [amend, ...rest] = workRecordChanges();
+				expect(rest).toEqual([]);
+				expect(amend).toMatchObject({ kind: "amend" });
+				expect(amend).not.toHaveProperty("toleratedDrift");
+			},
+		);
+
+		it("refuses a legacy approval of live work whose canonical start disagrees, writing nothing", async () => {
+			const correction = {
+				action: "edit" as const,
+				clockInCorrectionId: ids.correctionIn,
+				workLocationType: "office" as const,
+				workCategoryId: terminalPeriod.workCategoryId,
+			};
+			const { dbService, mutations } = createFinalizerDb({
+				period: {
+					...terminalPeriod,
+					approvalWorkflowId: null,
+					clockOutId: null,
+					endTime: null,
+					durationMinutes: null,
+					isActive: true,
+				},
+				entries: [originalIn, correctionIn],
+				canonical: {
+					...canonicalRecord,
+					startAt: new Date(originalIn.timestamp.getTime() - 60_000),
+					endAt: null,
+					durationMinutes: null,
+				},
+				legacyRequest: {
+					...legacyRequest,
+					metadata: {
+						timeCorrection: correction,
+						timeCorrectionOriginalWorkMetadata: {
+							workLocationType: "office",
+							workCategoryId: terminalPeriod.workCategoryId,
+						},
+					},
+				},
+				workflow: null,
+			});
 
 			await expect(
 				finalizeTimeCorrectionTerminalInTransaction(
-					approveInput(dbService, legacyDecision),
+					approveInput(dbService, { ...legacyDecision, correction }),
 				),
-			).resolves.toMatchObject({ transition: "approved" });
-			expect(workRecordChanges()).toEqual([
-				expect.objectContaining({
-					kind: "amend",
-					toleratedDrift: ["interval", "duration"],
-				}),
-			]);
-			expect(loggerWarn).not.toHaveBeenCalled();
+			).rejects.toMatchObject({
+				details: { reason: "canonical_record_source_mismatch" },
+			});
+			expect(mutations).toEqual([]);
+			expect(workRecordChanges()).toEqual([]);
 		});
 
 		it.each([
@@ -7790,33 +7714,6 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 				),
 			).resolves.toMatchObject({ transition: "rejected" });
 			expect(mutations).toEqual([]);
-		});
-
-		// Record agreement is work records' one rule (standards-C 3): an approval-state
-		// drift reaches it untolerated, and its refusal is the conflict (mapped above).
-		it("leaves a canonical approval-state drift to work records, tolerating only interval and minutes", async () => {
-			const { dbService } = legacyDriftDb({
-				...staleCanonicalInterval,
-				approvalState: "pending",
-			});
-
-			await finalizeTimeCorrectionTerminalInTransaction(approveInput(dbService, legacyDecision));
-
-			expect(workRecordChanges()).toEqual([
-				expect.objectContaining({ kind: "amend", toleratedDrift: ["interval", "duration"] }),
-			]);
-		});
-
-		it("tolerates only the minutes under a canonical workflow, so work records refuses an interval drift", async () => {
-			const { dbService } = createFinalizerDb({
-				canonical: { ...canonicalRecord, ...staleCanonicalInterval },
-			});
-
-			await finalizeTimeCorrectionTerminalInTransaction(approveInput(dbService));
-
-			expect(workRecordChanges()).toEqual([
-				expect.objectContaining({ kind: "amend", toleratedDrift: ["duration"] }),
-			]);
 		});
 	});
 
@@ -7972,7 +7869,6 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 					entries: { createdBy: "user-manager", ipAddress: null, deviceInfo: null },
 					appendOperation: "completed_work_correction",
 				},
-				toleratedDrift: ["duration"],
 				actorUserId: "user-manager",
 			},
 		]);
@@ -8327,7 +8223,6 @@ describe("finalizeTimeCorrectionTerminalInTransaction", () => {
 					reason: "Duplicate period",
 					approvalRequestId: ids.approval,
 				},
-				toleratedDrift: ["duration"],
 				actorUserId: "user-manager",
 			},
 		]);

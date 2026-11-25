@@ -195,10 +195,7 @@ describe("team-performance range evidence on PostgreSQL", () => {
 			`insert into team (id,organization_id,name,updated_at) values ($1,$2,'Isolated team',now())`,
 			[teamId, fixture.organizationId],
 		);
-		await fixture.pool.query(`update employee set team_id=$2 where id=$1`, [
-			person.employeeId,
-			teamId,
-		]);
+		await fixture.placeInTeam(person.employeeId, teamId);
 		await fixture.pool.query(
 			`insert into user_settings (user_id,timezone,updated_at) values ($1,$2,now())`,
 			[person.userId, timezone],

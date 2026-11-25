@@ -73,6 +73,11 @@
     "portalOpenFailed": "Nu s-a putut deschide portalul de facturare",
     "priceSeatMonth": "€{price}/loc/lună",
     "priceSeatMonthYearly": "€{price}/loc/lună (facturat anual)",
+    "recovery": {
+      "billingAndSubscription": "Facturare și abonament",
+      "navigationLabel": "Navigare recuperare facturare",
+      "suspensionNotice": "Notificare de suspendare"
+    },
     "seatBilledAnnually": "€{price}/loc facturat anual",
     "seatLines": {
       "full": "Locuri complete",

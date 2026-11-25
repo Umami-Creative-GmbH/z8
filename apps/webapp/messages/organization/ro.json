@@ -423,7 +423,6 @@
         "descriptionPlaceholder": "O scurtă descriere a acestei echipe",
         "fallbackManagerHelp": "Utilizat pentru aprobări atunci când un membru al echipei nu are un manager direct.",
         "fallbackManagerLabel": "Manager de rezervă",
-        "fallbackManagerPlaceholder": "Selectează un manager de rezervă",
         "nameLabel": "Numele echipei",
         "namePlaceholder": "Inginerie, Vânzări, Marketing...",
         "noFallbackManager": "Niciun manager de rezervă",

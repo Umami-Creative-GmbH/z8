@@ -19,6 +19,11 @@ import {
 } from "@/lib/absences/absence-days";
 import { loadWorkingDays } from "@/lib/absences/absence-days-resolver";
 import { dateRangesOverlap } from "@/lib/absences/date-utils";
+import { loadEngagementKindsOnDays } from "@/lib/absences/absence-engagement";
+import {
+	absenceEngagementRefusal,
+	ENGAGEMENT_CATEGORY_REFUSAL_MESSAGES,
+} from "@/lib/absences/category-rules";
 import { DEPUTY_REFUSAL_MESSAGES } from "@/lib/absences/deputy";
 import { notifyAbsenceDeputies } from "@/lib/absences/deputy-notifier";
 import { checkDeputyNaming, recordDeputyChange } from "@/lib/absences/deputy-store";
@@ -1136,6 +1141,27 @@ function requestAbsenceWithResolverEffect(
 					requestData.categoryId,
 					currentEmployee.organizationId,
 				);
+
+				// An External Contractor records only unavailability; an employee never does (#1996).
+				// Decided by the stints the absence's days fall in, not by the kind today.
+				const kindsOnDays = yield* dbService.query("absences.engagementKindsOnDays", () =>
+					loadEngagementKindsOnDays(dbService.db, {
+						organizationId: currentEmployee.organizationId,
+						employeeId: currentEmployee.id,
+						startDate: normalizedData.startDate,
+						endDate: normalizedData.endDate,
+					}),
+				);
+				const engagementRefusal = absenceEngagementRefusal(kindsOnDays, category.type);
+				if (engagementRefusal) {
+					return yield* Effect.fail(
+						new ValidationError({
+							message: ENGAGEMENT_CATEGORY_REFUSAL_MESSAGES[engagementRefusal],
+							field: "categoryId",
+							refusal: engagementRefusal,
+						}),
+					);
+				}
 
 				const sickDetailError = validateAbsenceSickDetail({
 					categoryType: category.type,

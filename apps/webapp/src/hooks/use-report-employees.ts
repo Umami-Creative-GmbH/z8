@@ -49,6 +49,8 @@ function transformAccessibleEmployee(emp: AccessibleEmployee): SelectableEmploye
 		...(emp.isFormer === true && emp.formerSince !== undefined
 			? { formerSince: emp.formerSince }
 			: {}),
+		// External Contractors are badged and can be filtered (#1995).
+		...(emp.engagementKind ? { engagementKind: emp.engagementKind } : {}),
 		teamId: null,
 		user: {
 			id: emp.id,

@@ -25,6 +25,7 @@ import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { isFormerEmployee } from "@/lib/employee-lifecycle/current-roster";
 import { departureCutoff, retrospectiveDepartureCutoff } from "@/lib/employee-lifecycle/cutoff";
 import { EMPLOYEE_OFFBOARDING_RELEASE_READY } from "@/lib/employee-lifecycle/release";
+import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 import { normalizePersonnelNumber } from "@/lib/organization/personnel-number";
 import type { ContractType } from "@/lib/validations/employee";
 import {
@@ -86,6 +87,8 @@ export interface CsvContractPreviewRow {
 	readonly employeeIdentifier: string;
 	readonly employeeId: string | null;
 	readonly employeeName: string | null;
+	/** External Contractors are badged in the preview (#1995); null when unmatched. */
+	readonly engagementKind: EngagementKind | null;
 	readonly effectiveFromDate: string | null;
 	readonly errors: readonly string[];
 	readonly warnings: readonly string[];
@@ -129,6 +132,8 @@ export interface CsvLeavingDatePreviewRow {
 	readonly employeeIdentifier: string;
 	readonly employeeId: string | null;
 	readonly employeeName: string | null;
+	/** External Contractors are badged in the preview (#1995); null when unmatched. */
+	readonly engagementKind: EngagementKind | null;
 	readonly lastWorkingDay: string | null;
 	readonly action: CsvDepartureItemAction | null;
 	readonly errors: readonly string[];
@@ -192,6 +197,7 @@ interface ResolvedEmployeeRecord {
 	readonly employeeNumber: string | null;
 	readonly email: string | null;
 	readonly role: "admin" | "manager" | "employee";
+	readonly engagementKind: EngagementKind;
 	readonly isFormer: boolean;
 }
 
@@ -249,6 +255,7 @@ async function resolveEmployeesByIdentifiers(
 		employeeNumber: employee.employeeNumber,
 		email: user.email,
 		role: employee.role,
+		engagementKind: employee.engagementKind,
 		isFormer: isFormerEmployee(employee, nowInstant),
 	};
 
@@ -1113,6 +1120,7 @@ export async function previewCsvContractImport(
 			employeeIdentifier: row.employeeIdentifier,
 			employeeId: row.employee?.id ?? null,
 			employeeName: row.employee ? formatEmployeeName(row.employee) : null,
+			engagementKind: row.employee?.engagementKind ?? null,
 			effectiveFromDate: row.effectiveFromDate,
 			errors,
 			warnings,
@@ -1221,7 +1229,13 @@ export async function previewCsvLeavingDateImport(
 	const empIdList = [...matchedEmployeeIds];
 	const periodsByEmp = new Map<
 		string,
-		{ id: string; status: string; startedAt: Date | null; endedAt: Date | null }[]
+		{
+			id: string;
+			status: string;
+			startedAt: Date | null;
+			endedAt: Date | null;
+			engagementKind: EngagementKind;
+		}[]
 	>();
 	const departuresByEmp = new Map<
 		string,
@@ -1247,6 +1261,7 @@ export async function previewCsvLeavingDateImport(
 					status: employeeEmploymentPeriod.status,
 					startedAt: employeeEmploymentPeriod.startedAt,
 					endedAt: employeeEmploymentPeriod.endedAt,
+					engagementKind: employeeEmploymentPeriod.engagementKind,
 				})
 				.from(employeeEmploymentPeriod)
 				.where(
@@ -1540,7 +1555,12 @@ export async function previewCsvLeavingDateImport(
 							const settledDays = (settledDaysByEmp.get(emp.id) ?? []).filter(
 								(d) => d >= cutoff.cutoffLocalDate,
 							);
-							if (closedMonths.length > 0 || settledDays.length > 0) {
+							// An External Contractor's stint has no employee payroll to reconcile
+							// (#1995), as in previewPastDeparture.
+							if (
+								openPeriod.engagementKind !== "contractor" &&
+								(closedMonths.length > 0 || settledDays.length > 0)
+							) {
 								pushDiagnostic(
 									warningDetails,
 									"departure_payroll_reconciliation",
@@ -1638,6 +1658,7 @@ export async function previewCsvLeavingDateImport(
 			employeeIdentifier,
 			employeeId: emp?.id ?? null,
 			employeeName: emp ? formatEmployeeName(emp) : null,
+			engagementKind: emp?.engagementKind ?? null,
 			lastWorkingDay,
 			action,
 			errors,

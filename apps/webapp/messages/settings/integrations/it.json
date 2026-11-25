@@ -204,7 +204,42 @@
       }
     },
     "discord": {
-      "title": "Discord"
+      "applicationId": "ID applicazione",
+      "botToken": "Token del bot",
+      "botTokenHelp": "Archiviato crittografato in Vault e utilizzato per convalidare e gestire il tuo bot.",
+      "commandsRegistrationFailed": "Bot Discord connesso, ma non è stato possibile registrare automaticamente i comandi slash. Verifica le autorizzazioni del bot, quindi disconnettilo e riconnettilo per riprovare.",
+      "connect": "Connetti bot Discord",
+      "connectDescription": "Inserisci le credenziali della tua applicazione Discord disponibili nel Discord Developer Portal.",
+      "connected": "Bot Discord connesso con successo",
+      "connectError": "Impossibile connettere il bot Discord",
+      "copied": "Copiato",
+      "copy": "Copia",
+      "copyInteractionUrl": "Copia URL dell'endpoint di interazione",
+      "copyInteractionUrlFailed": "Impossibile copiare l'URL dell'endpoint di interazione. Selezionalo e copialo manualmente.",
+      "disconnect": "Disconnetti",
+      "disconnectConfirm": {
+        "description": "Questo rimuoverà il token del bot archiviato e disabiliterà le notifiche e i comandi slash di Discord per la tua organizzazione.",
+        "title": "Disconnettere il bot Discord?"
+      },
+      "disconnected": "Bot Discord disconnesso",
+      "disconnectError": "Impossibile disconnettere il bot Discord",
+      "errors": {
+        "applicationIdMismatch": "L'ID applicazione non corrisponde al token del bot fornito.",
+        "invalidBotToken": "Token del bot non valido. Controlla le credenziali del bot Discord e riprova.",
+        "publicKeyMismatch": "La chiave pubblica non corrisponde all'applicazione Discord."
+      },
+      "interactionEndpointHelp": "Incolla questo URL nel campo Interactions Endpoint URL dell'applicazione nel Discord Developer Portal.",
+      "interactionEndpointUrl": "URL dell'endpoint di interazione",
+      "interactionUrlCopied": "URL dell'endpoint di interazione copiato",
+      "publicKey": "Chiave pubblica",
+      "title": "Discord",
+      "validation": {
+        "applicationIdInvalid": "L'ID applicazione deve contenere solo cifre.",
+        "applicationIdRequired": "L'ID applicazione è obbligatorio.",
+        "botTokenRequired": "Il token del bot è obbligatorio.",
+        "publicKeyInvalid": "La chiave pubblica deve essere una stringa esadecimale di 64 caratteri.",
+        "publicKeyRequired": "La chiave pubblica è obbligatoria."
+      }
     },
     "slack": {
       "title": "Slack"

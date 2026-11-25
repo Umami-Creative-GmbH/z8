@@ -423,7 +423,6 @@
         "descriptionPlaceholder": "Një përshkrim i shkurtër i këtij ekipi",
         "fallbackManagerHelp": "Përdoret për miratime kur një anëtar ekipi nuk ka një menaxher të drejtpërdrejtë.",
         "fallbackManagerLabel": "Menaxher rezervë",
-        "fallbackManagerPlaceholder": "Zgjidhni një menaxher rezervë",
         "nameLabel": "Emri i ekipit",
         "namePlaceholder": "Inxhinieri, Shitje, Marketing...",
         "noFallbackManager": "Nuk ka menaxher rezervë",

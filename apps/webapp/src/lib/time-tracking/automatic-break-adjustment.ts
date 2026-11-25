@@ -46,6 +46,7 @@ import {
 	deriveAutomaticBreakIntentId,
 	deriveAutomaticBreakOperationId,
 } from "./automatic-break-intent";
+import { isExecutiveExemptAt } from "@/lib/statutory/youth/executive-exempt";
 import type { BreakPolicyRegulation } from "./break-policy-calculation";
 import { type CompletedWorkFollowUp, CompletedWorkIntegrityError } from "./close-active-work";
 import { withCompletedWorkTransaction } from "./completed-work-transaction";
@@ -193,6 +194,26 @@ function regulationFrom(
 	}
 	if (!regulation || snapshot.resolution === "none") return null;
 	return { policyId: snapshot.policy.id, ...regulation };
+}
+
+/**
+ * The adult ArbZG break regulation the work owes: none while the employee's terms are
+ * `executive_exempt` when the work ended (§ 18 Abs. 1 Nr. 1 ArbZG, #1993).
+ */
+async function owedBreakRegulation(
+	reader: Parameters<typeof isExecutiveExemptAt>[0],
+	target: AutomaticBreakTarget,
+	snapshot: PolicyBreakSnapshot,
+	endTime: Instant,
+): Promise<(BreakPolicyRegulation & { policyId: string }) | null> {
+	const regulation = regulationFrom(snapshot);
+	if (!regulation) return null;
+	const exempt = await isExecutiveExemptAt(reader, {
+		organizationId: target.organizationId,
+		employeeId: target.employeeId,
+		at: endTime,
+	});
+	return exempt ? null : regulation;
 }
 
 /**
@@ -374,7 +395,7 @@ export async function adjustAutomaticBreakInTransaction(
 		employeeId,
 		endTime: sourceEnd,
 	});
-	const regulation = regulationFrom(breakPolicy);
+	const regulation = await owedBreakRegulation(tx, input, breakPolicy, sourceEnd);
 	// The break entries are captured like the closure they divide.
 	const timezone = capturedZone(clockOut);
 	const outcome = await applyWorkRecordChange(scope, {
@@ -622,13 +643,14 @@ async function mayOweBreak(target: AutomaticBreakTarget): Promise<boolean> {
 		)
 		.limit(1);
 	if (!period?.endTime || period.wasAutoAdjusted) return false;
+	const endTime = instantFromDate(period.endTime);
 	const breakPolicy = await resolvePolicyClockOutBreakSnapshotInTransaction({
 		dbService: { db },
 		organizationId: target.organizationId,
 		employeeId: target.employeeId,
-		endTime: instantFromDate(period.endTime),
+		endTime,
 	});
-	return regulationFrom(breakPolicy) !== null;
+	return (await owedBreakRegulation(db, target, breakPolicy, endTime)) !== null;
 }
 
 /**

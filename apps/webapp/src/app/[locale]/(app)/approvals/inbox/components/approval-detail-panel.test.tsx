@@ -32,6 +32,8 @@ vi.mock("@tolgee/react", () => ({
 									? "Keine Kategorie (100 %)"
 									: key === "approvals:approvals.workCategoryUnavailable"
 										? "Kategorie nicht verfügbar"
+											: key === "approvals:approvals.timeApproval.badge.manual"
+												? "Manuell"
 										: fallback.replace(/\{(\w+)\}/g, (match, name: string) =>
 												params && name in params ? String(params[name]) : match,
 											),
@@ -539,6 +541,33 @@ describe("ApprovalDetailPanel", () => {
 		expect(footer?.className).toContain("px-5");
 		expect(badge.className).toContain("max-w-");
 		expect(badge.className).toContain("truncate");
+	});
+
+	it("names a kind's header badge in the viewer's language (#1978)", async () => {
+		mockState.detailItem = {
+			...approvalItem,
+			summary: {
+				...approvalItem.summary,
+				badge: { label: "Manual", color: null },
+				localized: {
+					title: { key: "approvals:approvals.test.title", fallback: "Title" },
+					subtitle: { key: "approvals:approvals.test.subtitle", fallback: "Subtitle" },
+					badge: { key: "approvals:approvals.timeApproval.badge.manual", fallback: "Manual" },
+				},
+			},
+		};
+		render(
+			<ApprovalDetailPanel
+				approval={mockState.detailItem}
+				open={true}
+				onOpenChange={vi.fn()}
+				onActioned={vi.fn()}
+			/>,
+		);
+
+		await screen.findByRole("dialog");
+		expect(screen.getByText("Manuell")).toBeTruthy();
+		expect(screen.queryByText("Manual")).toBeNull();
 	});
 
 	it("approves with the approval id when approval is allowed", async () => {

@@ -75,12 +75,7 @@ describe("go-live checks (PostgreSQL)", () => {
 	async function seedNamed(organizationId: string, name: string, teamId: string | null = null) {
 		const seeded = await fixture.seedEmployee({ organizationId });
 		await fixture.pool.query(`update "user" set name = $1 where id = $2`, [name, seeded.userId]);
-		if (teamId) {
-			await fixture.pool.query(`update employee set team_id = $1 where id = $2`, [
-				teamId,
-				seeded.employeeId,
-			]);
-		}
+		if (teamId) await fixture.placeInTeam(seeded.employeeId, teamId);
 		return seeded;
 	}
 
@@ -273,6 +268,19 @@ describe("go-live checks (PostgreSQL)", () => {
 		expect(workPolicyResult(results)).toMatchObject({ outcome: "passed", checkedMemberCount: 2 });
 		expect(items.find((item) => item.id === "work-policies")?.status).toBe("verified");
 		expect(resolveGoLiveReadiness(results, 2)).toEqual({ status: "ready", warnings: [] });
+	});
+
+	it("needs no work policy for an external contractor: no work policy applies to their stint", async () => {
+		const { organizationId } = await createOrganizationWithOwner();
+		// The organization-wide policy covers employees; it never applies to a contractor's stint.
+		await assign(organizationId, await createPolicy(organizationId, "Default"), {
+			type: "organization",
+		});
+		await fixture.seedEmployee({ organizationId, engagementKind: "contractor" });
+
+		const result = workPolicyResult(await run(organizationId));
+
+		expect(result).toMatchObject({ outcome: "passed", checkedMemberCount: 2, failures: [] });
 	});
 
 	it("is unavailable, never passing, when a lookup fails", async () => {

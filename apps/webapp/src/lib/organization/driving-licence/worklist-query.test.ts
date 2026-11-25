@@ -29,6 +29,18 @@ describe("Checks table order (#1418)", () => {
 	it("puts checks due now first, then the soonest deadline, then ended records by default", () => {
 		expect(names(sortDrivingLicenceWorklist(rows))).toEqual(["Blair", "Casey", "Dana", "Alex"]);
 	});
+	it("counts an active driver who declared a new class as due now (#2003)", () => {
+		const declaring = {
+			...row("Dana", "active", "2026-05-01T22:00:00Z", "Vans"),
+			declaredUnchecked: ["C"],
+		};
+		expect(names(sortDrivingLicenceWorklist([...rows.slice(1), declaring]))).toEqual([
+			"Blair",
+			"Dana",
+			"Casey",
+			"Alex",
+		]);
+	});
 	it("reverses the deadline order on request", () => {
 		expect(
 			names(sortDrivingLicenceWorklist(rows, { sort: "deadline", direction: "desc" })),

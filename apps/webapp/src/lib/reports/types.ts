@@ -144,6 +144,8 @@ export interface AccessibleEmployee {
 	pronouns: string | null;
 	position: string | null;
 	role: "admin" | "manager" | "employee";
+	/** Employee or External Contractor (#1995): the selector badges and filters contractors. */
+	engagementKind?: "employee" | "contractor";
 	/** Deactivated or past a due departure (#1438): the selector labels them "Former". */
 	isFormer?: boolean;
 	/**

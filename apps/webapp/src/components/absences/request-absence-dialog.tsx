@@ -71,6 +71,7 @@ import { noWorkingDaysMessage } from "./absence-plan-preview-messages";
 import { AbsencePlanPreviewPanel } from "./absence-plan-preview-panel";
 import { CategoryBadge } from "./category-badge";
 import { DeputyPicker, deputyRefusalText, deputyRequiredText } from "./deputy-picker";
+import { engagementRefusalText } from "./engagement-refusal";
 import type { StagedSickNoteFile } from "./sick-notes/sick-note-files-field";
 import {
 	failedSickNoteNames,
@@ -281,7 +282,7 @@ function useRequestAbsenceDialogController({
 					),
 				);
 			} else {
-				toast.error(result.error || failureMessage);
+				toast.error(engagementRefusalText(t, result.refusal) ?? (result.error || failureMessage));
 			}
 		},
 	});

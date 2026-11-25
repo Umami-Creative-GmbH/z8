@@ -246,15 +246,27 @@
         "regenerateTokenFailed": "Rigjenerimi i token-it dështoi",
         "regenerateTokenSuccess": "U gjenerua token-i i ri i verifikimit",
         "regenerating": "Duke rigjeneruar…",
+        "registration": "Regjistrimi",
+        "registrationHelp": "Lejoni personat e rinj të krijojnë një llogari këtu. Kur është e çaktivizuar, vetëm personat me një ftesë mund të regjistrohen.",
+        "routingInstruction": "Për një nëndomain, shtoni një regjistrim CNAME që drejton {domain} te {target}. Për një apex domain, shtoni një regjistrim A që drejton tek IP-ja e balancuesit të ngarkesës Z8. Çaktivizoni ndërmjetësimin proxy të CDN-së për këtë regjistrim.",
         "saveConfiguration": "Ruaj konfigurimin",
         "secretKey": "Çelësi sekret",
         "secretKeyPlaceholder": "Futni çelësin sekret",
         "secretKeyRequired": "Kërkohet kur caktohet një çelës faqeje",
+        "signInMethods": "Metodat e hyrjes",
         "siteKey": "Çelësi i faqes",
         "socialProviders": "Ofruesit e rrjeteve sociale",
         "socialProvidersHelp": "Aktivizo opsionet e hyrjes sociale për këtë domen",
         "sso": "Identifikim i vetëm (SSO)",
+        "ssoButtonIcon": "Ikona e butonit SSO",
+        "ssoButtonLabel": "Etiketa e butonit SSO (opsionale)",
         "ssoHelp": "Lejo hyrjen e ndërmarrjes të bazuar në OIDC",
+        "ssoIconBadge": "Karta e identifikimit",
+        "ssoIconFingerprint": "Shenja e gishtit",
+        "ssoIconKey": "Çelësi",
+        "ssoIconLock": "Kyç",
+        "ssoIconShield": "Mburojë",
+        "ssoUnavailableHelp": "Konfiguroni dhe verifikoni fillimisht një ofrues SSO te Konfigurimi i identitetit.",
         "status": {
           "pending": "Në pritje të verifikimit",
           "verified": "Verifikuar"
@@ -337,65 +349,30 @@
       "enableProviderHelp": "Aktivizo ose çaktivizo këtë ofrues",
       "identity": {
         "accessPolicy": {
-          "action": {
-            "save": "Ruaj politikën e qasjes"
-          },
-          "defaultRoleTemplate": "Shablloni i parazgjedhur i rolit",
-          "description": "Caktoni zbatimin e detyrueshëm të domenit, ftesave dhe SSO-së pasi testi pilot të kalojë me sukses.",
           "noDefaultTemplate": "Asnjë shabllon i parazgjedhur",
           "placeholder": {
             "roleTemplate": "Zgjidhni shabllonin e rolit"
           },
           "requireSso": "Kërko SSO",
-          "requireSsoHelp": "Punonjësit duhet të përdorin IdP-në e ndërmarrjes.",
           "restrictDomain": "Kufizo në domenin e verifikuar",
-          "restrictDomainHelp": "Blloko llogaritë jashtë domenit të përzgjedhur.",
-          "restrictInvites": "Kufizo ftesat",
-          "restrictInvitesHelp": "Lejo vetëm ftesat në përputhje me politikën e qasjes.",
-          "title": "Politika e qasjes"
-        },
-        "badge": {
-          "now": "Tani",
-          "queued": "Në radhë",
-          "ready": "Gati"
+          "restrictInvites": "Kufizo ftesat"
         },
         "domain": {
-          "action": {
-            "checkStatus": "Kontrollo statusin e domenit"
-          },
-          "description": "Vlefësoni kufirin e qiramarrësit para se të zbatoni detyrimin e SSO-së për punonjësit.",
-          "help": "Verifikimi DNS përdor veprimet ekzistuese të verifikimit të domenit SSO. Përfundoni atë verifikim para se të aktivizoni zbatimin e detyrueshëm.",
-          "notSelected": "Nuk është përzgjedhur",
           "selected": "Domeni i përzgjedhur",
           "status": {
-            "pending": "Në pritje",
             "verified": "I verifikuar"
-          },
-          "title": "Domeni"
+          }
         },
-        "hero": {
-          "title": "Lista e kontrollit të komandave operacionale"
-        },
-        "progress": "{completed} nga {total} hapa të përfunduar",
         "provider": {
-          "action": {
-            "save": "Ruaj ofruesin"
-          },
-          "description": "Zgjidhni konfigurimin paraprak të ofruesit të identitetit, protokollin, ID-në e ofruesit dhe domenin e emailit.",
           "error": {
             "domainRequired": "Domeni është i detyrueshëm",
             "providerIdRequired": "Kërkohet ID-ja e ofruesit"
           },
           "label": {
-            "domain": "Domeni i email-it",
-            "preset": "Paracaktimi i ofruesit",
-            "protocol": "Protokolli",
             "providerId": "ID-ja e ofruesit"
           },
           "placeholder": {
             "domain": "p.sh. example.com…",
-            "protocol": "Zgjidhni protokollin",
-            "provider": "Zgjidhni ofruesin",
             "providerId": "p.sh. acme-okta…"
           },
           "preset": {
@@ -411,28 +388,14 @@
             "okta": {
               "description": "Përdorni Okta Workforce Identity për identifikim të vetëm (SSO) përmes SAML ose OIDC."
             }
-          },
-          "title": "Ofruesi"
-        },
-        "rail": {
-          "title": "Shiriti i gatishmërisë"
+          }
         },
         "review": {
           "action": {
             "activate": "Aktivizo identitetin e ndërmarrjes"
           },
-          "activationSummary": "Përmbledhja e aktivizimit",
-          "description": "Rishikoni kontrollet mbrojtëse të aktivizimit përpara se të aktivizoni kontrollet e identitetit të ndërmarrjes.",
           "lockoutWarning": "Paralajmërim për bllokimin e administratorit aktual",
-          "lockoutWarningHelp": "Konfirmoni që llogaria juaj aktuale e administratorit mund të identifikohet përmes ofruesit të konfiguruar përpara aktivizimit. Zbatimi mund të bllokojë përdorimin rezervë të fjalëkalimit për domenin e zgjedhur.",
-          "missingRequirement": "{item} kërkohet përpara aktivizimit",
-          "prerequisitesComplete": "Kushtet paraprake për ofruesin, domenin e verifikuar dhe testimin e SSO-së janë përfunduar.",
-          "requirement": {
-            "domain": "Domeni i verifikuar",
-            "provider": "Ofruesi",
-            "ssoTest": "Testi i SSO-së"
-          },
-          "title": "Rishiko dhe aktivizo"
+          "lockoutWarningHelp": "Konfirmoni që llogaria juaj aktuale e administratorit mund të identifikohet përmes ofruesit të konfiguruar përpara aktivizimit. Zbatimi mund të bllokojë përdorimin rezervë të fjalëkalimit për domenin e zgjedhur."
         },
         "scim": {
           "action": {
@@ -500,7 +463,6 @@
             "rotating": "duke ndërruar",
             "verified": "verifikuar"
           },
-          "title": "Provizionimi SCIM",
           "toast": {
             "createError": "E pamundur të krijohet lidhja SCIM.",
             "reconcileError": "E pamundur të rakordohet krijimi i SCIM.",
@@ -510,14 +472,9 @@
           },
           "verification": "Verifikimi",
           "verification.awaiting": "Në pritje të përdorimit nga ofruesi",
-          "verification.observed": "Vëzhguar",
-          "wizardDescription": "Konfiguroni provizionimin e menaxhuar të përdoruesve pa ndryshuar aktivizimin e ndërmarrjes."
+          "verification.observed": "Vëzhguar"
         },
         "sso": {
-          "action": {
-            "register": "Regjistro ofruesin e SSO-së"
-          },
-          "description": "Regjistroni IdP-në e jashtme duke përdorur kredencialet e klientit OIDC ose meta të dhënat SAML.",
           "error": {
             "saveProviderFirst": "Ruani ofruesin dhe domenin përpara se të regjistroni SSO-në"
           },
@@ -535,53 +492,19 @@
               "okta": "https://acme.okta.com…"
             },
             "metadata": "Ngjitni XML-in e meta të dhënave të IdP-së…"
-          },
-          "saml": {
-            "acsPath": "Shtegu ACS relativ me shfletuesin: {path}",
-            "acsUrl": "Konfiguroni IdP-në tuaj me këtë URL të shërbimit të konsumatorit të pohimit (ACS): {path}"
-          },
-          "title": "Konfigurimi i SSO-së"
+          }
         },
         "ssoTest": {
-          "action": {
-            "recordFail": "Regjistro dështimin",
-            "recordPass": "Regjistro suksesin"
-          },
           "defaultFailure": "Testi i drejtpërdrejtë i SSO-së dështoi",
-          "description": "Regjistroni rezultatin e një testi të drejtpërdrejtë të jashtëm të SSO-së përpara zbatimit.",
           "error": {
             "saveProviderFirst": "Ruani ofruesin përpara se të regjistroni një test"
           },
-          "label": {
-            "email": "Email-i i përdoruesit testues",
-            "failureNote": "Shënimi i dështimit"
-          },
           "status": {
-            "failed": "Dështoi",
-            "notRun": "Nuk është ekzekutuar",
-            "passed": "Kaloi"
-          },
-          "title": "Përdorues prove"
+            "notRun": "Nuk është ekzekutuar"
+          }
         },
         "status": {
-          "activated": "Aktivizuar",
-          "draft": "Draft"
-        },
-        "step": {
-          "accessPolicy": "Politika e aksesit",
-          "accessPolicy.description": "Caktoni rregullat e zbatimit",
-          "domain": "Domeni",
-          "domain.description": "Konfirmoni kufirin e njësisë (tenant)",
-          "provider": "Ofruesi",
-          "provider.description": "Zgjidhni burimin e identitetit",
-          "review": "Shqyrtoni dhe aktivizoni",
-          "review.description": "Mbrojtja e aktivizimit",
-          "scim": "Provizionimi SCIM",
-          "scim.description": "Lidhni dhe menaxhoni lidhjen tuaj të provizionimit SCIM",
-          "sso": "Konfigurimi i SSO-së",
-          "sso.description": "Regjistroni OIDC ose SAML",
-          "ssoTest": "Përdorues prove",
-          "ssoTest.description": "Regjistroni rezultatin e hyrjes në kohë reale"
+          "activated": "Aktivizuar"
         },
         "toast": {
           "accessPolicyFailed": "Dështoi ruajtja e politikës së aksesit",
@@ -589,7 +512,6 @@
           "activated": "Konfigurimi i identitetit të ndërmarrjes u aktivizua",
           "activateFailed": "Dështoi aktivizimi i konfigurimit",
           "domainStatusFailed": "Dështoi rifreskimi i statusit të domenit",
-          "domainStatusRefreshed": "Statusi i domenit u rifreskua",
           "providerSaved": "Ofruesi i identitetit u ruajt",
           "providerSaveFailed": "Dështoi ruajtja e ofruesit",
           "ssoRegistered": "Ofruesi SSO u regjistrua",
@@ -597,6 +519,171 @@
           "ssoTestFailed": "Testi SSO u shënua si i dështuar",
           "ssoTestPassed": "Testi SSO u shënua si i suksesshëm",
           "ssoTestRecordFailed": "Dështoi regjistrimi i testit SSO"
+        },
+        "wizard": {
+          "accessPolicy": {
+            "description": "Vendosni se sa rreptësisht zbatohet hyrja e ndërmarrjes. Asgjë nuk ndryshon për punonjësit derisa të aktivizoni konfigurimin në hapin e fundit.",
+            "domainsLink": "Hap Domenet",
+            "legend": "Aktivizoni rregullat që ju nevojiten. Të gjitha janë opsionale.",
+            "nav": "Rregullat e aksesit",
+            "requireSsoDomains": "Kjo kërkon gjithashtu që {domain} të shtohet dhe të verifikohet te Domenet.",
+            "requireSsoHelp": "Personat me një email @{domain} duhet të hyjnë përmes {provider} në vend të përdorimit të një fjalëkalimi.",
+            "restrictDomainHelp": "Kodet e ftesës mund të përdoren vetëm nga persona me një adresë emaili @{domain}.",
+            "restrictInvitesHelp": "Ftesat mund të dërgohen vetëm në adresat e emailit @{domain}.",
+            "save": "Ruaj dhe vazhdo",
+            "title": "Zgjidhni rregullat e aksesit"
+          },
+          "action": {
+            "back": "Prapa",
+            "next": "Tjetra: {step}",
+            "skip": "Kalo te {step}"
+          },
+          "activeNotice": "Hyrja e ndërmarrjes është aktive për {domain}. Mund të rishikoni çdo hap më poshtë.",
+          "description": "Lejojini punonjësit të hyjnë në Z8 me llogarinë e tyre të punës nga ofruesi i identitetit të kompanisë suaj. Progresi juaj ruhet pas çdo hapi, kështu që mund të ndaloni dhe të ktheheni në çdo moment.",
+          "domain": {
+            "continue": "Vazhdoni për të testuar hyrjen",
+            "copyName": "Kopjo emrin",
+            "copyValue": "Kopjo vlerën",
+            "create": "Krijo regjistrim DNS",
+            "createHelp": "Z8 gjeneron një vlerë unike që ju ta publikoni. Nëse tashmë keni krijuar një te Ofruesit e SSO-së, mund të kaloni te hapi i fundit.",
+            "description": "Shtoni një regjistrim DNS për të vërtetuar se kompania juaj kontrollon këtë domen. Vetëm domenet e verifikuara mund të përdorin hyrjen e ndërmarrjes.",
+            "fallbackName": "domeni juaj",
+            "fullNameHint": "Nëse ofruesi juaj i DNS-së kërkon emrin e plotë, përdorni {fullName}.",
+            "nav": "Verifiko domenin",
+            "needsConnection": "Lidhni fillimisht ofruesin tuaj të identitetit. Z8 krijon regjistrimin DNS për atë lidhje.",
+            "notVerified": "Ende i paverifikuar",
+            "publishHelp": "Hyni te ofruesi juaj i DNS-së, si p.sh. Cloudflare, GoDaddy ose IONOS, dhe shtoni një regjistrim të ri TXT ekzaktësisht siç tregohet. Nëse dikush tjetër e menaxhon domenin tuaj, dërgojini këto vlera.",
+            "recordName": "Emri (quhet gjithashtu host)",
+            "recordType": "Lloji",
+            "recordValue": "Vlera (quhet gjithashtu përmbajtje)",
+            "stepCreate": "Krijoni regjistrimin DNS",
+            "stepPublish": "Shtojeni aty ku menaxhohet domeni juaj",
+            "stepVerify": "Lëreni Z8 të kontrollojë regjistrimin",
+            "title": "Verifikoni që zotëroni {domain}",
+            "toast": {
+              "notFound": "Z8 nuk mundi ta gjente ende regjistrimin DNS. Kontrolloni emrin dhe vlerën, pastaj provoni përsëri pas disa minutash.",
+              "verified": "Domeni u verifikua"
+            },
+            "verifiedHelp": "Z8 e gjeti regjistrimin tuaj DNS. Mund ta lini në vend.",
+            "verify": "Verifiko domenin",
+            "verifyHelp": "Regjistrimet e reja zakonisht shfaqen brenda pak minutash, por mund të kërkojnë deri në 48 orë. Mund ta lini këtë faqe dhe ta kontrolloni përsëri më vonë."
+          },
+          "nav": {
+            "label": "Hapat e konfigurimit"
+          },
+          "prerequisite": {
+            "action": "Shko te {step}",
+            "title": "Mbetet fillimisht një hap"
+          },
+          "progress": "{completed} nga {total} hapa të kërkuar të përfunduar",
+          "progressLabel": "Ecuria e konfigurimit",
+          "provider": {
+            "changeWarning": "Ky ofrues është tashmë i lidhur. Ndryshimi i ID-së së ofruesit ose domenit të emailit do të thotë se do t'ju duhet të lidheni dhe të verifikoni përsëri.",
+            "description": "Tregoni Z8 se cilin shërbim përdor kompania juaj për llogaritë e punës dhe cilin domen emaili kanë punonjësit tuaj.",
+            "domainHelp": "Punonjësit, adresa e emailit të të cilëve përfundon me këtë domen, do të hyjnë përmes ofruesit tuaj.",
+            "domainInvalid": "Vendosni vetëm pjesën pas @, për shembull example.com.",
+            "domainLabel": "Domain-i i email-it të punës",
+            "genericName": "ofruesi juaj i identitetit",
+            "nav": "Ofruesi i identitetit",
+            "oidc": "OpenID Connect (e rekomanduar)",
+            "oidcHelp": "Më e shpejtë për t'u konfiguruar dhe mbështetet nga shumica e ofruesve. Zgjidheni këtë nëse nuk jeni të sigurt.",
+            "prepAdmin": "Qasje administratori te ofruesi juaj i identitetit, si p.sh. Okta ose Microsoft Entra ID",
+            "prepDns": "Qasje te cilësimet DNS të domain-it tuaj, për të shtuar një regjistrim TXT",
+            "prepIntro": "Konfigurimi zgjat rreth 15 minuta. Mbani gati këto:",
+            "prepTester": "Një llogari pune të një kolegu, ose një llogari testuese, për të provuar hyrjen",
+            "prepTitle": "Përpara se të filloni",
+            "presetLegend": "Cilin ofrues identiteti përdor kompania juaj?",
+            "protocolLegend": "Si duhet të lidhet Z8?",
+            "providerIdHelp": "Një emër i shkurtër për këtë lidhje, i përdorur në lidhjet e hyrjes. Shkronja të vogla, numra dhe viza lidhëse, për shembull acme-okta.",
+            "providerIdInvalid": "Përdorni vetëm shkronja të vogla, numra dhe viza lidhëse, pa vizë lidhëse në fillim ose në fund.",
+            "saml": "SAML 2.0",
+            "samlHelp": "Përdoreni këtë nëse ekipi juaj i IT-së kërkon SAML. Do të ngjisni një skedar metatëdhënash XML.",
+            "save": "Ruaj dhe vazhdo",
+            "singleProtocol": "{provider} lidhet me OpenID Connect (OIDC).",
+            "title": "Zgjidhni ofruesin tuaj të identitetit"
+          },
+          "review": {
+            "blocked": "Përfundoni hapat e shënuar \"Për t'u bërë\" për të aktivizuar. Kërkohet lidhja, verifikimi i domain-it dhe një test i suksesshëm hyrjeje.",
+            "checklist": "Lista e kontrollit",
+            "description": "Kontrolloni konfigurimin tuaj, më pas aktivizoni hyrjen e ndërmarrjes.",
+            "nav": "Aktivizo",
+            "noRules": "Nuk është aktivizuar asnjë rregull",
+            "notSet": "E papërcaktuar",
+            "open": "Hap hapin",
+            "provider": "Ofruesi i identitetit",
+            "ready": "Gjithçka e kërkuar është përfunduar. Mund ta aktivizoni tani.",
+            "reapply": "Tashmë aktive. Aktivizojeni sërish pasi të ndryshoni rregullat e qasjes për t'i zbatuar ato.",
+            "rules": "Rregullat e qasjes",
+            "scim": "Sinkronizimi i përdoruesve (SCIM)",
+            "scimOff": "E pakonfiguruar",
+            "scimOn": "E lidhur",
+            "summary": "Cilësimet tuaja",
+            "test": "Testi i hyrjes",
+            "title": "Shqyrto dhe aktivizo"
+          },
+          "scim": {
+            "description": "Lejoni {provider} të krijojë, përditësojë dhe çaktivizojë llogaritë Z8 për ju duke përdorur SCIM. Mund ta kapërceni këtë dhe ta konfiguroni më vonë.",
+            "nav": "Sinkronizo përdoruesit",
+            "roleHelp": "Zgjidhni një shabllon roli përpara se të krijoni lidhjen. Llogaritë e reja fillojnë me këtë rol.",
+            "roleLabel": "Roli për personat e krijuar nga ofruesi juaj",
+            "skipHelp": "Kapërcejeni këtë hap nëse ofruesi juaj nuk e mbështet SCIM ose nëse preferoni t'i shtoni vetë personat në Z8. Punonjësit mund të hyjnë përsëri me hyrjen e ndërmarrjes.",
+            "title": "Sinkronizo përdoruesit automatikisht"
+          },
+          "sso": {
+            "acsLabel": "URL-ja e ACS",
+            "clientIdHelp": "Quhet gjithashtu ID e aplikacionit.",
+            "clientIdRequired": "Vendosni ID-në e klientit.",
+            "clientSecretHelp": "Ruhet në mënyrë të sigurt dhe nuk shfaqet më kurrë.",
+            "clientSecretRequired": "Vendosni sekretin e klientit.",
+            "connected": "E lidhur si {providerId}",
+            "connectedHelp": "Për të ndryshuar detajet e lidhjes, hiqni këtë ofrues te Ofruesit e SSO-së dhe lidheni përsëri këtu.",
+            "continue": "Vazhdo te verifikimi i domenit",
+            "copyAcs": "Kopjo URL-në e ACS-së",
+            "description": "Krijoni një aplikacion për Z8 në {provider}, pastaj ngjitni këtu detajet që ju jep.",
+            "issuerHelp": "Adresa e uebit që identifikon ofruesin tuaj. Ajo listohet te cilësimet e aplikacionit dhe fillon me https://.",
+            "issuerRequired": "Vendosni URL-në e lëshuesit nga ofruesi juaj.",
+            "manageLink": "Hap ofruesit e SSO-së",
+            "metadataRequired": "Ngjitni XML-në e metadatave nga ofruesi juaj.",
+            "nav": "Lidh",
+            "needsProvider": "Zgjidhni fillimisht ofruesin tuaj të identitetit dhe domenin e emailit, në mënyrë që Z8 të mund të përgatisë detajet e lidhjes.",
+            "partOne": "Krijoni një aplikacion për Z8 në {provider}",
+            "partTwo": "Ngjitni detajet nga {provider}",
+            "samlIntro": "Krijoni një aplikacion SAML në {provider} dhe vendosni këtë adresë si shërbimin e saj të konsumimit të pohimit (ACS) ose URL-në e përgjigjes. Më pas shkarkoni XML-në e metadatave të aplikacionit.",
+            "save": "Lidh ofruesin",
+            "title": "Lidh {provider} me Z8"
+          },
+          "ssoTest": {
+            "description": "Përpara se të aktivizoni ndonjë gjë, konfirmoni që një punonjës mund të identifikohet me të vërtetë përmes {provider}.",
+            "domainFirst": "{domain} nuk është verifikuar ende. Identifikimi përmes ofruesit tuaj mund të mos funksionojë derisa të verifikohet.",
+            "emailHelp": "Idealisht llogaria e një kolegu dhe jo llogaria juaj e administratorit.",
+            "emailLabel": "Emaili i përdorur për testimin",
+            "failed": "Testimi i fundit dështoi",
+            "failedHelp": "Shkaqet e zakonshme: URL-ja e kthimit të thirrjes nuk përputhet saktësisht, çelësi sekret i klientit është i pasaktë ose ka skaduar, ose përdoruesi i testimit nuk është caktuar te aplikacioni në {provider}.",
+            "goToDomain": "Verifiko domenin",
+            "howPrivate": "Hapni një dritare private ose incognito të shfletuesit. Mbajeni hapur këtë dritare, në mënyrë që të qëndroni të identifikuar si administrator nëse diçka shkon keq.",
+            "howRecord": "Kthehuni këtu dhe regjistroni nëse funksionoi.",
+            "howSignIn": "Shkoni te faqja e hyrjes në Z8 dhe identifikohuni me një adresë emaili pune që përfundon me @{domain}.",
+            "howTitle": "Si të kryeni testimin",
+            "nav": "Testo identifikimin",
+            "needsConnection": "Lidhni ofruesin tuaj të identitetit përpara se të testoni identifikimin.",
+            "noteLabel": "Çfarë shkoi keq? (vetëm nëse dështoi)",
+            "notePlaceholder": "Për shembull, mesazhi i gabimit që patë…",
+            "passed": "Identifikimi funksionoi për {email}",
+            "recordFail": "Identifikimi dështoi",
+            "recordPass": "Identifikimi funksionoi",
+            "recordTitle": "Regjistro rezultatin",
+            "selfReported": "Z8 nuk mund ta monitorojë këtë test, prandaj rezultati ruhet ashtu siç e raportoni ju. Ruajtja e ofruesit dhe verifikimi i DNS-së nuk vërtetojnë që identifikimi funksionon.",
+            "title": "Testoni identifikimin me një llogari reale"
+          },
+          "status": {
+            "done": "Përfunduar",
+            "inProgress": "Në proces",
+            "notActive": "Ende jo aktiv",
+            "optional": "Opsionale",
+            "toDo": "Për t'u bërë"
+          },
+          "stepOf": "Hapi {current} nga {total}",
+          "title": "Konfiguro identifikimin e ndërmarrjes"
         }
       },
       "keepExistingSecretHelp": "Lëreni bosh për të mbajtur çelësin sekret ekzistues",
@@ -648,6 +735,9 @@
         "addError": "Shtimi i ofruesit SSO dështoi",
         "addSuccess": "Ofruesi SSO u shtua me sukses",
         "addTitle": "Shto ofrues SSO",
+        "copyError": "Kopjimi në kujtesën e fragmenteve dështoi",
+        "copyIssuerUrl": "Kopjo URL-në e lëshuesit",
+        "copyProviderId": "Kopjo ID-në e ofruesit",
         "deleteConfirm": "Fshi ofruesin",
         "deleteDialogDescription": "A jeni i sigurt që dëshironi ta fshini këtë ofrues SSO? Përdoruesit nuk do të mund të identifikohen më duke përdorur këtë ofrues identiteti.",
         "deleteDialogTitleNamed": "Të fshihet ofruesi SSO {provider}?",
@@ -655,6 +745,16 @@
         "deleteProviderAria": "Fshi ofruesin SSO {provider}",
         "deleteSuccess": "Ofruesi SSO u fshi",
         "description": "Shtoni ofrues identiteti OIDC për të aktivizuar SSO-në për organizatën tuaj.",
+        "dns": {
+          "copyFqdn": "Kopjo emrin e plotë të kualifikuar",
+          "copyHost": "Kopjo emrin e regjistrit",
+          "copyValue": "Kopjo token-in TXT",
+          "description": "Krijoni regjistrin te ofruesi juaj i DNS-së për {domain}, pastaj zgjidhni Verifiko. Ndryshimet e DNS-së mund të kërkojnë disa minuta për t'u shpërndarë.",
+          "fqdnHint": "Nëse ofruesi juaj i DNS-së pret emrin e plotë të kualifikuar, përdorni:",
+          "noToken": "Gjeneroni një token TXT për të parë regjistrimin DNS që vërteton se zotëroni këtë domen.",
+          "title": "Shtoni këtë regjistrim TXT në DNS-në tuaj",
+          "type": "Lloji"
+        },
         "domainInvalid": "Ju lutemi vendosni një domen të vlefshëm (p.sh., example.com)",
         "domainVerified": "Domeni u verifikua",
         "emailDomain": "Domeni i emailit",
@@ -673,7 +773,6 @@
           "copyCallback": "Kopjo URL-në e callback-ut",
           "copyFailed": "Qasja në kujtesën e fragmenteve dështoi. Zgjidhni dhe kopjoni tekstin manualisht.",
           "domainPending": "Domeni nuk është verifikuar",
-          "domainStatus": "Verifikimi i domenit",
           "domainVerified": "Domeni u verifikua",
           "entra": {
             "clientHelp": "Kopjoni Application (client) ID nga Overview, jo Object ID.",
@@ -743,7 +842,6 @@
           },
           "manual": "Ofrues tjetër / OIDC manual",
           "manualAvailable": "Po përdorni një ofrues tjetër? Zgjidhni konfigurimin manual OIDC në panelin e konfigurimit.",
-          "manualTestHelp": "Ky është një rezultat hyrjeje i raportuar nga administratori, jo një test lidhjeje i verifikuar automatikisht. Testoni hyrjen me një përdorues të synuar në një sesion të veçantë shfletuesi, mbajeni këtë sesion administratori të hapur dhe më pas regjistroni këtu suksesin ose dështimin e vëzhguar. Ruajtja e ofruesit dhe verifikimi i DNS-së nuk vërtetojnë se hyrja funksionon.",
           "openSetup": "Hap konfigurimin e udhëhequr",
           "provider": "Ofruesi i identitetit",
           "required": "Kjo fushë është e detyrueshme.",
@@ -755,10 +853,10 @@
         "providerId": "ID-ja e ofruesit",
         "providerIdHelp": "Një identifikues unik për këtë ofrues (me shkronja të vogla, pa hapësira)",
         "providerIdInvalid": "ID-ja e ofruesit duhet të përmbajë vetëm shkronja të vogla, numra dhe viza lidhëse",
+        "regenerateToken": "Rigjeneroni token-in TXT",
         "title": "Ofruesit e identitetit",
         "tokenError": "Gjenerimi i token-it të verifikimit të domenit dështoi",
         "tokenGenerated": "Token-i i verifikimit u gjenerua",
-        "txtToken": "Tokeni TXT:",
         "validUrlRequired": "Ju lutemi vendosni një URL të vlefshme",
         "verify": "Verifiko",
         "verifyError": "Verifikimi i domenit dështoi. Kontrolloni regjistrimin tuaj DNS TXT dhe provoni përsëri."

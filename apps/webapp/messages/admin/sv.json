@@ -441,7 +441,9 @@
       "description": "Visa och hantera alla användare på plattformen",
       "filters": {
         "allUsers": "Alla användare",
-        "banned": "Avstängda"
+        "banned": "Avstängda",
+        "clearOrganization": "Rensa organisationsfilter",
+        "organization": "Organisation: {name}"
       },
       "pagination": {
         "showing": "Visar {from} till {to} av {total} användare"

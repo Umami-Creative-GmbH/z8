@@ -440,6 +440,11 @@
       "workDays": "{count} zile lucrătoare",
       "workedFromHome": "{hours}h lucrate de acasă"
     },
+    "tabs": {
+      "projects": "Proiecte",
+      "timeAndAbsences": "Timp și absențe",
+      "vehicles": "Vehicule"
+    },
     "title": "Rapoarte angajați",
     "toast": {
       "failedGenerate": "Generarea raportului a eșuat",

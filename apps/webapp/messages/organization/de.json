@@ -217,8 +217,29 @@
     },
     "invite": {
       "allowCreateOrganizations": "Diesem Benutzer erlauben, Organisationen zu erstellen",
+      "contractor": {
+        "companyName": "Beauftragtes Unternehmen",
+        "legend": "Angaben zum Dienstleister (optional)",
+        "noProjects": "Noch keine aktiven Projekte. Sie können Projekte später zuweisen.",
+        "plannedEndDate": "Geplantes Auftragsende",
+        "plannedEndDateDescription": "Der letzte Arbeitstag. Nach dem Beitritt wird daraus ein geplantes Austrittsdatum, das Zugang und Lizenzplatz beendet.",
+        "plannedEndDateNotFuture": "Das geplante Auftragsende muss nach dem heutigen Tag liegen.",
+        "projects": "Projekte",
+        "referenceCode": "Bestellnummer oder Kostenstelle",
+        "vatId": "USt-IdNr.",
+        "compensation": {
+          "label": "Satz jetzt festlegen",
+          "description": "Gilt nach dem Beitritt ab Beginn des Auftrags. Nur Organisationsadministratoren sehen ihn; Sie können ihn auch später festlegen."
+        }
+      },
       "description": "Einladung zum Beitritt zu {organizationName} senden",
       "emailLabel": "E-Mail-Adresse",
+      "engagement": {
+        "contractorDescription": "Erfasst Zeit auf Projekten; ohne Arbeitsvertrag, Arbeitszeitrichtlinie oder Urlaub",
+        "employee": "Mitarbeiter",
+        "employeeDescription": "Arbeitsvertrag, Arbeitszeitrichtlinie und Urlaubsanspruch gelten",
+        "label": "Einladen als"
+      },
       "error": "Fehler beim Senden der Einladung",
       "kioskOnly": {
         "description": "Für Mitarbeiter ohne geschäftliche E-Mail. Sie können sich nicht anmelden und stempeln nur an Kiosken mit ihrer PIN. Sie können später eine E-Mail-Adresse hinzufügen.",
@@ -240,7 +261,10 @@
       "submit": "Einladung senden",
       "success": "Einladung erfolgreich gesendet",
       "targetTeam": "Ziel-Team",
-      "title": "Mitglied einladen"
+      "title": "Mitglied einladen",
+      "errors": {
+        "projectNotFound": "Ein gewähltes Projekt gehört nicht mehr zu dieser Organisation. Wählen Sie die Projekte erneut."
+      }
     },
     "joinOrCreate": "Beitreten oder erstellen",
     "language": {
@@ -423,7 +447,6 @@
         "descriptionPlaceholder": "Eine kurze Beschreibung dieses Teams",
         "fallbackManagerHelp": "Wird für Genehmigungen verwendet, wenn ein Teammitglied keinen direkten Vorgesetzten hat.",
         "fallbackManagerLabel": "Ersatz-Vorgesetzter",
-        "fallbackManagerPlaceholder": "Ersatz-Vorgesetzten auswählen",
         "nameLabel": "Teamname",
         "namePlaceholder": "Engineering, Vertrieb, Marketing...",
         "noFallbackManager": "Kein Ersatz-Vorgesetzter",

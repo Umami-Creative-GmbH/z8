@@ -15,6 +15,6 @@ An employee can download a personal data export of themselves, and an org admin 
 ## Consequences
 
 - Whether something is withheld depends only on the fixed list. A record that has no page in the app today still goes into the employee export.
-- The employee's own hourly wage and employment terms are not withheld: they are the employee's own pay, not the organization's pricing.
+- The employee's own hourly wage and employment terms are not withheld: they are the employee's own pay, not the organization's pricing. The same holds for an External Contractor's compensation terms (hourly or daily rate) and contracting details (#2001); the organization's billable and cost rates for the contractor's work stay withheld.
 - An admin cannot run an admin export on themselves, because no one is an officer for their own personnel file. Another admin runs it for them.
 - When an admin exports an employee's data, a current employee is told about it.

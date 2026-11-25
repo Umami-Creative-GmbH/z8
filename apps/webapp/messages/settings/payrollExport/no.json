@@ -1,6 +1,8 @@
 {
   "settings": {
     "payrollExport": {
+      "connectorsDescription": "Konfigurer koblinger for lønnseksport og tilordning av lønnsarter",
+      "connectorsTitle": "Lønnskoblinger og lønnsarter",
       "datev": {
         "beraternummer": "Konsulentnummer",
         "beraternummerTooltip": "Ditt DATEV-konsulentnummer (1-7 sifre)",
@@ -19,7 +21,6 @@
         "saveSuccess": "Konfigurasjon lagret",
         "title": "DATEV-stamdata"
       },
-      "description": "Eksporter arbeidsperioder til lønnssystemer som DATEV eller Personio",
       "expenseMappings": {
         "apiConnectors": "Personio, Workday og SuccessFactors-API-et overfører ikke utgiftsrefusjoner.",
         "codeLabel": "{line}, {format} lønnsart",
@@ -58,7 +59,6 @@
         "dateRange": "Datoperiode",
         "description": "Eksporter arbeidsperioder og fravær til DATEV Lohn & Gehalt-format",
         "employees": "Ansatte",
-        "employeesSelected": "{count} valgt",
         "endDate": "Sluttdato",
         "error": "Eksport mislyktes",
         "exportButtonDatev": "Eksporter til DATEV",
@@ -100,10 +100,13 @@
         "download": "Last ned eksport",
         "downloadError": "Kunne ikke hente nedlastings-URL",
         "employees": "ansatte",
+        "includesSettledDays": "Avregnede dager inkludert",
+        "loadError": "Kunne ikke laste inn eksporthistorikk.",
         "noExports": "Ingen eksporter ennå",
         "noExportsHint": "Start en lønnseksport i Eksport-fanen. Fullførte eksporter vises her for nedlasting.",
         "payrollRun": "{count, plural, one {Lønnskjøring: # utgiftsrapport} other {Lønnskjøring: # utgiftsrapporter}}",
         "periods": "perioder",
+        "settledDaysLeftOut": "{count, plural, one {# avregnet dag utelatt} other {# avregnede dager utelatt}}",
         "status": {
           "completed": "Fullført",
           "failed": "Mislyktes",
@@ -185,6 +188,7 @@
         },
         "workCategory": "Arbeidskategori"
       },
+      "openPayrollWorkspace": "Kjør eksporter i Lønn",
       "personio": {
         "clientId": "Klient-ID",
         "clientIdHelp": "Hjelp for klient-ID",
@@ -242,6 +246,9 @@
         "saveSuccess": "Konfigurasjonen er lagret",
         "title": "Sage Payroll"
       },
+      "sections": {
+        "targets": "Mål for lønnseksport"
+      },
       "specialCategory": {
         "overtime": "Overtid"
       },
@@ -278,8 +285,6 @@
       },
       "tabs": {
         "datev": "DATEV",
-        "export": "Eksport",
-        "history": "Historikk",
         "lexware": "Lexware",
         "mappings": "Lønnearter",
         "personio": "Personio",
@@ -287,7 +292,17 @@
         "successfactors": "SAP SuccessFactors",
         "workday": "Workday"
       },
-      "title": "Lønnseksport",
+      "targets": {
+        "datevSubtitle": "DATEV Lohn & Gehalt (CSV)",
+        "lexwareSubtitle": "Lexware lohn+gehalt (CSV)",
+        "personioSubtitle": "Personio API",
+        "sageSubtitle": "Sage Lohn (CSV)",
+        "statusConfigured": "Konfigurert",
+        "statusNeedsCredentials": "Krever påloggingsinformasjon",
+        "statusNotConfigured": "Ikke konfigurert",
+        "successfactorsSubtitle": "API og CSV",
+        "workdaySubtitle": "Workday API"
+      },
       "workday": {
         "apiTimeoutMs": "API-tidsavbrudd (ms)",
         "batchSize": "Puljestørrelse",
@@ -367,12 +382,12 @@
         "warning": "Advarsel"
       },
       "description": "Sjekk om en lønnsperiode er klar før du eksporterer tids-, fraværs- og lønnsdata.",
+      "loadError": "Kunne ikke laste inn kontroller for organisasjonens lønnsklarhet.",
       "openPayrollExport": "Åpne lønnseksport",
       "period": {
         "currentMonth": "Gjeldende måned",
         "navLabel": "Lønnsperiode",
         "previousMonth": "Forrige måned",
-        "scope": "Lønnsperiode: {period} (UTC)",
         "showMonth": "Vis {month}"
       },
       "status": {

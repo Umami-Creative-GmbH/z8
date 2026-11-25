@@ -75,6 +75,7 @@ import {
 	createDefaultCustomDays,
 	validateCustomDaysGrid,
 } from "./custom-days-grid";
+import { ExecutiveExemptNote } from "./executive-exempt-note";
 
 const NO_VALUE = "__none__";
 
@@ -831,7 +832,7 @@ function TemplateEditorForm({
 									value={field.state.value || NO_VALUE}
 									onValueChange={(v) => field.handleChange(v === NO_VALUE ? "" : (v as ArbzgScope))}
 								>
-									<SelectTrigger id="template-arbzg">
+									<SelectTrigger id="template-arbzg" aria-describedby="template-arbzg-hint">
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
@@ -844,6 +845,7 @@ function TemplateEditorForm({
 										</SelectItem>
 									</SelectContent>
 								</Select>
+								<ExecutiveExemptNote id="template-arbzg-hint" />
 							</div>
 						)}
 					</form.Field>

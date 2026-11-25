@@ -12,8 +12,10 @@ export async function loadManagerTodayForEmployee(
 		return { role: employee?.role ?? null, summary: null };
 	}
 	try {
+		// The widget shows the open total, never an approval: counts alone (#1980).
 		const briefing = await getManagerDailyBriefing({
 			currentEmployee: employee,
+			approvals: "counts",
 		});
 		return { role: employee.role, summary: briefing.summary };
 	} catch {

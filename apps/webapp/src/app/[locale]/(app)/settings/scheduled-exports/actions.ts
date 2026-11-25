@@ -317,7 +317,8 @@ function toSummary(schedule: ScheduledExport, owner: ScheduleOwner): ScheduledEx
 	};
 }
 
-function auditedSettings(schedule: ScheduledExport): AuditedSchedule {
+/** A schedule's audited settings, apart from whether it is active. */
+function scheduleSettings(schedule: ScheduledExport): Omit<AuditedSchedule, "isActive"> {
 	return {
 		name: schedule.name,
 		description: schedule.description ?? null,
@@ -333,14 +334,16 @@ function auditedSettings(schedule: ScheduledExport): AuditedSchedule {
 		deliveryMethod: schedule.deliveryMethod,
 		emailRecipients: [...(schedule.emailRecipients ?? [])],
 		emailSubjectTemplate: schedule.emailSubjectTemplate ?? null,
-		isActive: schedule.isActive,
 	};
+}
+
+function auditedSettings(schedule: ScheduledExport): AuditedSchedule {
+	return { ...scheduleSettings(schedule), isActive: schedule.isActive };
 }
 
 /** What a schedule was, for the entries that outlive it or describe it whole. */
 function scheduleSnapshot(schedule: ScheduledExport) {
-	const { isActive: _isActive, ...settings } = auditedSettings(schedule);
-	return { ...settings, ownerId: schedule.ownerId };
+	return { ...scheduleSettings(schedule), ownerId: schedule.ownerId };
 }
 
 // ============================================
@@ -863,6 +866,8 @@ export interface FilterOptions {
 		firstName: string;
 		lastName: string;
 		employeeNumber?: string;
+		/** External Contractors are badged in the picker (#1995). */
+		engagementKind?: "employee" | "contractor";
 	}>;
 	teams: Array<{ id: string; name: string }>;
 	projects: Array<{ id: string; name: string }>;
@@ -882,6 +887,7 @@ export const getFilterOptionsAction = organizationAction(
 						firstName: user.firstName,
 						lastName: user.lastName,
 						employeeNumber: employee.employeeNumber,
+						engagementKind: employee.engagementKind,
 					})
 					.from(employee)
 					.innerJoin(user, eq(employee.userId, user.id))
@@ -911,6 +917,7 @@ export const getFilterOptionsAction = organizationAction(
 					firstName: employeeRow.firstName ?? "",
 					lastName: employeeRow.lastName ?? "",
 					employeeNumber: employeeRow.employeeNumber ?? undefined,
+					engagementKind: employeeRow.engagementKind,
 				})),
 				teams: teams.map((t) => ({ id: t.id, name: t.name })),
 				projects: projects.map((p) => ({ id: p.id, name: p.name })),

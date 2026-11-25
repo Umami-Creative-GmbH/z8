@@ -16,6 +16,7 @@ import {
 	shiftRequest,
 } from "@/db/schema";
 import type { AuthUserDisplayNameInput } from "@/lib/auth/derived-user-name";
+import { instantFromDate, plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
 import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
 import {
 	findEmployeesNotOnCurrentRoster,
@@ -34,19 +35,21 @@ import {
 	insertSkillOverride,
 	skillOverrideReasonRequiredError,
 } from "@/lib/scheduling/skill-override";
+import {
+	STATUTORY_PUBLICATION_BLOCKED,
+	STATUTORY_SHIFT_EDIT_REFUSAL_MESSAGE,
+} from "@/lib/statutory/scheduling/publication-block";
+import {
+	guardPublishedShiftEdit,
+	PublishedShiftEditBlocked,
+} from "@/lib/statutory/scheduling/published-shift-edit";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { DatabaseService } from "./database.service";
 
 type Shift = typeof ShiftTable.$inferSelect;
 type ShiftRequest = typeof ShiftRequestTable.$inferSelect;
-type ShiftRequestTransaction = Parameters<
-	Parameters<typeof db.transaction>[0]
->[0];
-type ShiftRequestDomainError =
-	| AuthorizationError
-	| ConflictError
-	| NotFoundError
-	| ValidationError;
+type ShiftRequestTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+type ShiftRequestDomainError = AuthorizationError | ConflictError | NotFoundError | ValidationError;
 
 const SAFE_EMPLOYEE_RELATION = {
 	columns: {
@@ -78,9 +81,7 @@ function recoverTransactionError(
 	error: DatabaseError,
 ): Effect.Effect<never, ShiftRequestDomainError | DatabaseError> {
 	const recovered: ShiftRequestDomainError | DatabaseError =
-		error.cause instanceof ShiftRequestTransactionAbort
-			? error.cause.domainError
-			: error;
+		error.cause instanceof ShiftRequestTransactionAbort ? error.cause.domainError : error;
 	return Effect.fail(recovered);
 }
 
@@ -90,9 +91,7 @@ function notFound(entityType: string, entityId: string, message: string) {
 
 function staleRequest(status?: string) {
 	return new ConflictError({
-		message: status
-			? `Request has already been ${status}`
-			: "Request status changed",
+		message: status ? `Request has already been ${status}` : "Request status changed",
 		conflictType: "invalid_status",
 	});
 }
@@ -220,22 +219,18 @@ async function approvePendingRequest(
 	if (current.type === "swap" && !current.targetEmployeeId) {
 		abort(
 			new ConflictError({
-				message:
-					"A target employee is required before approving a swap",
+				message: "A target employee is required before approving a swap",
 				conflictType: "missing_target_employee",
 			}),
 		);
 	}
 
 	const assignedEmployeeId =
-		current.type === "pickup"
-			? current.requesterId
-			: current.targetEmployeeId;
+		current.type === "pickup" ? current.requesterId : current.targetEmployeeId;
 	if (!assignedEmployeeId) {
 		abort(
 			new ConflictError({
-				message:
-					"A target employee is required before approving this request",
+				message: "A target employee is required before approving this request",
 				conflictType: "missing_target_employee",
 			}),
 		);
@@ -249,9 +244,10 @@ async function approvePendingRequest(
 		subareaId: current.shift.subareaId,
 		templateId: current.shift.templateId,
 	};
+	const organizationTimezone = await loadOrganizationTimezone(tx, organizationId);
 	const { decision } = await decideSkillOverride(tx, {
 		organizationId,
-		organizationTimezone: await loadOrganizationTimezone(tx, organizationId),
+		organizationTimezone,
 		shiftId: current.shiftId,
 		context,
 		// The request always assigns someone new to the shift.
@@ -270,18 +266,44 @@ async function approvePendingRequest(
 				: current.shift.employeeId === null
 					? isNull(shift.employeeId)
 					: eq(shift.employeeId, current.shift.employeeId);
-	const [updatedShift] = await tx
-		.update(shift)
-		.set({ employeeId: assignedEmployeeId })
-		.where(
-			and(
-				eq(shift.id, current.shiftId),
-				eq(shift.organizationId, organizationId),
-				eq(shift.status, "published"),
-				expectedAssignment,
-			),
-		)
-		.returning({ id: shift.id });
+	// The shift stays published under its new assignee: the publish block applies (#1993).
+	const [updatedShift] = await guardPublishedShiftEdit<{ id: string }[]>(
+		tx,
+		{
+			organizationId,
+			timezone: organizationTimezone,
+			shiftId: current.shiftId,
+			published: true,
+			employeeId: assignedEmployeeId,
+			date: plainDateAt(instantFromDate(current.shift.date), organizationTimezone),
+			now: systemClock.nowInstant(),
+		},
+		() =>
+			tx
+				.update(shift)
+				// A new assignee is a material change: § 12 TzBfG notice restarts for them (#1992).
+				.set({ employeeId: assignedEmployeeId, assignmentChangedAt: new Date() })
+				.where(
+					and(
+						eq(shift.id, current.shiftId),
+						eq(shift.organizationId, organizationId),
+						eq(shift.status, "published"),
+						expectedAssignment,
+					),
+				)
+				.returning({ id: shift.id }),
+	).catch((error: unknown) => {
+		if (error instanceof PublishedShiftEditBlocked) {
+			abort(
+				new ValidationError({
+					message: STATUTORY_SHIFT_EDIT_REFUSAL_MESSAGE,
+					field: "shift",
+					refusal: STATUTORY_PUBLICATION_BLOCKED,
+				}),
+			);
+		}
+		throw error;
+	});
 	if (!updatedShift) abort(staleRequest());
 
 	// shiftId is locked and was verified against organizationId above; shift_request gets
@@ -408,17 +430,11 @@ export class ShiftRequestService extends Context.Service<
 		readonly getPendingRequests: (
 			organizationId: string,
 			approverId: string,
-		) => Effect.Effect<
-			ShiftRequestWithRelations[],
-			AuthorizationError | DatabaseError
-		>;
+		) => Effect.Effect<ShiftRequestWithRelations[], AuthorizationError | DatabaseError>;
 		readonly getRequestsByShift: (
 			organizationId: string,
 			shiftId: string,
-		) => Effect.Effect<
-			ShiftRequestWithRelations[],
-			NotFoundError | DatabaseError
-		>;
+		) => Effect.Effect<ShiftRequestWithRelations[], NotFoundError | DatabaseError>;
 		readonly getRequestById: (
 			organizationId: string,
 			requestId: string,
@@ -444,157 +460,132 @@ export const ShiftRequestServiceLive = Layer.effect(
 			input: SwapRequestInput | PickupRequestInput,
 			type: "swap" | "pickup",
 		) =>
-			runTransaction(
-				`create${type === "swap" ? "Swap" : "Pickup"}Request`,
-				async (tx) => {
-					await lockShiftRequestScope(tx, organizationId, input.shiftId);
-					const currentShift = await tx.query.shift.findFirst({
-						where: and(
-							eq(shift.id, input.shiftId),
-							eq(shift.organizationId, organizationId),
-						),
-					});
-					if (!currentShift)
-						abort(notFound("shift", input.shiftId, "Shift not found"));
-					requirePublishedShift(currentShift);
+			runTransaction(`create${type === "swap" ? "Swap" : "Pickup"}Request`, async (tx) => {
+				await lockShiftRequestScope(tx, organizationId, input.shiftId);
+				const currentShift = await tx.query.shift.findFirst({
+					where: and(eq(shift.id, input.shiftId), eq(shift.organizationId, organizationId)),
+				});
+				if (!currentShift) abort(notFound("shift", input.shiftId, "Shift not found"));
+				requirePublishedShift(currentShift);
 
-					const requester = await getActiveEmployee(
-						tx,
-						organizationId,
-						input.requesterId,
-					);
-					if (!requester) {
+				const requester = await getActiveEmployee(tx, organizationId, input.requesterId);
+				if (!requester) {
+					abort(notFound("employee", input.requesterId, "Requester not found"));
+				}
+
+				if (type === "swap") {
+					if (currentShift.employeeId !== input.requesterId) {
 						abort(
-							notFound("employee", input.requesterId, "Requester not found"),
+							new AuthorizationError({
+								message: "You can only request swaps for your own shifts",
+								userId: input.requesterId,
+								resource: "shift",
+								action: "swap",
+							}),
 						);
 					}
-
-					if (type === "swap") {
-						if (currentShift.employeeId !== input.requesterId) {
+					const swapInput = input as SwapRequestInput;
+					if (swapInput.targetEmployeeId) {
+						const target = await getActiveEmployee(tx, organizationId, swapInput.targetEmployeeId);
+						if (!target) {
+							abort(notFound("employee", swapInput.targetEmployeeId, "Target employee not found"));
+						}
+						if (requester.teamId && target.teamId !== requester.teamId) {
 							abort(
-								new AuthorizationError({
-									message: "You can only request swaps for your own shifts",
-									userId: input.requesterId,
-									resource: "shift",
-									action: "swap",
+								new ValidationError({
+									message: "Target employee must be in the same team",
+									field: "targetEmployeeId",
 								}),
 							);
 						}
-						const swapInput = input as SwapRequestInput;
-						if (swapInput.targetEmployeeId) {
-							const target = await getActiveEmployee(
-								tx,
-								organizationId,
-								swapInput.targetEmployeeId,
-							);
-							if (!target) {
-								abort(
-									notFound(
-										"employee",
-										swapInput.targetEmployeeId,
-										"Target employee not found",
-									),
-								);
-							}
-							if (requester.teamId && target.teamId !== requester.teamId) {
-								abort(
-									new ValidationError({
-										message: "Target employee must be in the same team",
-										field: "targetEmployeeId",
-									}),
-								);
-							}
-						}
-					} else if (currentShift.employeeId !== null) {
-						abort(
-							new ValidationError({
-								message:
-									"This shift is already assigned. Use swap request instead.",
-								field: "employeeId",
-							}),
-						);
 					}
-
-					const duplicate = await tx.query.shiftRequest.findFirst({
-						where: and(
-							eq(shiftRequest.shiftId, input.shiftId),
-							eq(shiftRequest.requesterId, input.requesterId),
-							eq(shiftRequest.type, type),
-							eq(shiftRequest.status, "pending"),
-						),
-					});
-					if (duplicate) {
-						abort(
-							new ConflictError({
-								message: "You already have a pending request for this shift",
-								conflictType: "duplicate_request",
-							}),
-						);
-					}
-
-					const swapInput =
-						type === "swap" ? (input as SwapRequestInput) : undefined;
-					const [created] = await tx
-						.insert(shiftRequest)
-						.values({
-							shiftId: input.shiftId,
-							type,
-							requesterId: input.requesterId,
-							targetEmployeeId: swapInput?.targetEmployeeId,
-							reason: swapInput?.reason,
-							reasonCategory: swapInput?.reasonCategory,
-							notes: input.notes,
-							status: "pending",
-							updatedAt: new Date(),
-						})
-						.returning();
-
-					// Nobody else can decide the only decider's request: it is approved as it is
-					// submitted, with every check a decider's approval makes (ADR-0004).
-					const deciders = await tx
-						.select({ id: employee.id, role: employee.role })
-						.from(employee)
-						.where(
-							and(
-								onCurrentRoster(organizationId),
-								inArray(employee.role, [...SHIFT_REQUEST_DECIDER_ROLES]),
-							),
-						);
-					if (!isOnlyShiftRequestDecider(deciders, requester.id)) return created;
-					return await approvePendingRequest(
-						tx,
-						organizationId,
-						{ ...created, shift: currentShift },
-						requester,
+				} else if (currentShift.employeeId !== null) {
+					abort(
+						new ValidationError({
+							message: "This shift is already assigned. Use swap request instead.",
+							field: "employeeId",
+						}),
 					);
-				},
-			);
+				}
+
+				const duplicate = await tx.query.shiftRequest.findFirst({
+					where: and(
+						eq(shiftRequest.shiftId, input.shiftId),
+						eq(shiftRequest.requesterId, input.requesterId),
+						eq(shiftRequest.type, type),
+						eq(shiftRequest.status, "pending"),
+					),
+				});
+				if (duplicate) {
+					abort(
+						new ConflictError({
+							message: "You already have a pending request for this shift",
+							conflictType: "duplicate_request",
+						}),
+					);
+				}
+
+				const swapInput = type === "swap" ? (input as SwapRequestInput) : undefined;
+				const [created] = await tx
+					.insert(shiftRequest)
+					.values({
+						shiftId: input.shiftId,
+						type,
+						requesterId: input.requesterId,
+						targetEmployeeId: swapInput?.targetEmployeeId,
+						reason: swapInput?.reason,
+						reasonCategory: swapInput?.reasonCategory,
+						notes: input.notes,
+						status: "pending",
+						updatedAt: new Date(),
+					})
+					.returning();
+
+				// Nobody else can decide the only decider's request: it is approved as it is
+				// submitted, with every check a decider's approval makes (ADR-0004).
+				const deciders = await tx
+					.select({ id: employee.id, role: employee.role })
+					.from(employee)
+					.where(
+						and(
+							onCurrentRoster(organizationId),
+							inArray(employee.role, [...SHIFT_REQUEST_DECIDER_ROLES]),
+						),
+					);
+				if (!isOnlyShiftRequestDecider(deciders, requester.id)) return created;
+				return await approvePendingRequest(
+					tx,
+					organizationId,
+					{ ...created, shift: currentShift },
+					requester,
+				);
+			});
 
 		return ShiftRequestService.of({
-			requestSwap: (organizationId, input) =>
-				createRequest(organizationId, input, "swap"),
-			requestPickup: (organizationId, input) =>
-				createRequest(organizationId, input, "pickup"),
+			requestSwap: (organizationId, input) => createRequest(organizationId, input, "swap"),
+			requestPickup: (organizationId, input) => createRequest(organizationId, input, "pickup"),
 
 			approveRequest: (organizationId, requestId, approverId, options) =>
 				runTransaction("approveShiftRequest", async (tx) => {
 					const initial = await getScopedRequest(tx, organizationId, requestId);
 					if (!initial) {
-						abort(
-							notFound("shiftRequest", requestId, "Shift request not found"),
-						);
+						abort(notFound("shiftRequest", requestId, "Shift request not found"));
 					}
 					await lockShiftRequestScope(tx, organizationId, initial.shiftId);
 
 					const current = await getScopedRequest(tx, organizationId, requestId);
 					if (!current) {
-						abort(
-							notFound("shiftRequest", requestId, "Shift request not found"),
-						);
+						abort(notFound("shiftRequest", requestId, "Shift request not found"));
 					}
 					requirePublishedShift(current.shift);
 					if (current.status !== "pending") abort(staleRequest(current.status));
-					const approver = await requireApprover(tx, organizationId, approverId, current, "approve");
+					const approver = await requireApprover(
+						tx,
+						organizationId,
+						approverId,
+						current,
+						"approve",
+					);
 					return await approvePendingRequest(tx, organizationId, current, approver, options);
 				}),
 
@@ -602,16 +593,12 @@ export const ShiftRequestServiceLive = Layer.effect(
 				runTransaction("rejectShiftRequest", async (tx) => {
 					const initial = await getScopedRequest(tx, organizationId, requestId);
 					if (!initial) {
-						abort(
-							notFound("shiftRequest", requestId, "Shift request not found"),
-						);
+						abort(notFound("shiftRequest", requestId, "Shift request not found"));
 					}
 					await lockShiftRequestScope(tx, organizationId, initial.shiftId);
 					const current = await getScopedRequest(tx, organizationId, requestId);
 					if (!current) {
-						abort(
-							notFound("shiftRequest", requestId, "Shift request not found"),
-						);
+						abort(notFound("shiftRequest", requestId, "Shift request not found"));
 					}
 					if (current.status !== "pending") abort(staleRequest(current.status));
 					await requireApprover(tx, organizationId, approverId, current, "reject");
@@ -635,24 +622,16 @@ export const ShiftRequestServiceLive = Layer.effect(
 				runTransaction("cancelShiftRequest", async (tx) => {
 					const initial = await getScopedRequest(tx, organizationId, requestId);
 					if (!initial) {
-						abort(
-							notFound("shiftRequest", requestId, "Shift request not found"),
-						);
+						abort(notFound("shiftRequest", requestId, "Shift request not found"));
 					}
 					await lockShiftRequestScope(tx, organizationId, initial.shiftId);
 					const current = await getScopedRequest(tx, organizationId, requestId);
 					if (!current) {
-						abort(
-							notFound("shiftRequest", requestId, "Shift request not found"),
-						);
+						abort(notFound("shiftRequest", requestId, "Shift request not found"));
 					}
 					if (current.status !== "pending") abort(staleRequest(current.status));
 
-					const requester = await getActiveEmployee(
-						tx,
-						organizationId,
-						requesterId,
-					);
+					const requester = await getActiveEmployee(tx, organizationId, requesterId);
 					if (!requester || requester.id !== current.requesterId) {
 						abort(
 							new AuthorizationError({
@@ -698,13 +677,11 @@ export const ShiftRequestServiceLive = Layer.effect(
 
 			getPendingRequests: (organizationId, approverId) =>
 				Effect.gen(function* () {
-					const approver = yield* dbService.query(
-						"getPendingRequestApprover",
-						async () =>
-							dbService.db.query.employee.findFirst({
-								// The same decider rule as the decision check (#1597).
-								where: and(eq(employee.id, approverId), onCurrentRoster(organizationId)),
-							}),
+					const approver = yield* dbService.query("getPendingRequestApprover", async () =>
+						dbService.db.query.employee.findFirst({
+							// The same decider rule as the decision check (#1597).
+							where: and(eq(employee.id, approverId), onCurrentRoster(organizationId)),
+						}),
 					);
 					if (!approver || !isShiftRequestDecider(approver)) {
 						return yield* Effect.fail(
@@ -748,20 +725,13 @@ export const ShiftRequestServiceLive = Layer.effect(
 
 			getRequestsByShift: (organizationId, shiftId) =>
 				Effect.gen(function* () {
-					const scopedShift = yield* dbService.query(
-						"getShiftForRequests",
-						async () =>
-							dbService.db.query.shift.findFirst({
-								where: and(
-									eq(shift.id, shiftId),
-									eq(shift.organizationId, organizationId),
-								),
-							}),
+					const scopedShift = yield* dbService.query("getShiftForRequests", async () =>
+						dbService.db.query.shift.findFirst({
+							where: and(eq(shift.id, shiftId), eq(shift.organizationId, organizationId)),
+						}),
 					);
 					if (!scopedShift) {
-						return yield* Effect.fail(
-							notFound("shift", shiftId, "Shift not found"),
-						);
+						return yield* Effect.fail(notFound("shift", shiftId, "Shift not found"));
 					}
 					return (yield* dbService.query("getRequestsByShift", async () =>
 						dbService.db.query.shiftRequest.findMany({

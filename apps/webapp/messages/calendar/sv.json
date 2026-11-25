@@ -105,7 +105,6 @@
     },
     "deputy": {
       "away": "Frånvarande {dates}",
-      "awayOption": "{name} · Frånvarande {dates}",
       "awayWarning": "{name} är frånvarande under dessa datum. Du kan fortfarande välja personen.",
       "changeAction": "Ändra ersättare",
       "changed": "Ersättare sparad",

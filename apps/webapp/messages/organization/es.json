@@ -423,7 +423,6 @@
         "descriptionPlaceholder": "Una breve descripción de este equipo",
         "fallbackManagerHelp": "Se utiliza para aprobaciones cuando un miembro del equipo no tiene un gerente directo.",
         "fallbackManagerLabel": "Gerente de respaldo",
-        "fallbackManagerPlaceholder": "Seleccione un gerente de respaldo",
         "nameLabel": "Nombre del equipo",
         "namePlaceholder": "Ingeniería, Ventas, Marketing...",
         "noFallbackManager": "Sin gerente de respaldo",

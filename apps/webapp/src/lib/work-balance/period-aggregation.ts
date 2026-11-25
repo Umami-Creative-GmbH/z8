@@ -1,13 +1,27 @@
 import { and, eq, gte, isNotNull, lte, sql } from "drizzle-orm";
-import { DateTime } from "luxon";
 import { db } from "@/db";
 import { employeeWorkBalance, employeeWorkBalancePeriod, workPeriod } from "@/db/schema";
 import { collectTrustBasedBalanceDates } from "@/lib/calendar/trust-based-dates";
+import type { DailyWorkRequirements } from "@/lib/calendar/types";
 import { getDailyWorkRequirementsForEmployee } from "@/lib/calendar/work-policy-requirements";
+import { loadEffectiveContractsBatch } from "@/lib/contracts/resolve-contract";
+import { localDayRange } from "@/lib/datetime/temporal-boundaries";
+import {
+	dateFromInstant,
+	instantFromDate,
+	parsePlainDate,
+	plainDateAt,
+} from "@/lib/datetime/temporal-core";
+import type { EngagementStints } from "@/lib/engagement/employee-time";
+import { loadEmployeeTime } from "@/lib/engagement/engagement-stints";
 import { loadEmployeeTrackingContext } from "@/lib/time-tracking/tracking-start";
 import type { WorkBalanceDbClient } from "./db-client";
 import { getYearPeriodForDate } from "./periods";
-import { sumTrackedWorkMinutes, sumTrackedWorkMinutesExcludingDates } from "./tracked-work";
+import {
+	sumTrackedWorkMinutes,
+	sumTrackedWorkMinutesExcludingDates,
+	sumUntrackedEmployeeWorkMinutes,
+} from "./tracked-work";
 
 export type EmployeeWorkBalancePeriodType = "month" | "year";
 
@@ -66,17 +80,13 @@ export async function computeEmployeePeriodBalance(input: {
 		tracking && (!input.calculationStartDate || tracking.startDate > input.calculationStartDate)
 			? tracking.startDate
 			: input.calculationStartDate;
-	const periodStart = DateTime.fromISO(input.periodStart, {
-		zone: timezone,
-	}).startOf("day");
-	const periodEnd = DateTime.fromISO(input.periodEnd, { zone: timezone }).endOf("day");
-	const calculationStart = calculationStartDate
-		? DateTime.fromISO(calculationStartDate, { zone: timezone }).startOf("day")
-		: null;
+	// These are ISO calendar date keys in the employee's timezone.
 	const effectiveStart =
-		calculationStart && calculationStart > periodStart ? calculationStart : periodStart;
+		calculationStartDate && calculationStartDate > input.periodStart
+			? calculationStartDate
+			: input.periodStart;
 
-	if (effectiveStart > periodEnd) {
+	if (effectiveStart > input.periodEnd) {
 		return buildPeriodBalanceValues({
 			employeeId: input.employeeId,
 			organizationId: input.organizationId,
@@ -90,8 +100,10 @@ export async function computeEmployeePeriodBalance(input: {
 		});
 	}
 
-	const startDate = effectiveStart.toJSDate();
-	const endDate = periodEnd.toJSDate();
+	const startDate = dateFromInstant(localDayRange(effectiveStart, timezone).start);
+	const endDate = dateFromInstant(
+		localDayRange(input.periodEnd, timezone).endExclusive.subtract({ milliseconds: 1 }),
+	);
 
 	// One after another: `dbClient` may be one connection, and pg@9 refuses a query while another is executing.
 	const requirements = await getDailyWorkRequirementsForEmployee(
@@ -109,69 +121,34 @@ export async function computeEmployeePeriodBalance(input: {
 		...(input.dbClient ? ([input.dbClient] as const) : []),
 	);
 
-	// Trust-based days emit exact 0 delta (neither actual nor required contributes to balance),
-	// preserving prior accrued balance across tracked <-> trust_based transitions.
-	const trustBasedDates = collectTrustBasedBalanceDates(requirements);
-
+	const balanceInput = { ...input, startDate, endDate, timezone };
 	let actualMinutes: number;
+	let requiredMinutes: number;
 	if (tracking) {
+		const days = await readBalanceDays(dbClient, balanceInput, requirements);
 		const windowInput = {
 			...input,
-			startDate: effectiveStart.toISODate()!,
+			startDate: effectiveStart,
 			throughDate: input.periodEnd,
 			timezone,
 		};
 		actualMinutes =
-			trustBasedDates.size > 0
-				? await sumTrackedWorkMinutesExcludingDates(dbClient, windowInput, trustBasedDates)
-				: await sumTrackedWorkMinutes(dbClient, windowInput);
-	} else if (trustBasedDates.size > 0) {
-		const rows = await dbClient
-			.select({
-				startTime: workPeriod.startTime,
-				durationMinutes: workPeriod.durationMinutes,
-			})
-			.from(workPeriod)
-			.where(
-				and(
-					eq(workPeriod.employeeId, input.employeeId),
-					eq(workPeriod.organizationId, input.organizationId),
-					isNotNull(workPeriod.endTime),
-					isNotNull(workPeriod.durationMinutes),
-					gte(workPeriod.startTime, startDate),
-					lte(workPeriod.startTime, endDate),
-				),
-			);
-		actualMinutes = rows.reduce((total, row) => {
-			const dayKey = DateTime.fromJSDate(row.startTime, { zone: "utc" })
-				.setZone(timezone)
-				.toISODate();
-			if (dayKey && trustBasedDates.has(dayKey)) return total;
-			return total + Number(row.durationMinutes ?? 0);
-		}, 0);
+			days.excludedDates.size > 0
+				? await sumTrackedWorkMinutesExcludingDates(
+						dbClient,
+						windowInput,
+						days.excludedDates,
+						days.stints,
+					)
+				: await sumTrackedWorkMinutes(dbClient, windowInput, days.stints);
+		requiredMinutes = days.requiredMinutes;
 	} else {
-		const actualRow = await dbClient
-			.select({
-				totalMinutes: sql<number>`coalesce(sum(${workPeriod.durationMinutes}), 0)`,
-			})
-			.from(workPeriod)
-			.where(
-				and(
-					eq(workPeriod.employeeId, input.employeeId),
-					eq(workPeriod.organizationId, input.organizationId),
-					isNotNull(workPeriod.endTime),
-					isNotNull(workPeriod.durationMinutes),
-					gte(workPeriod.startTime, startDate),
-					lte(workPeriod.startTime, endDate),
-				),
-			);
-		actualMinutes = Number(actualRow[0]?.totalMinutes ?? 0);
+		({ actualMinutes, requiredMinutes } = await computeUntrackedBalanceMinutes(
+			dbClient,
+			balanceInput,
+			requirements,
+		));
 	}
-
-	const requiredMinutes = Object.entries(requirements).reduce((total, [dateKey, requirement]) => {
-		if (trustBasedDates.has(dateKey)) return total;
-		return total + requirement.requiredMinutes;
-	}, 0);
 
 	return buildPeriodBalanceValues({
 		employeeId: input.employeeId,
@@ -184,6 +161,173 @@ export async function computeEmployeePeriodBalance(input: {
 		computedAt: input.now ?? new Date(),
 		isClosed: input.isClosed,
 	});
+}
+
+type BalanceInput = {
+	employeeId: string;
+	organizationId: string;
+	/** The first and last instant of the balance's days in `timezone`. */
+	startDate: Date;
+	endDate: Date;
+	timezone: string;
+};
+
+type BalanceDays = {
+	stints: EngagementStints;
+	/** Days whose actual minutes drop out whole, as their required minutes do. */
+	excludedDates: ReadonlySet<string>;
+	requiredMinutes: number;
+};
+
+/**
+ * Actual and required minutes of days without a tracking start: each completed work period
+ * counts whole on the day it started in `timezone`, but only its employee time (#1935). The
+ * month and year rows and the total balance of an organization without a tracking start
+ * (`computeEmployeeWorkBalance`) both read days this way, so they agree.
+ */
+export async function computeUntrackedBalanceMinutes(
+	dbClient: Pick<WorkBalanceDbClient, "select">,
+	input: BalanceInput,
+	requirements: DailyWorkRequirements,
+): Promise<{ actualMinutes: number; requiredMinutes: number }> {
+	const days = await readBalanceDays(dbClient, input, requirements);
+	const { excludedDates, stints, requiredMinutes } = days;
+
+	if (hasContractorStint(stints)) {
+		return {
+			actualMinutes: await sumUntrackedEmployeeWorkMinutes(dbClient, input, excludedDates, stints),
+			requiredMinutes,
+		};
+	}
+	if (excludedDates.size > 0) {
+		const rows = await dbClient
+			.select({
+				startTime: workPeriod.startTime,
+				durationMinutes: workPeriod.durationMinutes,
+			})
+			.from(workPeriod)
+			.where(
+				and(
+					eq(workPeriod.employeeId, input.employeeId),
+					eq(workPeriod.organizationId, input.organizationId),
+					isNotNull(workPeriod.endTime),
+					isNotNull(workPeriod.durationMinutes),
+					gte(workPeriod.startTime, input.startDate),
+					lte(workPeriod.startTime, input.endDate),
+				),
+			);
+		const actualMinutes = rows.reduce((total, row) => {
+			const dayKey = plainDateAt(instantFromDate(row.startTime), input.timezone).toString();
+			if (excludedDates.has(dayKey)) return total;
+			return total + Number(row.durationMinutes ?? 0);
+		}, 0);
+		return { actualMinutes, requiredMinutes };
+	}
+	const actualRow = await dbClient
+		.select({
+			totalMinutes: sql<number>`coalesce(sum(${workPeriod.durationMinutes}), 0)`,
+		})
+		.from(workPeriod)
+		.where(
+			and(
+				eq(workPeriod.employeeId, input.employeeId),
+				eq(workPeriod.organizationId, input.organizationId),
+				isNotNull(workPeriod.endTime),
+				isNotNull(workPeriod.durationMinutes),
+				gte(workPeriod.startTime, input.startDate),
+				lte(workPeriod.startTime, input.endDate),
+			),
+		);
+	return { actualMinutes: Number(actualRow[0]?.totalMinutes ?? 0), requiredMinutes };
+}
+
+/**
+ * How the balance reads the person's days. Trust-based days emit an exact 0 delta (neither
+ * actual nor required contributes), preserving prior accrued balance across tracked <->
+ * trust_based transitions.
+ *
+ * Only employee time is actual time (#1935), cut at the conversion instant as payroll cuts it
+ * (`allocateEmployeeMinutes`): an External Contractor's work never enters the balance, and on a
+ * conversion day the employee part of the day still does. So only trust-based employee time
+ * drops out whole; a contractor day has no requirement and its contractor work is no employee
+ * time. Required time stays the resolver's: a day follows the stint in force at its end
+ * (`resolveEmploymentPeriodForDay`), so a contractor -> employee day requires the employee's day,
+ * an employee -> contractor day nothing. On such a day the employee morning is credited, unless
+ * the employee stint was under trust-based terms that day: then it adds 0, as every trust-based
+ * day does.
+ */
+async function readBalanceDays(
+	dbClient: Pick<WorkBalanceDbClient, "select">,
+	input: BalanceInput,
+	requirements: DailyWorkRequirements,
+): Promise<BalanceDays> {
+	const trustBasedDates = collectTrustBasedBalanceDates(requirements);
+	const employeeTime = await loadEmployeeTime(dbClient, input.organizationId, [input.employeeId]);
+	const stints = employeeTime.stintsOf(input.employeeId);
+
+	const excludedDates = new Set<string>();
+	const leftEmployeeOn: string[] = [];
+	for (const date of trustBasedDates) {
+		if (employeeTime.isEmployeeDay(input.employeeId, date)) {
+			excludedDates.add(date);
+		} else if (employeeTime.hasEmployeeTimeOn(input.employeeId, date, date)) {
+			leftEmployeeOn.push(date);
+		}
+	}
+	for (const date of await trustBasedEmployeeStintDays(dbClient, input, stints, leftEmployeeOn)) {
+		excludedDates.add(date);
+	}
+
+	const requiredMinutes = Object.entries(requirements).reduce((total, [dateKey, requirement]) => {
+		if (trustBasedDates.has(dateKey)) return total;
+		return total + requirement.requiredMinutes;
+	}, 0);
+	return { stints, excludedDates, requiredMinutes };
+}
+
+/**
+ * Of days the resolver gives to a later contractor stint but which begin in employee time (an
+ * employee -> contractor day), those whose employee stint was under trust-based terms. That is
+ * the contract resolved from the employee stints alone, as on the stint's last full day: the
+ * departure ends the stint's terms on the day of the conversion (`valid_until_date`), so the day
+ * itself only shows the defaults. A stint that began that day is read on the day.
+ */
+async function trustBasedEmployeeStintDays(
+	dbClient: Pick<WorkBalanceDbClient, "select">,
+	input: BalanceInput,
+	stints: EngagementStints,
+	dates: readonly string[],
+): Promise<string[]> {
+	const employeeStints = stints.periods.filter((period) => period.engagementKind === "employee");
+	if (dates.length === 0 || employeeStints.length === 0) return [];
+	const dayBefore = (date: string) => parsePlainDate(date).subtract({ days: 1 }).toString();
+	const contracts = (
+		await loadEffectiveContractsBatch(dbClient, {
+			organizationId: input.organizationId,
+			employeeIds: [input.employeeId],
+			dates: dates.flatMap((date) => [dayBefore(date), date]),
+			timezoneOverride: input.timezone,
+			preloadedPeriods: employeeStints,
+		})
+	).get(input.employeeId);
+	return dates.filter((date) => {
+		const onDay = contracts?.get(date);
+		const lastFullDay = contracts?.get(dayBefore(date));
+		const contract =
+			lastFullDay?.isEmployedOnDay &&
+			lastFullDay.employmentPeriodId !== null &&
+			lastFullDay.employmentPeriodId === onDay?.employmentPeriodId
+				? lastFullDay
+				: onDay;
+		return contract?.engagementKind === "employee" && contract.contributesZeroBalanceDelta;
+	});
+}
+
+/** Whether any of the person's time was an External Contractor's (a stint, or the kind today). */
+function hasContractorStint(stints: EngagementStints): boolean {
+	return stints.periods.length > 0
+		? stints.periods.some((period) => period.engagementKind === "contractor")
+		: stints.employeeEngagementKind === "contractor";
 }
 
 export async function upsertEmployeeWorkBalancePeriod(

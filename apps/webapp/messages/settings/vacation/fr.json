@@ -81,7 +81,6 @@
             "updatePolicyAssignmentFailed": "Échec de la mise à jour de l'attribution de la politique"
           },
           "fallsBackToDefaultPolicy": "Revient à la politique par défaut de l'équipe ou de l'organisation",
-          "manageAllowances": "gérer les allocations de congés des employés",
           "managers": "Managers",
           "overrideEffectivePolicy": "Remplacer les droits alloués par la politique ({days} jours) pour cet employé",
           "partialSave": {
@@ -231,8 +230,7 @@
         "sourceEmployee": "Attribution d'employé",
         "sourceOrganization": "Attribution d'organisation",
         "sourceTeam": "Attribution d'équipe",
-        "teamDescription": "Définissez une politique datée pour une équipe. Les attributions d'employés sont prioritaires.",
-        "title": "Historique"
+        "teamDescription": "Définissez une politique datée pour une équipe. Les attributions d'employés sont prioritaires."
       },
       "next": "Suivant",
       "noDefaultPolicy": "Aucune politique par défaut de l'entreprise",

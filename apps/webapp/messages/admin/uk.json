@@ -441,7 +441,9 @@
       "description": "Перегляд усіх користувачів на платформі та керування ними",
       "filters": {
         "allUsers": "Усі користувачі",
-        "banned": "Заблоковані"
+        "banned": "Заблоковані",
+        "clearOrganization": "Очистити фільтр організацій",
+        "organization": "Організація: {name}"
       },
       "pagination": {
         "showing": "Показано від {from} до {to} з {total} користувачів"

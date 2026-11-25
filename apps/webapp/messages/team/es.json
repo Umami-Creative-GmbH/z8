@@ -159,7 +159,6 @@
       "scopeFailed": "No se pudo cargar el alcance de conducción actual.",
       "scopeLoading": "Cargando el alcance de conducción actual…",
       "scopeManaged": "Empleados que gestionas",
-      "title": "Faltan detalles de conducción",
       "truncated": "Mostrando los {count} períodos de trabajo más recientes. Filtre por equipo o empleado para ver el resto.",
       "updating": "Actualizando datos de conducción…"
     },

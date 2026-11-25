@@ -159,7 +159,6 @@
       "scopeFailed": "Não foi possível carregar o escopo de condução atual.",
       "scopeLoading": "Carregando escopo de condução atual…",
       "scopeManaged": "Funcionários que você gerencia",
-      "title": "Detalhes de condução ausentes",
       "truncated": "Mostrando os {count} períodos de trabalho mais recentes. Filtre por equipe ou funcionário para ver os demais.",
       "updating": "Atualizando detalhes de condução…"
     },

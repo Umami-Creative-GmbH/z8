@@ -111,4 +111,20 @@ describe("AbsenceChangeDialog", () => {
 		await screen.findByText("October is closed");
 		expect(onOpenChange).not.toHaveBeenCalled();
 	});
+	it("shows an engagement refusal in the user's language (#1996)", async () => {
+		vi.mocked(submitAbsenceChangeAction).mockResolvedValue({
+			success: false,
+			error: "An External Contractor can only record unavailability, not vacation or leave",
+			code: "engagement_category",
+			refusal: "contractor_records_unavailability_only",
+		});
+		render(<AbsenceChangeDialog absence={absence} kind="change" open onOpenChange={vi.fn()} />);
+		fireEvent.change(screen.getByLabelText(/Start date/), { target: { value: "2026-11-02" } });
+		fireEvent.change(screen.getByLabelText(/End date/), { target: { value: "2026-11-03" } });
+		fireEvent.change(screen.getByLabelText(/Reason/), { target: { value: "Moved" } });
+		fireEvent.click(screen.getByRole("button", { name: "Submit request" }));
+		await screen.findByText(
+			"On these dates they work as an External Contractor: only unavailability can be recorded.",
+		);
+	});
 });

@@ -4,6 +4,8 @@ import { Temporal } from "temporal-polyfill";
 import type { db } from "@/db";
 import { loadEffectiveContractsBatch } from "@/lib/contracts/resolve-contract";
 import type { EffectiveContractOnDay } from "@/lib/contracts/types";
+import { creditedReleaseDates } from "@/lib/statutory/apprenticeship/release-credits";
+import { loadApprenticeReleaseDays } from "@/lib/statutory/apprenticeship/release-facts";
 import {
 	type AbsenceDayRange,
 	countAbsenceDays,
@@ -107,9 +109,20 @@ export async function loadWorkingDaysForEmployees(
 		dates,
 	});
 
+	// Credited apprentice release days (school, block week, exam), in full or partly credited, are
+	// paid release, not working days, so an absence over them never deducts them from vacation
+	// (#1993; § 19 Abs. 3 Satz 2 JArbSchG for minors).
+	const releaseDays = await loadApprenticeReleaseDays(database, {
+		organizationId: input.organizationId,
+		employeeIds,
+		from: input.startDate,
+		until: Temporal.PlainDate.from(input.endDate).add({ days: 1 }).toString(),
+	});
+
 	// One after another: `database` may be one connection, and pg@9 refuses a query while another is executing.
 	const workingDays = new Map<string, IsWorkingDay>();
 	for (const [employeeId, contractsByDate] of contractsByEmployee) {
+		const released = creditedReleaseDates(releaseDays.get(employeeId) ?? []);
 		const holidays = holidayDateKeys(
 			await getVacationHolidays({
 				database,
@@ -121,7 +134,7 @@ export async function loadWorkingDaysForEmployees(
 		);
 		const isWorkingDay: IsWorkingDay = (day) => {
 			const dayStr = day.toString();
-			if (holidays.has(dayStr)) return false;
+			if (holidays.has(dayStr) || released.has(dayStr)) return false;
 			const weekdays = effectiveScheduledWeekdaysForContract(contractsByDate.get(dayStr));
 			return weekdays ? weekdays.has(day.dayOfWeek) : mondayToFriday(day);
 		};
@@ -132,7 +145,8 @@ export async function loadWorkingDaysForEmployees(
 
 /**
  * The working days per week of each employee in the organization over a range (Absences ADR
- * 0003), from the unified contract in effect on each day, without holidays.
+ * 0003), from the unified contract in effect on each day, without holidays. Days without an
+ * employment period are `notEmployed` periods (#2009), never a week without working days.
  * An employee outside the organization gets no entry.
  */
 export async function loadWorkingWeekPeriodsForEmployees(
@@ -157,12 +171,19 @@ export async function loadWorkingWeekPeriodsForEmployees(
 		for (const day of dates) {
 			const dayStr = day.toString();
 			const contract = contractsByDate.get(dayStr);
+			const last = periods.at(-1);
+			// A day without employment has no working week: never a schedule without working days.
+			if (contract && !contract.isEmployedOnDay) {
+				if (last?.notEmployed) last.endDate = dayStr;
+				else periods.push({ startDate: dayStr, endDate: dayStr, notEmployed: true });
+				continue;
+			}
 			const weekdays = effectiveScheduledWeekdaysForContract(contract);
 			const workingDaysPerWeek = weekdays ? weekdays.size : MONDAY_TO_FRIDAY_DAYS;
 			const workPolicyId = contract?.workPolicy?.policyId ?? null;
-			const last = periods.at(-1);
 			if (
 				last &&
+				!last.notEmployed &&
 				last.workingDaysPerWeek === workingDaysPerWeek &&
 				last.workPolicyId === workPolicyId
 			) {

@@ -23,9 +23,14 @@ const mockState = vi.hoisted(() => ({
 	getEligibleApprovalScopesForManager: vi.fn(),
 	getApprovalInboxCounts: vi.fn(),
 	loadInboxCovers: vi.fn(async (): Promise<unknown[]> => []),
+	resolveComplianceExceptionInboxScope: vi.fn(async (): Promise<unknown> => null),
 	logger: {
 		error: vi.fn(),
 	},
+}));
+
+vi.mock("@/lib/approvals/inbox/compliance-exception-inbox", () => ({
+	resolveComplianceExceptionInboxScope: mockState.resolveComplianceExceptionInboxScope,
 }));
 
 vi.mock("@/lib/approvals/deputy/deputy-decision-store", () => ({
@@ -115,6 +120,7 @@ describe("GET /api/approvals/inbox/counts", () => {
 			role: "manager",
 		});
 		mockState.getEligibleApprovalScopesForManager.mockResolvedValue([]);
+		mockState.resolveComplianceExceptionInboxScope.mockResolvedValue(null);
 		mockState.getApprovalInboxCounts.mockResolvedValue({
 			absence_entry: 0,
 			time_entry: 1,
@@ -168,6 +174,7 @@ describe("GET /api/approvals/inbox/counts", () => {
 			eligibleApprovalScopes: [],
 			includeAllApprovers: undefined,
 			covering: [],
+			complianceExceptionScope: null,
 		});
 	});
 
@@ -191,7 +198,52 @@ describe("GET /api/approvals/inbox/counts", () => {
 			eligibleApprovalScopes: [],
 			includeAllApprovers: true,
 			covering: [],
+			complianceExceptionScope: null,
 		});
+	});
+
+	it("counts the organization's compliance exceptions for an employee who manages Compliance (#1977)", async () => {
+		mockState.getAbility.mockResolvedValue(
+			defineAbilityFor({
+				userId: "user-1",
+				isPlatformAdmin: false,
+				activeOrganizationId: "org-1",
+				orgMembership: { organizationId: "org-1", role: "admin", status: "active" },
+				employee: { id: "employee-1", organizationId: "org-1", role: "employee", teamId: null },
+				permissions: { orgWide: null, byTeamId: new Map() },
+				managedEmployeeIds: [],
+				customRoles: [],
+			} satisfies PrincipalContext),
+		);
+		mockState.findEmployee.mockResolvedValue({
+			id: "employee-1",
+			organizationId: "org-1",
+			role: "employee",
+		});
+		mockState.resolveComplianceExceptionInboxScope.mockResolvedValue({ kind: "organization" });
+
+		const response = await GET();
+
+		expect(response.status).toBe(200);
+		expect(mockState.resolveComplianceExceptionInboxScope).toHaveBeenCalledWith({
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			canManageCompliance: true,
+		});
+		// Managing Compliance is no approver right: only compliance exceptions are counted.
+		expect(mockState.getApprovalInboxCounts).toHaveBeenCalledWith({
+			approverId: "employee-1",
+			organizationId: "org-1",
+			status: "pending",
+			limit: 1,
+			eligibleApprovalScopes: [],
+			includeAllApprovers: undefined,
+			covering: [],
+			complianceExceptionsOnly: true,
+			complianceExceptionScope: { kind: "organization" },
+		});
+		expect(mockState.getEligibleApprovalScopesForManager).not.toHaveBeenCalled();
+		expect(mockState.loadInboxCovers).not.toHaveBeenCalled();
 	});
 
 	it("includes team-primary scopes for a manager with no direct reports", async () => {
@@ -217,6 +269,7 @@ describe("GET /api/approvals/inbox/counts", () => {
 			eligibleApprovalScopes,
 			includeAllApprovers: undefined,
 			covering: [],
+			complianceExceptionScope: null,
 		});
 	});
 });

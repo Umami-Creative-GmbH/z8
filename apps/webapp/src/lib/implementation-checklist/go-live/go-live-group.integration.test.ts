@@ -48,6 +48,7 @@ describe("go-live group (PostgreSQL)", () => {
 			name?: [string, string];
 			status?: string;
 			expiresAt?: string;
+			engagementKind?: "employee" | "contractor";
 		} = {},
 	) {
 		const invitationId = randomUUID();
@@ -65,8 +66,8 @@ describe("go-live group (PostgreSQL)", () => {
 		);
 		const { rows } = await fixture.pool.query<{ id: string }>(
 			`insert into employee_invitation_draft
-			 (invitation_id, organization_id, normalized_email, team_id, first_name, last_name, updated_at)
-			 values ($1, $2, $3, $4, $5, $6, now()) returning id`,
+			 (invitation_id, organization_id, normalized_email, team_id, first_name, last_name, engagement_kind, updated_at)
+			 values ($1, $2, $3, $4, $5, $6, $7, now()) returning id`,
 			[
 				invitationId,
 				organizationId,
@@ -74,6 +75,7 @@ describe("go-live group (PostgreSQL)", () => {
 				input.teamId ?? null,
 				input.name?.[0] ?? null,
 				input.name?.[1] ?? null,
+				input.engagementKind ?? "employee",
 			],
 		);
 		const draftId = rows[0]?.id;
@@ -104,10 +106,7 @@ describe("go-live group (PostgreSQL)", () => {
 
 	async function seedInTeam(organizationId: string, teamId: string) {
 		const seeded = await fixture.seedEmployee({ organizationId });
-		await fixture.pool.query(`update employee set team_id = $1 where id = $2`, [
-			teamId,
-			seeded.employeeId,
-		]);
+		await fixture.placeInTeam(seeded.employeeId, teamId);
 		return seeded;
 	}
 
@@ -190,6 +189,7 @@ describe("go-live group (PostgreSQL)", () => {
 			draftId: picker,
 			email: expect.stringContaining("@invitee.test"),
 			teamId: warehouse,
+			engagementKind: "employee",
 			displayName: "Pia Picker",
 		});
 		expect(group.members).toContainEqual({
@@ -197,6 +197,7 @@ describe("go-live group (PostgreSQL)", () => {
 			draftId: unplaced,
 			email: unplacedEmail,
 			teamId: null,
+			engagementKind: "employee",
 			displayName: unplacedEmail,
 		});
 		expect(group.teamNames.get(warehouse)).toBe("Warehouse");
@@ -389,10 +390,7 @@ describe("go-live group (PostgreSQL)", () => {
 		const { organizationId, owner } = await createOrganizationWithOwner();
 		const warehouse = await createTeam(organizationId, "Warehouse");
 		await assignTeamPolicy(organizationId, warehouse, "Warehouse hours");
-		await fixture.pool.query(`update employee set team_id = $1 where id = $2`, [
-			warehouse,
-			owner.employeeId,
-		]);
+		await fixture.placeInTeam(owner.employeeId, warehouse);
 		await invite(organizationId, `${randomUUID()}@invitee.test`, { teamId: warehouse });
 		const unplacedEmail = `${randomUUID()}@invitee.test`;
 		const unplaced = await invite(organizationId, unplacedEmail);
@@ -421,6 +419,44 @@ describe("go-live group (PostgreSQL)", () => {
 				},
 			],
 		});
+	});
+
+	it("needs no work policy for an invited external contractor, wherever they are placed", async () => {
+		const { organizationId } = await createOrganizationWithOwner();
+		const warehouse = await createTeam(organizationId, "Warehouse");
+		await assignTeamPolicy(organizationId, warehouse, "Warehouse hours");
+		const employeeEmail = `${randomUUID()}@invitee.test`;
+		const employeeDraft = await invite(organizationId, employeeEmail);
+		const contractorDraft = await invite(organizationId, `${randomUUID()}@invitee.test`, {
+			engagementKind: "contractor",
+		});
+
+		const group = await resolveGoLiveGroup(db, organizationId, AS_OF);
+		const { results } = await runGoLiveChecks({
+			db,
+			organizationId,
+			asOf: AS_OF,
+			fixLink: (href, label) => ({ href, label }),
+			checks: [workPolicyGoLiveCheck],
+		});
+		const [result] = results;
+
+		expect(
+			group.members.find(
+				(member) => member.kind === "invitee" && member.draftId === contractorDraft,
+			),
+		).toMatchObject({ kind: "invitee", engagementKind: "contractor" });
+		if (!result || result.outcome === "unavailable") throw new Error("unexpected");
+		expect(result).toMatchObject({ outcome: "failed", checkedMemberCount: 3 });
+		const flagged = result.failures.flatMap((failure) =>
+			failure.members.map(({ member }) =>
+				member.kind === "invitee" ? member.draftId : member.employeeId,
+			),
+		);
+		// The owner and the employee invitee have no policy; the contractor invitee needs none.
+		expect(flagged).toContain(employeeDraft);
+		expect(flagged).toHaveLength(2);
+		expect(flagged).not.toContain(contractorDraft);
 	});
 
 	it("ends an exclusion when the employee becomes former; a rehired employee needs a new one", async () => {

@@ -1,6 +1,8 @@
 {
   "settings": {
     "payrollExport": {
+      "connectorsDescription": "Configurar conectores de exportação da folha de pagamento e mapeamentos de tipos de salário",
+      "connectorsTitle": "Conectores de folha de pagamento e tipos de salário",
       "datev": {
         "beraternummer": "Beraternummer",
         "beraternummerTooltip": "Seu número de consultor DATEV (1-7 dígitos)",
@@ -19,7 +21,6 @@
         "saveSuccess": "Configuração salva",
         "title": "Dados mestres DATEV"
       },
-      "description": "Exportar períodos de trabalho para sistemas de folha de pagamento como DATEV ou Personio",
       "expenseMappings": {
         "apiConnectors": "O Personio, o Workday e a API do SuccessFactors não incluem reembolsos de despesas.",
         "codeLabel": "{line}, tipo de remuneração {format}",
@@ -58,7 +59,6 @@
         "dateRange": "Intervalo de datas",
         "description": "Exportar períodos de trabalho e ausências para o formato DATEV Lohn & Gehalt",
         "employees": "Funcionários",
-        "employeesSelected": "{count} selecionado(s)",
         "endDate": "Data de término",
         "error": "Falha na exportação",
         "exportButtonDatev": "Exportar para DATEV",
@@ -100,10 +100,13 @@
         "download": "Baixar exportação",
         "downloadError": "Falha ao obter URL de download",
         "employees": "funcionários",
+        "includesSettledDays": "Dias liquidados incluídos",
+        "loadError": "Não foi possível carregar o histórico de exportação.",
         "noExports": "Nenhuma exportação ainda",
         "noExportsHint": "Inicie uma exportação de folha de pagamento na aba Exportar. As exportações concluídas aparecerão aqui para download.",
         "payrollRun": "{count, plural, one {Processamento da folha: # relatório de despesas} other {Processamento da folha: # relatórios de despesas}}",
         "periods": "períodos",
+        "settledDaysLeftOut": "{count, plural, one {# dia liquidado deixado de fora} other {# dias liquidados deixados de fora}}",
         "status": {
           "completed": "Concluído",
           "failed": "Falhou",
@@ -185,6 +188,7 @@
         },
         "workCategory": "Categoria de trabalho"
       },
+      "openPayrollWorkspace": "Executar exportações na Folha de pagamento",
       "personio": {
         "clientId": "ID do cliente",
         "clientIdHelp": "Ajuda do ID do cliente",
@@ -242,6 +246,9 @@
         "saveSuccess": "Configuração salva",
         "title": "Sage Lohn"
       },
+      "sections": {
+        "targets": "Destinos da folha de pagamento"
+      },
       "specialCategory": {
         "overtime": "Horas extras"
       },
@@ -278,8 +285,6 @@
       },
       "tabs": {
         "datev": "DATEV",
-        "export": "Exportar",
-        "history": "Histórico",
         "lexware": "Lexware",
         "mappings": "Tipos de remuneração",
         "personio": "Personio",
@@ -287,7 +292,17 @@
         "successfactors": "SAP SuccessFactors",
         "workday": "Workday"
       },
-      "title": "Exportação de folha de pagamento",
+      "targets": {
+        "datevSubtitle": "DATEV Lohn & Gehalt (CSV)",
+        "lexwareSubtitle": "Lexware lohn+gehalt (CSV)",
+        "personioSubtitle": "Personio API",
+        "sageSubtitle": "Sage Lohn (CSV)",
+        "statusConfigured": "Configurado",
+        "statusNeedsCredentials": "Requer credenciais",
+        "statusNotConfigured": "Não configurado",
+        "successfactorsSubtitle": "API e CSV",
+        "workdaySubtitle": "Workday API"
+      },
       "workday": {
         "apiTimeoutMs": "Tempo limite da API (ms)",
         "batchSize": "Tamanho do lote",
@@ -367,12 +382,12 @@
         "warning": "Aviso"
       },
       "description": "Verifique se um período de folha de pagamento está pronto antes de exportar dados de tempo, ausência e folha de pagamento.",
+      "loadError": "Não foi possível carregar as verificações de prontidão da folha de pagamento da organização.",
       "openPayrollExport": "Abrir exportação da folha de pagamento",
       "period": {
         "currentMonth": "Mês atual",
         "navLabel": "Período da folha de pagamento",
         "previousMonth": "Mês anterior",
-        "scope": "Período da folha de pagamento: {period} (UTC)",
         "showMonth": "Mostrar {month}"
       },
       "status": {

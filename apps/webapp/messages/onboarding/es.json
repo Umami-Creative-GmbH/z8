@@ -152,7 +152,6 @@
       "vacationPolicy": "Vacaciones",
       "welcome": "Bienvenido",
       "wellness": "Bienestar",
-      "workSchedule": "Horario",
       "workTemplates": "Plantillas"
     },
     "vacationPolicy": {
@@ -259,35 +258,6 @@
       "subtitle": "Configure recordatorios de agua para mantenerse saludable durante su jornada laboral. Recibirá notificaciones suaves para beber agua mientras esté fichado.",
       "success": "¡Recordatorio de agua habilitado!",
       "title": "Mantenerse hidratado"
-    },
-    "workSchedule": {
-      "accessUnavailable": "No se pudo verificar el acceso al horario laboral. Continuando al siguiente paso disponible.",
-      "checkingAccess": "Verificando acceso al horario laboral",
-      "classification": "Clasificación de Trabajo",
-      "classificationDesc": "Cómo quieres registrar tus horas de trabajo.",
-      "continue": "Continuar",
-      "daily": "Diario",
-      "error": "Error al establecer horario de trabajo",
-      "hoursPerWeek": "Horas por Semana",
-      "hoursPerWeekDesc": "El tiempo completo típico es de 40 horas por semana.",
-      "hoursPerWeekPlaceholder": "40",
-      "laterContext": "Puedes revisar las políticas laborales en la configuración después de la incorporación.",
-      "monthly": "Mensual",
-      "policyContext": "Al continuar, se guarda tu progreso de incorporación. Las políticas laborales de la organización siguen vigentes; las horas y la clasificación ingresadas aquí no se guardan en ninguna política laboral.",
-      "previousAttempt": "Una solicitud anterior aún está finalizando. Inténtalo de nuevo para continuar.",
-      "progressSaved": "Progreso de incorporación guardado.",
-      "scheduleTitle": "Horario de Trabajo",
-      "selectClassification": "Seleccionar clasificación",
-      "setupContext": "Revisa las horas semanales y cómo se registran las horas trabajadas en conjunto.",
-      "skip": "Omitir por ahora",
-      "skipError": "No se pudo omitir la configuración del horario de trabajo",
-      "subtitle": "Define tus horas de trabajo para ayudar a rastrear el tiempo y gestionar ausencias con precisión.",
-      "title": "Establece tu horario de trabajo",
-      "validation": {
-        "hoursNegative": "Las horas no pueden ser negativas",
-        "hoursTooMany": "Una semana tiene como máximo 168 horas"
-      },
-      "weekly": "Semanal"
     },
     "workTemplates": {
       "cardDesc": "Crea un horario de trabajo predeterminado. Puedes agregar más plantillas más tarde en la configuración.",

@@ -12,7 +12,7 @@ import type {
 } from "@/lib/approvals/route-preview/types";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import type { EffectiveWorkPolicy } from "@/lib/effect/services/work-policy.service";
-import { loadEffectiveWorkPolicies } from "@/lib/work-policy/effective-work-policies";
+import { loadWorkPolicyCoverage } from "@/lib/work-policy/effective-work-policies";
 import {
 	APPROVER_KIND_LABEL,
 	type ApproverKindResolution,
@@ -57,7 +57,7 @@ const WEEKDAYS: readonly WeekdayName[] = [
  * The go-live rehearsal (Organization ADR 0007): for one checked member of the go-live group,
  * their effective work policy today, how each covered approval kind would route (every stage,
  * fallbacks and stand-ins included) and their payroll prerequisites. It resolves exactly as the
- * go-live checks do (the same group, `loadEffectiveWorkPolicies`, `previewApprovalRoutes`,
+ * go-live checks do (the same group, `loadWorkPolicyCoverage`, `previewApprovalRoutes`,
  * `readPayrollPrerequisites`), so the two never disagree, all in one read-only transaction: it
  * writes nothing, starts no workflow and sends nothing.
  *
@@ -82,9 +82,10 @@ export async function rehearseGoLiveMember(
 		);
 		if (!member) return { ok: false, refusal: "member_not_checked" };
 
-		const policies = await loadEffectiveWorkPolicies(reader, {
+		const subject = workPolicySubject(member);
+		const coverage = await loadWorkPolicyCoverage(reader, {
 			organizationId,
-			employees: [workPolicySubject(member)],
+			employees: [subject],
 			at: asOf.instant,
 		});
 		const routing = await previewGoLiveApprovers(reader, {
@@ -106,7 +107,9 @@ export async function rehearseGoLiveMember(
 				timezone: asOf.timezone,
 				today: asOf.today.toString(),
 			},
-			workPolicy: workPolicyTrace(policies.get(workPolicySubject(member).id) ?? null, fixLink),
+			workPolicy: coverage.notApplicable.has(subject.id)
+				? { status: "not_applicable" }
+				: workPolicyTrace(coverage.policies.get(subject.id) ?? null, fixLink),
 			approvals: {
 				kinds: [...resolutions].map(([kind, resolution]) =>
 					kindTrace(kind, resolution, { member, group, people, categories, fixLink }),

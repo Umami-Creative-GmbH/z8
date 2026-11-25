@@ -1,14 +1,12 @@
 {
   "analytics": {
     "access": {
-      "noEmployeeFeature": "se analyser",
       "restrictedDescription": "Analyse er bare tilgjengelig for administratorer og ledere.",
       "restrictedTitle": "Begrenset tilgang"
     },
     "common": {
       "days": "Dager",
       "employee": "Ansatt",
-      "employees": "Ansatte",
       "hours": "Timer",
       "loadingOrganizationSettings": "Laster inn organisasjonsinnstillinger før forhåndsinnstillinger aktiveres.",
       "noDataAvailable": "Ingen data tilgjengelig",
@@ -17,17 +15,16 @@
       "overtimeHours": "Overtidstimer",
       "team": "Team",
       "totalHours": "Totale timer",
-      "unavailable": "Utilgjengelig",
       "undertime": "Undertid",
       "undertimeHours": "Undertidstimer"
     },
     "layout": {
       "description": "Omfattende innsikt i teamets ytelse, arbeidstimer og fraværsmønstre",
       "tabs": {
+        "absencesAndVacation": "Fravær og ferie",
         "overtimeBurnDown": "Overtidsnedtrapping",
         "overview": "Oversikt",
         "teamPerformance": "Teamytelse",
-        "vacationTrends": "Ferietrender",
         "workHours": "Arbeidstimer"
       },
       "title": "Analyse"
@@ -100,31 +97,8 @@
       "errors": {
         "retryDescription": "Noen analysedata kunne ikke lastes inn. Tidligere innlastede verdier, hvis de vises, kan være utdaterte."
       },
-      "kpis": {
-        "approvalRate": {
-          "description": "Av behandlede forespørsler godkjent",
-          "title": "Godkjenningsrate",
-          "unavailableDescription": "Kunne ikke laste inn godkjenningsanalyse"
-        },
-        "avgWorkHours": {
-          "description": "Per ansatt i valgt periode",
-          "title": "Gj.snittlige arbeidstimer"
-        },
-        "totalAbsenceDays": {
-          "description": "Totalt antall dager i valgt periode",
-          "title": "Totalt antall fraværsdager"
-        },
-        "totalEmployees": {
-          "description": "Aktive ansatte i organisasjonen",
-          "title": "Totalt antall ansatte"
-        }
-      },
       "loadingLabel": "Laster inn analysedata",
-      "refreshing": "Oppdaterer analyse…",
-      "workHoursByTeam": {
-        "description": "Totalt antall arbeidstimer registrert per team",
-        "title": "Arbeidstimer per team"
-      }
+      "refreshing": "Oppdaterer analyse…"
     },
     "teamPerformance": {
       "avgPerEmployee": "Gj.snitt per ansatt",

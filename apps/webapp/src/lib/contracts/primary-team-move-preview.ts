@@ -95,7 +95,8 @@ export interface PreviewPrimaryTeamMoveResult {
 	readonly preservedPersonalDivergences: readonly string[];
 	readonly preservedEmployeeOwnedTerms: {
 		readonly contractType: ContractType;
-		readonly employmentProfile: EmploymentProfile;
+		/** Null for an External Contractor, who has no employee statutory profile (#1996). */
+		readonly employmentProfile: EmploymentProfile | null;
 		readonly arbzgScope: ArbzgScope;
 		readonly onCallTerms: ResolvedOnCallTerms | null;
 	};
@@ -140,6 +141,7 @@ export async function previewPrimaryTeamMove(
 				id: employee.id,
 				teamId: employee.teamId,
 				contractType: employee.contractType,
+				engagementKind: employee.engagementKind,
 				userTimezone: userSettings.timezone,
 			})
 			.from(employee)
@@ -190,6 +192,7 @@ export async function previewPrimaryTeamMove(
 				startProvenance: employeeEmploymentPeriod.startProvenance,
 				endedAt: employeeEmploymentPeriod.endedAt,
 				createdAt: employeeEmploymentPeriod.createdAt,
+				engagementKind: employeeEmploymentPeriod.engagementKind,
 			})
 			.from(employeeEmploymentPeriod)
 			.where(
@@ -552,6 +555,7 @@ export async function previewPrimaryTeamMove(
 		startProvenance: p.startProvenance,
 		endedAt: p.endedAt ? instantFromDate(p.endedAt) : null,
 		createdAt: instantFromDate(p.createdAt),
+		engagementKind: p.engagementKind,
 	}));
 
 	const currentTeamHistory: TeamHistoryInterval[] = teamHistoryRows.map((row) => ({
@@ -641,6 +645,7 @@ export async function previewPrimaryTeamMove(
 		date: day,
 		employeeId: input.employeeId,
 		employeeContractType: empRow.contractType,
+		employeeEngagementKind: empRow.engagementKind,
 		employeeCalendarTimezone,
 		organizationTimezone: orgTimezone,
 		employmentPeriods: periods,

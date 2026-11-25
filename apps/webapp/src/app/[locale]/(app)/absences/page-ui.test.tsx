@@ -32,6 +32,9 @@ vi.mock("@/db", () => ({
 		},
 	},
 }));
+vi.mock("@/lib/absences/absence-engagement", () => ({
+	loadEngagementKindsOfStints: async () => new Map(),
+}));
 vi.mock("./actions", () => ({
 	getCurrentEmployee: readers.employee,
 	getVacationBalanceResult: readers.balance,
@@ -53,6 +56,9 @@ vi.mock("@/components/absences/absences-view-container", () => ({
 vi.mock("@/components/absences/vacation-balance-card", () => ({
 	VacationBalanceCard: () => <p>Available vacation balance</p>,
 }));
+vi.mock("@/components/statutory/on-call/on-call-status-card", () => ({
+	OnCallStatusCard: () => null,
+}));
 
 /** Renders the page's streamed content for a URL query. */
 async function renderPage(
@@ -72,6 +78,7 @@ describe("Personal absences arrival", () => {
 		readers.employee.mockResolvedValue({
 			id: "employee-1",
 			organizationId: "org-1",
+			engagementKind: "employee",
 		});
 		readers.balance.mockResolvedValue({
 			balance: null,

@@ -81,7 +81,7 @@
         "changedAfterInvoicing": "{count, plural, one {# invoiced work period was changed after invoicing} other {# invoiced work periods were changed after invoicing}}",
         "cost": "Cost",
         "costUnknown": "Cost unknown",
-        "costUnknownCount": "{count, plural, one {# work period has no cost rate} other {# work periods have no cost rate}}",
+        "costUnknownCount": "{count, plural, one {# work period has no usable cost rate or contractor rate} other {# work periods have no usable cost rate or contractor rate}}",
         "description": "Completed work only. Revenue uses the rates in effect on {date}.",
         "employee": "Employee",
         "hasUnpriced": "Has unpriced work",
@@ -176,7 +176,7 @@
         "changedAfterInvoicing": "Changed after invoicing",
         "cost": "Cost",
         "costUnknown": "Cost unknown",
-        "costUnknownNote": "Cost unknown: some of the work has no cost rate, so its cost and margin are not shown.",
+        "costUnknownNote": "Cost unknown: some of the work has no usable cost rate or contractor rate, so its cost and margin are not shown.",
         "currency": "Currency",
         "customer": "Customer",
         "customerReportTitle": "Customer report",
@@ -439,6 +439,11 @@
       "vacationDays": "Vacation Days",
       "workDays": "{count} work days",
       "workedFromHome": "{hours}h worked from home"
+    },
+    "tabs": {
+      "projects": "Projects",
+      "timeAndAbsences": "Time & Absences",
+      "vehicles": "Vehicles"
     },
     "title": "Employee Reports",
     "toast": {

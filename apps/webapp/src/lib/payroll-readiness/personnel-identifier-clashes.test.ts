@@ -8,6 +8,11 @@ const mocks = vi.hoisted(() => ({
 	clashes: vi.fn(),
 }));
 
+// Everyone is an employee here: External Contractor exclusion has its own PostgreSQL suites (#1997).
+vi.mock("@/lib/engagement/engagement-stints", async () => ({
+	loadEmployeeTime: async () =>
+		(await import("@/lib/engagement/testing/all-employee-time")).allEmployeeTime(),
+}));
 vi.mock("@/db", async () => ({
 	timeRecord: (await import("@/db/schema")).timeRecord,
 	db: { selectDistinct: () => ({ from: () => ({ where: mocks.records }) }) },

@@ -1,14 +1,12 @@
 {
   "analytics": {
     "access": {
-      "noEmployeeFeature": "shiko analitikën",
       "restrictedDescription": "Analitika është e disponueshme vetëm për administratorët dhe menaxherët.",
       "restrictedTitle": "Qasje e kufizuar"
     },
     "common": {
       "days": "Ditë",
       "employee": "Punonjës",
-      "employees": "Punonjës",
       "hours": "Orë",
       "loadingOrganizationSettings": "Po ngarkohen cilësimet e organizatës para aktivizimit të konfigurimeve paraprake.",
       "noDataAvailable": "Nuk ka të dhëna të disponueshme",
@@ -17,17 +15,16 @@
       "overtimeHours": "Orët shtesë",
       "team": "Ekipi",
       "totalHours": "Totali i orëve",
-      "unavailable": "I padisponueshëm",
       "undertime": "Mungesë orësh",
       "undertimeHours": "Orë të munguara"
     },
     "layout": {
       "description": "Njohuri gjithëpërfshirëse mbi performancën e ekipit, orët e punës dhe modelet e mungesave",
       "tabs": {
+        "absencesAndVacation": "Mungesat & Pushimet",
         "overtimeBurnDown": "Konsumimi i orëve shtesë",
         "overview": "Përmbledhje",
         "teamPerformance": "Performanca e ekipit",
-        "vacationTrends": "Trendet e pushimeve",
         "workHours": "Orët e punës"
       },
       "title": "Analitika"
@@ -100,31 +97,8 @@
       "errors": {
         "retryDescription": "Disa analitika nuk mund të ngarkoheshin. Vlerat e ngarkuara më parë, nëse shfaqen, mund të jenë të vjetruara."
       },
-      "kpis": {
-        "approvalRate": {
-          "description": "E kërkesave të shqyrtuara të miratuara",
-          "title": "Shkalla e miratimit",
-          "unavailableDescription": "Analitika e miratimeve nuk mund të ngarkohej"
-        },
-        "avgWorkHours": {
-          "description": "Për punonjës në periudhën e përzgjedhur",
-          "title": "Orë mesatare pune"
-        },
-        "totalAbsenceDays": {
-          "description": "Ditë totale në periudhën e përzgjedhur",
-          "title": "Ditë totale mungese"
-        },
-        "totalEmployees": {
-          "description": "Punonjës aktivë në organizatë",
-          "title": "Punonjës gjithsej"
-        }
-      },
       "loadingLabel": "Po ngarkohen të dhënat analitike",
-      "refreshing": "Po rifreskohen analitikat…",
-      "workHoursByTeam": {
-        "description": "Totali i orëve të punës të regjistruara për çdo ekip",
-        "title": "Orët e punës sipas ekipit"
-      }
+      "refreshing": "Po rifreskohen analitikat…"
     },
     "teamPerformance": {
       "avgPerEmployee": "Mes. për punonjës",

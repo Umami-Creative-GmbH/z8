@@ -2,13 +2,17 @@
 
 import {
 	IconAlertTriangle,
+	IconArrowBackUp,
 	IconBan,
 	IconCalendarEvent,
 	IconCheck,
 	IconClock,
 	IconClockEdit,
+	IconFileDescription,
+	IconHourglassEmpty,
 	IconReceipt,
 	IconSearch,
+	IconShieldCheck,
 	IconX,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
@@ -45,7 +49,11 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { useInvalidatePeriodSubmissionReadiness } from "@/lib/query/period-submission-readiness";
+import { needsFix } from "@/lib/self-service-requests/needs-fix";
 import type {
+	ComplianceExceptionKind,
+	ComplianceExceptionRequestDetails,
+	ExpenseReportRequestDetails,
 	SelfServiceRequestCounts,
 	SelfServiceRequestItem,
 	SelfServiceRequestResult,
@@ -68,7 +76,11 @@ interface MyRequestsClientProps {
 
 type StatusFilter = SelfServiceRequestStatus | "all";
 type SourceTypeFilter = SelfServiceRequestSourceType | "all";
-type Translate = (key: string, fallback: string) => string;
+type Translate = (
+	key: string,
+	fallback: string,
+	params?: Record<string, string | number>,
+) => string;
 
 const sourceTypeLabelKeys: Record<SelfServiceRequestSourceType, { key: string; fallback: string }> =
 	{
@@ -80,23 +92,82 @@ const sourceTypeLabelKeys: Record<SelfServiceRequestSourceType, { key: string; f
 			key: "myRequests:myRequests.types.timeCorrection",
 			fallback: "Time correction",
 		},
+		travel_expense_report: {
+			key: "myRequests:myRequests.types.expenseReport",
+			fallback: "Expense report",
+		},
 		travel_expense: {
-			key: "myRequests:myRequests.types.travelExpense",
-			fallback: "Travel expense",
+			key: "myRequests:myRequests.types.earlierClaim",
+			fallback: "Earlier claim",
+		},
+		compliance_exception: {
+			key: "myRequests:myRequests.types.complianceException",
+			fallback: "Compliance exception",
 		},
 	};
+
+/** The type filter's options, in the order they are offered. */
+const SOURCE_TYPE_OPTIONS: SelfServiceRequestSourceType[] = [
+	"absence",
+	"time_correction",
+	"travel_expense_report",
+	"travel_expense",
+	"compliance_exception",
+];
+
+/** The status filter's options, in the order they are offered. */
+const STATUS_OPTIONS: SelfServiceRequestStatus[] = [
+	"pending",
+	"returned",
+	"approved",
+	"rejected",
+	"expired",
+	"cancelled",
+];
 
 type TablerIcon = typeof IconClock;
 
 const sourceTypeIcons: Record<SelfServiceRequestSourceType, TablerIcon> = {
 	absence: IconCalendarEvent,
 	time_correction: IconClockEdit,
+	travel_expense_report: IconFileDescription,
 	travel_expense: IconReceipt,
+	compliance_exception: IconShieldCheck,
+};
+
+const complianceExceptionTitleKeys: Record<
+	ComplianceExceptionKind,
+	{ key: string; fallback: string }
+> = {
+	rest_period: {
+		key: "myRequests:myRequests.requests.complianceException.restPeriod",
+		fallback: "Rest period exception",
+	},
+	overtime_daily: {
+		key: "myRequests:myRequests.requests.complianceException.overtimeDaily",
+		fallback: "Daily overtime exception",
+	},
+	overtime_weekly: {
+		key: "myRequests:myRequests.requests.complianceException.overtimeWeekly",
+		fallback: "Weekly overtime exception",
+	},
+	overtime_monthly: {
+		key: "myRequests:myRequests.requests.complianceException.overtimeMonthly",
+		fallback: "Monthly overtime exception",
+	},
 };
 
 /** Pending requests are called "In review" everywhere on this page: summary, filter, badge, section. */
 const statusLabelKeys: Record<SelfServiceRequestStatus, { key: string; fallback: string }> = {
 	pending: { key: "myRequests:myRequests.status.inReview", fallback: "In review" },
+	returned: {
+		key: "myRequests:myRequests.status.returned",
+		fallback: "Returned",
+	},
+	expired: {
+		key: "myRequests:myRequests.status.expired",
+		fallback: "Expired",
+	},
 	approved: {
 		key: "myRequests:myRequests.status.approved",
 		fallback: "Approved",
@@ -114,6 +185,7 @@ const statusLabelKeys: Record<SelfServiceRequestStatus, { key: string; fallback:
 const RECENT_DECISION_HOURS = 30 * 24;
 const travelExpenseAmountFormatters = new Map<string, Intl.NumberFormat>();
 const dateFormatters = new Map<string, Intl.DateTimeFormat>();
+const dateTimeFormatters = new Map<string, Intl.DateTimeFormat>();
 
 const selectClassName =
 	"h-9 w-full min-w-0 rounded-md border border-input bg-background px-3 text-foreground text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30";
@@ -133,9 +205,13 @@ function getTravelExpenseAmountFormatter(locale: string, currency: string) {
 	return formatter;
 }
 
-/** Medium dates, read in UTC: request instants and stored calendar dates format the same everywhere. */
-function getDateFormatter(locale: string) {
-	const cachedFormatter = dateFormatters.get(locale);
+/**
+ * Medium dates in an explicit zone: "UTC" for stored calendar dates (held as UTC midnights), the
+ * viewer's own zone for request instants, so they read on the same day as a validity window.
+ */
+function getDateFormatter(locale: string, timeZone = "UTC") {
+	const formatterKey = `${locale}:${timeZone}`;
+	const cachedFormatter = dateFormatters.get(formatterKey);
 	if (cachedFormatter) {
 		return cachedFormatter;
 	}
@@ -144,9 +220,26 @@ function getDateFormatter(locale: string) {
 		year: "numeric",
 		month: "short",
 		day: "numeric",
-		timeZone: "UTC",
+		timeZone,
 	});
-	dateFormatters.set(locale, formatter);
+	dateFormatters.set(formatterKey, formatter);
+	return formatter;
+}
+
+/** Medium dates with short times in an explicit zone: a compliance exception's validity window. */
+function getDateTimeFormatter(locale: string, timeZone: string) {
+	const formatterKey = `${locale}:${timeZone}`;
+	const cachedFormatter = dateTimeFormatters.get(formatterKey);
+	if (cachedFormatter) {
+		return cachedFormatter;
+	}
+
+	const formatter = new Intl.DateTimeFormat(locale, {
+		dateStyle: "medium",
+		timeStyle: "short",
+		timeZone,
+	});
+	dateTimeFormatters.set(formatterKey, formatter);
 	return formatter;
 }
 
@@ -168,13 +261,43 @@ function sourceErrorMessage(sourceType: SelfServiceRequestSourceType, t: Transla
 
 	if (sourceType === "travel_expense") {
 		return t(
-			"myRequests:myRequests.sourceError.travelExpense",
-			"Travel expense requests could not be loaded.",
+			"myRequests:myRequests.sourceError.earlierClaim",
+			"Earlier claims could not be loaded.",
+		);
+	}
+
+	if (sourceType === "travel_expense_report") {
+		return t(
+			"myRequests:myRequests.sourceError.expenseReport",
+			"Expense reports could not be loaded.",
+		);
+	}
+
+	if (sourceType === "compliance_exception") {
+		return t(
+			"myRequests:myRequests.sourceError.complianceException",
+			"Compliance exceptions could not be loaded.",
 		);
 	}
 
 	return t("myRequests:myRequests.sourceError.absence", "Absence requests could not be loaded.");
 }
+
+/** An earlier claim's title names its type, as the finance list's "Earlier {type} claim" does. */
+const earlierClaimTitleKeys: Partial<Record<string, { key: string; fallback: string }>> = {
+	receipt: {
+		key: "myRequests:myRequests.requests.earlierClaim.receipt",
+		fallback: "Earlier receipt claim",
+	},
+	mileage: {
+		key: "myRequests:myRequests.requests.earlierClaim.mileage",
+		fallback: "Earlier mileage claim",
+	},
+	per_diem: {
+		key: "myRequests:myRequests.requests.earlierClaim.perDiem",
+		fallback: "Earlier per diem claim",
+	},
+};
 
 function requestTitle(item: SelfServiceRequestItem, t: Translate) {
 	if (item.sourceType === "time_correction") {
@@ -182,7 +305,20 @@ function requestTitle(item: SelfServiceRequestItem, t: Translate) {
 	}
 
 	if (item.sourceType === "travel_expense") {
-		return t("myRequests:myRequests.requests.travelExpense.title", "Travel expense claim");
+		const claimType = item.details?.kind === "earlier_claim" ? item.details.claimType : null;
+		const named = claimType ? earlierClaimTitleKeys[claimType] : undefined;
+		if (named) return t(named.key, named.fallback);
+		return t("myRequests:myRequests.requests.earlierClaim.title", "Earlier claim");
+	}
+
+	if (item.details?.kind === "expense_report") {
+		return expenseReportName(item.title, item.details, t);
+	}
+
+	if (item.details?.kind === "compliance_exception") {
+		const label = complianceExceptionTitleKeys[item.details.exceptionType];
+		if (label) return t(label.key, label.fallback);
+		return t("myRequests:myRequests.requests.complianceException.title", "Compliance exception");
 	}
 
 	if (item.title === "absence") {
@@ -209,7 +345,126 @@ function requestSubtitle(item: SelfServiceRequestItem, locale: string, t: Transl
 		return formatTravelExpenseSubtitle(item.subtitle, locale);
 	}
 
+	if (item.details?.kind === "expense_report") {
+		const adjustment = expenseReportAdjustmentLabel(item.details, t);
+		const kind = expenseReportKindLabel(item.details, t);
+		// A trip with only a start or end date arrives as one "YYYY-MM-DD".
+		const dates =
+			formatStoredDateRange(item.subtitle, locale) ?? formatStoredDate(item.subtitle, locale);
+		return [adjustment, kind, dates].filter(Boolean).join(" · ");
+	}
+
+	if (item.details?.kind === "compliance_exception") {
+		return formatComplianceExceptionSubtitle(item.details, locale, t);
+	}
+
 	return item.subtitle;
+}
+
+/**
+ * A report's name, as `reportName` in `components/travel-expenses/report-name.ts` gives it: the
+ * trip purpose or the standalone expense's description or route, else an "Untitled …" fallback.
+ * Its copy lives in this page's namespace, which is the one loaded here.
+ */
+function expenseReportName(title: string, details: ExpenseReportRequestDetails, t: Translate) {
+	if (title.trim()) return title;
+	if (details.reportKind === "trip") {
+		return t("myRequests:myRequests.requests.expenseReport.untitledTrip", "Untitled trip");
+	}
+	if (details.itemType === "mileage") {
+		return t("myRequests:myRequests.requests.expenseReport.untitledMileage", "Untitled mileage");
+	}
+	return t("myRequests:myRequests.requests.expenseReport.untitledReceipt", "Untitled receipt");
+}
+
+/**
+ * The report an adjustment adjusts, as the expense history names it. An adjustment copies its
+ * original's name and dates, so without this the two would read the same.
+ */
+function expenseReportAdjustmentLabel(details: ExpenseReportRequestDetails, t: Translate) {
+	if (!details.adjustmentOf) return null;
+	if (details.adjustmentOf.title) {
+		return t(
+			"myRequests:myRequests.requests.expenseReport.adjustmentOf",
+			"Adjustment of “{title}”",
+			{
+				title: details.adjustmentOf.title,
+			},
+		);
+	}
+	return t(
+		"myRequests:myRequests.requests.expenseReport.adjustmentOfUntitled",
+		"Adjustment of an earlier report",
+	);
+}
+
+/** A report's kind, as `reportKindLabel` gives it: trip report, standalone receipt or mileage. */
+function expenseReportKindLabel(details: ExpenseReportRequestDetails, t: Translate) {
+	if (details.reportKind === "trip") {
+		return t("myRequests:myRequests.requests.expenseReport.kind.trip", "Trip report");
+	}
+	if (details.itemType === "mileage") {
+		return t(
+			"myRequests:myRequests.requests.expenseReport.kind.standaloneMileage",
+			"Standalone mileage",
+		);
+	}
+	return t(
+		"myRequests:myRequests.requests.expenseReport.kind.standaloneReceipt",
+		"Standalone receipt",
+	);
+}
+
+function formatPlannedDuration(minutes: number, t: Translate) {
+	const hours = Math.floor(minutes / 60);
+	const rest = minutes % 60;
+	if (hours > 0 && rest > 0) {
+		return t(
+			"myRequests:myRequests.requests.complianceException.durationHoursMinutes",
+			"{hours} h {minutes} min",
+			{ hours, minutes: rest },
+		);
+	}
+
+	if (hours > 0) {
+		return t("myRequests:myRequests.requests.complianceException.durationHours", "{hours} h", {
+			hours,
+		});
+	}
+
+	return t("myRequests:myRequests.requests.complianceException.durationMinutes", "{minutes} min", {
+		minutes: rest,
+	});
+}
+
+/**
+ * The planned duration and the 24-hour validity window, read in the viewer's effective time zone
+ * (their own setting, else the organization's, else UTC).
+ */
+function formatComplianceExceptionSubtitle(
+	details: ComplianceExceptionRequestDetails,
+	locale: string,
+	t: Translate,
+) {
+	const window = getDateTimeFormatter(locale, details.timeZone).formatRange(
+		details.validFrom,
+		details.validUntil,
+	);
+	const validity = t(
+		"myRequests:myRequests.requests.complianceException.validity",
+		"Valid: {window} ({timeZone})",
+		{ window, timeZone: details.timeZone },
+	);
+	if (details.plannedDurationMinutes === null || details.plannedDurationMinutes <= 0) {
+		return validity;
+	}
+
+	const planned = t(
+		"myRequests:myRequests.requests.complianceException.planned",
+		"Planned: {duration}",
+		{ duration: formatPlannedDuration(details.plannedDurationMinutes, t) },
+	);
+	return `${planned} · ${validity}`;
 }
 
 function plainDateToUtcDate(value: string) {
@@ -237,6 +492,15 @@ function formatStoredDateRange(value: string, locale: string) {
 	return getDateFormatter(locale).formatRange(start, end);
 }
 
+/** One stored calendar date ("YYYY-MM-DD"), formatted in the locale. */
+function formatStoredDate(value: string, locale: string) {
+	if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+		return null;
+	}
+	const date = plainDateToUtcDate(value);
+	return date ? getDateFormatter(locale).format(date) : null;
+}
+
 function formatTravelExpenseSubtitle(value: string, locale: string) {
 	const separator = " · ";
 	const [prefix, amountPart] = value.includes(separator) ? value.split(separator) : [null, value];
@@ -253,13 +517,9 @@ function formatTravelExpenseSubtitle(value: string, locale: string) {
 	return prefix ? `${prefix}${separator}${formattedAmount}` : formattedAmount;
 }
 
-function formatDate(date: Date, locale: string) {
-	return getDateFormatter(locale).format(date);
-}
-
-/** A rejection the employee can correct and resubmit: the summary's "Required fixes". */
-function needsFix(item: SelfServiceRequestItem) {
-	return item.status === "rejected" && item.availableActions.includes("fix");
+/** A request instant's date in the viewer's effective time zone. */
+function formatDate(date: Date, locale: string, timeZone: string) {
+	return getDateFormatter(locale, timeZone).format(date);
 }
 
 function isRecentlyDecided(item: SelfServiceRequestItem, now: Date) {
@@ -280,7 +540,8 @@ function isRecentlyDecided(item: SelfServiceRequestItem, now: Date) {
 
 /**
  * Each request appears once in the working sections (fix, review, recent decision) and once in the
- * history. A rejection that needs a fix is shown under "Needs attention", not again as a decision.
+ * history. A rejection that needs a fix is shown under "Needs attention", not again as a decision;
+ * so is a returned expense report. Expired compliance exceptions appear in the history only.
  */
 function groupRequestItems(items: SelfServiceRequestItem[], now: Date) {
 	return {
@@ -411,8 +672,8 @@ export function MyRequestsClient({ initialResult, focusRequest }: MyRequestsClie
 			<PageHeader
 				title={t("myRequests:myRequests.title", "My Requests")}
 				scope={t(
-					"myRequests:myRequests.scope",
-					"Your absence, time-correction and legacy expense requests in the active organization",
+					"myRequests:myRequests.scopeAllRequests",
+					"Your absence, time-correction, compliance exception and expense requests in the active organization",
 				)}
 			/>
 
@@ -500,16 +761,18 @@ export function MyRequestsClient({ initialResult, focusRequest }: MyRequestsClie
 							<RequestSection
 								title={t("myRequests:myRequests.needsAttention.title", "Needs attention")}
 								description={t(
-									"myRequests:myRequests.needsAttention.description",
-									"Rejected requests that may require a correction before resubmission.",
+									"myRequests:myRequests.needsAttention.fixDescription",
+									"Returned or rejected requests that need a correction before resubmission.",
 								)}
 								items={groupedItems.needsAttention}
+								timeZone={initialResult.timeZone}
 								preferFix
 								tone="attention"
 							/>
 							<RequestSection
 								title={t("myRequests:myRequests.inReview.title", "In review")}
 								items={groupedItems.inReview}
+								timeZone={initialResult.timeZone}
 								focusTargets
 							/>
 							<RequestSection
@@ -519,9 +782,10 @@ export function MyRequestsClient({ initialResult, focusRequest }: MyRequestsClie
 									"Approved and rejected decisions from the last 30 days.",
 								)}
 								items={groupedItems.recentlyDecided}
+								timeZone={initialResult.timeZone}
 								allowCancel={false}
 							/>
-							<RequestHistory items={groupedItems.all} />
+							<RequestHistory items={groupedItems.all} timeZone={initialResult.timeZone} />
 						</>
 					)}
 				</>
@@ -648,10 +912,11 @@ function RequestFilters({ filters }: { filters: ReturnType<typeof useMyRequestsF
 						<option value="all">
 							{t("myRequests:myRequests.filters.allStatuses", "All statuses")}
 						</option>
-						<option value="pending">{statusLabel("pending", t)}</option>
-						<option value="approved">{statusLabel("approved", t)}</option>
-						<option value="rejected">{statusLabel("rejected", t)}</option>
-						<option value="cancelled">{statusLabel("cancelled", t)}</option>
+						{STATUS_OPTIONS.map((status) => (
+							<option key={status} value={status}>
+								{statusLabel(status, t)}
+							</option>
+						))}
 					</select>
 				</label>
 				<label className="grid gap-1.5 font-medium text-sm">
@@ -664,9 +929,11 @@ function RequestFilters({ filters }: { filters: ReturnType<typeof useMyRequestsF
 						<option value="all">
 							{t("myRequests:myRequests.filters.allTypes", "All types")}
 						</option>
-						<option value="absence">{sourceTypeLabel("absence", t)}</option>
-						<option value="time_correction">{sourceTypeLabel("time_correction", t)}</option>
-						<option value="travel_expense">{sourceTypeLabel("travel_expense", t)}</option>
+						{SOURCE_TYPE_OPTIONS.map((sourceType) => (
+							<option key={sourceType} value={sourceType}>
+								{sourceTypeLabel(sourceType, t)}
+							</option>
+						))}
 					</select>
 				</label>
 				{isFiltered ? (
@@ -730,6 +997,7 @@ function RequestSection({
 	title,
 	description,
 	items,
+	timeZone,
 	allowCancel = true,
 	preferFix = false,
 	tone = "default",
@@ -738,6 +1006,8 @@ function RequestSection({
 	title: string;
 	description?: string;
 	items: SelfServiceRequestItem[];
+	/** The viewer's effective time zone, in which request instants are read. */
+	timeZone: string;
 	allowCancel?: boolean;
 	preferFix?: boolean;
 	tone?: "default" | "attention";
@@ -769,6 +1039,7 @@ function RequestSection({
 					<RequestCard
 						key={item.id}
 						item={item}
+						timeZone={timeZone}
 						allowCancel={allowCancel}
 						preferFix={preferFix}
 						targetId={focusTargets ? myRequestFocusTargetId(item.id) : undefined}
@@ -790,11 +1061,13 @@ function RequestTypeIcon({ sourceType }: { sourceType: SelfServiceRequestSourceT
 
 function RequestCard({
 	item,
+	timeZone,
 	allowCancel = true,
 	preferFix = false,
 	targetId,
 }: {
 	item: SelfServiceRequestItem;
+	timeZone: string;
 	allowCancel?: boolean;
 	preferFix?: boolean;
 	targetId?: string;
@@ -827,12 +1100,11 @@ function RequestCard({
 							<span>{sourceTypeLabel(item.sourceType, t)}</span>
 							<span>
 								{t("myRequests:myRequests.card.submitted", "Submitted")}:{" "}
-								{formatDate(item.submittedAt, locale)}
+								{formatDate(item.submittedAt, locale, timeZone)}
 							</span>
 							{item.resolvedAt ? (
 								<span>
-									{t("myRequests:myRequests.card.decision", "Decision")}:{" "}
-									{formatDate(item.resolvedAt, locale)}
+									<ResolvedAtLabel item={item} />: {formatDate(item.resolvedAt, locale, timeZone)}
 								</span>
 							) : null}
 						</div>
@@ -840,11 +1112,16 @@ function RequestCard({
 							<p
 								className={cn(
 									"mt-2 break-words rounded-md border-l-2 bg-muted/50 px-3 py-2 text-sm",
-									item.status === "rejected" ? "border-destructive" : "border-border",
+									item.status === "rejected" || item.status === "returned"
+										? "border-destructive"
+										: "border-border",
 								)}
 							>
 								<span className="font-medium">
-									{t("myRequests:myRequests.reasonLabel", "Reason")}:
+									{item.status === "returned"
+										? t("myRequests:myRequests.returnNoteLabel", "Reviewer's note")
+										: t("myRequests:myRequests.reasonLabel", "Reason")}
+									:
 								</span>{" "}
 								{item.decisionReason}
 							</p>
@@ -864,8 +1141,25 @@ function RequestCard({
 	);
 }
 
+/**
+ * What a request's `resolvedAt` marks: a decision, or for a returned report the return, which
+ * hands it back to the employee to fix rather than deciding it.
+ */
+function ResolvedAtLabel({ item }: { item: SelfServiceRequestItem }) {
+	const { t } = useTranslate();
+	return item.status === "returned"
+		? t("myRequests:myRequests.card.returned", "Returned")
+		: t("myRequests:myRequests.card.decision", "Decision");
+}
+
 /** Every loaded request once, as an aligned record table; it opens records but never cancels them. */
-function RequestHistory({ items }: { items: SelfServiceRequestItem[] }) {
+function RequestHistory({
+	items,
+	timeZone,
+}: {
+	items: SelfServiceRequestItem[];
+	timeZone: string;
+}) {
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const titleId = useId();
@@ -895,7 +1189,7 @@ function RequestHistory({ items }: { items: SelfServiceRequestItem[] }) {
 					</TableHeader>
 					<TableBody>
 						{items.map((item) => (
-							<RequestHistoryRow key={item.id} item={item} locale={locale} />
+							<RequestHistoryRow key={item.id} item={item} locale={locale} timeZone={timeZone} />
 						))}
 					</TableBody>
 				</Table>
@@ -904,7 +1198,15 @@ function RequestHistory({ items }: { items: SelfServiceRequestItem[] }) {
 	);
 }
 
-function RequestHistoryRow({ item, locale }: { item: SelfServiceRequestItem; locale: string }) {
+function RequestHistoryRow({
+	item,
+	locale,
+	timeZone,
+}: {
+	item: SelfServiceRequestItem;
+	locale: string;
+	timeZone: string;
+}) {
 	const { t } = useTranslate();
 	const titleId = useId();
 	const primaryAction = getPrimaryRequestAction(item, false);
@@ -923,9 +1225,19 @@ function RequestHistoryRow({ item, locale }: { item: SelfServiceRequestItem; loc
 			<TableCell>
 				<StatusBadge status={item.status} />
 			</TableCell>
-			<TableCell className="tabular-nums">{formatDate(item.submittedAt, locale)}</TableCell>
+			<TableCell className="tabular-nums">
+				{formatDate(item.submittedAt, locale, timeZone)}
+			</TableCell>
 			<TableCell className="text-muted-foreground tabular-nums">
-				{item.resolvedAt ? formatDate(item.resolvedAt, locale) : "—"}
+				{item.resolvedAt === null ? (
+					"—"
+				) : item.status === "returned" ? (
+					<>
+						<ResolvedAtLabel item={item} />: {formatDate(item.resolvedAt, locale, timeZone)}
+					</>
+				) : (
+					formatDate(item.resolvedAt, locale, timeZone)
+				)}
 			</TableCell>
 			<TableCell className="pr-4 sm:text-right md:pr-5">
 				{primaryAction ? (
@@ -953,9 +1265,18 @@ const statusBadgeStyles: Record<SelfServiceRequestStatus, { className: string; I
 			"border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-300",
 		Icon: IconCheck,
 	},
+	returned: {
+		className:
+			"border-orange-200 bg-orange-50 text-orange-900 dark:border-orange-900/60 dark:bg-orange-950/40 dark:text-orange-200",
+		Icon: IconArrowBackUp,
+	},
 	rejected: {
 		className: "border-destructive/30 bg-destructive/10 text-destructive dark:bg-destructive/20",
 		Icon: IconX,
+	},
+	expired: {
+		className: "text-muted-foreground",
+		Icon: IconHourglassEmpty,
 	},
 	cancelled: {
 		className: "text-muted-foreground",

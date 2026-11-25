@@ -27,11 +27,6 @@ const REQUIRED_KEYS: Array<{
 		de: "Rolle erstellen",
 	},
 	{
-		key: "settings.roles.actions.refresh",
-		en: "Refresh custom roles",
-		de: "Benutzerdefinierte Rollen aktualisieren",
-	},
-	{
 		key: "settings.permissions.title",
 		en: "Team Permissions",
 		de: "Teamberechtigungen",

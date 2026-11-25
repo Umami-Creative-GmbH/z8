@@ -267,7 +267,7 @@ function LegacyClaimEvidence({
 			<Card className="min-w-0 shadow-none">
 				<CardHeader>
 					<p className="text-sm text-muted-foreground">
-						{t("travelExpenses.detail.legacyClaim", "Legacy claim")}
+						{t("travelExpenses.detail.earlierClaim", "Earlier claim")}
 						<span className="mt-1 block break-all font-mono text-xs">{claim.id}</span>
 					</p>
 					<h2 className="font-semibold leading-none">
@@ -379,8 +379,8 @@ function LegacyClaimReceipts({ data }: { data: TravelExpenseClaimDetailData }) {
 								{!attachment.checksumSha256 && (
 									<p className="text-sm text-muted-foreground">
 										{t(
-											"travelExpenses.detail.legacyReceiptIdentity",
-											"Legacy receipt: content checksum was not recorded.",
+											"travelExpenses.detail.earlierReceiptIdentity",
+											"Earlier receipt: content checksum was not recorded.",
 										)}
 									</p>
 								)}

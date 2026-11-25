@@ -440,6 +440,11 @@
       "workDays": "{count} робочих днів",
       "workedFromHome": "{hours} год відпрацьовано вдома"
     },
+    "tabs": {
+      "projects": "Проєкти",
+      "timeAndAbsences": "Робочий час і відсутності",
+      "vehicles": "Транспортні засоби"
+    },
     "title": "Звіти працівників",
     "toast": {
       "failedGenerate": "Не вдалося згенерувати звіт",

@@ -1,3 +1,5 @@
+import { FormatIcu } from "@tolgee/format-icu";
+import { TolgeeCore } from "@tolgee/react";
 import { PgDialect, type SQL } from "drizzle-orm/pg-core";
 import { Cause, Effect, Exit, Option } from "effect";
 import { describe, expect, it, vi } from "vitest";
@@ -9,6 +11,7 @@ import {
 	ValidationError,
 } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { resolveReviewText } from "../inbox/summary-text";
 import {
 	AbsenceRequestHandler,
 	redactNonSickAbsenceSickDetail,
@@ -151,6 +154,57 @@ describe("redactNonSickAbsenceSickDetail", () => {
 		});
 
 		expect(absence.sickDetail).toBeNull();
+	});
+});
+
+describe("absence request summary in the viewer's language (#1978)", () => {
+	async function translatorFor(
+		language: string,
+		translations: Record<string, string> = {},
+	) {
+		const tolgee = TolgeeCore()
+			.use(FormatIcu())
+			.init({ language, staticData: { [language]: translations } });
+		await tolgee.run();
+		return (key: string, fallback: string, params?: Record<string, string | number>) =>
+			tolgee.t(key, fallback, params);
+	}
+
+	const display = (days: number, endDate: string) =>
+		AbsenceRequestHandler.getDisplayMetadata({
+			...absence,
+			endDate,
+			absenceDays: days,
+		});
+
+	it("renders the category, dates and days in German with German date formats", async () => {
+		const de = await translatorFor("de", {
+			"approvals:approvals.absenceRequest.summary":
+				"{days, plural, one {# Tag} other {# Tage}} frei – {range}",
+		});
+		const { localized } = display(4, "2026-06-04");
+
+		expect(localized).toBeDefined();
+		if (!localized) return;
+		expect(resolveReviewText(localized.title, de, "de")).toBe("Vacation");
+		expect(resolveReviewText(localized.subtitle, de, "de")).toBe("01.06.2026 – 04.06.2026");
+		expect(resolveReviewText(localized.summary, de, "de")).toBe(
+			"4 Tage frei – 01.06.2026 – 04.06.2026",
+		);
+		expect(resolveReviewText(display(1, "2026-06-01").localized!.summary, de, "de")).toBe(
+			"1 Tag frei – 01.06.2026",
+		);
+	});
+
+	it("falls back to the English summary in the viewer's date format", async () => {
+		const en = await translatorFor("en");
+
+		expect(resolveReviewText(display(4, "2026-06-04").localized!.summary, en, "en")).toBe(
+			"4 days off - Jun 1, 2026 – Jun 4, 2026",
+		);
+		expect(resolveReviewText(display(1, "2026-06-01").localized!.summary, en, "en")).toBe(
+			"1 day off - Jun 1, 2026",
+		);
 	});
 });
 

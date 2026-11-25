@@ -3,6 +3,7 @@
 import { useTolgee, useTranslate } from "@tolgee/react";
 import type { ReactNode } from "react";
 import type { ShiftWithRelations } from "@/app/[locale]/(app)/scheduling/types";
+import { useTimeFormat } from "@/components/providers/user-preferences-provider";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -16,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { shiftCalendarDate } from "@/lib/scheduling/shift-date";
 import { shiftEndsNextDay, shiftPlaceLabel } from "@/lib/scheduling/shift-labels";
+import { formatTimeStringForPreference } from "@/lib/user-preferences/time-format";
 
 interface ShiftDetailsPanelProps {
 	open: boolean;
@@ -33,6 +35,7 @@ export function ShiftDetailsPanel({
 }: ShiftDetailsPanelProps) {
 	const { t } = useTranslate();
 	const locale = useTolgee().getLanguage() || "en";
+	const timeFormat = useTimeFormat();
 
 	return (
 		<ActionPanel open={open} onOpenChange={onOpenChange}>
@@ -59,7 +62,8 @@ export function ShiftDetailsPanel({
 							</ShiftDetail>
 							<ShiftDetail label={t("scheduling:scheduling.shiftDetails.time", "Time")}>
 								<span className="tabular-nums">
-									{shift.startTime} – {shift.endTime}
+									{formatTimeStringForPreference(shift.startTime, timeFormat)} –{" "}
+									{formatTimeStringForPreference(shift.endTime, timeFormat)}
 								</span>
 								{shiftEndsNextDay(shift) && (
 									<span className="text-muted-foreground">

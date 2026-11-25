@@ -878,6 +878,7 @@
       "setDescriptionPlaceholder": "Descriere opțională pentru acest set de categorii",
       "setName": "Nume",
       "setNamePlaceholder": "de ex., Categorii de călătorie",
+      "setNameRequired": "Numele setului de categorii este obligatoriu",
       "setNameTaken": "Există deja un set de categorii cu acest nume.",
       "setUpdated": "Set de categorii actualizat",
       "setUpdateFailed": "Actualizarea setului de categorii a eșuat",

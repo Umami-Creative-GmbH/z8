@@ -13,14 +13,27 @@ import { EmployeeLifecycleActions } from "@/components/organization/employee-lif
 import { ReactivationChecklistCard } from "@/components/organization/reactivation-checklist";
 import { PersonnelFilePanel } from "@/components/personnel-file/personnel-file-panel";
 import { EmployeeAssignedLocationsCard } from "@/components/settings/assigned-locations/employee-assigned-locations-card";
+import { ContractorCompensationCard } from "@/components/settings/contracts/contractor-compensation-card";
 import { EmployeeContractTab } from "@/components/settings/contracts/employee-contract-tab";
+import { EmployeeMinijobMonitorCard } from "@/components/settings/contracts/employee-minijob-monitor-card";
+import {
+	MINIJOB_REVIEWS_QUERY_KEY,
+	minijobMonitorQueryPrefix,
+} from "@/components/settings/contracts/minijob-query-keys";
 import { ScopedManagerPolicyCard } from "@/components/settings/contracts/scoped-manager-policy-card";
+import { ShortTermMonitorCard } from "@/components/settings/contracts/short-term-monitor-card";
+import {
+	shortTermMonitorQueryKey,
+	shortTermReviewsQueryKey,
+} from "@/components/settings/contracts/short-term-query-keys";
+import { WorkingStudentMonitorCard } from "@/components/settings/contracts/working-student-monitor-card";
 import { CustomFieldDraftsSection } from "@/components/settings/custom-fields/custom-field-values-section";
 import { useCustomFieldDrafts } from "@/components/settings/custom-fields/use-custom-field-drafts";
 import { EmployeeCustomRolesCard } from "@/components/settings/custom-roles/employee-custom-roles-card";
 import { EmploymentLifecycleEvents } from "@/components/settings/employee-employment-history/lifecycle-events";
 import { WageHistoryMergeNote } from "@/components/settings/employee-employment-history/wage-history-merge-note";
 import { EmployeeEmploymentHistoryCard } from "@/components/settings/employee-employment-history-card";
+import { OnCallStatusCard } from "@/components/statutory/on-call/on-call-status-card";
 import { EmployeeOffboardingSection } from "@/components/settings/employee-offboarding/employee-offboarding-section";
 import { LeavingDatePanel } from "@/components/settings/employee-offboarding/leaving-date-panel";
 import { EmployeeSkillsCard } from "@/components/settings/employee-skills-card";
@@ -29,6 +42,7 @@ import { EmploymentDateCorrectionCard } from "@/components/settings/employment-d
 import { EmployeeKioskCard } from "@/components/settings/kiosk/employee-kiosk-card";
 import { ManagerAssignment } from "@/components/settings/manager-assignment";
 import { EmployeePersonalDataExportCard } from "@/components/settings/personal-data-export/employee-personal-data-export-card";
+import { ApprenticeReleaseCard } from "@/components/settings/employees/apprentice-release-card";
 import { EmployeeWorkBalanceSection } from "@/components/settings/work-balance/employee-work-balance-section";
 import { EMPLOYEE_WORK_BALANCE_QUERY_KEY } from "@/components/settings/work-balance/use-employee-work-balance";
 import { WorkBalanceRecalculationCard } from "@/components/settings/work-balance-recalculation-card";
@@ -243,6 +257,28 @@ export function EmployeeDetailPageClient({
 		initialSnapshot,
 	});
 	const { employee, isLoading, hasEmployee, updateEmployee, isUpdating } = employeeData;
+	// Terms, history, wage and employment-date changes move Minijob (#1989) and short-term (#1990)
+	// coverage, limit choice and earnings: refresh both monitors and the reviews built from them.
+	// A work policy assigned to the employee alone changes the short-term limit choice too.
+	const refreshShortTermMonitor = () => {
+		const shortTermOrganizationId = employee?.organizationId ?? organizationId;
+		if (!shortTermOrganizationId) return;
+		void queryClient.invalidateQueries({
+			queryKey: shortTermMonitorQueryKey(shortTermOrganizationId, employeeId),
+		});
+		void queryClient.invalidateQueries({
+			queryKey: shortTermReviewsQueryKey(shortTermOrganizationId),
+		});
+	};
+	const refreshStatutoryMonitors = () => {
+		void queryClient.invalidateQueries({ queryKey: minijobMonitorQueryPrefix(employeeId) });
+		void queryClient.invalidateQueries({ queryKey: MINIJOB_REVIEWS_QUERY_KEY });
+		refreshShortTermMonitor();
+	};
+	const refreshingMonitors =
+		<A, R>(mutate: (input: A) => Promise<R>) =>
+		(input: A) =>
+			mutate(input).finally(refreshStatutoryMonitors);
 	// The "Custom fields" section (#818), saved with the employee details.
 	const customFields = useCustomFieldDrafts({
 		entity: "employee",
@@ -389,7 +425,10 @@ export function EmployeeDetailPageClient({
 										employeeId={employeeId}
 										workPolicies={workPolicies}
 										employmentHistory={employeeData.employmentHistory}
-										onContractMutated={() => void employeeData.refetch()}
+										onContractMutated={() => {
+											void employeeData.refetch();
+											refreshStatutoryMonitors();
+										}}
 									/>
 									<EmploymentDateCorrectionCard
 										key={employeeId}
@@ -400,6 +439,8 @@ export function EmployeeDetailPageClient({
 												: null
 										}
 										onSaved={async () => {
+											// The start date moves Minijob and short-term coverage too.
+											refreshStatutoryMonitors();
 											await Promise.all([
 												employeeData.refetch(),
 												queryClient.invalidateQueries({
@@ -414,9 +455,9 @@ export function EmployeeDetailPageClient({
 									<EmployeeEmploymentHistoryCard
 										history={employeeData.employmentHistory}
 										canManage={isOrgAdmin}
-										onCreate={employeeData.createEmploymentHistory}
-										onConfirm={employeeData.confirmEmploymentHistory}
-										onCancel={employeeData.cancelEmploymentHistory}
+										onCreate={refreshingMonitors(employeeData.createEmploymentHistory)}
+										onConfirm={refreshingMonitors(employeeData.confirmEmploymentHistory)}
+										onCancel={refreshingMonitors(employeeData.cancelEmploymentHistory)}
 										isCreating={employeeData.isCreatingEmploymentHistory}
 										isMutating={
 											employeeData.isConfirmingEmploymentHistory ||
@@ -428,28 +469,62 @@ export function EmployeeDetailPageClient({
 										changeWage={
 											employee.contractTypeToday === "hourly"
 												? {
-														onSubmit: employeeData.changeWage,
+														onSubmit: refreshingMonitors(employeeData.changeWage),
 														isPending: employeeData.isChangingWage,
 													}
 												: undefined
 										}
 									/>
 									<EmployeeRateSections employeeId={employeeId} settingsAccess={settingsAccess} />
+									{/* External Contractors only (#1998); renders nothing for employees. */}
+									<ContractorCompensationCard employeeId={employeeId} />
 								</>
 							) : (
 								<ScopedManagerPolicyCard
 									employeeId={employeeId}
 									organizationTimezone={organizationTimezone}
 									workPolicies={workPolicies}
-									onAssigned={() => void employeeData.refetch()}
+									onAssigned={() => {
+										void employeeData.refetch();
+										refreshShortTermMonitor();
+									}}
 								/>
 							)}
+							<EmployeeMinijobMonitorCard
+								employeeId={employeeId}
+								userId={currentUserId}
+								organizationId={employee.organizationId}
+							/>
+							<ShortTermMonitorCard
+								organizationId={employee.organizationId}
+								employeeId={employeeId}
+								isOrgAdmin={isOrgAdmin}
+							/>
+							{/* § 12 TzBfG on-call (#1992): wage-free for both audiences, redacted server-side. */}
+							<OnCallStatusCard
+								organizationId={employee.organizationId}
+								employeeId={employeeId}
+								showErrors
+							/>
+							<WorkingStudentMonitorCard
+								organizationId={employee.organizationId}
+								employeeId={employeeId}
+								canManage={isOrgAdmin}
+							/>
 						</TabsContent>
 
 						{/* Tab 3: Time & Balance */}
 						<TabsContent value="time-balance" className="flex flex-col gap-4">
 							{isOrgAdminOrManager && <EmployeeTrackingDateCard employeeId={employeeId} />}
 							{isOrgAdminOrManager && <EmployeeWorkBalanceSection employeeId={employeeId} />}
+							{isOrgAdminOrManager && (
+								<ApprenticeReleaseCard
+									view="employee"
+									organizationId={employee.organizationId}
+									employeeId={employeeId}
+									canManage={isOrgAdmin}
+								/>
+							)}
 							{isOrgAdmin && (
 								<WorkBalanceRecalculationCard
 									employeeName={buildAuthUserDisplayName(employee.user) || employee.id}

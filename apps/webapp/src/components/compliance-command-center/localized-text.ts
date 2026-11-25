@@ -32,7 +32,45 @@ export const COMPLIANCE_COMMAND_CENTER_I18N = {
 	coverageWorkforceCompliance: {
 		key: "compliance.commandCenter.coverage.workforceCompliance",
 		default:
-			"Workforce compliance uses the last 7 days of work-policy violations and pending exception requests.",
+			"Workforce compliance uses the last 7 days of work-policy violations and pending exception requests, plus the open findings and acknowledgements of the German statutory monitors (Minijob, short-term employment, working students, on-call work, youth protection and apprentices).",
+	},
+	factWorkforceStatutoryFindings: {
+		key: "compliance.commandCenter.facts.workforce.statutoryFindings",
+		default:
+			"Statutory findings: {critical} critical, {warning, plural, one {# warning} other {# warnings}}",
+	},
+	factWorkforceStatutoryAcknowledgements: {
+		key: "compliance.commandCenter.facts.workforce.statutoryAcknowledgements",
+		default:
+			"Statutory acknowledgements: {pending} pending, {stale} invalidated by newer work or shifts",
+	},
+	factWorkforceStatutoryUnavailable: {
+		key: "compliance.commandCenter.facts.workforce.statutoryUnavailable",
+		default: "Some statutory monitors could not be loaded.",
+	},
+	linkStatutoryDomainMinijob: {
+		key: "compliance.commandCenter.links.statutoryDomain.minijob",
+		default: "Minijob: {count} open",
+	},
+	linkStatutoryDomainShortTerm: {
+		key: "compliance.commandCenter.links.statutoryDomain.short_term",
+		default: "Short-term: {count} open",
+	},
+	linkStatutoryDomainWorkingStudent: {
+		key: "compliance.commandCenter.links.statutoryDomain.working_student",
+		default: "Working students: {count} open",
+	},
+	linkStatutoryDomainOnCall: {
+		key: "compliance.commandCenter.links.statutoryDomain.on_call",
+		default: "On-call: {count} open",
+	},
+	linkStatutoryDomainYouthApprentice: {
+		key: "compliance.commandCenter.links.statutoryDomain.youth_apprentice",
+		default: "Youth & apprentices: {count} open",
+	},
+	statutoryReviewsHeading: {
+		key: "compliance.commandCenter.sections.workforceCompliance.statutoryReviews",
+		default: "Statutory reviews",
 	},
 	eventAuditEvidenceFailuresDescription: {
 		key: "compliance.commandCenter.events.auditEvidenceFailures.description",
@@ -58,6 +96,15 @@ export const COMPLIANCE_COMMAND_CENTER_I18N = {
 	eventAuditVerificationFailureTitle: {
 		key: "compliance.commandCenter.events.auditVerificationFailure.title",
 		default: "Audit verification failed",
+	},
+	eventPendingExceptionsDescription: {
+		key: "compliance.commandCenter.events.pendingExceptions.description",
+		default:
+			"{count, plural, one {# compliance exception awaits a decision} other {# compliance exceptions await a decision}}",
+	},
+	eventPendingExceptionsTitle: {
+		key: "compliance.commandCenter.events.pendingExceptions.title",
+		default: "Compliance exceptions pending",
 	},
 	eventSensitiveActionDescription: {
 		key: "compliance.commandCenter.events.sensitiveAction.description",
@@ -144,10 +191,6 @@ export const COMPLIANCE_COMMAND_CENTER_I18N = {
 		key: "compliance.commandCenter.facts.workforce.restPeriodViolations",
 		default: "Rest-period violations: {count}",
 	},
-	linkInspectCompliance: {
-		key: "compliance.commandCenter.links.inspectCompliance",
-		default: "Inspect compliance",
-	},
 	linkInspectInAuditLog: {
 		key: "compliance.commandCenter.links.inspectInAuditLog",
 		default: "Inspect in Audit Log",
@@ -160,9 +203,13 @@ export const COMPLIANCE_COMMAND_CENTER_I18N = {
 		key: "compliance.commandCenter.links.openAuditLog",
 		default: "Open Audit Log",
 	},
-	linkOpenComplianceSettings: {
-		key: "compliance.commandCenter.links.openComplianceSettings",
-		default: "Open Compliance Settings",
+	linkReviewComplianceExceptions: {
+		key: "compliance.commandCenter.links.reviewComplianceExceptions",
+		default: "Review compliance exceptions",
+	},
+	linkReviewPolicyViolations: {
+		key: "compliance.commandCenter.links.reviewPolicyViolations",
+		default: "Review policy violations",
 	},
 	linkReviewAuditExport: {
 		key: "compliance.commandCenter.links.reviewAuditExport",
@@ -198,11 +245,11 @@ export const COMPLIANCE_COMMAND_CENTER_I18N = {
 	},
 	sectionWorkforceComplianceCritical: {
 		key: "compliance.commandCenter.sections.workforceCompliance.headline.critical",
-		default: "Workforce policy violations need review",
+		default: "Workforce policy violations or statutory findings need review",
 	},
 	sectionWorkforceComplianceHealthy: {
 		key: "compliance.commandCenter.sections.workforceCompliance.headline.healthy",
-		default: "No recent workforce policy issues were detected",
+		default: "No recent workforce policy issues or open statutory findings were detected",
 	},
 	sectionWorkforceComplianceWarning: {
 		key: "compliance.commandCenter.sections.workforceCompliance.headline.warning",
@@ -243,10 +290,7 @@ export const COMPLIANCE_COMMAND_CENTER_I18N = {
 };
 
 const FALLBACKS = Object.fromEntries(
-	Object.values(COMPLIANCE_COMMAND_CENTER_I18N).map((entry) => [
-		entry.key,
-		entry.default,
-	]),
+	Object.values(COMPLIANCE_COMMAND_CENTER_I18N).map((entry) => [entry.key, entry.default]),
 );
 
 export const COMPLIANCE_STATUS_I18N = {
@@ -258,8 +302,7 @@ export const COMPLIANCE_STATUS_I18N = {
 
 export const COMPLIANCE_SECTION_I18N = {
 	auditEvidence: COMPLIANCE_COMMAND_CENTER_I18N.sectionAuditEvidence,
-	workforceCompliance:
-		COMPLIANCE_COMMAND_CENTER_I18N.sectionWorkforceCompliance,
+	workforceCompliance: COMPLIANCE_COMMAND_CENTER_I18N.sectionWorkforceCompliance,
 	accessControls: COMPLIANCE_COMMAND_CENTER_I18N.sectionAccessControls,
 };
 

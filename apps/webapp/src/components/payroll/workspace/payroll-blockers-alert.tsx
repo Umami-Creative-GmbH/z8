@@ -158,7 +158,8 @@ export function PayrollBlockersAlert({
 						{blockers.map((blocker) => {
 							const blockerKey = payrollBlockerIdentity(blocker);
 							const isClearing = clearingBlockerKeys.has(blockerKey);
-							const summaryEmployeeName = employeeNames.get(blocker.employeeId);
+							const summaryEmployeeName =
+								employeeNames.get(blocker.employeeId) ?? blocker.employeeName;
 							const employeeName =
 								summaryEmployeeName && summaryEmployeeName !== blocker.employeeId
 									? summaryEmployeeName

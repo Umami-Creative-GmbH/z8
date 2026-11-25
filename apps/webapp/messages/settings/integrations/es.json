@@ -204,7 +204,42 @@
       }
     },
     "discord": {
-      "title": "Discord"
+      "applicationId": "ID de la aplicación",
+      "botToken": "Token del bot",
+      "botTokenHelp": "Se almacena cifrado en Vault y se utiliza para validar y operar su bot.",
+      "commandsRegistrationFailed": "Bot de Discord conectado, pero los comandos de barra no se pudieron registrar automáticamente. Verifique los permisos de su bot y, a continuación, desconéctelo y vuelva a conectarlo para reintentar.",
+      "connect": "Conectar bot de Discord",
+      "connectDescription": "Introduzca las credenciales de su aplicación de Discord desde el Discord Developer Portal.",
+      "connected": "Bot de Discord conectado correctamente",
+      "connectError": "Error al conectar el bot de Discord",
+      "copied": "Copiado",
+      "copy": "Copiar",
+      "copyInteractionUrl": "Copiar URL del endpoint de interacción",
+      "copyInteractionUrlFailed": "No se pudo copiar la URL del endpoint de interacción. Selecciónela y cópiela manualmente.",
+      "disconnect": "Desconectar",
+      "disconnectConfirm": {
+        "description": "Esto eliminará el token del bot almacenado y desactivará las notificaciones y los comandos de barra de Discord para su organización.",
+        "title": "¿Desconectar el bot de Discord?"
+      },
+      "disconnected": "Bot de Discord desconectado",
+      "disconnectError": "Error al desconectar el bot de Discord",
+      "errors": {
+        "applicationIdMismatch": "El ID de la aplicación no coincide con el token del bot proporcionado.",
+        "invalidBotToken": "Token del bot no válido. Compruebe las credenciales del bot de Discord e inténtelo de nuevo.",
+        "publicKeyMismatch": "La clave pública no coincide con la aplicación de Discord."
+      },
+      "interactionEndpointHelp": "Pegue esta URL en el campo Interactions Endpoint URL de su aplicación en el Discord Developer Portal.",
+      "interactionEndpointUrl": "URL del endpoint de interacción",
+      "interactionUrlCopied": "URL del endpoint de interacción copiada",
+      "publicKey": "Clave pública",
+      "title": "Discord",
+      "validation": {
+        "applicationIdInvalid": "El ID de la aplicación solo debe contener dígitos.",
+        "applicationIdRequired": "El ID de la aplicación es obligatorio.",
+        "botTokenRequired": "El token del bot es obligatorio.",
+        "publicKeyInvalid": "La clave pública debe ser una cadena hexadecimal de 64 caracteres.",
+        "publicKeyRequired": "La clave pública es obligatoria."
+      }
     },
     "slack": {
       "title": "Slack"

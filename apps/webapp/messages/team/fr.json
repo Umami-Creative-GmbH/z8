@@ -159,7 +159,6 @@
       "scopeFailed": "Impossible de charger le périmètre de conduite actuel.",
       "scopeLoading": "Chargement du périmètre de conduite actuel…",
       "scopeManaged": "Employés que vous gérez",
-      "title": "Détails de conduite manquants",
       "truncated": "Affichage des {count} périodes de travail les plus récentes. Filtrez par équipe ou par employé pour voir les autres.",
       "updating": "Mise à jour des détails de conduite…"
     },

@@ -279,11 +279,6 @@ const SHELL_WORK_QUEUE = [
 		contentComponent: "StatisticsContent",
 	},
 	{
-		file: "src/app/[locale]/(app)/settings/compliance/page.tsx",
-		fallbackComponent: "ComplianceSettingsLoading",
-		contentComponent: "ComplianceSettingsContent",
-	},
-	{
 		file: "src/app/[locale]/(app)/settings/implementation-checklist/page.tsx",
 		fallbackComponent: "ImplementationChecklistPageLoading",
 		contentComponent: "ImplementationChecklistPageContent",
@@ -1380,7 +1375,8 @@ describe("low-risk route streaming boundaries", () => {
 	it("registers every shell work queue route exactly once", () => {
 		const workQueueFiles = SHELL_WORK_QUEUE.map(({ file }) => file);
 
-		expect(workQueueFiles).toHaveLength(60);
+		// 59 since `/settings/compliance` became a redirect to the Approval inbox (#1977).
+		expect(workQueueFiles).toHaveLength(59);
 		expect(new Set(workQueueFiles).size).toBe(workQueueFiles.length);
 	});
 

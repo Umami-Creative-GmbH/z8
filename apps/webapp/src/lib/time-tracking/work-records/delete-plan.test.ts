@@ -99,8 +99,5 @@ describe("planDeletion (#1227)", () => {
 			found: "locked_pair",
 			disagreements: ["duration"],
 		});
-		expect(planDeletion(drifted, { ...markers, toleratedDrift: ["duration"] })).toMatchObject({
-			kind: "delete",
-		});
 	});
 });

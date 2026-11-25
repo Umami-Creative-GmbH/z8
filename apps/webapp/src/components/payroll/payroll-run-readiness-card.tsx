@@ -124,8 +124,8 @@ function reasonText(t: Translate, locale: string, skip: PayrollRunSkip): string 
 			);
 		case "legacy_claim":
 			return t(
-				"payroll.runReadiness.reason.legacyClaim",
-				"Legacy claims are never paid through payroll.",
+				"payroll.runReadiness.reason.earlierClaim",
+				"Earlier claims are never paid through payroll.",
 			);
 		case "unmapped_wage_type":
 			return t(
@@ -167,6 +167,16 @@ function reasonText(t: Translate, locale: string, skip: PayrollRunSkip): string 
 					period: formatPlainDateRange(locale, skip.run.periodStart, skip.run.periodEnd),
 					format: skip.run.formatName,
 				},
+			);
+		case "external_contractor_days":
+			return t(
+				"payroll.runReadiness.reason.externalContractorDays",
+				"Its days fall in an External Contractor engagement: payroll never carries it.",
+			);
+		case "spans_engagement_change":
+			return t(
+				"payroll.runReadiness.reason.spansEngagementChange",
+				"Its days span a change between employee and External Contractor: payroll carries no part of it.",
 			);
 		case "nothing_owed":
 			return t(

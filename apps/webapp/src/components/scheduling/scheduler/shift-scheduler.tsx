@@ -4,7 +4,7 @@
 import "temporal-polyfill/global";
 
 import { createViewDay, createViewMonthGrid, createViewWeek } from "@schedule-x/calendar";
-import { ScheduleXCalendar, useCalendarApp } from "@schedule-x/react";
+import { useCalendarApp } from "@schedule-x/react";
 import "@schedule-x/theme-default/dist/index.css";
 import { IconPlus } from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
@@ -14,23 +14,27 @@ import type {
 	ShiftTemplate,
 	ShiftWithRelations,
 } from "@/app/[locale]/(app)/scheduling/types";
-import { useWeekStartDay } from "@/components/providers/user-preferences-provider";
+import { useTimeFormat, useWeekStartDay } from "@/components/providers/user-preferences-provider";
 import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
-import { toScheduleXLocale } from "@/lib/calendar/schedule-x-locale";
+import { scheduleXTimeAxisFormat, toScheduleXLocale } from "@/lib/calendar/schedule-x-locale";
 import { type PlainDate, parsePlainDate, type ZonedDateTime } from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { ShiftRequestsReview } from "../shift-requests/shift-requests-panel";
 import { ShiftDialog } from "../shifts/shift-dialog";
 import { CoverageHeatmapOverlay } from "./coverage-heatmap-overlay";
 import { EmployeeShiftSchedule } from "./employee-shift-schedule";
+import { PublishBlockedDialog } from "./publish-blocked-dialog";
 import { PublishComplianceDialog } from "./publish-compliance-dialog";
 import { PublishFab } from "./publish-fab";
 import { ScheduleComplianceBanner } from "./schedule-compliance-banner";
 import { ScheduleReadFailure } from "./schedule-read-failure";
 import { ScheduleShiftList } from "./schedule-shift-list";
 import { createScheduleXDragAndDropPlugin } from "./schedule-x-drag-and-drop";
+import { ScheduleXPortalCalendar } from "./schedule-x-portal-calendar";
+import { shiftCalendarEventComponents } from "./shift-calendar-event-components";
+import { SHIFT_CALENDARS } from "./shift-calendars";
 import {
 	calendarRangeToDateRange,
 	eventToShiftTimes,
@@ -111,6 +115,8 @@ function PlannerShiftScheduler({
 		supportingDataRetryPending,
 		retrySupportingData,
 		complianceSummary,
+		statutoryFindings,
+		shiftEmployeeIds,
 		draftCount,
 		complianceFindingsCount,
 		hasComplianceWarnings,
@@ -123,14 +129,7 @@ function PlannerShiftScheduler({
 		isManager,
 		employeeFilter,
 	});
-	const {
-		pendingAcknowledgment,
-		isComplianceDialogOpen,
-		setIsComplianceDialogOpen,
-		publish,
-		confirmPublish,
-		isPublishing,
-	} = useShiftPublishFlow({ organizationId, dateRange });
+	const publishFlow = useShiftPublishFlow({ organizationId, dateRange });
 
 	// Fetch coverage heatmap data
 	const { hasGaps: hasCoverageGaps, readState: coverageState } = useCoverageHeatmap(
@@ -181,26 +180,22 @@ function PlannerShiftScheduler({
 					{t("scheduling:scheduling.shiftDialog.createTitle", "Create Shift")}
 				</Button>
 			</div>
-			{shiftsFailed && (
-				<ScheduleReadFailure onRetry={() => void retryShifts()} pending={shiftsFetching}>
-					{t(
-						"scheduling:scheduling.scheduler.loadFailed",
-						"Shifts could not be refreshed. Loaded shifts are retained.",
-					)}
-				</ScheduleReadFailure>
-			)}
-			{(templatesFailed || complianceFailed || supportingDataRetryPending) && (
-				<ScheduleReadFailure
-					onRetry={() => void retrySupportingData()}
-					pending={supportingDataFetching}
-				>
-					{t(
-						"scheduling:scheduling.scheduler.supportFailed",
-						"Templates or compliance information could not be refreshed. Check again before publishing.",
-					)}
-				</ScheduleReadFailure>
-			)}
-			<ScheduleComplianceBanner summary={complianceSummary} />
+			<PlannerReadFailures
+				shiftsFailed={shiftsFailed}
+				shiftsFetching={shiftsFetching}
+				retryShifts={retryShifts}
+				templatesFailed={templatesFailed}
+				complianceFailed={complianceFailed}
+				supportingDataFetching={supportingDataFetching}
+				supportingDataRetryPending={supportingDataRetryPending}
+				retrySupportingData={retrySupportingData}
+			/>
+			<ScheduleComplianceBanner
+				summary={complianceSummary}
+				statutoryFindings={statutoryFindings}
+				dateRange={dateRange}
+				shiftEmployeeIds={shiftEmployeeIds}
+			/>
 
 			{/* Coverage summary bar and toggle for managers */}
 			<div className="flex flex-wrap items-center gap-4">
@@ -232,7 +227,10 @@ function PlannerShiftScheduler({
 				{/* `isolate` keeps Schedule-X's z-indexes (sticky header 100) below dialogs and sheets. */}
 				<div className="relative isolate h-[36rem] min-w-0 overflow-auto rounded-lg border lg:flex-1">
 					<div className="h-full min-w-[42rem]">
-						<ScheduleXCalendar calendarApp={calendar} />
+						<ScheduleXPortalCalendar
+							calendarApp={calendar}
+							customComponents={shiftCalendarEventComponents}
+						/>
 					</div>
 					{/* Over the calendar, not instead of it, so it stays mounted while a new range loads. */}
 					{shiftsLoading && (
@@ -260,8 +258,8 @@ function PlannerShiftScheduler({
 			{draftCount > 0 && (
 				<PublishFab
 					draftCount={draftCount}
-					onPublish={publish}
-					isPublishing={isPublishing}
+					onPublish={publishFlow.publish}
+					isPublishing={publishFlow.isPublishing}
 					hasCoverageGaps={coverageState === "ready" && hasCoverageGaps}
 					coverageState={coverageState}
 					hasComplianceWarnings={hasComplianceWarnings}
@@ -282,14 +280,92 @@ function PlannerShiftScheduler({
 				organizationTimezone={organizationTimezone}
 			/>
 
-			<PublishComplianceDialog
-				open={isComplianceDialogOpen}
-				onOpenChange={setIsComplianceDialogOpen}
-				summary={pendingAcknowledgment?.complianceSummary ?? null}
-				onConfirm={confirmPublish}
-				isConfirming={isPublishing}
+			<PlannerPublishDialogs
+				publishFlow={publishFlow}
+				dateRange={dateRange}
+				shiftEmployeeIds={shiftEmployeeIds}
 			/>
 		</div>
+	);
+}
+
+/** Says which reads failed, each with its own retry. */
+function PlannerReadFailures({
+	shiftsFailed,
+	shiftsFetching,
+	retryShifts,
+	templatesFailed,
+	complianceFailed,
+	supportingDataFetching,
+	supportingDataRetryPending,
+	retrySupportingData,
+}: Pick<
+	ReturnType<typeof useShiftSchedulerData>,
+	| "shiftsFailed"
+	| "shiftsFetching"
+	| "retryShifts"
+	| "templatesFailed"
+	| "complianceFailed"
+	| "supportingDataFetching"
+	| "supportingDataRetryPending"
+	| "retrySupportingData"
+>) {
+	const { t } = useTranslate();
+	return (
+		<>
+			{shiftsFailed && (
+				<ScheduleReadFailure onRetry={() => void retryShifts()} pending={shiftsFetching}>
+					{t(
+						"scheduling:scheduling.scheduler.loadFailed",
+						"Shifts could not be refreshed. Loaded shifts are retained.",
+					)}
+				</ScheduleReadFailure>
+			)}
+			{(templatesFailed || complianceFailed || supportingDataRetryPending) && (
+				<ScheduleReadFailure
+					onRetry={() => void retrySupportingData()}
+					pending={supportingDataFetching}
+				>
+					{t(
+						"scheduling:scheduling.scheduler.supportFailed",
+						"Templates or compliance information could not be refreshed. Check again before publishing.",
+					)}
+				</ScheduleReadFailure>
+			)}
+		</>
+	);
+}
+
+function PlannerPublishDialogs({
+	publishFlow,
+	dateRange,
+	shiftEmployeeIds,
+}: {
+	publishFlow: ReturnType<typeof useShiftPublishFlow>;
+	dateRange: DateRange;
+	shiftEmployeeIds: ReturnType<typeof useShiftSchedulerData>["shiftEmployeeIds"];
+}) {
+	const { pendingAcknowledgment } = publishFlow;
+	return (
+		<>
+			<PublishComplianceDialog
+				open={publishFlow.isComplianceDialogOpen}
+				onOpenChange={publishFlow.setIsComplianceDialogOpen}
+				summary={pendingAcknowledgment?.complianceSummary ?? null}
+				statutoryFindings={pendingAcknowledgment?.statutoryFindings ?? null}
+				dateRange={dateRange}
+				shiftEmployeeIds={shiftEmployeeIds}
+				onConfirm={publishFlow.confirmPublish}
+				isConfirming={publishFlow.isPublishing}
+			/>
+
+			<PublishBlockedDialog
+				open={publishFlow.isBlockedDialogOpen}
+				onOpenChange={publishFlow.setIsBlockedDialogOpen}
+				statutoryFindings={publishFlow.blockedFindings}
+				dateRange={dateRange}
+			/>
+		</>
 	);
 }
 
@@ -358,58 +434,21 @@ function usePlannerCalendar({
 		setDateRange(calendarRangeToDateRange(range));
 	};
 
+	const timeFormat = useTimeFormat();
+
 	// Create calendar
 	const calendar = useCalendarApp({
 		views: [createViewDay(), createViewWeek(), createViewMonthGrid()],
 		defaultView: "week",
 		locale: toScheduleXLocale(locale),
+		weekOptions: { timeAxisFormatOptions: scheduleXTimeAxisFormat(timeFormat) },
 		isResponsive: false,
 		selectedDate: initialView.selectedDate,
 		timezone: organizationTimezone,
 		firstDayOfWeek: scheduleXFirstDayOfWeek(weekStartDay),
 		events,
 		isDark,
-		calendars: {
-			published: {
-				colorName: "published",
-				lightColors: {
-					main: "#3b82f6",
-					container: "#dbeafe",
-					onContainer: "#1e40af",
-				},
-				darkColors: {
-					main: "#60a5fa",
-					container: "#1e3a8a",
-					onContainer: "#bfdbfe",
-				},
-			},
-			draft: {
-				colorName: "draft",
-				lightColors: {
-					main: "#9ca3af",
-					container: "#f3f4f6",
-					onContainer: "#374151",
-				},
-				darkColors: {
-					main: "#6b7280",
-					container: "#374151",
-					onContainer: "#d1d5db",
-				},
-			},
-			open: {
-				colorName: "open",
-				lightColors: {
-					main: "#f59e0b",
-					container: "#fef3c7",
-					onContainer: "#92400e",
-				},
-				darkColors: {
-					main: "#fbbf24",
-					container: "#78350f",
-					onContainer: "#fde68a",
-				},
-			},
-		},
+		calendars: SHIFT_CALENDARS,
 		// No event modal: a click opens the shift dialog, which the modal would only duplicate.
 		plugins: [createScheduleXDragAndDropPlugin()],
 		callbacks: {

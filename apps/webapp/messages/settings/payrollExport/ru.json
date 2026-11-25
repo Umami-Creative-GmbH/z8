@@ -1,6 +1,8 @@
 {
   "settings": {
     "payrollExport": {
+      "connectorsDescription": "Настройте коннекторы экспорта зарплаты и сопоставления видов оплаты",
+      "connectorsTitle": "Коннекторы расчета зарплаты и виды оплаты",
       "datev": {
         "beraternummer": "Номер консультанта",
         "beraternummerTooltip": "Ваш номер консультанта DATEV (1–7 цифр)",
@@ -19,7 +21,6 @@
         "saveSuccess": "Конфигурация сохранена",
         "title": "Основные данные DATEV"
       },
-      "description": "Экспорт рабочих периодов в системы расчета заработной платы, такие как DATEV или Personio",
       "expenseMappings": {
         "apiConnectors": "Personio, Workday и SuccessFactors API не поддерживают компенсацию расходов.",
         "codeLabel": "{line}, вид оплаты {format}",
@@ -58,7 +59,6 @@
         "dateRange": "Диапазон дат",
         "description": "Экспорт рабочих периодов и отсутствий в формат DATEV Lohn & Gehalt",
         "employees": "Сотрудники",
-        "employeesSelected": "Выбрано: {count}",
         "endDate": "Дата окончания",
         "error": "Экспорт не удался",
         "exportButtonDatev": "Экспорт в DATEV",
@@ -100,10 +100,13 @@
         "download": "Скачать экспорт",
         "downloadError": "Не удалось получить ссылку для скачивания",
         "employees": "сотрудники",
+        "includesSettledDays": "Включены рассчитанные дни",
+        "loadError": "Не удалось загрузить историю экспорта.",
         "noExports": "Экспортов пока нет",
         "noExportsHint": "Запустите экспорт зарплатной ведомости на вкладке «Экспорт». Готовые файлы появятся здесь для скачивания.",
         "payrollRun": "{count, plural, one {Расчетный прогон: # отчет о расходах} few {Расчетный прогон: # отчета о расходах} other {Расчетный прогон: # отчетов о расходах} }",
         "periods": "периоды",
+        "settledDaysLeftOut": "{count, plural, one {# рассчитанный день не включен} few {# рассчитанных дня не включено} other {# рассчитанных дней не включено} }",
         "status": {
           "completed": "Завершено",
           "failed": "Ошибка",
@@ -185,6 +188,7 @@
         },
         "workCategory": "Категория работы"
       },
+      "openPayrollWorkspace": "Запускайте экспорт в разделе «Расчет зарплаты»",
       "personio": {
         "clientId": "Client ID",
         "clientIdHelp": "Справка по Client ID",
@@ -242,6 +246,9 @@
         "saveSuccess": "Конфигурация сохранена",
         "title": "Sage Payroll"
       },
+      "sections": {
+        "targets": "Целевые системы расчета зарплаты"
+      },
       "specialCategory": {
         "overtime": "Сверхурочные"
       },
@@ -278,8 +285,6 @@
       },
       "tabs": {
         "datev": "DATEV",
-        "export": "Экспорт",
-        "history": "История",
         "lexware": "Lexware",
         "mappings": "Виды оплаты",
         "personio": "Personio",
@@ -287,7 +292,17 @@
         "successfactors": "SAP SuccessFactors",
         "workday": "Workday"
       },
-      "title": "Экспорт для расчета зарплаты",
+      "targets": {
+        "datevSubtitle": "DATEV Lohn & Gehalt (CSV)",
+        "lexwareSubtitle": "Lexware lohn+gehalt (CSV)",
+        "personioSubtitle": "Personio API",
+        "sageSubtitle": "Sage Lohn (CSV)",
+        "statusConfigured": "Настроено",
+        "statusNeedsCredentials": "Требуются учетные данные",
+        "statusNotConfigured": "Не настроено",
+        "successfactorsSubtitle": "API и CSV",
+        "workdaySubtitle": "Workday API"
+      },
       "workday": {
         "apiTimeoutMs": "Тайм-аут API (мс)",
         "batchSize": "Размер пакета",
@@ -367,12 +382,12 @@
         "warning": "Предупреждение"
       },
       "description": "Проверяйте готовность расчетного периода перед экспортом данных об отработанном времени, отсутствии и заработной плате.",
+      "loadError": "Не удалось загрузить проверки готовности организации к расчету зарплаты.",
       "openPayrollExport": "Открыть экспорт зарплаты",
       "period": {
         "currentMonth": "Текущий месяц",
         "navLabel": "Расчетный период",
         "previousMonth": "Предыдущий месяц",
-        "scope": "Расчетный период: {period} (UTC)",
         "showMonth": "Показать {month}"
       },
       "status": {

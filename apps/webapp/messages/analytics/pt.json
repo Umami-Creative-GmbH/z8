@@ -1,14 +1,12 @@
 {
   "analytics": {
     "access": {
-      "noEmployeeFeature": "ver análise",
       "restrictedDescription": "A análise só está disponível para administradores e gestores.",
       "restrictedTitle": "Acesso restrito"
     },
     "common": {
       "days": "Dias",
       "employee": "Funcionário",
-      "employees": "Funcionários",
       "hours": "Horas",
       "loadingOrganizationSettings": "A carregar definições da organização antes de ativar predefinições.",
       "noDataAvailable": "Sem dados disponíveis",
@@ -17,17 +15,16 @@
       "overtimeHours": "Horas extras",
       "team": "Equipa",
       "totalHours": "Total de horas",
-      "unavailable": "Indisponível",
       "undertime": "Horas em falta",
       "undertimeHours": "Horas em falta"
     },
     "layout": {
       "description": "Informações abrangentes sobre o desempenho da equipa, horas de trabalho e padrões de ausência",
       "tabs": {
+        "absencesAndVacation": "Ausências e Férias",
         "overtimeBurnDown": "Redução de horas extras",
         "overview": "Visão geral",
         "teamPerformance": "Desempenho da equipa",
-        "vacationTrends": "Tendências de férias",
         "workHours": "Horas de trabalho"
       },
       "title": "Análise"
@@ -100,31 +97,8 @@
       "errors": {
         "retryDescription": "Não foi possível carregar algumas análises. Os valores carregados anteriormente, se exibidos, podem estar desatualizados."
       },
-      "kpis": {
-        "approvalRate": {
-          "description": "Das solicitações decididas, aprovadas",
-          "title": "Taxa de Aprovação",
-          "unavailableDescription": "Não foi possível carregar as análises de aprovação"
-        },
-        "avgWorkHours": {
-          "description": "Por funcionário no período selecionado",
-          "title": "Média de Horas de Trabalho"
-        },
-        "totalAbsenceDays": {
-          "description": "Total de dias no período selecionado",
-          "title": "Total de Dias de Ausência"
-        },
-        "totalEmployees": {
-          "description": "Funcionários ativos na organização",
-          "title": "Total de Funcionários"
-        }
-      },
       "loadingLabel": "Carregando dados de análise",
-      "refreshing": "Atualizando análises…",
-      "workHoursByTeam": {
-        "description": "Total de horas de trabalho registradas por equipe",
-        "title": "Horas de Trabalho por Equipe"
-      }
+      "refreshing": "Atualizando análises…"
     },
     "teamPerformance": {
       "avgPerEmployee": "Média por Funcionário",

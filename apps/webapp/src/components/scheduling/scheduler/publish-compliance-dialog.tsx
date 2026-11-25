@@ -13,12 +13,20 @@ import {
 } from "@/components/ui/action-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import type { DateRange } from "@/app/[locale]/(app)/scheduling/types";
 import type { ScheduleComplianceSummary } from "@/lib/scheduling/compliance/types";
+import type { ScheduleStatutoryFindings } from "@/lib/statutory/scheduling/findings-list";
+import { StatutoryFindingsList } from "./statutory-findings-list";
 
 interface PublishComplianceDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	summary: ScheduleComplianceSummary | null;
+	/** The statutory findings being acknowledged, for this viewer (#2026). */
+	statutoryFindings?: ScheduleStatutoryFindings | null;
+	/** The range being published, where a finding's calendar link opens. */
+	dateRange?: DateRange;
+	shiftEmployeeIds?: ReadonlySet<string>;
 	onConfirm: () => void;
 	isConfirming: boolean;
 }
@@ -27,6 +35,9 @@ export function PublishComplianceDialog({
 	open,
 	onOpenChange,
 	summary,
+	statutoryFindings,
+	dateRange,
+	shiftEmployeeIds,
 	onConfirm,
 	isConfirming,
 }: PublishComplianceDialogProps) {
@@ -40,10 +51,7 @@ export function PublishComplianceDialog({
 			<ActionPanelContent>
 				<ActionPanelHeader>
 					<ActionPanelTitle className="flex items-center gap-2">
-						<IconAlertTriangle
-							className="size-5 text-amber-600"
-							aria-hidden="true"
-						/>
+						<IconAlertTriangle className="size-5 text-warning" aria-hidden="true" />
 						{t(
 							"scheduling.publish.complianceAcknowledgmentRequired",
 							"Compliance Acknowledgment Required",
@@ -82,8 +90,31 @@ export function PublishComplianceDialog({
 									count: summary.byType.overtime,
 								})}
 							</Badge>
+							{summary.byType.statutory > 0 && (
+								<Badge variant="outline">
+									{t("scheduling.publish.statutory", "Statutory limits: {count}", {
+										count: summary.byType.statutory,
+									})}
+								</Badge>
+							)}
 						</div>
 					</div>
+					{statutoryFindings &&
+						dateRange &&
+						(statutoryFindings.items.length > 0 || statutoryFindings.outsideScopeCount > 0) && (
+							<div className="mt-4">
+								<StatutoryFindingsList
+									findings={statutoryFindings}
+									dateRange={dateRange}
+									shiftEmployeeIds={shiftEmployeeIds}
+									onShiftLinkClick={() => onOpenChange(false)}
+									label={t(
+										"scheduling:scheduling.statutory.findings.acknowledgeListLabel",
+										"Statutory findings to acknowledge",
+									)}
+								/>
+							</div>
+						)}
 				</ActionPanelBody>
 
 				<ActionPanelFooter>
@@ -102,10 +133,7 @@ export function PublishComplianceDialog({
 								{t("scheduling.publish.publishing", "Publishing…")}
 							</>
 						) : (
-							t(
-								"scheduling.publish.acknowledgeAndPublish",
-								"Acknowledge and Publish",
-							)
+							t("scheduling.publish.acknowledgeAndPublish", "Acknowledge and Publish")
 						)}
 					</Button>
 				</ActionPanelFooter>

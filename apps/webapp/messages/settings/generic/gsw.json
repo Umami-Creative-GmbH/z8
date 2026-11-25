@@ -334,10 +334,12 @@
           "unknownCustomer": "Unbekannte Chund",
           "unknownProject": "Unbekannts Projekt"
         },
+        "configureSettings": "Iistellige für abrechebari Zyt",
         "confirmed": "Der Rechnungsentwurf wurde erstellt",
         "csv": {
           "download": "Abgliichs-CSV abelade"
         },
+        "description": "Erstell Rechnigsentwürf us abrechebarer Arbet, überprüef de Tool-Status, lad Zytblätter abe und klär Änderige nach de Rechnigsstellig.",
         "detail": {
           "checking": "Entwurf im Tool wird geprüft…",
           "gone": "Das Buchhaltungstool hat diesen Entwurf nicht mehr. Wenn er absichtlich gelöscht wurde, geben Sie die Übergabe frei, damit die Arbeit erneut übergeben werden kann.",
@@ -489,7 +491,6 @@
       "nav": {
         "accounting": "Buechhaltig",
         "costRates": "Choschtensätz",
-        "currency": "Verrechebari Währig",
         "handOff": "Übergab",
         "label": "Istellige für verrechebari Zite",
         "rates": "Verrechnigssätz"
@@ -637,6 +638,7 @@
         "teams": "Teams"
       },
       "scopeLabel": "Schlüsse für",
+      "selectEmployees": "Mitarbeitendi uswähle",
       "teamNotFound": "Das Team git's nüme.",
       "title": "Gschlosseni Mönet",
       "warning": {
@@ -1729,6 +1731,7 @@
         "search": "Mitarbeiter sueche…",
         "selected": "Uusgwählti Teams und Mitarbeiter",
         "selectedHelp": "Deckt d Mitglider vo de uusgwählte Teams und die uusgwählte Mitarbeiter ab.",
+        "selectEmployees": "Mitarbeitendi uswähle",
         "teams": "Teams",
         "title": "Uusrüschtigsverantwortlichi"
       },
@@ -1779,7 +1782,6 @@
         "unavailableHelp": "Dä Gegestand wird für neui Usgabe gsperrt, bis er explizit freigäh wird. Verwahrig und Rücknahmenoowiise bliibid unveränderet.",
         "unchanged": "Dä Verfüegbarkeitsstatus isch bereits erfasst. Lade d Usrüstig neu, zum de Verlauf aazluege."
       },
-      "reload": "Iirichtig neu lade",
       "retention": {
         "activity": "Letschti Aktivität",
         "badgeDue": "Wartet uf d Bereinigung",
@@ -2002,8 +2004,7 @@
     "group": {
       "account": "Konto",
       "data": "Date",
-      "integrations": "Integratione",
-      "notifications": "Benachrichtigunge",
+      "integrationsChannels": "Integratione & Kanäl",
       "organization": "Organisation"
     },
     "implementationChecklist": {
@@ -2061,7 +2062,6 @@
           "skipNoCategoryRequiresApproval": "Abweseheitsafrage bruched kei Gnähmigung, will kei Abweseheitskategorie das verlangt.",
           "skipNoChangePolicy": "{count, plural, one {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: # Mitarbeiter brucht kei Gnähmigung, will kei Änderigsrichtlinie gilt.} other {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: # Mitarbeiter bruched kei Gnähmigung, will kei Änderigsrichtlinie gilt.}}",
           "skipOwnApprover": "{count, plural, one {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: # Mitarbeiter isch sin eigne Gnähmiger.} other {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: # Mitarbeiter sind iri eigne Gnähmiger.}}",
-          "skipOwnDecider": "{count, plural, one {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: # Mitarbeiter isch de Einzig, wo drüber chan entscheide, drum warted di eigne Afrage uf di eigni Gnähmigung.} other {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: # Mitarbeiter sind di Einzige, wo drüber chönd entscheide, drum warted di eigne Afrage uf di eigni Gnähmigung.}}",
           "skipOwnerAdmin": "{count, plural, one {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: # Mitarbeiter brucht kei Gnähmigung, will Inhaber und Admins iri eigeni Arbetszyt direkt erfassed.} other {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: # Mitarbeiter bruched kei Gnähmigung, will Inhaber und Admins iri eigeni Arbetszyt direkt erfassed.}}",
           "skipOwnerSelfApproval": "{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: de Inhaber gnähmigt sini eigne Bricht selber, will niemert suscht das chan.",
           "skipTrustMode": "{count, plural, one {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: # Mitarbeiter brucht kei Gnähmigung, will d'Änderigsrichtlinie im Vertrouensmodus isch.} other {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: # Mitarbeiter bruched kei Gnähmigung, will iri Änderigsrichtlinie im Vertrouensmodus isch.}}",
@@ -2191,7 +2191,6 @@
             "noCategoryRequiresApproval": "Kei Abweeseheitskategorie brucht e Freigaab.",
             "noChangePolicy": "Für si gilt kei Änderigsrichtlinie.",
             "ownApprover": "Si sind ihri eigni Freigaabeperson, drum werded ihri Aaträg grad abgschlosse.",
-            "ownDecider": "Si sind die einzigi vorgesetzti Person oder Admin, wo über Schichtaaträg cha entscheide, drum bliibed ihri hängig, bis si si freigend.",
             "ownerAdmin": "Inhaber und Admins erfassed ihri eigeni Arbeit direkt.",
             "ownerSelfApproval": "Als Inhaber genehmiged si ihri eigene Bricht selber, will niemert suscht das cha.",
             "trustMode": "Ihri Änderigsrichtlinie isch im Vertrouensmodus."
@@ -2901,9 +2900,9 @@
           "descriptionPlaceholder": "E churzi Beschrybig vo däm Team",
           "fallbackManagerHelp": "Wird für Gnehmigunge brucht, wenn es Teammitglid kei diräkte Vorgesetzte hät.",
           "fallbackManagerLabel": "Ersatz-Vorgesetzte",
-          "fallbackManagerPlaceholder": "Wähl en Ersatz-Vorgesetzte us",
           "nameLabel": "Teamname",
           "namePlaceholder": "Engineering, Verchauf, Marketing...",
+          "nameRequired": "Teamname isch erforderlich",
           "noFallbackManager": "Kein Ersatz-Manager",
           "submit": "Team erstellen",
           "title": "Team erstellen"
@@ -3387,6 +3386,10 @@
     "reportShareLinks": {
       "description": "Alli Links aaluege und widerruefe, wo es Projekt- oder en Chundebricht teiled",
       "pageDescription": "Links, wo öpperem usserhalb vo Z8 en iigfrorene Snapshot vome Projekt- oder Chundebricht zeiged. Wänn en Link widerruefe wird, funktioniert er sofort nümme und sin Snapshot wird glöscht.",
+      "projectsDisabledNotice": {
+        "description": "«Projäkt» isch für die Organisation aktuell deaktiviert, drum chönd keini neue Freigaab-Links für Bricht erstellt werde. Du chasch bestahndi Links da aber immer no überprüefe und widerruefe.",
+        "title": "«Projäkt» isch abgschalte"
+      },
       "title": "Bricht-Freigaabelinks"
     },
     "search": {
@@ -3505,34 +3508,56 @@
       "unexpectedError": "Es isch en unerwartete Fehler ufträtte"
     },
     "statistics": {
-      "cards": {
-        "activeSessions": "Aktivi Sitzige",
-        "activeSessionsDescription": "Aktivi Datebanksitzige",
-        "approvalRequests": "Gnehmigungsafroge",
-        "approvedAbsences": "Gnehmigti Absänz",
-        "employees": "Mitarbeitende",
-        "employeesDescription": "{active} aktiv, {inactive} inaktiv",
-        "pendingAbsences": "Pändendi Absänz",
-        "pendingCount": "{count} pändend",
-        "rejectedAbsences": "Abglehnti Absänz",
+      "allClear": "Alles im Grüene: Grad bruucht nüüt dini Ufmerksamkeit.",
+      "groupLoadError": "Die Zahle händ nöd chönne glade werde. Lad d Syte neu, zum's namal z'probiere.",
+      "kpi": {
+        "absenceDays": "Abweeseheitstäg",
+        "clockedIn": "Jetzt iigstämplet",
+        "clockedInCaption": "Mitarbeitendi mit Live-Arbet",
+        "comparisonDetail": "{days}: {previous}",
+        "completedWorkPeriods": "Abgschlosseni Arbetsperiode",
+        "daysUnit": "Täg",
+        "employees": "Mitarbeitendi",
+        "employeesCaption": "+{joined} dezuecho, −{left} gange dä Monet",
+        "failed": "Hät nöd chönne glade werde",
+        "hoursUnit": "h",
+        "hoursWorked": "Gschaffti Stunde",
+        "incompleteSetup": "Unvollständigi Iirichtig",
+        "incompleteSetupCaption": "Mitarbeitendi ohni primärs Team oder ohni Arbetsrichtlinie",
+        "incompleteSetupManagerCaption": "Mitarbeitendi ohni Arbetsrichtlinie",
+        "manualEntryShare": "Aateil manuelli Iiträg",
+        "manualEntryShareCaption": "{manual} h vo {total} h als manuelli Iiträg erfasst",
+        "manualEntryShareNone": "Dä Monet no kei abgschlosseni Arbet",
+        "openInbox": "Postiigang öffne",
+        "openPayrollReadiness": "I de Lohnabrechnigs-Bereitschaft überprüefe",
+        "openViolations": "Offeni Richtlinie-Verstöss",
+        "openViolationsCaption": "Dä Monet no nöd bestätigt",
+        "openWorkPolicies": "I de Arbetsrichtlinie überprüefe",
+        "pendingApprovals": "Usschtehendi Gnähmigunge",
+        "pendingApprovalsCaption": "{count, plural, =0 {Kei Abweeseheitsaafraage} one {Inklusive # Abweeseheitsaafraag} other {Inklusive # Abweeseheitsaafraage}}",
+        "staleLiveWork": "Veralteti Live-Arbet",
+        "staleLiveWorkCaption": "Mitarbeitendi, wo sit meh als 24 Stunde iigstämplet sind",
         "teams": "Teams",
-        "thisMonth": "Dä Monet",
-        "timeEntries": "Ziiterfassige",
-        "totalAbsences": "Absänz total",
-        "totalTimeEntries": "Ziiterfassige total",
-        "vsLastMonth": "im Vergliich zum Vormonet"
+        "trackingCoverage": "Erfassigsabdeckig",
+        "trackingCoverageCaption": "{tracked} vo {expected} Mitarbeitende mit Sollzyt händ Arbet erfasst",
+        "trackingCoverageNone": "Dä Monet hät no niemert e Sollzyt",
+        "trackingCoverageProgress": "Mitarbeitendi, wo dä Monet Arbet erfasst händ",
+        "usersSignedIn": "Aagmelditi Benutzer",
+        "usersSignedInCaption": "Eideutigi Benutzer mitere aktive Sitzig",
+        "vsComparison": "{change} vs. {days}"
       },
-      "description": "Statistike und Metrike zu dinere Instanz aaluege",
       "lastUpdated": "Zuletzt aktualisiert",
       "loadError": "Statistike konnted nöd glade werde",
       "loadErrorRetry": "Laden Sie die Seite neu, um es erneut zu versuchen.",
-      "managerDescription": "Lueg dir d'Analytik für d'Teams aa, wo du verwaltsch.",
+      "scope": {
+        "organization": "Gsamti Organisation",
+        "teams": "{count, plural, =0 {Kei Teams, wo du leitisch} one {# Team, wo du leitisch} other {# Teams, wo du leitisch}}"
+      },
       "sections": {
-        "absenceBreakdown": "Absänz-Übersicht",
-        "activityMetrics": "Aktivitätsmetrike",
-        "coreCounts": "Kernzahle",
-        "managedScope": "Verwaltete Team-Umfang",
-        "systemHealth": "Systemstatus"
+        "adoption": "Adoption tracke",
+        "attention": "Bruucht Ufmerksamkeit",
+        "thisMonth": "Dä Monet",
+        "workforce": "Mitarbeiter & Iirichtig"
       },
       "title": "Statistike"
     },

@@ -64,4 +64,20 @@ describe("WorkPolicyManagement", () => {
 		);
 		expect(screen.getByText("Assignment manager")).toBeTruthy();
 	});
+
+	it("opens the compliance tab from the command center's violations link (#1977)", () => {
+		searchParams.current = new URLSearchParams("tab=work&view=compliance");
+
+		render(
+			<WorkPolicyManagement
+				settingsAccess="orgAdmin"
+				organizationId="org-1"
+				organizationTimezone="Europe/Berlin"
+			/>,
+		);
+
+		expect(screen.getByRole("tab", { name: "Compliance" }).getAttribute("aria-selected")).toBe(
+			"true",
+		);
+	});
 });

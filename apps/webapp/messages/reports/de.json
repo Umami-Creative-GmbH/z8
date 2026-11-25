@@ -81,7 +81,7 @@
         "changedAfterInvoicing": "{count, plural, one {# abgerechneter Arbeitszeitraum wurde nach der Rechnungsstellung geändert} other {# abgerechnete Arbeitszeiträume wurden nach der Rechnungsstellung geändert}}",
         "cost": "Kosten",
         "costUnknown": "Kosten unbekannt",
-        "costUnknownCount": "{count, plural, one {# Arbeitszeitraum hat keinen Kostensatz} other {# Arbeitszeiträume haben keinen Kostensatz}}",
+        "costUnknownCount": "{count, plural, one {# Arbeitszeitraum hat keinen verwendbaren Kostensatz oder Dienstleistersatz} other {# Arbeitszeiträume haben keinen verwendbaren Kostensatz oder Dienstleistersatz}}",
         "description": "Nur abgeschlossene Arbeiten. Der Umsatz basiert auf den am {date} gültigen Sätzen.",
         "employee": "Mitarbeiter",
         "hasUnpriced": "Enthält nicht bepreiste Arbeit",
@@ -176,7 +176,7 @@
         "changedAfterInvoicing": "Nach Rechnungsstellung geändert",
         "cost": "Kosten",
         "costUnknown": "Kosten unbekannt",
-        "costUnknownNote": "Kosten unbekannt: Für einen Teil der Arbeit ist kein Kostensatz hinterlegt, daher werden Kosten und Marge nicht angezeigt.",
+        "costUnknownNote": "Kosten unbekannt: Für einen Teil der Arbeit gibt es keinen verwendbaren Kostensatz oder Dienstleistersatz, daher werden Kosten und Marge nicht angezeigt.",
         "currency": "Währung",
         "customer": "Kunde",
         "customerReportTitle": "Kundenbericht",
@@ -439,6 +439,11 @@
       "vacationDays": "Urlaubstage",
       "workDays": "{count} Arbeitstage",
       "workedFromHome": "{hours} Std. im Homeoffice gearbeitet"
+    },
+    "tabs": {
+      "projects": "Projekte",
+      "timeAndAbsences": "Zeiten & Abwesenheiten",
+      "vehicles": "Fahrzeuge"
     },
     "title": "Mitarbeiterberichte",
     "toast": {

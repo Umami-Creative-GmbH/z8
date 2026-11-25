@@ -1,5 +1,9 @@
 import type { AbsenceCategoryType } from "@/app/[locale]/(app)/settings/vacation/actions";
 import { getBuiltInAbsenceCategoryTranslations } from "@/lib/absences/built-in-category-translations";
+import {
+	CONTRACTOR_UNAVAILABILITY_RULES,
+	isContractorUnavailabilityType,
+} from "@/lib/absences/category-rules";
 import { canRequireDeputy } from "@/lib/absences/deputy";
 
 export interface AbsenceCategoryForSettings {
@@ -132,5 +136,7 @@ export function buildAbsenceCategoryPayload(value: AbsenceCategoryFormValues) {
 		deputyRequired: canRequireDeputy(value.type) && value.deputyRequired,
 		color: value.color.trim(),
 		isActive: value.isActive,
+		// An External Contractor's unavailability never deducts anything (#1996).
+		...(isContractorUnavailabilityType(value.type) ? CONTRACTOR_UNAVAILABILITY_RULES : {}),
 	};
 }

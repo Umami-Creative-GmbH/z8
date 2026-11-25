@@ -1,11 +1,17 @@
-import { and, eq, exists, lte, or, sql } from "drizzle-orm";
+import { and, eq, exists, inArray, lte, or, sql } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import { invitation, user } from "@/db/auth-schema";
-import { employee, employeeInvitationDraft, team } from "@/db/schema";
+import { employee, employeeInvitationDraft, project, projectAssignment, team } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
 import type { AuditTrail } from "@/lib/audit-trail";
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
+import {
+	hasContractorProfileDetails,
+	normalizeContractorProfileDetails,
+	saveContractorProfile,
+} from "@/lib/engagement/contractor-profile";
+import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 import { writeFirstEmploymentTerms } from "@/lib/employment-history/first-terms";
 import { createLogger } from "@/lib/logger";
 import {
@@ -91,13 +97,25 @@ export function draftCreationValues(draft: InvitationDraft | null) {
 		position: draft.position,
 		startDate: draft.startDate,
 		endDate: draft.endDate,
-		contractType: draft.contractType,
+		engagementKind: draft.engagementKind,
+		// An External Contractor has no employee contract type (#1995); the column keeps its default.
+		...(draft.engagementKind === "contractor" ? {} : { contractType: draft.contractType }),
 	};
 }
 
-/** Like `draftCreationValues`, for a reactivated employee: only what the draft sets. */
-export function draftReactivationValues(draft: InvitationDraft | null) {
+/**
+ * Like `draftCreationValues`, for a reactivated employee: only what the draft
+ * sets. Never the engagement kind: a reactivation continues the open period,
+ * whose kind cannot change in place (#1995). The contract type is employee-only:
+ * written only when both the draft and the returning employee are employees.
+ */
+export function draftReactivationValues(
+	draft: InvitationDraft | null,
+	returning: { engagementKind: EngagementKind },
+) {
 	if (!draft) return {};
+	const appliesEmployeeTerms =
+		draft.engagementKind === "employee" && returning.engagementKind === "employee";
 	return {
 		...(draft.role != null ? { role: draft.role } : {}),
 		...(draft.firstName != null ? { firstName: draft.firstName } : {}),
@@ -108,7 +126,9 @@ export function draftReactivationValues(draft: InvitationDraft | null) {
 		...(draft.position != null ? { position: draft.position } : {}),
 		...(draft.startDate != null ? { startDate: draft.startDate } : {}),
 		...(draft.endDate != null ? { endDate: draft.endDate } : {}),
-		...(draft.contractType != null ? { contractType: draft.contractType } : {}),
+		...(appliesEmployeeTerms && draft.contractType != null
+			? { contractType: draft.contractType }
+			: {}),
 	};
 }
 
@@ -215,8 +235,15 @@ export function recordDroppedPersonnelNumber(
 /**
  * Why joining applied nothing of the draft: a former employee who stays off the
  * current roster (spec #1664 decision 4), or an employee already on it (decision 5).
+ * Or, for `engagement_kind_differs`, nothing of the draft's engagement: a
+ * returning employee whose open period has the other engagement kind (#1995)
+ * comes back as what that period is, without the draft's employee terms or
+ * contracting setup; converting takes an effective departure and a rehire.
  */
-export type DraftNotAppliedReason = "former_employee_needs_rehire" | "employee_already_current";
+export type DraftNotAppliedReason =
+	| "former_employee_needs_rehire"
+	| "employee_already_current"
+	| "engagement_kind_differs";
 
 /**
  * An employee joining writes nothing of the draft for gets an entry saying so;
@@ -231,6 +258,8 @@ export function recordDraftNotApplied(
 		employeeId: string;
 		draft: InvitationDraft;
 		reason: DraftNotAppliedReason;
+		/** Extra context of the entry, such as both engagement kinds. */
+		details?: Record<string, string>;
 	},
 ) {
 	return audit.record(tx, {
@@ -244,6 +273,7 @@ export function recordDraftNotApplied(
 			reason: input.reason,
 			invitationId: input.draft.invitationId,
 			draftId: input.draft.id,
+			...input.details,
 		},
 	});
 }
@@ -267,6 +297,56 @@ export function writeDraftFirstTerms(
 		hourlyRate: draftHourlyWage(draft.currentHourlyRate),
 		startDate: draft.startDate ?? null,
 	});
+}
+
+/**
+ * What a contractor invitation prepares besides the employee row (#1995): the
+ * contracting details and the projects, assigned only when they belong to this
+ * organization. Employee-only setup (terms, wage, work policy) is never written.
+ */
+export async function applyContractorDraft(
+	tx: JoiningTransaction,
+	input: {
+		organizationId: string;
+		employeeId: string;
+		actorUserId: string;
+		draft: InvitationDraft;
+	},
+) {
+	const { draft } = input;
+	const details = normalizeContractorProfileDetails({
+		companyName: draft.contractorCompanyName,
+		vatId: draft.contractorVatId,
+		referenceCode: draft.contractorReferenceCode,
+	});
+	if (hasContractorProfileDetails(details)) {
+		await saveContractorProfile(tx, {
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+			details,
+			updatedBy: input.actorUserId,
+		});
+	}
+	if (draft.projectIds.length === 0) return;
+	const projects = await tx
+		.select({ id: project.id })
+		.from(project)
+		.where(
+			and(eq(project.organizationId, input.organizationId), inArray(project.id, draft.projectIds)),
+		);
+	if (projects.length === 0) return;
+	await tx
+		.insert(projectAssignment)
+		.values(
+			projects.map((assigned) => ({
+				projectId: assigned.id,
+				organizationId: input.organizationId,
+				assignmentType: "employee" as const,
+				employeeId: input.employeeId,
+				createdBy: input.actorUserId,
+			})),
+		)
+		.onConflictDoNothing();
 }
 
 /** The draft's stored decimal-string wage, as employment terms hold it. */

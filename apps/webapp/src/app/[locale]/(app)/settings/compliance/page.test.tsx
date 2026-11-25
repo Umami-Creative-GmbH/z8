@@ -1,38 +1,50 @@
+import type { ReactElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ComplianceExceptionsRedirect } from "./compliance-exceptions-redirect";
+import ComplianceSettingsPage from "./page";
 
-const mocks = vi.hoisted(() => ({
-	translate: vi.fn((key: string, fallback?: string) => `${key}|${fallback ?? ""}`),
+class RedirectSignal extends Error {
+	constructor(readonly href: string) {
+		super(`redirect:${href}`);
+	}
+}
+
+const redirectWithLocale = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/navigation/locale-redirect", () => ({ redirectWithLocale }));
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
 }));
 
-vi.mock("@/tolgee/server", () => ({
-	getTranslate: vi.fn(async () => mocks.translate),
-}));
-vi.mock("@/lib/auth-helpers", () => ({
-	getAuthContext: vi.fn(),
-}));
-vi.mock("@/lib/navigation/locale-redirect", () => ({
-	redirectWithLocale: vi.fn(),
-}));
-vi.mock("@/components/settings/compliance-exceptions-manager", () => ({
-	ComplianceExceptionsManager: () => null,
-}));
-vi.mock("@/components/errors/no-employee-error", () => ({
-	NoEmployeeError: () => null,
-}));
+beforeEach(() => {
+	redirectWithLocale.mockReset();
+	redirectWithLocale.mockImplementation(async (href: string) => {
+		throw new RedirectSignal(href);
+	});
+});
 
-import { generateMetadata } from "./page";
+async function redirectOf(run: () => Promise<never>): Promise<string> {
+	const outcome = await run().catch((error: unknown) => error);
+	if (!(outcome instanceof RedirectSignal)) {
+		throw new Error("Expected /settings/compliance to redirect");
+	}
+	return outcome.href;
+}
 
-describe("compliance settings metadata", () => {
-	beforeEach(() => vi.clearAllMocks());
+describe("/settings/compliance (#1977)", () => {
+	it("redirects to the Approval inbox's compliance exceptions", async () => {
+		expect(await redirectOf(ComplianceExceptionsRedirect)).toBe(
+			"/approvals/inbox?types=compliance_exception",
+		);
+	});
 
-	it("translates the page title and description", async () => {
-		const metadata = await generateMetadata();
+	it("mounts the redirect from the page entry", async () => {
+		const redirect = ComplianceSettingsPage().props.children as ReactElement<
+			object,
+			() => Promise<never>
+		>;
 
-		expect(metadata).toEqual({
-			title: "settings.compliance.metadata.title|Compliance Settings | ArbZG",
-			description:
-				"settings.compliance.metadata.description|Configure ArbZG compliance settings and manage exception requests",
-		});
-		expect(mocks.translate).toHaveBeenCalledTimes(2);
+		expect(await redirectOf(() => redirect.type(redirect.props))).toBe(
+			"/approvals/inbox?types=compliance_exception",
+		);
 	});
 });

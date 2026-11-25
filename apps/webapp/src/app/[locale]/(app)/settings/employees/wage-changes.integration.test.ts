@@ -284,9 +284,14 @@ describe("wage changes on PostgreSQL", () => {
 		expect(await terms()).toHaveLength(1);
 	});
 
-	it.each(["owner", "manager"])(
-		"shows confirmed contract types in the %s's employee directory",
-		async (actor) => {
+	// Contract fields are org-admin only (Spec #1921 Story 22 / A3-1): the owner
+	// sees today's confirmed terms, a scoped manager sees nothing.
+	it.each([
+		["owner", "hourly"],
+		["manager", null],
+	] as const)(
+		"shows the %s the confirmed contract type in the employee directory, or redacts it",
+		async (actor, expected) => {
 			actAs(actor === "owner" ? fixture.ownerUserId : managerUserId);
 			await fixture.pool.query("update employee set contract_type = 'fixed' where id = $1", [
 				fixture.employeeId,
@@ -296,24 +301,30 @@ describe("wage changes on PostgreSQL", () => {
 			expect(result).toMatchObject({ success: true });
 			if (!result.success) throw new Error(result.error);
 			expect(result.data.employees.find((row) => row.id === fixture.employeeId)?.contractType).toBe(
-				"hourly",
+				expected,
 			);
 		},
 	);
 
-	it("reads the contract type of today's confirmed terms for the edit form", async () => {
-		actAs(managerUserId);
-		await fixture.pool.query("update employee set contract_type = 'fixed' where id = $1", [
-			fixture.employeeId,
-		]);
+	it.each([
+		["owner", "hourly"],
+		["manager", null],
+	] as const)(
+		"reads the contract type of today's confirmed terms for the %s's edit form, or redacts it",
+		async (actor, expected) => {
+			actAs(actor === "owner" ? fixture.ownerUserId : managerUserId);
+			await fixture.pool.query("update employee set contract_type = 'fixed' where id = $1", [
+				fixture.employeeId,
+			]);
 
-		const result = await getEmployeeAction(fixture.employeeId);
+			const result = await getEmployeeAction(fixture.employeeId);
 
-		expect(result).toMatchObject({
-			success: true,
-			data: { contractTypeToday: "hourly" },
-		});
-	});
+			expect(result).toMatchObject({
+				success: true,
+				data: { contractTypeToday: expected },
+			});
+		},
+	);
 
 	it("keeps cancelled future terms out of later directory reads", async () => {
 		actAs(fixture.ownerUserId);

@@ -334,10 +334,12 @@
           "unknownCustomer": "Ukjent kunde",
           "unknownProject": "Ukjent prosjekt"
         },
+        "configureSettings": "Innstillinger for fakturerbar tid",
         "confirmed": "Fakturautkastet ble opprettet",
         "csv": {
           "download": "Last ned avstemmings-CSV"
         },
+        "description": "Opprett fakturautkast fra fakturerbart arbeid, sjekk verktøystatus, last ned timelister og håndter endringer etter fakturering.",
         "detail": {
           "checking": "Kontrollerer utkastet i verktøyet…",
           "gone": "Regnskapsverktøyet har ikke lenger dette utkastet. Hvis det ble slettet med hensikt, må du frigjøre overføringen slik at arbeidet kan overføres på nytt.",
@@ -489,7 +491,6 @@
       "nav": {
         "accounting": "Regnskap",
         "costRates": "Kostnadssatser",
-        "currency": "Fakturerbar valuta",
         "handOff": "Overlevering",
         "label": "Innstillinger for fakturerbar tid",
         "rates": "Fakturerbare satser"
@@ -637,6 +638,7 @@
         "teams": "Team"
       },
       "scopeLabel": "Lukk for",
+      "selectEmployees": "Velg ansatte",
       "teamNotFound": "Dette teamet eksisterer ikke lenger.",
       "title": "Lukkede måneder",
       "warning": {
@@ -1729,6 +1731,7 @@
         "search": "Søk etter ansatte …",
         "selected": "Valgte team og ansatte",
         "selectedHelp": "Dekker medlemmer av de valgte teamene og de valgte ansatte.",
+        "selectEmployees": "Velg ansatte",
         "teams": "Team",
         "title": "Utstyrsansvarlige"
       },
@@ -1779,7 +1782,6 @@
         "unavailableHelp": "Denne gjenstanden vil bli sperret for ny utlevering til den uttrykkelig er klarert. Ansvarshistorikk og mottaksbevis forblir uendret.",
         "unchanged": "Denne tilgjengelighetsstatusen er allerede registrert. Last inn utstyret på nytt for å se historikken."
       },
-      "reload": "Last inn oppsett på nytt",
       "retention": {
         "activity": "Siste aktivitet",
         "badgeDue": "Venter på opprydding",
@@ -2002,8 +2004,7 @@
     "group": {
       "account": "Konto",
       "data": "Data",
-      "integrations": "Integrasjoner",
-      "notifications": "Varsler",
+      "integrationsChannels": "Integrasjoner og kanaler",
       "organization": "Organisasjon"
     },
     "implementationChecklist": {
@@ -2061,7 +2062,6 @@
           "skipNoCategoryRequiresApproval": "Fraværsforespørsler krever ingen godkjenning, fordi ingen fraværskategori krever det.",
           "skipNoChangePolicy": "{count, plural, one {{kind, select, absence {Fraværsforespørsler} timeCorrection {Tidskorrigeringer} workPeriod {Innsendinger av arbeidsperioder} periodSubmission {Periodeinnsendinger} expenseReport {Utgiftsrapporter} other {Skiftforespørsler}}: # ansatt trenger ingen godkjenning, fordi ingen endringspolicy gjelder.} other {{kind, select, absence {Fraværsforespørsler} timeCorrection {Tidskorrigeringer} workPeriod {Innsendinger av arbeidsperioder} periodSubmission {Periodeinnsendinger} expenseReport {Utgiftsrapporter} other {Skiftforespørsler}}: # ansatte trenger ingen godkjenning, fordi ingen endringspolicy gjelder.}}",
           "skipOwnApprover": "{count, plural, one {{kind, select, absence {Fraværsforespørsler} timeCorrection {Tidskorrigeringer} workPeriod {Innsendinger av arbeidsperioder} periodSubmission {Periodeinnsendinger} expenseReport {Utgiftsrapporter} other {Skiftforespørsler}}: # ansatt er sin egen godkjenner.} other {{kind, select, absence {Fraværsforespørsler} timeCorrection {Tidskorrigeringer} workPeriod {Innsendinger av arbeidsperioder} periodSubmission {Periodeinnsendinger} expenseReport {Utgiftsrapporter} other {Skiftforespørsler}}: # ansatte er sin egen godkjenner.}}",
-          "skipOwnDecider": "{count, plural, one {{kind, select, absence {Fraværsforespørsler} timeCorrection {Tidskorrigeringer} workPeriod {Innsendinger av arbeidsperioder} periodSubmission {Periodeinnsendinger} expenseReport {Utgiftsrapporter} other {Skiftforespørsler}}: # ansatt er den eneste som kan avgjøre dem, så egne forespørsler venter på egen godkjenning.} other {{kind, select, absence {Fraværsforespørsler} timeCorrection {Tidskorrigeringer} workPeriod {Innsendinger av arbeidsperioder} periodSubmission {Periodeinnsendinger} expenseReport {Utgiftsrapporter} other {Skiftforespørsler}}: # ansatte er de eneste som kan avgjøre dem, så egne forespørsler venter på egen godkjenning.}}",
           "skipOwnerAdmin": "{count, plural, one {{kind, select, absence {Fraværsforespørsler} timeCorrection {Tidskorrigeringer} workPeriod {Innsendinger av arbeidsperioder} periodSubmission {Periodeinnsendinger} expenseReport {Utgiftsrapporter} other {Skiftforespørsler}}: # ansatt trenger ingen godkjenning, fordi eiere og administratorer registrerer eget arbeid direkte.} other {{kind, select, absence {Fraværsforespørsler} timeCorrection {Tidskorrigeringer} workPeriod {Innsendinger av arbeidsperioder} periodSubmission {Periodeinnsendinger} expenseReport {Utgiftsrapporter} other {Skiftforespørsler}}: # ansatte trenger ingen godkjenning, fordi eiere og administratorer registrerer eget arbeid direkte.}}",
           "skipOwnerSelfApproval": "{kind, select, absence {Fraværsforespørsler} timeCorrection {Tidskorrigeringer} workPeriod {Innsendinger av arbeidsperioder} periodSubmission {Periodeinnsendinger} expenseReport {Utgiftsrapporter} other {Skiftforespørsler}}: eieren godkjenner egne rapporter, fordi ingen andre kan.",
           "skipTrustMode": "{count, plural, one {{kind, select, absence {Fraværsforespørsler} timeCorrection {Tidskorrigeringer} workPeriod {Innsendinger av arbeidsperioder} periodSubmission {Periodeinnsendinger} expenseReport {Utgiftsrapporter} other {Skiftforespørsler}}: # ansatt trenger ingen godkjenning, fordi endringspolicyen er i tillitsmodus.} other {{kind, select, absence {Fraværsforespørsler} timeCorrection {Tidskorrigeringer} workPeriod {Innsendinger av arbeidsperioder} periodSubmission {Periodeinnsendinger} expenseReport {Utgiftsrapporter} other {Skiftforespørsler}}: # ansatte trenger ingen godkjenning, fordi endringspolicyen er i tillitsmodus.}}",
@@ -2191,7 +2191,6 @@
             "noCategoryRequiresApproval": "Ingen fraværskategori krever godkjenning.",
             "noChangePolicy": "Ingen endringspolicy gjelder for dem.",
             "ownApprover": "De er sin egen godkjenner, så forespørslene deres fullføres umiddelbart.",
-            "ownDecider": "De er den eneste lederen eller administratoren som kan avgjøre vaktforespørsler, så deres egne forblir ventende til de godkjenner dem.",
             "ownerAdmin": "Eiere og administratorer registrerer eget arbeid direkte.",
             "ownerSelfApproval": "Som eier godkjenner de sine egne rapporter, fordi ingen andre kan.",
             "trustMode": "Endringspolicyen deres er i tillitsmodus."
@@ -2901,9 +2900,9 @@
           "descriptionPlaceholder": "En kort beskrivelse av dette teamet",
           "fallbackManagerHelp": "Brukes til godkjenninger når et teammedlem ikke har en direkte leder.",
           "fallbackManagerLabel": "Reserveleder",
-          "fallbackManagerPlaceholder": "Velg en reserveleder",
           "nameLabel": "Teamnavn",
           "namePlaceholder": "Utvikling, salg, markedsføring...",
+          "nameRequired": "Teamnavn er obligatorisk",
           "noFallbackManager": "Ingen reserveleder",
           "submit": "Opprett team",
           "title": "Opprett team"
@@ -3387,6 +3386,10 @@
     "reportShareLinks": {
       "description": "Se og tilbakekall alle lenker som deler en prosjekt- eller kunderapport",
       "pageDescription": "Lenker som viser et fryst øyeblikksbilde av en prosjekt- eller kunderapport til noen utenfor Z8. Å tilbakekalle en lenke stopper den umiddelbart og sletter øyeblikksbildet.",
+      "projectsDisabledNotice": {
+        "description": "Prosjekter er for øyeblikket slått av for denne organisasjonen, så ingen nye delingslenker for rapporter kan opprettes. Du kan fortsatt se gjennom og tilbakekalle eksisterende lenker her.",
+        "title": "Prosjekter er slått av"
+      },
       "title": "Delingslenker for rapporter"
     },
     "search": {
@@ -3505,34 +3508,56 @@
       "unexpectedError": "Det oppsto en uventet feil"
     },
     "statistics": {
-      "cards": {
-        "activeSessions": "Aktive økter",
-        "activeSessionsDescription": "Gjeldende databaseøkter",
-        "approvalRequests": "Godkjenningsforespørsler",
-        "approvedAbsences": "Godkjent fravær",
+      "allClear": "Alt i orden: ingenting krever din oppmerksomhet akkurat nå.",
+      "groupLoadError": "Kunne ikke laste inn disse tallene. Last inn siden på nytt for å prøve igjen.",
+      "kpi": {
+        "absenceDays": "Fraværsdager",
+        "clockedIn": "Stemplet inn nå",
+        "clockedInCaption": "Ansatte med pågående arbeid",
+        "comparisonDetail": "{days}: {previous}",
+        "completedWorkPeriods": "Fullførte arbeidsperioder",
+        "daysUnit": "dager",
         "employees": "Ansatte",
-        "employeesDescription": "{active} aktive, {inactive} inaktive",
-        "pendingAbsences": "Ventende fravær",
-        "pendingCount": "{count} ventende",
-        "rejectedAbsences": "Avvist fravær",
+        "employeesCaption": "+{joined} startet, −{left} sluttet denne måneden",
+        "failed": "Kunne ikke laste inn",
+        "hoursUnit": "t",
+        "hoursWorked": "Arbeidstimer",
+        "incompleteSetup": "Ufullstendig oppsett",
+        "incompleteSetupCaption": "Ansatte uten primærteam eller retningslinje for arbeid",
+        "incompleteSetupManagerCaption": "Ansatte uten retningslinje for arbeid",
+        "manualEntryShare": "Andel manuelle registreringer",
+        "manualEntryShareCaption": "{manual} t av {total} t registrert som manuelle oppføringer",
+        "manualEntryShareNone": "Ingen fullført arbeid denne måneden ennå",
+        "openInbox": "Åpne innboks",
+        "openPayrollReadiness": "Gå gjennom i lønnsklargjøring",
+        "openViolations": "Åpne brudd på retningslinjer",
+        "openViolationsCaption": "Ikke bekreftet ennå denne måneden",
+        "openWorkPolicies": "Gå gjennom i arbeidsretningslinjer",
+        "pendingApprovals": "Ventende godkjenninger",
+        "pendingApprovalsCaption": "{count, plural, =0 {Ingen fraværsforespørsler} one {Inkludert # fraværsforespørsel} other {Inkludert # fraværsforespørsler}}",
+        "staleLiveWork": "Utdatert pågående arbeid",
+        "staleLiveWorkCaption": "Ansatte som har vært innstemplet i mer enn 24 timer",
         "teams": "Team",
-        "thisMonth": "Denne måneden",
-        "timeEntries": "Timeregistreringer",
-        "totalAbsences": "Totalt fravær",
-        "totalTimeEntries": "Totale timeregistreringer",
-        "vsLastMonth": "mot forrige måned"
+        "trackingCoverage": "Sporingsdekning",
+        "trackingCoverageCaption": "{tracked} av {expected} ansatte med obligatorisk tid har registrert arbeid",
+        "trackingCoverageNone": "Ingen har påkrevd tid ennå denne måneden",
+        "trackingCoverageProgress": "Ansatte som har registrert arbeid denne måneden",
+        "usersSignedIn": "Innloggede brukere",
+        "usersSignedInCaption": "Unike brukere med en aktiv økt",
+        "vsComparison": "{change} mot {days}"
       },
-      "description": "Se statistikk og måleverdier for instansen din",
       "lastUpdated": "Sist oppdatert",
       "loadError": "Kunne ikke laste inn statistikk",
       "loadErrorRetry": "Last inn siden på nytt for å prøve igjen.",
-      "managerDescription": "Gå gjennom skrivebeskyttet analyse for teamene du administrerer.",
+      "scope": {
+        "organization": "Hele organisasjonen",
+        "teams": "{count, plural, =0 {Ingen team du administrerer} other {# team du administrerer} }"
+      },
       "sections": {
-        "absenceBreakdown": "Fraværsfordeling",
-        "activityMetrics": "Aktivitetsmålinger",
-        "coreCounts": "Kjernetall",
-        "managedScope": "Omfang for administrerte team",
-        "systemHealth": "Systemhelse"
+        "adoption": "Sporing av innføring",
+        "attention": "Krever oppmerksomhet",
+        "thisMonth": "Denne måneden",
+        "workforce": "Arbeidsstyrke og oppsett"
       },
       "title": "Statistikk"
     },

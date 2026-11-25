@@ -23,6 +23,7 @@ import {
 	parseInstant,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
+import { loadPayrollScope } from "@/lib/engagement/payroll-scope";
 import { formatUnits, parseUnits } from "@/lib/money/exact-decimal";
 import { getExpenseWageTypeMappings } from "@/lib/payroll-export/expense-wage-type";
 import {
@@ -51,6 +52,7 @@ import {
 	type SettlementAccount,
 	type SettlementActor,
 	type SettlementSource,
+	type SettlementTitle,
 } from "./settlement-store";
 
 /**
@@ -108,9 +110,14 @@ export async function exportIsPayrollRun(
  * Every report and legacy claim awaiting reimbursement in a run's scope, each
  * with what a run of `format` does with it: awaiting reimbursement, approved
  * on or before the period's last day (in the organization's zone), and of an
- * employee of `employeeIds`. Approved adjustment reports have no account of
- * their own and are not candidates. The export includes exactly the candidates
- * it classifies `include`; payroll readiness (#854) lists exactly the others.
+ * employee of `employeeIds`. A report goes by its own days, not the period's
+ * (#1997): whether or not its employee has employee time in the period, a
+ * report whose days are all employee time can be carried, and any other is
+ * classified `skip`, so External Contractor reports are never carried, stay
+ * free for a bank transfer and are announced as left out. Approved adjustment
+ * reports have no account of their own and are not candidates. The export
+ * includes exactly the candidates it classifies `include`; payroll readiness
+ * (#854) lists exactly the others.
  *
  * With `lock`, the reports' rows are locked first, in a fixed order: the lock
  * every settlement write takes.
@@ -126,8 +133,8 @@ export async function classifyPayrollRunCandidates(
 	options: { lock?: boolean } = {},
 ): Promise<PayrollRunCandidate[]> {
 	const { organizationId, period } = input;
-	if (input.employeeIds.length === 0) return [];
-	const employeeIds = [...input.employeeIds];
+	const employeeIds = [...new Set(input.employeeIds)];
+	if (employeeIds.length === 0) return [];
 	const reportQuery = database
 		.select({ row: travelExpenseReport })
 		.from(travelExpenseReport)
@@ -169,6 +176,14 @@ export async function classifyPayrollRunCandidates(
 			isAwaitingReimbursement(account),
 	);
 	if (awaiting.length === 0) return [];
+	// A report goes by its own days (#1997), so its employee need not have employee time in
+	// the period: `scope.employeeIds` is not a filter here.
+	const scope = await loadPayrollScope(
+		database,
+		organizationId,
+		[...new Set(awaiting.map((account) => account.employeeId))],
+		period,
+	);
 
 	const awaitingReports = awaiting.filter((account) => account.source.type === "report");
 	const revisions = await latestApprovedRevisions(database, {
@@ -190,6 +205,7 @@ export async function classifyPayrollRunCandidates(
 			if (!loaded) throw new Error(`Approved revision of report ${account.source.id} not readable`);
 			revision = { id: loaded.id, facts: loaded.facts };
 		}
+		const days = revision ? reportDays(revision.facts) : claimDays(account.title);
 		return {
 			account,
 			classification: classifyPayrollRunCandidate({
@@ -197,6 +213,8 @@ export async function classifyPayrollRunCandidates(
 				revision,
 				format: input.format,
 				period,
+				// Days that cannot be told (an old legacy claim's) are never carried either.
+				engagement: days ? scope.engagementOfDays(account.employeeId, days) : "both",
 				codes,
 				// What earlier confirmed runs carried (#853, decision 17).
 				priorLines: account.confirmedPayrollRuns.flatMap((run) =>
@@ -311,6 +329,25 @@ export async function includeReportsInPayrollRun(
 		includedReportIds: included.map((inclusion) => inclusion.reportId),
 		skipped,
 	};
+}
+
+/**
+ * The days a report covers (#1997): its trip's days, or for a standalone report the first to the
+ * last expense date of its items, from its latest approved revision.
+ */
+function reportDays(facts: PayrollRevision): { startDate: string; endDate: string } | null {
+	if (facts.trip) return { startDate: facts.trip.startDate, endDate: facts.trip.endDate };
+	const dates = facts.items.map((item) => item.expenseDate).toSorted();
+	const [first] = dates;
+	const last = dates.at(-1);
+	return first && last ? { startDate: first, endDate: last } : null;
+}
+
+/** A legacy claim's trip days as entered; null for a claim from before they were captured. */
+function claimDays(title: SettlementTitle): { startDate: string; endDate: string } | null {
+	return title.kind !== "standalone" && title.startDate && title.endDate
+		? { startDate: title.startDate, endDate: title.endDate }
+		: null;
 }
 
 /** The instant the period's last day ends in the organization's zone. */

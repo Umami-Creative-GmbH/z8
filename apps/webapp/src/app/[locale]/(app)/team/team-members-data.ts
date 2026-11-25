@@ -1,4 +1,5 @@
 import { formerMark } from "@/lib/employee-lifecycle/former-since";
+import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 import type { EmployeeWorkBalancePayload } from "@/lib/work-balance/types";
 
 type TeamMemberUser = {
@@ -26,6 +27,7 @@ type TeamMemberEmployee = {
 	position: string | null;
 	role: "admin" | "manager" | "employee";
 	isActive: boolean;
+	engagementKind?: EngagementKind;
 	user: TeamMemberUser;
 	team: TeamMemberTeam;
 };
@@ -52,6 +54,8 @@ export interface ManagedEmployee {
 	position: string | null;
 	role: "admin" | "manager" | "employee";
 	isActive: boolean;
+	/** The kind in force today; External Contractors are badged and filterable (#1995). */
+	engagementKind?: EngagementKind;
 	/** A former employee (Organization ADR 0006), shown only on request and marked (#1438). */
 	isFormer: boolean;
 	/**
@@ -90,6 +94,7 @@ export function buildVisibleManagedEmployees(input: {
 		position: emp.position,
 		role: emp.role,
 		isActive: emp.isActive,
+		engagementKind: emp.engagementKind ?? "employee",
 		...formerMark(isCurrentUser ? undefined : input.formerSinceById, emp.id),
 		isPrimaryManager,
 		isCurrentUser,

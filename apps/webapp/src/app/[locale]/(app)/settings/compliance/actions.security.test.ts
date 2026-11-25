@@ -1,6 +1,5 @@
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { databaseFailure, serializedLog } from "@/test/log-redaction";
 import type { StubCaller } from "@/test/organization-action";
 
 const mocks = vi.hoisted(() => ({
@@ -8,7 +7,6 @@ const mocks = vi.hoisted(() => ({
 	/** `${action}:${subject}` pairs the caller's ability grants. */
 	granted: [] as string[],
 	employeeFindFirst: vi.fn(),
-	exceptionFindFirst: vi.fn(),
 	userSettingsFindFirst: vi.fn(),
 	service: {
 		checkRestPeriod: vi.fn(),
@@ -18,9 +16,6 @@ const mocks = vi.hoisted(() => ({
 		requestException: vi.fn(),
 		hasValidException: vi.fn(),
 		getMyExceptions: vi.fn(),
-		getPendingExceptions: vi.fn(),
-		approveException: vi.fn(),
-		rejectException: vi.fn(),
 	},
 }));
 
@@ -34,7 +29,6 @@ vi.mock("@/lib/effect/runtime", async () => {
 			db: {
 				query: {
 					employee: { findFirst: mocks.employeeFindFirst },
-					complianceException: { findFirst: mocks.exceptionFindFirst },
 					userSettings: { findFirst: mocks.userSettingsFindFirst },
 				},
 			},
@@ -57,7 +51,8 @@ vi.mock("@/lib/effect/services/compliance-guardrail.service", async () => {
 	const call =
 		(fn: (...args: unknown[]) => unknown) =>
 		(...args: unknown[]) =>
-			Effect.promise(async () => fn(...args));
+			// A rejection is the service's typed failure, as a failed query's DatabaseError is.
+			Effect.tryPromise({ try: async () => fn(...args), catch: (error) => error });
 	return {
 		ComplianceGuardrailService,
 		ComplianceGuardrailServiceLive: Layer.succeed(
@@ -79,8 +74,10 @@ vi.mock("@/lib/notifications/compliance-triggers", () => ({
 	onComplianceExceptionRequested: vi.fn(async () => undefined),
 }));
 
+const logger = vi.hoisted(() => ({ info: vi.fn(), error: vi.fn(), warn: vi.fn() }));
+
 vi.mock("@/lib/logger", () => ({
-	createLogger: () => ({ info: vi.fn(), error: vi.fn(), warn: vi.fn() }),
+	createLogger: () => logger,
 }));
 
 const actions = await import("./actions");
@@ -105,15 +102,6 @@ const employeeRecord = {
 	user: { name: "Ada Lovelace" },
 };
 
-const pendingException = {
-	id: "exception-1",
-	organizationId: "org-1",
-	employeeId: "employee-2",
-	exceptionType: "rest_period",
-	validUntil: null,
-	employee: { id: "employee-2", userId: "user-2", user: { name: "Grace Hopper" } },
-};
-
 /** Every member-level action, called with valid input. */
 const memberActions = {
 	checkRestPeriod: () => actions.checkRestPeriod(),
@@ -124,11 +112,6 @@ const memberActions = {
 		actions.requestComplianceException({ exceptionType: "rest_period", reason: "Deadline" }),
 	hasValidException: () => actions.hasValidException({ exceptionType: "rest_period" }),
 	getMyExceptions: () => actions.getMyExceptions({ includeExpired: false }),
-	getPendingExceptions: () => actions.getPendingExceptions(),
-	approveComplianceException: () =>
-		actions.approveComplianceException({ exceptionId: "exception-1" }),
-	rejectComplianceException: () =>
-		actions.rejectComplianceException({ exceptionId: "exception-1", reason: "No" }),
 };
 
 beforeEach(() => {
@@ -136,7 +119,6 @@ beforeEach(() => {
 	mocks.caller = member;
 	mocks.granted = [];
 	mocks.employeeFindFirst.mockResolvedValue(employeeRecord);
-	mocks.exceptionFindFirst.mockResolvedValue(pendingException);
 	mocks.userSettingsFindFirst.mockResolvedValue({ timezone: "Europe/Berlin" });
 	for (const fn of Object.values(mocks.service)) fn.mockResolvedValue(undefined);
 	mocks.service.requestException.mockResolvedValue("exception-1");
@@ -165,7 +147,6 @@ describe("compliance actions", () => {
 		});
 		expect(serviceCalls()).toBe(0);
 	});
-
 
 	it("checks the rest period of the caller's own employee record in their timezone", async () => {
 		await actions.checkRestPeriod();
@@ -201,115 +182,46 @@ describe("compliance actions", () => {
 		);
 	});
 
+	it("logs a failed request without the employee's reason text", async () => {
+		mocks.caller = { ...orgAdmin, employee: null };
+
+		await actions.requestComplianceException({
+			exceptionType: "rest_period",
+			reason: "Caring for my sick child",
+		});
+
+		expect(logger.error).toHaveBeenCalledWith(
+			expect.objectContaining({ exceptionType: "rest_period", reasonLength: 24 }),
+			"Failed to request compliance exception",
+		);
+		expect(JSON.stringify(logger.error.mock.calls)).not.toContain("sick child");
+	});
+
+	it("logs a failed insert without the reason its query bound", async () => {
+		mocks.service.requestException.mockRejectedValue(
+			databaseFailure("createException", ["org-1", "Caring for my sick child"]),
+		);
+
+		await actions.requestComplianceException({
+			exceptionType: "rest_period",
+			reason: "Caring for my sick child",
+		});
+
+		expect(logger.error).toHaveBeenCalledTimes(1);
+		const [logged, message] = logger.error.mock.calls[0] ?? [];
+		expect(message).toBe("Failed to request compliance exception");
+		const line = await serializedLog(logged);
+		expect(line).not.toContain("sick child");
+		expect(JSON.parse(line)).toMatchObject({
+			error: { errorTag: "DatabaseError", operation: "createException", code: "22001" },
+			reasonLength: 24,
+		});
+	});
+
 	it("rejects an unknown exception type before requesting it", async () => {
 		expect(
 			await actions.requestComplianceException({ exceptionType: "holiday" as never, reason: "x" }),
 		).toMatchObject({ success: false, code: "ValidationError" });
 		expect(mocks.service.requestException).not.toHaveBeenCalled();
-	});
-
-	it("refuses pending exceptions to an employee who neither manages nor administers compliance", async () => {
-		expect(await actions.getPendingExceptions()).toMatchObject({
-			success: false,
-			code: "AuthorizationError",
-		});
-		expect(mocks.service.getPendingExceptions).not.toHaveBeenCalled();
-	});
-
-	it("limits a manager's pending exceptions to the ones they manage", async () => {
-		mocks.employeeFindFirst.mockResolvedValue({ ...employeeRecord, role: "manager" });
-
-		await actions.getPendingExceptions();
-
-		expect(mocks.service.getPendingExceptions).toHaveBeenCalledWith({
-			organizationId: "org-1",
-			managerId: "employee-1",
-		});
-	});
-
-	it("shows every pending exception to a compliance manager", async () => {
-		mocks.granted = ["manage:Compliance"];
-
-		await actions.getPendingExceptions();
-
-		expect(mocks.service.getPendingExceptions).toHaveBeenCalledWith({
-			organizationId: "org-1",
-			managerId: undefined,
-		});
-	});
-
-	it.each([
-		["approve", () => actions.approveComplianceException({ exceptionId: "exception-1" })],
-		["reject", () => actions.rejectComplianceException({ exceptionId: "exception-1" })],
-	])("refuses to %s without the approval permission on the exception", async (action, call) => {
-		expect(await call()).toMatchObject({
-			success: false,
-			error: `Not authorized to ${action} this compliance exception`,
-		});
-		expect(mocks.service.approveException).not.toHaveBeenCalled();
-		expect(mocks.service.rejectException).not.toHaveBeenCalled();
-	});
-
-	it("refuses to decide the caller's own exception", async () => {
-		mocks.granted = ["approve:Approval"];
-		mocks.exceptionFindFirst.mockResolvedValue({ ...pendingException, employeeId: "employee-1" });
-
-		expect(await actions.approveComplianceException({ exceptionId: "exception-1" })).toMatchObject({
-			success: false,
-			error: "You cannot process your own compliance exception",
-		});
-		expect(mocks.service.approveException).not.toHaveBeenCalled();
-	});
-
-	it("reads another organization's exception as not found", async () => {
-		mocks.granted = ["approve:Approval"];
-		mocks.exceptionFindFirst.mockResolvedValue(undefined);
-
-		expect(await actions.approveComplianceException({ exceptionId: "exception-1" })).toMatchObject({
-			success: false,
-			code: "NotFoundError",
-		});
-	});
-
-	it("approves an exception the caller may approve", async () => {
-		mocks.granted = ["approve:Approval"];
-
-		expect(await actions.approveComplianceException({ exceptionId: "exception-1" })).toEqual({
-			success: true,
-			data: undefined,
-		});
-		expect(mocks.service.approveException).toHaveBeenCalledWith({
-			exceptionId: "exception-1",
-			approverId: "employee-1",
-			organizationId: "org-1",
-		});
-	});
-});
-
-describe("compliance exception decisions in the service", () => {
-	const serviceSource = readFileSync(
-		fileURLToPath(
-			new URL(
-				"../../../../../lib/effect/services/compliance-guardrail.service.ts",
-				import.meta.url,
-			),
-		),
-		"utf8",
-	);
-
-	it("enforces tenant and self-approval constraints in the service update", () => {
-		for (const name of ["approveException", "rejectException"]) {
-			const start = serviceSource.indexOf(`${name}: (params) =>`);
-			const next = serviceSource.indexOf("Exception:", start + name.length);
-			const body = serviceSource.slice(start, next === -1 ? undefined : next);
-
-			expect(body).toContain("eq(complianceException.organizationId, params.organizationId)");
-			expect(body).toContain("ne(complianceException.employeeId, params.approverId)");
-		}
-	});
-
-	it("applies manager scope to pending exceptions in the service", () => {
-		expect(serviceSource).toContain("eq(employeeManagers.managerId, params.managerId)");
-		expect(serviceSource).toContain("inArray(complianceException.employeeId, managedEmployeeIds)");
 	});
 });

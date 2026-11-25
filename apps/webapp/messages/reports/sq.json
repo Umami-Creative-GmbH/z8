@@ -440,6 +440,11 @@
       "workDays": "{count} ditë pune",
       "workedFromHome": "{hours} orë të punuara nga shtëpia"
     },
+    "tabs": {
+      "projects": "Projektet",
+      "timeAndAbsences": "Koha dhe mungesat",
+      "vehicles": "Automjetet"
+    },
     "title": "Raportet e punonjësve",
     "toast": {
       "failedGenerate": "Gjenerimi i raportit dështoi",

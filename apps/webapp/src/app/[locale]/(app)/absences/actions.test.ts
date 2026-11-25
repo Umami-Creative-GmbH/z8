@@ -113,6 +113,7 @@ describe("absence action wrappers", () => {
 		expect(await actions.getVacationBalanceResult("emp-other", 2026)).toEqual({
 			balance: null,
 			configuration: null,
+			externalContractor: false,
 		});
 		expect(mockState.getVacationBalanceResult).not.toHaveBeenCalled();
 	});

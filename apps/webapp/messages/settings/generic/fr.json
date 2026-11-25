@@ -334,10 +334,12 @@
           "unknownCustomer": "Client inconnu",
           "unknownProject": "Projet inconnu"
         },
+        "configureSettings": "Paramètres du temps facturable",
         "confirmed": "Le brouillon de facture a été créé",
         "csv": {
           "download": "Télécharger le fichier CSV de rapprochement"
         },
+        "description": "Créez des brouillons de factures à partir des heures facturables, vérifiez l'état des outils, téléchargez les feuilles de temps et traitez les modifications postérieures à la facturation.",
         "detail": {
           "checking": "Vérification du brouillon dans l'outil…",
           "gone": "L'outil de comptabilité n'a plus ce brouillon. S'il a été supprimé intentionnellement, libérez la transmission afin que son travail puisse être transmis à nouveau.",
@@ -489,7 +491,6 @@
       "nav": {
         "accounting": "Comptabilité",
         "costRates": "Taux de coût",
-        "currency": "Devise facturable",
         "handOff": "Passation",
         "label": "Paramètres du temps facturable",
         "rates": "Taux facturables"
@@ -637,6 +638,7 @@
         "teams": "Équipes"
       },
       "scopeLabel": "Clôturer pour",
+      "selectEmployees": "Sélectionner des employés",
       "teamNotFound": "Cette équipe n'existe plus.",
       "title": "Mois clôturés",
       "warning": {
@@ -1729,6 +1731,7 @@
         "search": "Rechercher des employés…",
         "selected": "Équipes et employés sélectionnés",
         "selectedHelp": "Couvre les membres des équipes sélectionnées ainsi que les employés sélectionnés.",
+        "selectEmployees": "Sélectionner des employés",
         "teams": "Équipes",
         "title": "Responsables du matériel"
       },
@@ -1779,7 +1782,6 @@
         "unavailableHelp": "Cet article sera bloqué pour toute nouvelle attribution jusqu'à son déblocage explicite. Les preuves de garde et de réception restent inchangées.",
         "unchanged": "Cet état de disponibilité est déjà enregistré. Rechargez l'équipement pour consulter son historique."
       },
-      "reload": "Recharger la configuration",
       "retention": {
         "activity": "Dernière activité",
         "badgeDue": "En attente de nettoyage",
@@ -2002,8 +2004,7 @@
     "group": {
       "account": "Compte",
       "data": "Données",
-      "integrations": "Intégrations",
-      "notifications": "Notifications",
+      "integrationsChannels": "Intégrations et canaux",
       "organization": "Organisation"
     },
     "implementationChecklist": {
@@ -2061,7 +2062,6 @@
           "skipNoCategoryRequiresApproval": "Les demandes d'absence ne nécessitent aucune approbation, car aucune catégorie d'absence ne l'exige.",
           "skipNoChangePolicy": "{count, plural, one {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : # employé ne nécessite aucune approbation, car aucune politique de modification ne s'applique.} other {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : # employés ne nécessitent aucune approbation, car aucune politique de modification ne s'applique.}}",
           "skipOwnApprover": "{count, plural, one {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : # employé est son propre approbateur.} other {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : # employés sont leur propre approbateur.}}",
-          "skipOwnDecider": "{count, plural, one {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : # employé est le seul à pouvoir les traiter, ses propres demandes sont donc en attente de sa propre approbation.} other {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : # employés sont les seuls à pouvoir les traiter, leurs propres demandes sont donc en attente de leur propre approbation.}}",
           "skipOwnerAdmin": "{count, plural, one {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : # employé ne nécessite aucune approbation, car les propriétaires et les administrateurs enregistrent directement leur propre travail.} other {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : # employés ne nécessitent aucune approbation, car les propriétaires et les administrateurs enregistrent directement leur propre travail.}}",
           "skipOwnerSelfApproval": "{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : le propriétaire approuve ses propres rapports, car personne d'autre ne peut le faire.",
           "skipTrustMode": "{count, plural, one {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : # employé ne nécessite aucune approbation, car sa politique de modification est en mode confiance.} other {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : # employés ne nécessitent aucune approbation, car leur politique de modification est en mode confiance.}}",
@@ -2191,7 +2191,6 @@
             "noCategoryRequiresApproval": "Aucune catégorie d'absence ne requiert d'approbation.",
             "noChangePolicy": "Aucune politique de modification ne s'applique à ces personnes.",
             "ownApprover": "Ces personnes sont leur propre approbateur, leurs demandes sont donc validées immédiatement.",
-            "ownDecider": "Ces personnes étant les seuls responsables ou administrateurs habilités à statuer sur les demandes de quart, les leurs restent en attente jusqu'à ce qu'elles les approuvent.",
             "ownerAdmin": "Les propriétaires et les administrateurs enregistrent directement leur propre temps de travail.",
             "ownerSelfApproval": "En tant que propriétaire, cette personne approuve ses propres notes de frais, car personne d'autre ne peut le faire.",
             "trustMode": "Leur politique de modification est en mode confiance."
@@ -2901,9 +2900,9 @@
           "descriptionPlaceholder": "Une brève description de cette équipe",
           "fallbackManagerHelp": "Utilisé pour les approbations lorsqu'un membre de l'équipe n'a pas de manager direct.",
           "fallbackManagerLabel": "Manager de secours",
-          "fallbackManagerPlaceholder": "Sélectionnez un manager de secours",
           "nameLabel": "Nom de l'équipe",
           "namePlaceholder": "Ingénierie, Ventes, Marketing...",
+          "nameRequired": "Le nom de l'équipe est requis",
           "noFallbackManager": "Aucun manager de secours",
           "submit": "Créer l'équipe",
           "title": "Créer l'équipe"
@@ -3387,6 +3386,10 @@
     "reportShareLinks": {
       "description": "Consultez et révoquez chaque lien partageant un rapport de projet ou de client",
       "pageDescription": "Liens affichant un instantané figé d'un rapport de projet ou de client à une personne externe à Z8. Révoquer un lien le désactive immédiatement et supprime son instantané.",
+      "projectsDisabledNotice": {
+        "description": "La fonctionnalité Projets est actuellement désactivée pour cette organisation. Aucun nouveau lien de partage de rapport ne peut être créé. Vous pouvez toujours consulter et révoquer les liens existants ici.",
+        "title": "Projets est désactivé"
+      },
       "title": "Liens de partage de rapports"
     },
     "search": {
@@ -3505,34 +3508,56 @@
       "unexpectedError": "Une erreur inattendue est survenue"
     },
     "statistics": {
-      "cards": {
-        "activeSessions": "Sessions actives",
-        "activeSessionsDescription": "Sessions de base de données actuelles",
-        "approvalRequests": "Demandes d'approbation",
-        "approvedAbsences": "Absences approuvées",
+      "allClear": "Tout est en ordre : aucun élément ne requiert votre attention pour le moment.",
+      "groupLoadError": "Impossible de charger ces chiffres. Rechargez la page pour réessayer.",
+      "kpi": {
+        "absenceDays": "Jours d'absence",
+        "clockedIn": "Actuellement pointés",
+        "clockedInCaption": "Employés avec une session active",
+        "comparisonDetail": "{days} : {previous}",
+        "completedWorkPeriods": "Périodes de travail terminées",
+        "daysUnit": "jours",
         "employees": "Employés",
-        "employeesDescription": "{active} actif, {inactive} inactif",
-        "pendingAbsences": "Absences en attente",
-        "pendingCount": "{count} en attente",
-        "rejectedAbsences": "Absences rejetées",
+        "employeesCaption": "+{joined} arrivées, −{left} départs ce mois-ci",
+        "failed": "Impossible de charger",
+        "hoursUnit": "h",
+        "hoursWorked": "Heures travaillées",
+        "incompleteSetup": "Configuration incomplète",
+        "incompleteSetupCaption": "Employés sans équipe principale ou sans politique de travail",
+        "incompleteSetupManagerCaption": "Employés sans politique de travail",
+        "manualEntryShare": "Part des saisies manuelles",
+        "manualEntryShareCaption": "{manual} h sur {total} h enregistrées sous forme de saisies manuelles",
+        "manualEntryShareNone": "Aucun travail terminé ce mois-ci pour l'instant",
+        "openInbox": "Ouvrir la boîte de réception",
+        "openPayrollReadiness": "Vérifier dans la préparation de la paie",
+        "openViolations": "Infractions aux politiques non résolues",
+        "openViolationsCaption": "Pas encore confirmées ce mois-ci",
+        "openWorkPolicies": "Vérifier dans les politiques de travail",
+        "pendingApprovals": "Approbations en attente",
+        "pendingApprovalsCaption": "{count, plural, =0 {Aucune demande d'absence} one {Dont # demande d'absence} other {Dont # demandes d'absence}}",
+        "staleLiveWork": "Sessions actives prolongées",
+        "staleLiveWorkCaption": "Employés pointés depuis plus de 24 heures",
         "teams": "Équipes",
-        "thisMonth": "Ce mois-ci",
-        "timeEntries": "Entrées de temps",
-        "totalAbsences": "Total des absences",
-        "totalTimeEntries": "Total des entrées de temps",
-        "vsLastMonth": "par rapport au mois dernier"
+        "trackingCoverage": "Couverture du suivi",
+        "trackingCoverageCaption": "{tracked} sur {expected} employés soumis à des heures requises ont enregistré du travail",
+        "trackingCoverageNone": "Personne n'a d'heures requises ce mois-ci pour le moment",
+        "trackingCoverageProgress": "Employés ayant enregistré du travail ce mois-ci",
+        "usersSignedIn": "Utilisateurs connectés",
+        "usersSignedInCaption": "Utilisateurs distincts avec une session active",
+        "vsComparison": "{change} par rapport à {days}"
       },
-      "description": "Voir les statistiques et les métriques de votre instance",
       "lastUpdated": "Dernière mise à jour",
       "loadError": "Échec du chargement des statistiques",
       "loadErrorRetry": "Rechargez la page pour réessayer.",
-      "managerDescription": "Consultez les analyses en lecture seule pour les équipes que vous gérez.",
+      "scope": {
+        "organization": "Toute l'organisation",
+        "teams": "{count, plural, =0 {Aucune équipe que vous gérez} one {# équipe que vous gérez} other {# équipes que vous gérez}}"
+      },
       "sections": {
-        "absenceBreakdown": "Répartition des absences",
-        "activityMetrics": "Métriques d'activité",
-        "coreCounts": "Comptes principaux",
-        "managedScope": "Portée de l'équipe gérée",
-        "systemHealth": "Santé du système"
+        "adoption": "Suivi de l'adoption",
+        "attention": "Nécessite une attention",
+        "thisMonth": "Ce mois-ci",
+        "workforce": "Effectif et configuration"
       },
       "title": "Statistiques"
     },

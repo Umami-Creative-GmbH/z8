@@ -5,12 +5,14 @@ import { Suspense } from "react";
 import { AbsencesViewContainer } from "@/components/absences/absences-view-container";
 import { VacationBalanceCard } from "@/components/absences/vacation-balance-card";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
+import { OnCallStatusCard } from "@/components/statutory/on-call/on-call-status-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
+import { loadEngagementKindsOfStints } from "@/lib/absences/absence-engagement";
 import { parseAbsencesUrlState } from "@/lib/absences/absences-url";
 import { hasZeroWorkingDaysSchedule } from "@/lib/absences/types";
 import {
@@ -66,13 +68,22 @@ async function AbsencesPageContent({ searchParams }: AbsencesPageProps) {
 
 	// Fetch all data in parallel
 	const [
-		{ balance: vacationBalance, configuration },
+		{ balance: vacationBalance, configuration, externalContractor },
 		{ absences, holidays },
 		categories,
 	] = await Promise.all([
 		getVacationBalanceResult(employee.id, calendarYear, timezone),
 		readAbsenceCalendarYear(employee.id, recordYear),
-		getAbsenceCategories(employee.organizationId),
+		// An External Contractor records only unavailability (#1996): the categories of every
+		// stint they had are offered; the request is decided by the stints its dates fall in.
+		loadEngagementKindsOfStints(db, {
+			organizationId: employee.organizationId,
+			employeeIds: [employee.id],
+		}).then((kinds) =>
+			getAbsenceCategories(employee.organizationId, {
+				engagementKinds: kinds.get(employee.id) ?? [employee.engagementKind],
+			}),
+		),
 	]);
 
 	return (
@@ -86,7 +97,8 @@ async function AbsencesPageContent({ searchParams }: AbsencesPageProps) {
 					</>
 				}
 			/>
-			{vacationBalance ? (
+			{/* Vacation does not apply to an External Contractor (#1996): no balance, no policy alert. */}
+			{externalContractor ? null : vacationBalance ? (
 				<VacationBalanceCard
 					balance={vacationBalance}
 					now={nowIso}
@@ -126,6 +138,8 @@ async function AbsencesPageContent({ searchParams }: AbsencesPageProps) {
 					</AlertDescription>
 				</Alert>
 			)}
+			{/* § 12 TzBfG reference hours for on-call sick leave and holidays (#1992). */}
+			<OnCallStatusCard organizationId={employee.organizationId} employeeId={employee.id} />
 			<AbsencesViewContainer
 				key={`${employee.organizationId}:${employee.id}`}
 				absences={absences}

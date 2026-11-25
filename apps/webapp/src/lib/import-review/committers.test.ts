@@ -113,6 +113,12 @@ vi.mock("@/lib/time-tracking/closed-months/store", async (importOriginal) => ({
 	assertAbsenceDaysOpen: vi.fn(async () => {}),
 	assertAbsenceOpenById: vi.fn(async () => {}),
 }));
+// The per-stint category rule (#1996) has its own PostgreSQL suites; here every day is an
+// employee day.
+vi.mock("@/lib/absences/absence-engagement", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/absences/absence-engagement")>()),
+	loadEngagementKindsOnDays: vi.fn(async () => new Set(["employee"])),
+}));
 
 vi.mock("@/db", () => ({
 	db: {

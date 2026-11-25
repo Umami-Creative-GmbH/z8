@@ -16,6 +16,10 @@
       "createCategoryButton": "Kategorie erstellen",
       "deactivate": "Deaktivieren",
       "defaults": {
+        "contractorUnavailability": {
+          "description": "Kalenderhinweis, dass ein Externer Dienstleister nicht verfügbar ist; kein Urlaub und keine Abwesenheit",
+          "name": "Nicht verfügbar (Externer Dienstleister)"
+        },
         "timeOffInLieu": {
           "description": "Vom Arbeitszeitsaldo abgezogene Abwesenheit",
           "name": "Freizeitausgleich"
@@ -32,6 +36,7 @@
         "activeHelp": "Aktive Kategorien stehen für neue Abwesenheitsanträge zur Verfügung.",
         "color": "Farbe",
         "colorHelp": "Kalendermarkierung",
+        "contractorUnavailabilityRules": "Die Nichtverfügbarkeit Externer Dienstleister ist nur eine Kalendermarkierung: Sie verbraucht nie Urlaub, Arbeitszeit oder Arbeitszeitsaldo.",
         "countsAgainstVacation": "Wird vom Urlaubsguthaben abgezogen",
         "countsAgainstVacationHelp": "Genehmigte Tage vom Urlaubsanspruch des Mitarbeiters abziehen.",
         "deputyRequired": "Vertretung erforderlich",
@@ -59,6 +64,7 @@
         "translations": "Übersetzungen",
         "translationsHelp": "Optionale lokalisierte Bezeichnungen für Mitarbeiter, die eine andere App-Sprache verwenden.",
         "type": "Typ",
+        "typeContractorUnavailability": "Nichtverfügbarkeit Externer Dienstleister",
         "typeHelp": "Gruppiert Berichte und nachgelagerte Abwesenheits-Workflows.",
         "typePlaceholder": "Kategorietyp auswählen",
         "typeTimeOffInLieu": "Freizeitausgleich"
@@ -878,6 +884,7 @@
       "setDescriptionPlaceholder": "Optionale Beschreibung für dieses Kategorienset",
       "setName": "Name",
       "setNamePlaceholder": "z. B. Reisekategorien",
+      "setNameRequired": "Name des Kategoriensets ist erforderlich",
       "setNameTaken": "Ein Kategorieset mit diesem Namen existiert bereits.",
       "setUpdated": "Kategorienset wurde aktualisiert",
       "setUpdateFailed": "Kategorienset konnte nicht aktualisiert werden",

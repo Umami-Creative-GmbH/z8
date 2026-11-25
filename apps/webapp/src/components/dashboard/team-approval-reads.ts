@@ -3,7 +3,9 @@ import "server-only";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { approvalRequest, employee as employeeTable, team } from "@/db/schema";
-import { loadPendingApprovalsForEmployee } from "@/lib/approvals/server/queries";
+import { getApprovalInboxTopItems } from "@/lib/approvals/inbox/top-items";
+import { resolveApprovalInboxViewerScope } from "@/lib/approvals/inbox/viewer-scope";
+import { getAbility } from "@/lib/auth-helpers";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { ManagerService } from "@/lib/effect/services/manager.service";
 import { currentRosterAverageWeeklyHours, currentRosterCount } from "./current-roster-queries";
@@ -12,7 +14,11 @@ import type {
 	PendingApprovalsData,
 	RecentlyApprovedData,
 } from "./dashboard-types";
+import { pendingApprovalsData } from "./pending-approvals-data";
 import { mapRecentlyApprovedRequestRows } from "./recently-approved-requests";
+
+// The inbox reads need the approval handlers registered.
+import "@/lib/approvals/init";
 
 /** Only a render or freshly authorized request can supply this employee. */
 export function loadManagedEmployeesForEmployee(
@@ -116,33 +122,28 @@ export function loadRecentlyApprovedForOrganization(organizationId: string, limi
 	});
 }
 
-/** Preserve the canonical pending-list filtering and order, but deliver only card fields. */
+const PENDING_APPROVALS_PREVIEW_LIMIT = 5;
+
+/**
+ * What waits in the viewer's Approval inbox (#1978), read through the inbox itself with its
+ * own viewer scope, so the total matches the inbox badge: every supported type, the compliance
+ * exceptions they see and their "Covering for" work. Null when they may not open the inbox.
+ */
 export async function loadPendingApprovalsForSubject(
 	subject: DashboardSubject,
-): Promise<PendingApprovalsData> {
+): Promise<PendingApprovalsData | null> {
 	if (!subject.employee) throw new Error("Employee access required");
-	const result = await loadPendingApprovalsForEmployee({
-		...subject.employee,
-		userId: subject.userId,
-	});
-	return {
-		absenceApprovals: result.absenceApprovals.map(({ id, requester, absence }) => ({
-			id,
-			requester: { user: { name: requester.user.name } },
-			absence: {
-				startDate: absence.startDate,
-				endDate: absence.endDate,
-				category: { name: absence.category.name },
-			},
-		})),
-		timeCorrectionApprovals: result.timeCorrectionApprovals.map(
-			({ id, requester, workPeriod }) => ({
-				id,
-				requester: { user: { name: requester.user.name } },
-				workPeriod: { startTime: workPeriod.startTime.toISOString() },
-			}),
+	const ability = await getAbility();
+	if (!ability) throw new Error("Approval inbox access required");
+	const scope = await resolveApprovalInboxViewerScope({ ability, employee: subject.employee });
+	if (!scope) return null;
+	// One inbox read; triage evidence only for the items that can reach the preview.
+	return pendingApprovalsData(
+		await getApprovalInboxTopItems(
+			{ ...scope, status: "pending" },
+			{ limit: PENDING_APPROVALS_PREVIEW_LIMIT },
 		),
-	};
+	);
 }
 
 export function recentlyApprovedDto(

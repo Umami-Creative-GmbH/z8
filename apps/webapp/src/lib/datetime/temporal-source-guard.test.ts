@@ -48,6 +48,8 @@ const SCHEDULE_X_GLOBAL_POLYFILL_ALLOWLIST = new Set([
 	"components/calendar/schedule-x-calendar.test.tsx",
 	"components/calendar/schedule-x-wrapper.tsx",
 	"components/scheduling/scheduler/employee-shift-schedule.tsx",
+	"components/scheduling/scheduler/schedule-x-portal-calendar.test.tsx",
+	"components/scheduling/scheduler/shift-calendar-event.test.tsx",
 	"components/scheduling/scheduler/shift-scheduler-calendar.test.tsx",
 	"components/scheduling/scheduler/shift-scheduler.tsx",
 	"lib/calendar/schedule-x-adapter.test.ts",
@@ -153,7 +155,6 @@ const PURE_LUXON_LEGACY_ALLOWLIST = [
 	"lib/wellness/actions/queries.ts",
 	"lib/wellness/actions/shared.ts",
 	"lib/wellness/streak-calculator.ts",
-	"lib/work-balance/period-aggregation.ts",
 	"lib/work-balance/periods.ts",
 	"lib/work-balance/service.ts",
 ] as const;

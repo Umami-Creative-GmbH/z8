@@ -440,6 +440,11 @@
       "workDays": "{count} iş günü",
       "workedFromHome": "{hours}s evden çalışıldı"
     },
+    "tabs": {
+      "projects": "Projeler",
+      "timeAndAbsences": "Zaman ve Devamsızlıklar",
+      "vehicles": "Araçlar"
+    },
     "title": "Çalışan Raporları",
     "toast": {
       "failedGenerate": "Rapor oluşturulamadı",

@@ -1,6 +1,8 @@
 {
   "settings": {
     "payrollExport": {
+      "connectorsDescription": "Configura i connettori di esportazione delle buste paga e le mappature dei tipi di retribuzione",
+      "connectorsTitle": "Connettori buste paga e tipi di retribuzione",
       "datev": {
         "beraternummer": "Beraternummer",
         "beraternummerTooltip": "Il tuo numero consulente DATEV (1-7 cifre)",
@@ -19,7 +21,6 @@
         "saveSuccess": "Configurazione salvata",
         "title": "Dati anagrafici DATEV"
       },
-      "description": "Esporta i periodi di lavoro verso sistemi di buste paga come DATEV o Personio",
       "expenseMappings": {
         "apiConnectors": "Personio, Workday e l'API di SuccessFactors non gestiscono i rimborsi spese.",
         "codeLabel": "{line}, voce retributiva {format}",
@@ -58,7 +59,6 @@
         "dateRange": "Intervallo di date",
         "description": "Esporta periodi di lavoro e assenze nel formato DATEV Lohn & Gehalt",
         "employees": "Dipendenti",
-        "employeesSelected": "{count} selezionati",
         "endDate": "Data di fine",
         "error": "Esportazione fallita",
         "exportButtonDatev": "Esporta in DATEV",
@@ -100,10 +100,13 @@
         "download": "Scarica esportazione",
         "downloadError": "Impossibile ottenere l'URL di download",
         "employees": "dipendenti",
+        "includesSettledDays": "Giorni saldati inclusi",
+        "loadError": "Impossibile caricare la cronologia delle esportazioni.",
         "noExports": "Nessuna esportazione ancora",
         "noExportsHint": "Avvia un'esportazione paghe nella scheda Esporta. Le esportazioni completate appariranno qui per il download.",
         "payrollRun": "{count, plural, one {Elaborazione paghe: # nota spese} other {Elaborazione paghe: # note spese}}",
         "periods": "periodi",
+        "settledDaysLeftOut": "{count, plural, one {# giorno saldato escluso} other {# giorni saldati esclusi}}",
         "status": {
           "completed": "Completato",
           "failed": "Non riuscito",
@@ -185,6 +188,7 @@
         },
         "workCategory": "Categoria lavoro"
       },
+      "openPayrollWorkspace": "Esegui esportazioni in Buste paga",
       "personio": {
         "clientId": "ID cliente",
         "clientIdHelp": "Aiuto ID cliente",
@@ -242,6 +246,9 @@
         "saveSuccess": "Configurazione salvata",
         "title": "Sage Lohn"
       },
+      "sections": {
+        "targets": "Destinazioni buste paga"
+      },
       "specialCategory": {
         "overtime": "Straordinari"
       },
@@ -278,8 +285,6 @@
       },
       "tabs": {
         "datev": "DATEV",
-        "export": "Esporta",
-        "history": "Cronologia",
         "lexware": "Lexware",
         "mappings": "Tipi di retribuzione",
         "personio": "Personio",
@@ -287,7 +292,17 @@
         "successfactors": "SAP SuccessFactors",
         "workday": "Workday"
       },
-      "title": "Esportazione buste paga",
+      "targets": {
+        "datevSubtitle": "DATEV Lohn & Gehalt (CSV)",
+        "lexwareSubtitle": "Lexware lohn+gehalt (CSV)",
+        "personioSubtitle": "Personio API",
+        "sageSubtitle": "Sage Lohn (CSV)",
+        "statusConfigured": "Configurato",
+        "statusNeedsCredentials": "Richiede credenziali",
+        "statusNotConfigured": "Non configurato",
+        "successfactorsSubtitle": "API e CSV",
+        "workdaySubtitle": "Workday API"
+      },
       "workday": {
         "apiTimeoutMs": "Timeout API (ms)",
         "batchSize": "Dimensione batch",
@@ -367,12 +382,12 @@
         "warning": "Avviso"
       },
       "description": "Verifica se un periodo di paga è pronto prima di esportare i dati relativi a orari, assenze e buste paga.",
+      "loadError": "Impossibile caricare i controlli di conformità per le buste paga dell'organizzazione.",
       "openPayrollExport": "Apri esportazione buste paga",
       "period": {
         "currentMonth": "Mese corrente",
         "navLabel": "Periodo paga",
         "previousMonth": "Mese precedente",
-        "scope": "Periodo paga: {period} (UTC)",
         "showMonth": "Mostra {month}"
       },
       "status": {

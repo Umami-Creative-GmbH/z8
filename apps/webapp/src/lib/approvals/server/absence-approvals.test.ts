@@ -27,6 +27,12 @@ vi.mock("@/lib/time-tracking/closed-months/store", async (importOriginal) => ({
 	assertAbsenceDaysOpen: vi.fn(async () => {}),
 	assertAbsenceOpenById: vi.fn(async () => {}),
 }));
+// The stints an absence's days fall in (#1996) have their own PostgreSQL suite
+// (contractor-employee-domain-exclusions); here the category fits unless a test says otherwise.
+const loadAbsenceEngagementRefusal = vi.hoisted(() =>
+	vi.fn<() => Promise<string | null>>(async () => null),
+);
+vi.mock("@/lib/absences/absence-engagement", () => ({ loadAbsenceEngagementRefusal }));
 
 // Deputy decisions read and write the acting-for record; verified against
 // PostgreSQL in deputy-decisions.integration.test.ts (#1016).
@@ -700,6 +706,36 @@ describe("finalizeAbsenceTerminalInTransaction", () => {
 				finalizedAt: parseInstant("2026-07-18T09:00:00Z"),
 			}),
 		).rejects.toThrow(/pending absence/i);
+	});
+
+	it("refuses approving an absence whose category no longer fits its stints, before writing", async () => {
+		const { finalizeAbsenceTerminalInTransaction } = await import(
+			"@/lib/approvals/server/absence-approvals"
+		);
+		const { dbService, updates } = createTerminalFinalizerDb();
+		loadAbsenceEngagementRefusal.mockResolvedValueOnce("contractor_records_unavailability_only");
+
+		await expect(
+			finalizeAbsenceTerminalInTransaction({
+				dbService,
+				organizationId: "org-1",
+				absenceId: "absence-1",
+				expectedApprovalWorkflowId: "workflow-1",
+				expectedCanonicalRecordId: "canonical-1",
+				actorEmployeeId: "emp-manager",
+				actorUserId: "user-manager",
+				transition: { kind: "approve" },
+				finalizedAt: parseInstant("2026-07-18T09:00:00Z"),
+			}),
+		).rejects.toMatchObject({
+			_tag: "ValidationError",
+			refusal: "contractor_records_unavailability_only",
+		});
+		expect(updates).toEqual([]);
+		expect(loadAbsenceEngagementRefusal).toHaveBeenCalledWith(expect.anything(), {
+			organizationId: "org-1",
+			absenceId: "absence-1",
+		});
 	});
 
 	it.each([

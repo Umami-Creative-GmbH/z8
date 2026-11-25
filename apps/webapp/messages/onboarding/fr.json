@@ -152,7 +152,6 @@
       "vacationPolicy": "Vacances",
       "welcome": "Bienvenue",
       "wellness": "Bien-être",
-      "workSchedule": "Horaire",
       "workTemplates": "Modèles"
     },
     "vacationPolicy": {
@@ -259,35 +258,6 @@
       "subtitle": "Configurez des rappels d'eau pour rester en bonne santé pendant votre journée de travail. Vous recevrez de douces notifications pour boire de l'eau pendant que vous êtes pointé.",
       "success": "Rappel d'eau activé !",
       "title": "Rester hydraté"
-    },
-    "workSchedule": {
-      "accessUnavailable": "L'accès aux horaires de travail n'a pas pu être vérifié. Passage à l'étape suivante disponible.",
-      "checkingAccess": "Vérification de l'accès aux horaires de travail",
-      "classification": "Classification du travail",
-      "classificationDesc": "Comment vous souhaitez suivre vos heures de travail.",
-      "continue": "Continuer",
-      "daily": "Quotidien",
-      "error": "Échec de la définition de l'horaire de travail",
-      "hoursPerWeek": "Heures par semaine",
-      "hoursPerWeekDesc": "Le temps plein typique est de 40 heures par semaine.",
-      "hoursPerWeekPlaceholder": "40",
-      "laterContext": "Vous pourrez revoir les politiques de travail dans les paramètres après l'intégration.",
-      "monthly": "Mensuel",
-      "policyContext": "Continuer enregistre votre progression dans l'intégration. Les politiques de travail de l'organisation restent en vigueur ; les heures et la classification saisies ici ne sont pas enregistrées dans une politique de travail.",
-      "previousAttempt": "Une demande précédente est toujours en cours de finalisation. Réessayez pour continuer.",
-      "progressSaved": "Progression de l'intégration enregistrée.",
-      "scheduleTitle": "Horaire de travail",
-      "selectClassification": "Sélectionner la classification",
-      "setupContext": "Passez en revue les heures hebdomadaires et la manière dont les heures de travail sont suivies ensemble.",
-      "skip": "Ignorer pour l'instant",
-      "skipError": "Échec de l'omission de la configuration de l'horaire de travail",
-      "subtitle": "Définissez vos heures de travail pour aider à suivre le temps et gérer les absences avec précision.",
-      "title": "Définir votre horaire de travail",
-      "validation": {
-        "hoursNegative": "Le nombre d'heures ne peut pas être négatif",
-        "hoursTooMany": "Une semaine compte au maximum 168 heures"
-      },
-      "weekly": "Hebdomadaire"
     },
     "workTemplates": {
       "cardDesc": "Créez un horaire de travail par défaut. Vous pourrez ajouter d'autres modèles plus tard dans les paramètres.",

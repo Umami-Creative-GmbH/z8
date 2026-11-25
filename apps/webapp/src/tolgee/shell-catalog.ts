@@ -22,6 +22,8 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"appSearch",
 		"common",
 		"employeeSelect",
+		// The External Contractor badge and filter of the shared pickers and rosters (#1995).
+		"engagement",
 		"errors",
 		"formerEmployees",
 		"header",
@@ -54,6 +56,7 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		// The header clock's status panel, its roster search and class evidence.
 		"drivingLicence.operational.title",
 		"drivingLicence.operational.search",
+		"drivingLicence.operational.selectEmployee",
 		"drivingLicence.operational.searchHelp",
 		"drivingLicence.operational.noEmployees",
 		"drivingLicence.operational.loadingEmployees",

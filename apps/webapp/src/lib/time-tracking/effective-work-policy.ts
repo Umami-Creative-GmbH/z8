@@ -8,9 +8,11 @@ import {
 
 /**
  * The work policy in force for an employee at `at` (employee, team, then organization
- * assignment), resolved on the shared runtime. `null` when no policy applies.
+ * assignment) as adult ArbZG rules apply it, resolved on the shared runtime: without its
+ * regulation while the employee's terms are `executive_exempt` (#1993). `null` when no policy
+ * applies.
  */
-export function readEffectiveWorkPolicyAt(input: {
+export function readAdultArbzgPolicyAt(input: {
 	organizationId: string;
 	employeeId: string;
 	at: Instant;
@@ -18,7 +20,7 @@ export function readEffectiveWorkPolicyAt(input: {
 	return runtime.runPromise(
 		Effect.gen(function* () {
 			const service = yield* WorkPolicyService;
-			return yield* service.getEffectivePolicyAt(input);
+			return yield* service.getAdultArbzgPolicyAt(input);
 		}),
 	);
 }

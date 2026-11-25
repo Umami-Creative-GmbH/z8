@@ -24,6 +24,8 @@ export interface CanonicalInboxEligibleScope {
 
 export interface CanonicalInboxListFilters {
 	teamId?: string;
+	/** Only these requesters' approvals (#1980); none for an empty list. */
+	requesterEmployeeIds?: readonly string[];
 	priority?: ApprovalInboxPriority;
 	minAgeDays?: number;
 	dateRange?: { from: Date; to: Date };

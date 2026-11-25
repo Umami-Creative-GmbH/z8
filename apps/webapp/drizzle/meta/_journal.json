@@ -2297,6 +2297,76 @@
       "when": 1812988800000,
       "tag": "0327_work_policy_v1_seal",
       "breakpoints": true
+    },
+    {
+      "idx": 328,
+      "version": "7",
+      "when": 1813075200000,
+      "tag": "0328_driving_licence_declared_classes",
+      "breakpoints": true
+    },
+    {
+      "idx": 329,
+      "version": "7",
+      "when": 1813161600000,
+      "tag": "0329_contractor_engagement_kind",
+      "breakpoints": true
+    },
+    {
+      "idx": 330,
+      "version": "7",
+      "when": 1813248000000,
+      "tag": "0330_contractor_compensation_terms",
+      "breakpoints": true
+    },
+    {
+      "idx": 331,
+      "version": "7",
+      "when": 1813334400000,
+      "tag": "0331_contractor_unavailability",
+      "breakpoints": true
+    },
+    {
+      "idx": 332,
+      "version": "7",
+      "when": 1813420800000,
+      "tag": "0332_invitation_contractor_compensation",
+      "breakpoints": true
+    },
+    {
+      "idx": 333,
+      "version": "7",
+      "when": 1813507200000,
+      "tag": "0333_statutory_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 334,
+      "version": "7",
+      "when": 1813593600000,
+      "tag": "0334_shift_assignment_changed_at",
+      "breakpoints": true
+    },
+    {
+      "idx": 335,
+      "version": "7",
+      "when": 1813680000000,
+      "tag": "0335_jarbschg_violation_types",
+      "breakpoints": true
+    },
+    {
+      "idx": 336,
+      "version": "7",
+      "when": 1813766400000,
+      "tag": "0336_working_student_daytime_band",
+      "breakpoints": true
+    },
+    {
+      "idx": 337,
+      "version": "7",
+      "when": 1813852800000,
+      "tag": "0337_jarbschg_minor_contractors",
+      "breakpoints": true
     }
   ]
 }

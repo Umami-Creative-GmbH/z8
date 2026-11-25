@@ -152,7 +152,6 @@
       "vacationPolicy": "Ferie",
       "welcome": "Velkommen",
       "wellness": "Velvære",
-      "workSchedule": "Tidsplan",
       "workTemplates": "Maler"
     },
     "vacationPolicy": {
@@ -259,35 +258,6 @@
       "subtitle": "Konfigurer vannpåminnelser for å ta vare på helsen i løpet av arbeidsdagen. Du vil motta vennlige varsler om å drikke vann mens du er stemplet inn.",
       "success": "Vannpåminnelse aktivert!",
       "title": "Hold deg hydrert"
-    },
-    "workSchedule": {
-      "accessUnavailable": "Kunne ikke kontrollere tilgang til arbeidsplan. Fortsetter til neste tilgjengelige steg.",
-      "checkingAccess": "Kontrollerer tilgang til arbeidsplan",
-      "classification": "Arbeidsklassifisering",
-      "classificationDesc": "Hvordan du vil spore arbeidstiden din.",
-      "continue": "Fortsett",
-      "daily": "Daglig",
-      "error": "Kunne ikke angi arbeidsplan",
-      "hoursPerWeek": "Timer per uke",
-      "hoursPerWeekDesc": "Vanlig fulltid er 40 timer per uke.",
-      "hoursPerWeekPlaceholder": "40",
-      "laterContext": "Du kan gå tilbake til arbeidsregler i innstillingene etter onboarding.",
-      "monthly": "Månedlig",
-      "policyContext": "Hvis du fortsetter, lagres onboarding-fremdriften din. Organisasjonens arbeidsregler forblir gjeldende; timene og klassifiseringen som oppgis her, lagres ikke i en arbeidsregel.",
-      "previousAttempt": "En tidligere forespørsel fullføres fortsatt. Prøv på nytt for å fortsette.",
-      "progressSaved": "Onboarding-fremdrift lagret.",
-      "scheduleTitle": "Arbeidsplan",
-      "selectClassification": "Velg klassifisering",
-      "setupContext": "Se gjennom ukentlige timer og hvordan arbeidstid registreres samlet.",
-      "skip": "Hopp over nå",
-      "skipError": "Kunne ikke hoppe over oppsett av arbeidsplan",
-      "subtitle": "Definer arbeidstiden din for å registrere tid og administrere fravær nøyaktig.",
-      "title": "Angi arbeidsplanen din",
-      "validation": {
-        "hoursNegative": "Timer kan ikke være negative",
-        "hoursTooMany": "En uke har maksimalt 168 timer"
-      },
-      "weekly": "Ukentlig"
     },
     "workTemplates": {
       "cardDesc": "Opprett en standard arbeidsplan. Du kan legge til flere maler senere i innstillingene.",

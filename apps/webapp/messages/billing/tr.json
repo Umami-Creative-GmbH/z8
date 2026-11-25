@@ -73,6 +73,11 @@
     "portalOpenFailed": "Faturalandırma portalı açılamadı",
     "priceSeatMonth": "€{price}/kullanıcı/ay",
     "priceSeatMonthYearly": "€{price}/kullanıcı/ay (yıllık faturalandırılır)",
+    "recovery": {
+      "billingAndSubscription": "Faturalandırma ve Abonelik",
+      "navigationLabel": "Ödeme kurtarma gezinmesi",
+      "suspensionNotice": "Askıya alma bildirimi"
+    },
     "seatBilledAnnually": "Yıllık faturalandırılan €{price}/kullanıcı",
     "seatLines": {
       "full": "Tam koltuklar",

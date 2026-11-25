@@ -1,26 +1,44 @@
-import { and, desc, eq, inArray, ne } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, ne } from "drizzle-orm";
 
 import { db } from "@/db";
 import {
 	absenceEntry,
 	approvalRequest,
 	approvalWorkflow,
+	complianceException,
 	travelExpenseClaim,
 	travelExpenseDecisionLog,
+	travelExpenseReport,
+	travelExpenseReportAdjustment,
+	travelExpenseReportCycleClosure,
+	travelExpenseReportItem,
 	workPeriod,
 } from "@/db/schema";
+import type {
+	TravelExpenseReportItemType,
+	TravelExpenseReportKind,
+} from "@/db/schema/travel-expense";
 import { readApprovalAuthoritySnapshot } from "@/lib/approvals/authority";
+import { TRAVEL_EXPENSE_REPORT_SOURCE_TYPE } from "@/lib/approvals/evidence/travel-expense-report-store";
 import { parseRequesterCancellationMarker } from "@/lib/approvals/domain-adapters/time-correction-cancellation-marker";
 import {
 	normalizeTimeCorrectionOriginalWorkMetadata,
 	normalizeTimeCorrectionWorkflowPayload,
 } from "@/lib/approvals/domain-adapters/time-correction-contract";
 import { classifyPersistedTimeApprovalRequest } from "@/lib/approvals/server/time-approval-classification";
+import { LEGACY_OBSERVATION_SYSTEM_REASONS } from "@/lib/approvals/workflow/legacy-observation-planner";
 import { mapConcurrently } from "@/lib/async/map-concurrently";
 import { instantFromDB } from "@/lib/datetime/drizzle-adapter";
-import { compareInstants, instantFromDate, parseInstant } from "@/lib/datetime/temporal-core";
+import {
+	compareInstants,
+	type Instant,
+	instantFromDate,
+	parseInstant,
+} from "@/lib/datetime/temporal-core";
 
+import { needsFix } from "./needs-fix";
 import type {
+	ComplianceExceptionKind,
 	SelfServiceRequestAction,
 	SelfServiceRequestCounts,
 	SelfServiceRequestFilters,
@@ -36,6 +54,10 @@ interface GetSelfServiceRequestsInput {
 	organizationId: string;
 	filters?: SelfServiceRequestFilters;
 	now?: Date;
+	/** The request sources to read; every source when omitted. */
+	sources?: readonly SelfServiceRequestSourceType[];
+	/** The zone the viewer reads request dates and compliance exception windows in. */
+	timeZone: string;
 }
 
 type SourceLoadResult =
@@ -107,10 +129,50 @@ interface TravelExpenseRow {
 	}>;
 }
 
+interface ExpenseReportRow {
+	id: string;
+	organizationId: string;
+	employeeId: string;
+	kind: TravelExpenseReportKind;
+	status: "draft" | "submitted" | "returned" | "approved" | "rejected";
+	tripPurpose: string | null;
+	tripStartDate: string | null;
+	tripEndDate: string | null;
+	submissionCount: number;
+	submittedAt: Date | null;
+	decidedAt: Date | null;
+	createdAt: Date;
+}
+
+interface StandaloneExpenseRow {
+	organizationId: string;
+	reportId: string;
+	type: TravelExpenseReportItemType;
+	description: string | null;
+	mileageRoute: string | null;
+}
+
+interface ComplianceExceptionRow {
+	id: string;
+	organizationId: string;
+	employeeId: string;
+	exceptionType: ComplianceExceptionKind;
+	status: "pending" | "approved" | "rejected" | "expired" | "used";
+	plannedDurationMinutes: number | null;
+	validFrom: Date;
+	validUntil: Date;
+	approvedAt: Date | null;
+	rejectedAt: Date | null;
+	rejectionReason: string | null;
+	createdAt: Date;
+}
+
 const SOURCE_ERROR_MESSAGES: Record<SelfServiceRequestSourceType, string> = {
 	time_correction: "Time correction requests could not be loaded.",
 	absence: "Absence requests could not be loaded.",
-	travel_expense: "Travel expense requests could not be loaded.",
+	travel_expense: "Earlier claims could not be loaded.",
+	travel_expense_report: "Expense reports could not be loaded.",
+	compliance_exception: "Compliance exceptions could not be loaded.",
 };
 
 const SOURCE_QUERY_LIMIT = 100;
@@ -119,18 +181,24 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 export async function getSelfServiceRequests(
 	input: GetSelfServiceRequestsInput,
 ): Promise<SelfServiceRequestResult> {
-	const sourceResults = await Promise.all([
-		loadSource("time_correction", () => loadTimeCorrections(input)),
-		loadSource("absence", () => loadAbsences(input)),
-		loadSource("travel_expense", () => loadTravelExpenses(input)),
-	]);
+	const loaders: Record<SelfServiceRequestSourceType, () => Promise<SelfServiceRequestItem[]>> = {
+		time_correction: () => loadTimeCorrections(input),
+		absence: () => loadAbsences(input),
+		travel_expense: () => loadTravelExpenses(input),
+		travel_expense_report: () => loadExpenseReports(input),
+		compliance_exception: () => loadComplianceExceptions(input),
+	};
+	const sources = input.sources ?? (Object.keys(loaders) as SelfServiceRequestSourceType[]);
+	const sourceResults = await Promise.all(
+		sources.map((sourceType) => loadSource(sourceType, loaders[sourceType])),
+	);
 
 	const allItems = sourceResults.flatMap((result) => result.items);
 	const sourceErrors = sourceResults.flatMap((result) => result.sourceErrors);
 	const counts = countItems(allItems, input.now ?? new Date());
 	const items = applyFilters(allItems, input.filters).sort(compareItems);
 
-	return { items, counts, sourceErrors };
+	return { items, counts, sourceErrors, timeZone: input.timeZone };
 }
 
 async function loadSource(
@@ -420,9 +488,17 @@ function parseLegacyTimeCorrectionMetadata(row: TimeCorrectionRow): {
 	}
 }
 
+/**
+ * A canonical workflow's reason as the employee reads it: the reasons the legacy mirror wrote
+ * itself (a rejection or cancellation fallback, not a person's words) are none.
+ */
+function employeeFacingWorkflowReason(reason: string | null): string | null {
+	return reason !== null && LEGACY_OBSERVATION_SYSTEM_REASONS.has(reason) ? null : reason;
+}
+
 function mapCanonicalTimeCorrection(
 	row: CanonicalTimeCorrectionRow,
-	input: GetSelfServiceRequestsInput,
+	input: Pick<GetSelfServiceRequestsInput, "organizationId" | "employeeId">,
 ): SelfServiceRequestItem[] {
 	if (
 		row.organizationId !== input.organizationId ||
@@ -472,7 +548,7 @@ function mapCanonicalTimeCorrection(
 				resolvedAt: status === "cancelled" ? row.cancelledAt : row.completedAt,
 				title: display.title,
 				subtitle: display.subtitle,
-				decisionReason: row.decisionReason,
+				decisionReason: employeeFacingWorkflowReason(row.decisionReason),
 				availableActions: actionsFor(status, "time_correction"),
 				sourceHref: "/time-tracking",
 			},
@@ -707,11 +783,355 @@ async function loadTravelExpenses(
 				title: "travel_expense",
 				subtitle: travelExpenseSubtitle(row),
 				decisionReason: latestDecisionLog?.reason ?? latestDecisionLog?.comment ?? null,
-				availableActions: actionsFor(status),
-				sourceHref: "/travel-expenses",
+				// An earlier claim is read-only once decided: a rejection is final, never a fix.
+				availableActions: ["view"],
+				sourceHref: `/travel-expenses/${row.id}`,
+				details: { kind: "earlier_claim", claimType: row.type },
 			},
 		];
 	});
+}
+
+/**
+ * The employee's expense reports once submitted, each named by its trip purpose or its expense's
+ * description or route. An adjustment report copies its original's purpose and dates, so it also
+ * names the report it adjusts. A returned report waits for the employee's fix and carries the
+ * reviewer's return note; a rejected one is final, with the rejection reason. Withdrawal stays on
+ * the report page, so no request here offers cancellation.
+ */
+async function loadExpenseReports(
+	input: GetSelfServiceRequestsInput,
+): Promise<SelfServiceRequestItem[]> {
+	const rows = (
+		(await db.query.travelExpenseReport.findMany({
+			where: and(
+				eq(travelExpenseReport.organizationId, input.organizationId),
+				eq(travelExpenseReport.employeeId, input.employeeId),
+				ne(travelExpenseReport.status, "draft"),
+			),
+			orderBy: [desc(travelExpenseReport.createdAt)],
+			limit: SOURCE_QUERY_LIMIT,
+		})) as ExpenseReportRow[]
+	).filter(
+		(row) =>
+			row.status !== "draft" &&
+			row.organizationId === input.organizationId &&
+			row.employeeId === input.employeeId,
+	);
+	const [returnNotes, rejectionReasons, standaloneExpenses, adjustmentLinks] = await Promise.all([
+		loadReturnNotes(input.organizationId, rows),
+		loadReportRejectionReasons(input.organizationId, rows),
+		loadStandaloneExpenses(input.organizationId, rows),
+		loadAdjustmentLinks(input.organizationId, rows),
+	]);
+	const adjustmentOf = await nameAdjustedReports(input, rows, standaloneExpenses, adjustmentLinks);
+
+	return rows.map((row) => {
+		const status = mapExpenseReportStatus(row.status);
+		const expense = standaloneExpenses.get(row.id);
+		const adjusted = adjustmentOf.get(row.id);
+		return {
+			id: `travel_expense_report:${row.id}`,
+			sourceType: "travel_expense_report",
+			sourceId: row.id,
+			organizationId: row.organizationId,
+			employeeId: row.employeeId,
+			status,
+			submittedAt: row.submittedAt ?? row.createdAt,
+			resolvedAt: row.decidedAt,
+			title: expenseReportTitle(row, expense),
+			subtitle: expenseReportSubtitle(row),
+			details: {
+				kind: "expense_report",
+				reportKind: row.kind,
+				itemType: row.kind === "standalone" ? (expense?.type ?? null) : null,
+				...(adjusted ? { adjustmentOf: adjusted } : {}),
+			},
+			decisionReason:
+				status === "returned"
+					? (returnNotes.get(row.id) ?? null)
+					: status === "rejected"
+						? (rejectionReasons.get(row.id) ?? null)
+						: null,
+			availableActions: status === "returned" ? ["fix", "view"] : ["view"],
+			sourceHref: `/travel-expenses/reports/${row.id}`,
+		};
+	});
+}
+
+/** A report's name: its trip purpose, or its (only) expense's description or route; "" if none. */
+function expenseReportTitle(row: ExpenseReportRow, expense: StandaloneExpenseRow | undefined) {
+	return (
+		(row.kind === "trip"
+			? row.tripPurpose?.trim()
+			: expense?.description?.trim() || expense?.mileageRoute?.trim()) || ""
+	);
+}
+
+/** Which of these reports are adjustment reports (#615), mapped to the report each adjusts. */
+async function loadAdjustmentLinks(organizationId: string, rows: ExpenseReportRow[]) {
+	const links = new Map<string, string>();
+	if (rows.length === 0) return links;
+	const adjustments = (await db.query.travelExpenseReportAdjustment.findMany({
+		columns: { organizationId: true, reportId: true, originalReportId: true },
+		where: and(
+			eq(travelExpenseReportAdjustment.organizationId, organizationId),
+			inArray(
+				travelExpenseReportAdjustment.reportId,
+				rows.map((row) => row.id),
+			),
+		),
+	})) as Array<{ organizationId: string; reportId: string; originalReportId: string }>;
+	for (const adjustment of adjustments) {
+		if (adjustment.organizationId !== organizationId) continue;
+		links.set(adjustment.reportId, adjustment.originalReportId);
+	}
+	return links;
+}
+
+/**
+ * The report each adjustment adjusts, named as that report is. An original beyond the listed
+ * reports is read by id, still only among the employee's own; one that cannot be read, or has no
+ * name, is named null.
+ */
+async function nameAdjustedReports(
+	input: GetSelfServiceRequestsInput,
+	rows: ExpenseReportRow[],
+	standaloneExpenses: Map<string, StandaloneExpenseRow>,
+	links: Map<string, string>,
+) {
+	const adjusted = new Map<string, { reportId: string; title: string | null }>();
+	if (links.size === 0) return adjusted;
+	const reports = new Map(rows.map((row) => [row.id, row]));
+	const expenses = new Map(standaloneExpenses);
+	const unlisted = [...new Set(links.values())].filter((id) => !reports.has(id));
+	if (unlisted.length > 0) {
+		const originals = (
+			(await db.query.travelExpenseReport.findMany({
+				where: and(
+					eq(travelExpenseReport.organizationId, input.organizationId),
+					eq(travelExpenseReport.employeeId, input.employeeId),
+					inArray(travelExpenseReport.id, unlisted),
+				),
+			})) as ExpenseReportRow[]
+		).filter(
+			(row) => row.organizationId === input.organizationId && row.employeeId === input.employeeId,
+		);
+		for (const original of originals) reports.set(original.id, original);
+		for (const [id, expense] of await loadStandaloneExpenses(input.organizationId, originals)) {
+			expenses.set(id, expense);
+		}
+	}
+	for (const [reportId, originalReportId] of links) {
+		const original = reports.get(originalReportId);
+		adjusted.set(reportId, {
+			reportId: originalReportId,
+			title: original ? expenseReportTitle(original, expenses.get(original.id)) || null : null,
+		});
+	}
+	return adjusted;
+}
+
+/** Closures that send a report back to its employee with a reviewer's note. */
+const NOTED_CLOSURE_KINDS = ["returned", "reopened"] as const;
+
+/**
+ * The reviewer's note on each returned report's current submission cycle: a reviewer returned
+ * it, or an approver reopened its approval for correction (both leave the report "returned").
+ */
+async function loadReturnNotes(organizationId: string, rows: ExpenseReportRow[]) {
+	const returned = rows.filter((row) => row.status === "returned");
+	const notes = new Map<string, string>();
+	if (returned.length === 0) return notes;
+	const closures = await db.query.travelExpenseReportCycleClosure.findMany({
+		where: and(
+			eq(travelExpenseReportCycleClosure.organizationId, organizationId),
+			inArray(travelExpenseReportCycleClosure.kind, [...NOTED_CLOSURE_KINDS]),
+			inArray(
+				travelExpenseReportCycleClosure.reportId,
+				returned.map((row) => row.id),
+			),
+		),
+	});
+	for (const row of returned) {
+		const closure = closures.find(
+			(candidate) =>
+				candidate.organizationId === organizationId &&
+				candidate.reportId === row.id &&
+				(NOTED_CLOSURE_KINDS as readonly string[]).includes(candidate.kind) &&
+				candidate.submissionCycle === row.submissionCount,
+		);
+		if (closure?.note) notes.set(row.id, closure.note);
+	}
+	return notes;
+}
+
+/**
+ * The reason of the final rejection behind each rejected report. Returning a cycle also marks its
+ * approval request rejected, with the return note as its reason; those requests are named by the
+ * cycle's closure and skipped, so a final rejection without a reason shows none.
+ */
+async function loadReportRejectionReasons(organizationId: string, rows: ExpenseReportRow[]) {
+	const rejected = rows.filter((row) => row.status === "rejected");
+	const reasons = new Map<string, string>();
+	if (rejected.length === 0) return reasons;
+	const reportIds = rejected.map((row) => row.id);
+	const [requests, closures] = await Promise.all([
+		db.query.approvalRequest.findMany({
+			where: and(
+				eq(approvalRequest.organizationId, organizationId),
+				eq(approvalRequest.entityType, TRAVEL_EXPENSE_REPORT_SOURCE_TYPE),
+				eq(approvalRequest.status, "rejected"),
+				inArray(approvalRequest.entityId, reportIds),
+			),
+			orderBy: [desc(approvalRequest.createdAt)],
+		}) as Promise<
+			Array<{
+				id: string;
+				organizationId: string;
+				entityType: string;
+				entityId: string;
+				status: string;
+				rejectionReason: string | null;
+			}>
+		>,
+		db.query.travelExpenseReportCycleClosure.findMany({
+			where: and(
+				eq(travelExpenseReportCycleClosure.organizationId, organizationId),
+				inArray(travelExpenseReportCycleClosure.reportId, reportIds),
+			),
+		}),
+	]);
+	const closedRequestIds = new Set(
+		closures
+			.filter((closure) => closure.organizationId === organizationId)
+			.map((closure) => closure.approvalRequestId),
+	);
+	const decided = new Set<string>();
+	for (const request of requests) {
+		if (
+			request.organizationId !== organizationId ||
+			request.entityType !== TRAVEL_EXPENSE_REPORT_SOURCE_TYPE ||
+			request.status !== "rejected" ||
+			closedRequestIds.has(request.id) ||
+			decided.has(request.entityId)
+		) {
+			continue;
+		}
+		decided.add(request.entityId);
+		if (request.rejectionReason) reasons.set(request.entityId, request.rejectionReason);
+	}
+	return reasons;
+}
+
+/**
+ * The employee's ArbZG compliance exceptions, view-only: they are requested and used from time
+ * tracking. A used exception shows as the approval it was; an expired one passed its 24-hour
+ * window undecided. The window is shown in the viewer's time zone.
+ */
+async function loadComplianceExceptions(
+	input: GetSelfServiceRequestsInput,
+): Promise<SelfServiceRequestItem[]> {
+	const rows = (
+		(await db.query.complianceException.findMany({
+			where: and(
+				eq(complianceException.organizationId, input.organizationId),
+				eq(complianceException.employeeId, input.employeeId),
+			),
+			orderBy: [desc(complianceException.createdAt)],
+			limit: SOURCE_QUERY_LIMIT,
+		})) as ComplianceExceptionRow[]
+	).filter(
+		(row) => row.organizationId === input.organizationId && row.employeeId === input.employeeId,
+	);
+	if (rows.length === 0) return [];
+	const now = instantFromDate(input.now ?? new Date());
+
+	return rows.map((row) => {
+		const status = complianceExceptionStatus(row, now);
+		return {
+			id: `compliance_exception:${row.id}`,
+			sourceType: "compliance_exception",
+			sourceId: row.id,
+			organizationId: row.organizationId,
+			employeeId: row.employeeId,
+			status,
+			submittedAt: row.createdAt,
+			resolvedAt:
+				status === "approved" ? row.approvedAt : status === "rejected" ? row.rejectedAt : null,
+			title: row.exceptionType,
+			subtitle: "",
+			decisionReason: status === "rejected" ? row.rejectionReason : null,
+			availableActions: ["view"],
+			sourceHref: "/time-tracking",
+			details: {
+				kind: "compliance_exception",
+				exceptionType: row.exceptionType,
+				plannedDurationMinutes: row.plannedDurationMinutes,
+				validFrom: row.validFrom,
+				validUntil: row.validUntil,
+				timeZone: input.timeZone,
+			},
+		};
+	});
+}
+
+/**
+ * A used exception was approved first. A pending one whose window has passed can no longer be
+ * decided: it reads as expired even before anything persists that status.
+ */
+function complianceExceptionStatus(
+	row: ComplianceExceptionRow,
+	now: Instant,
+): SelfServiceRequestStatus {
+	if (row.status === "used") return "approved";
+	if (row.status === "pending" && compareInstants(instantFromDate(row.validUntil), now) <= 0) {
+		return "expired";
+	}
+	return row.status;
+}
+
+function mapExpenseReportStatus(status: ExpenseReportRow["status"]): SelfServiceRequestStatus {
+	return status === "submitted" || status === "draft" ? "pending" : status;
+}
+
+/**
+ * The trip's stored calendar dates ("YYYY-MM-DD to YYYY-MM-DD"), or the one it has, as
+ * `formatPlainDateRange` shows them; empty without either or for a standalone report.
+ */
+function expenseReportSubtitle(row: ExpenseReportRow): string {
+	if (row.tripStartDate && row.tripEndDate) return `${row.tripStartDate} to ${row.tripEndDate}`;
+	return row.tripStartDate ?? row.tripEndDate ?? "";
+}
+
+/** The (only) expense of each standalone report, which names it: its type, description or route. */
+async function loadStandaloneExpenses(organizationId: string, rows: ExpenseReportRow[]) {
+	const standalone = rows.filter((row) => row.kind === "standalone");
+	const expenses = new Map<string, StandaloneExpenseRow>();
+	if (standalone.length === 0) return expenses;
+	const items = (await db.query.travelExpenseReportItem.findMany({
+		columns: {
+			organizationId: true,
+			reportId: true,
+			position: true,
+			type: true,
+			description: true,
+			mileageRoute: true,
+		},
+		where: and(
+			eq(travelExpenseReportItem.organizationId, organizationId),
+			inArray(
+				travelExpenseReportItem.reportId,
+				standalone.map((row) => row.id),
+			),
+		),
+		orderBy: [asc(travelExpenseReportItem.position)],
+	})) as StandaloneExpenseRow[];
+	for (const item of items) {
+		if (item.organizationId !== organizationId || expenses.has(item.reportId)) continue;
+		expenses.set(item.reportId, item);
+	}
+	return expenses;
 }
 
 function absenceResolvedAt(row: AbsenceRow): Date | null {
@@ -760,11 +1180,14 @@ function countItems(items: SelfServiceRequestItem[], now: Date): SelfServiceRequ
 
 	return {
 		pending: items.filter((item) => item.status === "pending").length,
-		requiredFixes: items.filter(
-			(item) => item.status === "rejected" && item.availableActions.includes("fix"),
-		).length,
+		requiredFixes: items.filter(needsFix).length,
+		// A rejection that needs a fix is counted, and shown, as a required fix only.
 		recentDecisions: items.filter((item) => {
-			if ((item.status !== "approved" && item.status !== "rejected") || item.resolvedAt === null) {
+			if (
+				(item.status !== "approved" && item.status !== "rejected") ||
+				item.resolvedAt === null ||
+				needsFix(item)
+			) {
 				return false;
 			}
 
@@ -804,7 +1227,7 @@ function applyFilters(
 }
 
 function compareItems(a: SelfServiceRequestItem, b: SelfServiceRequestItem): number {
-	const statusDelta = statusRank(a.status) - statusRank(b.status);
+	const statusDelta = statusRank(a) - statusRank(b);
 
 	if (statusDelta !== 0) {
 		return statusDelta;
@@ -813,12 +1236,13 @@ function compareItems(a: SelfServiceRequestItem, b: SelfServiceRequestItem): num
 	return relevantDate(b).getTime() - relevantDate(a).getTime();
 }
 
-function statusRank(status: SelfServiceRequestStatus): number {
-	if (status === "rejected") {
+/** Work the employee must fix first, then requests in review, then every final decision. */
+function statusRank(item: SelfServiceRequestItem): number {
+	if (needsFix(item)) {
 		return 0;
 	}
 
-	if (status === "pending") {
+	if (item.status === "pending") {
 		return 1;
 	}
 

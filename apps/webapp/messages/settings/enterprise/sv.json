@@ -246,15 +246,27 @@
         "regenerateTokenFailed": "Kunde inte generera ny token",
         "regenerateTokenSuccess": "Ny verifieringstoken genererad",
         "regenerating": "Genererar ny…",
+        "registration": "Registrering",
+        "registrationHelp": "Tillåt nya personer att skapa ett konto här. När det är inaktiverat kan endast personer med en inbjudan registrera sig.",
+        "routingInstruction": "För en underdomän lägger du till en CNAME-post som pekar {domain} mot {target}. För en apex-domän lägger du till en A-post som pekar mot IP-adressen för Z8-lastbalanseraren. Inaktivera CDN-proxy för denna post.",
         "saveConfiguration": "Spara konfiguration",
         "secretKey": "Hemlig nyckel",
         "secretKeyPlaceholder": "Ange hemlig nyckel",
         "secretKeyRequired": "Krävs när en webbplatsnyckel anges",
+        "signInMethods": "Inloggningsmetoder",
         "siteKey": "Webbplatsnyckel",
         "socialProviders": "Sociala leverantörer",
         "socialProvidersHelp": "Aktivera sociala inloggningsalternativ för denna domän",
         "sso": "Enkel inloggning (SSO)",
+        "ssoButtonIcon": "Ikon för SSO-knapp",
+        "ssoButtonLabel": "Etikett för SSO-knapp (valfritt)",
         "ssoHelp": "Tillåt OIDC-baserad företagsinloggning",
+        "ssoIconBadge": "ID-bricka",
+        "ssoIconFingerprint": "Fingeravtryck",
+        "ssoIconKey": "Nyckel",
+        "ssoIconLock": "Lås",
+        "ssoIconShield": "Sköld",
+        "ssoUnavailableHelp": "Konfigurera och verifiera en SSO-leverantör under Identitetskonfiguration först.",
         "status": {
           "pending": "Väntar på verifiering",
           "verified": "Verifierad"
@@ -337,65 +349,30 @@
       "enableProviderHelp": "Aktivera eller inaktivera denna leverantör",
       "identity": {
         "accessPolicy": {
-          "action": {
-            "save": "Spara åtkomstpolicy"
-          },
-          "defaultRoleTemplate": "Standardrollmall",
-          "description": "Ställ in krav för domän, inbjudningar och SSO efter att pilottestet har godkänts.",
           "noDefaultTemplate": "Ingen standardmall",
           "placeholder": {
             "roleTemplate": "Välj rollmall"
           },
           "requireSso": "Kräv SSO",
-          "requireSsoHelp": "Anställda måste använda företagets IdP.",
           "restrictDomain": "Begränsa till verifierad domän",
-          "restrictDomainHelp": "Blockera konton utanför den valda domänen.",
-          "restrictInvites": "Begränsa inbjudningar",
-          "restrictInvitesHelp": "Tillåt endast inbjudningar som överensstämmer med åtkomstpolicyn.",
-          "title": "Åtkomstpolicy"
-        },
-        "badge": {
-          "now": "Nu",
-          "queued": "I kö",
-          "ready": "Redo"
+          "restrictInvites": "Begränsa inbjudningar"
         },
         "domain": {
-          "action": {
-            "checkStatus": "Kontrollera domänstatus"
-          },
-          "description": "Validera klientorganisationens gräns innan SSO tillämpas för anställda.",
-          "help": "DNS-verifiering använder befintliga åtgärder för SSO-domänverifiering. Slutför den verifieringen innan kravet aktiveras.",
-          "notSelected": "Inte vald",
           "selected": "Vald domän",
           "status": {
-            "pending": "Väntar",
             "verified": "Verifierad"
-          },
-          "title": "Domän"
+          }
         },
-        "hero": {
-          "title": "Checklista för operativa kommandon"
-        },
-        "progress": "{completed} av {total} steg slutförda",
         "provider": {
-          "action": {
-            "save": "Spara leverantör"
-          },
-          "description": "Välj förinställning för identitetsleverantör, protokoll, leverantörs-ID och e-postdomän.",
           "error": {
             "domainRequired": "Domän krävs",
             "providerIdRequired": "Leverantörs-ID krävs"
           },
           "label": {
-            "domain": "E-postdomän",
-            "preset": "Förinställning för leverantör",
-            "protocol": "Protokoll",
             "providerId": "Leverantörs-ID"
           },
           "placeholder": {
             "domain": "t.ex. example.com…",
-            "protocol": "Välj protokoll",
-            "provider": "Välj leverantör",
             "providerId": "t.ex. acme-okta…"
           },
           "preset": {
@@ -411,28 +388,14 @@
             "okta": {
               "description": "Använd Okta Workforce Identity för enkel inloggning med SAML eller OIDC."
             }
-          },
-          "title": "Leverantör"
-        },
-        "rail": {
-          "title": "Beredskapsfält"
+          }
         },
         "review": {
           "action": {
             "activate": "Aktivera företagsidentitet"
           },
-          "activationSummary": "Aktiveringssammanfattning",
-          "description": "Granska skyddade aktiveringskontroller innan du aktiverar företagsidentitetskontroller.",
           "lockoutWarning": "Varning för utelåsning av nuvarande administratör",
-          "lockoutWarningHelp": "Bekräfta att ditt nuvarande administratörskonto kan logga in via den konfigurerade leverantören före aktivering. Tillämpning kan blockera reservinloggning med lösenord för den valda domänen.",
-          "missingRequirement": "{item} krävs före aktivering",
-          "prerequisitesComplete": "Förutsättningarna för leverantör, verifierad domän och SSO-test är uppfyllda.",
-          "requirement": {
-            "domain": "Verifierad domän",
-            "provider": "Leverantör",
-            "ssoTest": "SSO-test"
-          },
-          "title": "Granska och aktivera"
+          "lockoutWarningHelp": "Bekräfta att ditt nuvarande administratörskonto kan logga in via den konfigurerade leverantören före aktivering. Tillämpning kan blockera reservinloggning med lösenord för den valda domänen."
         },
         "scim": {
           "action": {
@@ -500,7 +463,6 @@
             "rotating": "roterar",
             "verified": "verifierad"
           },
-          "title": "SCIM-provisionering",
           "toast": {
             "createError": "Det gick inte att skapa SCIM-anslutningen.",
             "reconcileError": "Det gick inte att stämma av SCIM-skapandet.",
@@ -510,14 +472,9 @@
           },
           "verification": "Verifiering",
           "verification.awaiting": "Väntar på leverantörsanvändning",
-          "verification.observed": "Observerad",
-          "wizardDescription": "Konfigurera hanterad användarprovisionering utan att ändra företagsaktiveringen."
+          "verification.observed": "Observerad"
         },
         "sso": {
-          "action": {
-            "register": "Registrera SSO-leverantör"
-          },
-          "description": "Registrera den externa identitetsleverantören med OIDC-klientuppgifter eller SAML-metadata.",
           "error": {
             "saveProviderFirst": "Spara leverantör och domän innan du registrerar SSO"
           },
@@ -535,53 +492,19 @@
               "okta": "https://acme.okta.com…"
             },
             "metadata": "Klistra in IdP-metadata-XML…"
-          },
-          "saml": {
-            "acsPath": "Webbläsarrelativ ACS-sökväg: {path}",
-            "acsUrl": "Konfigurera din IdP med denna URL för Assertion Consumer Service (ACS): {path}"
-          },
-          "title": "SSO-konfiguration"
+          }
         },
         "ssoTest": {
-          "action": {
-            "recordFail": "Registrera underkänt",
-            "recordPass": "Registrera godkänt"
-          },
           "defaultFailure": "Skarpt SSO-test misslyckades",
-          "description": "Registrera resultatet av ett skarpt externt SSO-test innan kravställning.",
           "error": {
             "saveProviderFirst": "Spara leverantören innan du registrerar ett test"
           },
-          "label": {
-            "email": "E-postadress för testanvändare",
-            "failureNote": "Anteckning om misslyckande"
-          },
           "status": {
-            "failed": "Misslyckades",
-            "notRun": "Ej körd",
-            "passed": "Godkänd"
-          },
-          "title": "Testanvändare"
+            "notRun": "Ej körd"
+          }
         },
         "status": {
-          "activated": "Aktiverad",
-          "draft": "Utkast"
-        },
-        "step": {
-          "accessPolicy": "Åtkomstpolicy",
-          "accessPolicy.description": "Ange tillämpningsregler",
-          "domain": "Domän",
-          "domain.description": "Bekräfta klientorganisationens gräns",
-          "provider": "Leverantör",
-          "provider.description": "Välj identitetskälla",
-          "review": "Granska och aktivera",
-          "review.description": "Säkra aktiveringen",
-          "scim": "SCIM-provisionering",
-          "scim.description": "Anslut och hantera din SCIM-etableringsanslutning",
-          "sso": "SSO-konfiguration",
-          "sso.description": "Registrera OIDC eller SAML",
-          "ssoTest": "Testanvändare",
-          "ssoTest.description": "Registrera resultat för live-inloggning"
+          "activated": "Aktiverad"
         },
         "toast": {
           "accessPolicyFailed": "Det gick inte att spara åtkomstpolicyn",
@@ -589,7 +512,6 @@
           "activated": "Konfiguration av företagsidentitet har aktiverats",
           "activateFailed": "Det gick inte att aktivera konfigurationen",
           "domainStatusFailed": "Det gick inte att uppdatera domänstatusen",
-          "domainStatusRefreshed": "Domänstatus uppdaterad",
           "providerSaved": "Identitetsleverantör sparad",
           "providerSaveFailed": "Det gick inte att spara leverantören",
           "ssoRegistered": "SSO-leverantör registrerad",
@@ -597,6 +519,171 @@
           "ssoTestFailed": "SSO-test markerat som misslyckat",
           "ssoTestPassed": "SSO-test markerat som godkänt",
           "ssoTestRecordFailed": "Det gick inte att registrera SSO-test"
+        },
+        "wizard": {
+          "accessPolicy": {
+            "description": "Bestäm hur strikt företagsinloggning ska tillämpas. Inget ändras för anställda förrän du aktiverar konfigurationen i det sista steget.",
+            "domainsLink": "Öppna domäner",
+            "legend": "Aktivera reglerna du behöver. Alla är valfria.",
+            "nav": "Åtkomstregler",
+            "requireSsoDomains": "Detta kräver också att {domain} läggs till och verifieras under Domäner.",
+            "requireSsoHelp": "Personer med en @{domain}-e-postadress måste logga in via {provider} istället för att använda ett lösenord.",
+            "restrictDomainHelp": "Inbjudningskoder kan endast lösas in av personer med en @{domain}-e-postadress.",
+            "restrictInvitesHelp": "Inbjudningar kan endast skickas till @{domain}-e-postadresser.",
+            "save": "Spara och fortsätt",
+            "title": "Välj åtkomstregler"
+          },
+          "action": {
+            "back": "Tillbaka",
+            "next": "Nästa: {step}",
+            "skip": "Hoppa till {step}"
+          },
+          "activeNotice": "Företagsinloggning är aktiv för {domain}. Du kan granska varje steg nedan.",
+          "description": "Låt anställda logga in på Z8 med sitt arbetskonto från företagets identitetsleverantör. Dina framsteg sparas efter varje steg, så du kan pausa och komma tillbaka när som helst.",
+          "domain": {
+            "continue": "Fortsätt för att testa inloggning",
+            "copyName": "Kopiera namn",
+            "copyValue": "Kopiera värde",
+            "create": "Skapa DNS-post",
+            "createHelp": "Z8 genererar ett unikt värde som du kan publicera. Om du redan har skapat ett under SSO-leverantörer kan du hoppa till det sista steget.",
+            "description": "Lägg till en DNS-post för att bevisa att ditt företag kontrollerar denna domän. Endast verifierade domäner kan använda företagsinloggning.",
+            "fallbackName": "din domän",
+            "fullNameHint": "Om din DNS-leverantör ber om det fullständiga namnet använder du {fullName}.",
+            "nav": "Verifiera domän",
+            "needsConnection": "Anslut din identitetsleverantör först. Z8 skapar DNS-posten för den anslutningen.",
+            "notVerified": "Inte verifierad ännu",
+            "publishHelp": "Logga in hos din DNS-leverantör, såsom Cloudflare, GoDaddy eller IONOS, och lägg till en ny TXT-post exakt som visas. Om någon annan hanterar din domän skickar du dessa värden till dem.",
+            "recordName": "Namn (kallas även värd)",
+            "recordType": "Typ",
+            "recordValue": "Värde (kallas även innehåll)",
+            "stepCreate": "Skapa DNS-posten",
+            "stepPublish": "Lägg till den där din domän hanteras",
+            "stepVerify": "Låt Z8 kontrollera posten",
+            "title": "Verifiera att du äger {domain}",
+            "toast": {
+              "notFound": "Z8 kunde inte hitta DNS-posten ännu. Kontrollera namnet och värdet och försök sedan igen om några minuter.",
+              "verified": "Domän verifierad"
+            },
+            "verifiedHelp": "Z8 hittade din DNS-post. Du kan låta den ligga kvar.",
+            "verify": "Verifiera domän",
+            "verifyHelp": "Nya poster visas vanligtvis inom några minuter, men det kan ta upp till 48 timmar. Du kan lämna den här sidan och kontrollera igen senare."
+          },
+          "nav": {
+            "label": "Konfigurationssteg"
+          },
+          "prerequisite": {
+            "action": "Gå till {step}",
+            "title": "Ett steg kvar först"
+          },
+          "progress": "{completed} av {total} obligatoriska steg slutförda",
+          "progressLabel": "Konfigurationsförlopp",
+          "provider": {
+            "changeWarning": "Den här leverantören är redan ansluten. Om du ändrar leverantörs-ID eller e-postdomän måste du ansluta och verifiera igen.",
+            "description": "Berätta för Z8 vilken tjänst ditt företag använder för arbetskonton och vilken e-postdomän dina anställda har.",
+            "domainHelp": "Anställda vars e-postadress slutar med denna domän kommer att logga in via din leverantör.",
+            "domainInvalid": "Ange endast delen efter @, till exempel example.com.",
+            "domainLabel": "Jobb-e-postdomän",
+            "genericName": "din identitetsleverantör",
+            "nav": "Identitetsleverantör",
+            "oidc": "OpenID Connect (rekommenderas)",
+            "oidcHelp": "Går snabbare att konfigurera och stöds av de flesta leverantörer. Välj detta om du är osäker.",
+            "prepAdmin": "Administratörsåtkomst till din identitetsleverantör, såsom Okta eller Microsoft Entra ID",
+            "prepDns": "Åtkomst till din domäns DNS-inställningar för att lägga till en TXT-post",
+            "prepIntro": "Konfigurationen tar cirka 15 minuter. Ha följande redo:",
+            "prepTester": "En kollegas arbetskonto, eller ett testkonto, för att prova att logga in",
+            "prepTitle": "Innan du börjar",
+            "presetLegend": "Vilken identitetsleverantör använder ditt företag?",
+            "protocolLegend": "Hur ska Z8 ansluta?",
+            "providerIdHelp": "Ett kort namn för den här anslutningen som används i inloggningslänkar. Gemener, siffror och bindestreck, till exempel acme-okta.",
+            "providerIdInvalid": "Använd endast gemener, siffror och bindestreck, utan bindestreck i början eller slutet.",
+            "saml": "SAML 2.0",
+            "samlHelp": "Använd detta om ditt IT-team kräver SAML. Du klistrar in en XML-metadatafil.",
+            "save": "Spara och fortsätt",
+            "singleProtocol": "{provider} ansluter med OpenID Connect (OIDC).",
+            "title": "Välj din identitetsleverantör"
+          },
+          "review": {
+            "blocked": "Slutför stegen märkta ”Att göra” för att aktivera. Anslutning, domänverifiering och ett godkänt inloggningstest krävs.",
+            "checklist": "Checklista",
+            "description": "Kontrollera konfigurationen och aktivera sedan företagsinloggning.",
+            "nav": "Aktivera",
+            "noRules": "Inga regler aktiverade",
+            "notSet": "Inte angivet",
+            "open": "Öppna steg",
+            "provider": "Identitetsleverantör",
+            "ready": "Allt som krävs är klart. Du kan aktivera nu.",
+            "reapply": "Redan aktiv. Aktivera igen efter att ha ändrat åtkomstregler för att tillämpa dem.",
+            "rules": "Åtkomstregler",
+            "scim": "Användarsynkronisering (SCIM)",
+            "scimOff": "Inte konfigurerat",
+            "scimOn": "Ansluten",
+            "summary": "Dina inställningar",
+            "test": "Inloggningstest",
+            "title": "Granska och aktivera"
+          },
+          "scim": {
+            "description": "Låt {provider} skapa, uppdatera och inaktivera Z8-konton åt dig med SCIM. Du kan hoppa över detta och konfigurera det senare.",
+            "nav": "Synkronisera användare",
+            "roleHelp": "Välj en rollmall innan du skapar anslutningen. Nya konton startar med denna roll.",
+            "roleLabel": "Roll för personer som skapas av din leverantör",
+            "skipHelp": "Hoppa över detta steg om din leverantör inte stöder SCIM eller om du föredrar att lägga till personer i Z8 själv. Medarbetare kan fortfarande logga in med företagsinloggning.",
+            "title": "Synkronisera användare automatiskt"
+          },
+          "sso": {
+            "acsLabel": "ACS-URL",
+            "clientIdHelp": "Kallas även applikations-ID.",
+            "clientIdRequired": "Ange klient-ID.",
+            "clientSecretHelp": "Lagras säkert och visas aldrig igen.",
+            "clientSecretRequired": "Ange klienthemligheten.",
+            "connected": "Ansluten som {providerId}",
+            "connectedHelp": "För att ändra anslutningsuppgifterna tar du bort denna leverantör under SSO-leverantörer och ansluter den igen här.",
+            "continue": "Fortsätt till domänverifiering",
+            "copyAcs": "Kopiera ACS-URL",
+            "description": "Skapa en app för Z8 i {provider} och klistra sedan in uppgifterna du får här.",
+            "issuerHelp": "Webbadressen som identifierar din leverantör. Den visas i appens inställningar och börjar med https://.",
+            "issuerRequired": "Ange utfärdar-URL från din leverantör.",
+            "manageLink": "Öppna SSO-leverantörer",
+            "metadataRequired": "Klistra in metadata-XML från din leverantör.",
+            "nav": "Anslut",
+            "needsProvider": "Välj din identitetsleverantör och e-postdomän först, så att Z8 kan förbereda anslutningsuppgifterna.",
+            "partOne": "Skapa en app för Z8 i {provider}",
+            "partTwo": "Klistra in uppgifterna från {provider}",
+            "samlIntro": "Skapa en SAML-app i {provider} och ange den här adressen som Assertion Consumer Service (ACS) eller svars-URL. Ladda sedan ned appens metadata-XML.",
+            "save": "Anslut leverantör",
+            "title": "Anslut {provider} till Z8"
+          },
+          "ssoTest": {
+            "description": "Innan du aktiverar något bör du bekräfta att en anställd faktiskt kan logga in via {provider}.",
+            "domainFirst": "{domain} har inte verifierats än. Inloggning via din leverantör kanske inte fungerar förrän detta är gjort.",
+            "emailHelp": "Helst en kollegas konto snarare än ditt eget administratörskonto.",
+            "emailLabel": "E-postadress som användes för testet",
+            "failed": "Det senaste testet misslyckades",
+            "failedHelp": "Vanliga orsaker: callback-URL:en matchar inte exakt, klienthemligheten är felaktig eller har gått ut, eller så har testanvändaren inte tilldelats appen i {provider}.",
+            "goToDomain": "Verifiera domän",
+            "howPrivate": "Öppna ett privat fönster eller inkognitofönster i webbläsaren. Låt det här fönstret vara öppet, så att du förblir inloggad som administratör om något går fel.",
+            "howRecord": "Gå tillbaka hit och registrera om det fungerade.",
+            "howSignIn": "Gå till inloggningssidan för Z8 och logga in med en arbets-e-postadress som slutar med @{domain}.",
+            "howTitle": "Så här testar du",
+            "nav": "Testa inloggning",
+            "needsConnection": "Anslut din identitetsleverantör innan du testar inloggningen.",
+            "noteLabel": "Vad gick fel? (endast om det misslyckades)",
+            "notePlaceholder": "Till exempel felmeddelandet du såg…",
+            "passed": "Inloggningen fungerade för {email}",
+            "recordFail": "Inloggningen misslyckades",
+            "recordPass": "Inloggningen fungerade",
+            "recordTitle": "Registrera resultatet",
+            "selfReported": "Z8 kan inte se detta test, så resultatet sparas så som du rapporterar det. Att spara leverantören och verifiera DNS bevisar inte att inloggningen fungerar.",
+            "title": "Testa inloggningen med ett riktigt konto"
+          },
+          "status": {
+            "done": "Klar",
+            "inProgress": "Pågår",
+            "notActive": "Inte aktiv än",
+            "optional": "Valfritt",
+            "toDo": "Att göra"
+          },
+          "stepOf": "Steg {current} av {total}",
+          "title": "Konfigurera företagsinloggning"
         }
       },
       "keepExistingSecretHelp": "Lämna tomt för att behålla den befintliga hemligheten",
@@ -648,6 +735,9 @@
         "addError": "Kunde inte lägga till SSO-leverantör",
         "addSuccess": "SSO-leverantör har lagts till",
         "addTitle": "Lägg till SSO-leverantör",
+        "copyError": "Kunde inte kopiera till urklipp",
+        "copyIssuerUrl": "Kopiera utfärdar-URL",
+        "copyProviderId": "Kopiera leverantörs-ID",
         "deleteConfirm": "Ta bort leverantör",
         "deleteDialogDescription": "Är du säker på att du vill ta bort den här SSO-leverantören? Användare kommer inte längre att kunna logga in med denna identitetsleverantör.",
         "deleteDialogTitleNamed": "Vill du ta bort SSO-leverantören {provider}?",
@@ -655,6 +745,16 @@
         "deleteProviderAria": "Ta bort SSO-leverantör {provider}",
         "deleteSuccess": "SSO-leverantör har tagits bort",
         "description": "Lägg till OIDC-identitetsleverantörer för att aktivera SSO för din organisation.",
+        "dns": {
+          "copyFqdn": "Kopiera fullständigt kvalificerat namn",
+          "copyHost": "Kopiera postnamn",
+          "copyValue": "Kopiera TXT-token",
+          "description": "Skapa posten hos din DNS-leverantör för {domain} och välj sedan Verifiera. Det kan ta några minuter för DNS-ändringarna att spridas.",
+          "fqdnHint": "Om din DNS-leverantör förväntar sig det fullständigt kvalificerade namnet, använd:",
+          "noToken": "Generera en TXT-token för att se DNS-posten som bevisar att du äger denna domän.",
+          "title": "Lägg till den här TXT-posten i din DNS",
+          "type": "Typ"
+        },
         "domainInvalid": "Ange en giltig domän (t.ex. example.com)",
         "domainVerified": "Domänen har verifierats",
         "emailDomain": "E-postdomän",
@@ -673,7 +773,6 @@
           "copyCallback": "Kopiera callback-URL",
           "copyFailed": "Åtkomst till urklipp misslyckades. Markera och kopiera texten manuellt.",
           "domainPending": "Domänen är inte verifierad",
-          "domainStatus": "Domänverifiering",
           "domainVerified": "Domänen är verifierad",
           "entra": {
             "clientHelp": "Kopiera Program-ID (klient-ID) från Översikt, inte Objekt-ID.",
@@ -743,7 +842,6 @@
           },
           "manual": "Annan leverantör / manuell OIDC",
           "manualAvailable": "Använder du en annan leverantör? Välj manuell OIDC-konfiguration i konfigurationspanelen.",
-          "manualTestHelp": "Detta är ett inloggningsresultat som rapporterats av en administratör, inte ett automatiskt verifierat anslutningstest. Gör en testinloggning med en avsedd användare i en separat webbläsarsession, håll denna administratörssession öppen och registrera sedan om det lyckades eller misslyckades här. Att spara leverantören och verifiera DNS bevisar inte att inloggningen fungerar.",
           "openSetup": "Öppna Guidad konfiguration",
           "provider": "Identitetsleverantör",
           "required": "Det här fältet är obligatoriskt.",
@@ -755,10 +853,10 @@
         "providerId": "Leverantörs-ID",
         "providerIdHelp": "En unik identifierare för denna leverantör (gemener, inga mellanslag)",
         "providerIdInvalid": "Leverantörs-ID får endast innehålla gemener, siffror och bindestreck",
+        "regenerateToken": "Generera ny TXT-token",
         "title": "Identitetsleverantörer",
         "tokenError": "Kunde inte generera domänverifieringstoken",
         "tokenGenerated": "Verifieringstoken har genererats",
-        "txtToken": "TXT-token:",
         "validUrlRequired": "Ange en giltig URL",
         "verify": "Verifiera",
         "verifyError": "Domänverifieringen misslyckades. Kontrollera din DNS TXT-post och försök igen."

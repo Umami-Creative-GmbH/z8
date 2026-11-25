@@ -43,6 +43,15 @@ export enum AuditAction {
 	EMPLOYEE_PERSONNEL_NUMBER_DROPPED = "employee.personnel_number_dropped",
 	/** A former employee regained a membership but stays off the roster, so joining discarded the invitation draft (#1665). */
 	EMPLOYEE_INVITATION_DRAFT_NOT_APPLIED = "employee.invitation_draft_not_applied",
+	/** A contractor invitation's planned engagement end was not scheduled as planned when they joined (#1995). */
+	EMPLOYEE_PLANNED_ENGAGEMENT_END_NOT_APPLIED = "employee.planned_engagement_end_not_applied",
+	/** A contractor invitation's first compensation terms were not written when they joined (#1935). */
+	EMPLOYEE_INVITATION_CONTRACTOR_TERMS_NOT_APPLIED = "employee.invitation_contractor_terms_not_applied",
+	/** An External Contractor's compensation terms were set or ended from a date (#1998). */
+	CONTRACTOR_TERMS_SET = "employee.contractor_terms_set",
+	CONTRACTOR_TERMS_ENDED = "employee.contractor_terms_ended",
+	/** An External Contractor's company, VAT ID or PO reference changed (#1998). */
+	CONTRACTOR_DETAILS_UPDATED = "employee.contractor_details_updated",
 
 	// Organization Operations
 	ORGANIZATION_CREATED = "organization.created",
@@ -104,6 +113,10 @@ export enum AuditAction {
 	TRAVEL_EXPENSE_PAYROLL_RUN_REPORT_REMOVED = "travel_expense.payroll_run_report_removed",
 	// #853: a payroll run confirmed as paid recorded the report's reimbursement.
 	TRAVEL_EXPENSE_PAYROLL_RUN_REPORT_CONFIRMED = "travel_expense.payroll_run_report_confirmed",
+
+	// German statutory compliance (#2017): an org admin changed the organization's statutory
+	// preferences (warning tiers, JArbSchG publish block, working-student daytime band).
+	STATUTORY_PREFERENCES_UPDATED = "statutory.preferences_updated",
 
 	// Approval Escalation Management
 	APPROVAL_ESCALATION_POLICY_UPDATED = "approval_escalation.policy_updated",

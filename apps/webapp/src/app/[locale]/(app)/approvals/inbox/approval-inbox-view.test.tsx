@@ -1,0 +1,1017 @@
+import type { ApprovalFastLaneReview } from "@/lib/approvals/inbox/fast-lane-review";
+/* @vitest-environment jsdom */
+
+import {
+	act,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
+import { isValidElement } from "react";
+import { hydrateRoot, type Root } from "react-dom/client";
+import { renderToString } from "react-dom/server";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type {
+	ApprovalInboxItem,
+	ApprovalInboxListResult,
+	ApprovalInboxType,
+} from "@/lib/approvals/inbox/types";
+
+const {
+	approvalInboxMock,
+	bulkApproveMutateAsyncMock,
+	bulkRejectMutateAsyncMock,
+	approveMutateAsyncMock,
+	rejectMutateAsyncMock,
+	refetchMock,
+	toastErrorMock,
+	toastSuccessMock,
+	translateMock,
+} = vi.hoisted(() => ({
+	approvalInboxMock: vi.fn(),
+	bulkApproveMutateAsyncMock: vi.fn(),
+	bulkRejectMutateAsyncMock: vi.fn(),
+	approveMutateAsyncMock: vi.fn(),
+	rejectMutateAsyncMock: vi.fn(),
+	refetchMock: vi.fn(),
+	toastErrorMock: vi.fn(),
+	toastSuccessMock: vi.fn(),
+	translateMock: vi.fn(),
+}));
+
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({
+		t: translateMock,
+	}),
+}));
+
+vi.mock("sonner", () => ({
+	toast: {
+		error: toastErrorMock,
+		success: toastSuccessMock,
+	},
+}));
+
+vi.mock("./components/approval-inbox-toolbar", () => ({
+	ApprovalInboxToolbar: ({
+		filters,
+		onFiltersChange,
+		onSelectAll,
+		supportedTypes,
+		totalCount,
+	}: {
+		filters: { status?: string; search?: string };
+		onFiltersChange: (filters: { status?: string; search?: string }) => void;
+		onSelectAll: (checked: boolean) => void;
+		supportedTypes: ApprovalInboxType[];
+		totalCount: number;
+	}) => (
+		<div>
+			<span>{totalCount} pending</span>
+			<button type="button" onClick={() => onSelectAll(true)}>
+				Select All
+			</button>
+			<button
+				type="button"
+				onClick={() => onFiltersChange({ ...filters, search: "avery" })}
+			>
+				Search Avery
+			</button>
+			{supportedTypes.map((type) => (
+				<span key={type}>
+					{
+						{
+							absence_entry: "Absence Requests",
+							time_entry: "Time Corrections",
+							travel_expense_claim: "Travel Expenses",
+						}[type]
+					}
+				</span>
+			))}
+		</div>
+	),
+}));
+
+vi.mock("./components/approval-inbox-table", () => ({
+	ApprovalInboxTable: ({ items }: { items: ApprovalInboxItem[] }) => (
+		<div>
+			{items.length === 0
+				? "No pending requests"
+				: items.map((item) => (
+						<div key={item.id}>
+							<span>{item.requester.name}</span>
+							<span>{item.triage.explanation}</span>
+						</div>
+					))}
+		</div>
+	),
+}));
+
+vi.mock("./components/approval-detail-panel", () => ({
+	ApprovalDetailPanel: () => null,
+}));
+
+vi.mock("./components/approval-fast-lanes", () => ({
+	ApprovalFastLanes: ({
+		groups,
+		onBulkApprove,
+	}: {
+		groups: Array<{
+			key: ApprovalInboxFastLaneGroup;
+			items: ApprovalInboxItem[];
+		}>;
+		onBulkApprove: (
+			approvalIds: string[],
+			review: ApprovalFastLaneReview,
+		) => void;
+	}) => (
+		<div>
+			{groups.map((group) => (
+				<button
+					key={group.key}
+					type="button"
+					onClick={() =>
+						onBulkApprove(
+							group.items.map((item) => item.id),
+							{
+								group: group.key,
+								reviewedContexts: Object.fromEntries(
+									group.items.map((item) => [
+										item.id,
+										item.triage.context ?? null,
+									]),
+								),
+							},
+						)
+					}
+				>
+					Approve Low-risk absences
+				</button>
+			))}
+		</div>
+	),
+}));
+
+vi.mock("@/components/ui/button", () => ({
+	Button: ({
+		children,
+		...props
+	}: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
+		<button {...props}>{children}</button>
+	),
+}));
+
+vi.mock("@/components/ui/card", () => ({
+	Card: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+	CardContent: ({ children }: { children: React.ReactNode }) => (
+		<div>{children}</div>
+	),
+	CardDescription: ({ children }: { children: React.ReactNode }) => (
+		<div>{children}</div>
+	),
+	CardHeader: ({ children }: { children: React.ReactNode }) => (
+		<div>{children}</div>
+	),
+	CardTitle: ({ children }: { children: React.ReactNode }) => (
+		<div>{children}</div>
+	),
+}));
+
+vi.mock("@/components/ui/dialog", () => ({
+	Dialog: ({ children, open }: { children: React.ReactNode; open: boolean }) =>
+		open ? <div>{children}</div> : null,
+	DialogContent: ({ children }: { children: React.ReactNode }) => (
+		<div>{children}</div>
+	),
+	DialogDescription: ({ children }: { children: React.ReactNode }) => (
+		<div>{children}</div>
+	),
+	DialogFooter: ({ children }: { children: React.ReactNode }) => (
+		<div>{children}</div>
+	),
+	DialogHeader: ({ children }: { children: React.ReactNode }) => (
+		<div>{children}</div>
+	),
+	DialogTitle: ({ children }: { children: React.ReactNode }) => (
+		<div>{children}</div>
+	),
+}));
+
+vi.mock("@/components/ui/skeleton", () => ({
+	Skeleton: () => <div>loading</div>,
+}));
+
+vi.mock("@/components/ui/textarea", () => ({
+	Textarea: (props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) => (
+		<textarea {...props} />
+	),
+}));
+
+vi.mock("@/lib/query/use-approval-inbox", () => ({
+	useApprovalInbox: approvalInboxMock,
+	useBulkApprove: vi.fn(() => ({
+		isPending: false,
+		mutateAsync: bulkApproveMutateAsyncMock,
+	})),
+	useBulkReject: vi.fn(() => ({
+		isPending: false,
+		mutateAsync: bulkRejectMutateAsyncMock,
+	})),
+	useApproveApproval: vi.fn(() => ({
+		isPending: false,
+		mutateAsync: approveMutateAsyncMock,
+	})),
+	useRejectApproval: vi.fn(() => ({
+		isPending: false,
+		mutateAsync: rejectMutateAsyncMock,
+	})),
+}));
+
+import { ApprovalInboxView as ApprovalInboxPage } from "./approval-inbox-view";
+
+function makeApprovalInboxItem(
+	overrides: Partial<ApprovalInboxItem> = {},
+): ApprovalInboxItem {
+	return {
+		id: "approval-1",
+		type: "absence_entry",
+		entityId: "absence-1",
+		status: "pending",
+		requester: {
+			id: "employee-1",
+			name: "Avery Employee",
+			email: "avery@example.com",
+			image: null,
+			teamId: "team-1",
+		},
+		summary: {
+			title: "Vacation request",
+			subtitle: "Jun 3-4",
+			detail: "2 days away",
+			badge: null,
+		},
+		timing: {
+			createdAt: "2026-05-30T08:00:00.000Z",
+			resolvedAt: null,
+			slaDeadline: null,
+			ageDays: 1,
+		},
+		triage: {
+			requestKind: "absence",
+			context: {
+				organizationId: "org-1",
+				requestId: "approval-1",
+				entityId: "absence-1",
+				revision: "revision-1",
+				scope: "submitted_request",
+			},
+			priority: "normal",
+			riskLevel: "low",
+			riskReasons: ["no_conflicts_detected"],
+			fastLaneGroup: "low_risk_absence",
+			isPayrollRelevant: false,
+			explanation: "No conflicts detected.",
+		},
+		capabilities: {
+			canApprove: true,
+			canReject: true,
+			canBulkApprove: true,
+			requiresRejectReason: true,
+		},
+		...overrides,
+	};
+}
+
+function makeApprovalInboxPage(
+	items: ApprovalInboxItem[] = [makeApprovalInboxItem()],
+	overrides: Partial<ApprovalInboxListResult> = {},
+): ApprovalInboxListResult {
+	return {
+		items,
+		total: items.length,
+		counts: {
+			absence_entry: items.filter((item) => item.type === "absence_entry")
+				.length,
+			time_entry: items.filter((item) => item.type === "time_entry").length,
+			travel_expense_claim: items.filter(
+				(item) => item.type === "travel_expense_claim",
+			).length,
+		},
+		supportedTypes: ["absence_entry", "time_entry", "travel_expense_claim"],
+		warnings: [],
+		hasMore: false,
+		nextCursor: null,
+		...overrides,
+	};
+}
+
+describe("ApprovalInboxPage", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		translateMock.mockImplementation(
+			(_key: string, defaultValue?: string) => defaultValue ?? _key,
+		);
+		approvalInboxMock.mockReturnValue({
+			data: {
+				pages: [makeApprovalInboxPage()],
+			},
+			isLoading: false,
+			isError: false,
+			error: null,
+			isFetching: false,
+			fetchNextPage: vi.fn(),
+			hasNextPage: false,
+			isFetchingNextPage: false,
+			refetch: refetchMock,
+		});
+		bulkApproveMutateAsyncMock.mockResolvedValue({ succeeded: [], failed: [] });
+		bulkRejectMutateAsyncMock.mockResolvedValue({
+			succeeded: [],
+			failed: [],
+		});
+		approveMutateAsyncMock.mockResolvedValue({ success: true });
+		rejectMutateAsyncMock.mockResolvedValue({ success: true });
+	});
+
+	it("provides an accessible toolbar, table, and detail shell while URL state loads", () => {
+		translateMock.mockImplementation((key: string, defaultValue?: string) =>
+			key === "approvals:approvals.loadingInbox"
+				? "Posteingang wird geladen"
+				: (defaultValue ?? key),
+		);
+		const page = ApprovalInboxPage();
+		if (!isValidElement<{ fallback: React.ReactNode }>(page)) {
+			throw new Error("Expected ApprovalInboxPage to return a React element");
+		}
+
+		render(page.props.fallback);
+
+		expect(
+			screen.getByRole("status", { name: "Posteingang wird geladen" }),
+		).toBeTruthy();
+		expect(translateMock).toHaveBeenCalledWith(
+			"approvals:approvals.loadingInbox",
+			"Loading approval inbox",
+		);
+		expect(screen.getByTestId("approval-toolbar-loading")).toBeTruthy();
+		expect(screen.getByTestId("approval-table-loading")).toBeTruthy();
+		expect(screen.getByTestId("approval-detail-loading")).toBeTruthy();
+		expect(screen.queryByText(/avery|employee|request/i)).toBeNull();
+	});
+
+	it("renders new inbox contract content and supported type filters", () => {
+		render(<ApprovalInboxPage />);
+
+		expect(screen.getByText("Approval Inbox")).toBeTruthy();
+		expect(screen.getByText("Avery Employee")).toBeTruthy();
+		expect(screen.getByText("No conflicts detected.")).toBeTruthy();
+		expect(screen.queryByText("Shift Requests")).toBeNull();
+	});
+
+	it("renders an explicit inbox error state when the inbox query fails", () => {
+		approvalInboxMock.mockReturnValue({
+			data: undefined,
+			isLoading: false,
+			isError: true,
+			error: new Error("Employee not found"),
+			isFetching: false,
+			fetchNextPage: vi.fn(),
+			hasNextPage: false,
+			isFetchingNextPage: false,
+			refetch: refetchMock,
+		});
+
+		render(<ApprovalInboxPage />);
+
+		expect(screen.getByText("Unable to load approval inbox")).toBeTruthy();
+		expect(screen.getByText("Employee not found")).toBeTruthy();
+		expect(screen.queryByText("No pending requests")).toBeNull();
+	});
+
+	it("uses the shared app page spacing shell", () => {
+		const { container } = render(<ApprovalInboxPage />);
+
+		expect(container.firstElementChild?.className).toContain(
+			"@container/main page-frame flex flex-1 flex-col gap-6",
+		);
+		expect(
+			container.querySelectorAll(":scope > div > .px-4.lg\\:px-6"),
+		).toHaveLength(0);
+	});
+
+	it("keeps the first hydrated render consistent when client query data is already cached", async () => {
+		approvalInboxMock
+			.mockReturnValueOnce({
+				data: undefined,
+				isLoading: true,
+				isError: false,
+				error: null,
+				isFetching: true,
+				fetchNextPage: vi.fn(),
+				hasNextPage: false,
+				isFetchingNextPage: false,
+				refetch: refetchMock,
+			})
+			.mockReturnValue({
+				data: {
+					pages: [makeApprovalInboxPage()],
+				},
+				isLoading: false,
+				isError: false,
+				error: null,
+				isFetching: false,
+				fetchNextPage: vi.fn(),
+				hasNextPage: false,
+				isFetchingNextPage: false,
+				refetch: refetchMock,
+			});
+
+		const container = document.createElement("div");
+		container.innerHTML = renderToString(<ApprovalInboxPage />);
+		document.body.appendChild(container);
+		const onRecoverableError = vi.fn();
+		let root: Root | null = null;
+
+		try {
+			await act(async () => {
+				root = hydrateRoot(container, <ApprovalInboxPage />, {
+					onRecoverableError,
+				});
+			});
+
+			await waitFor(() => {
+				expect(screen.getByText("Approval Inbox")).toBeTruthy();
+			});
+			expect(onRecoverableError).not.toHaveBeenCalled();
+		} finally {
+			root?.unmount();
+			container.remove();
+		}
+	});
+
+	it("shows a toast when bulk approve throws instead of leaving an uncaught rejection", async () => {
+		bulkApproveMutateAsyncMock.mockRejectedValue(
+			new Error("Bulk approve failed"),
+		);
+
+		render(<ApprovalInboxPage />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Select All" }));
+		fireEvent.click(screen.getByRole("button", { name: /Approve Selected/ }));
+
+		await waitFor(() => {
+			expect(toastErrorMock).toHaveBeenCalledWith("Bulk approve failed");
+		});
+		expect(refetchMock).not.toHaveBeenCalled();
+		expect(
+			screen.getByRole("button", { name: /Approve Selected/ }),
+		).toBeTruthy();
+	});
+
+	it("handles bulk reject partial success through the page dialog flow", async () => {
+		bulkRejectMutateAsyncMock.mockResolvedValue({
+			succeeded: [
+				{ id: "approval-1", type: "travel_expense_claim", status: "rejected" },
+			],
+			failed: [{ id: "approval-2", code: "stale", message: "Already handled" }],
+		});
+		translateMock.mockImplementation(
+			(_key: string, defaultValue?: string, params?: { count?: number }) =>
+				(defaultValue ?? _key).replace(
+					/\{count, plural, one \{# ([^}]+)\} other \{# ([^}]+)\}\}/,
+					(_match, one: string, other: string) =>
+						`${params?.count} ${params?.count === 1 ? one : other}`,
+				),
+		);
+
+		render(<ApprovalInboxPage />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Select All" }));
+		fireEvent.click(screen.getByRole("button", { name: /Reject Selected/ }));
+		fireEvent.change(screen.getByLabelText("Reason for rejection"), {
+			target: { value: "Missing receipt" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Confirm Rejection" }));
+
+		await waitFor(() => {
+			expect(bulkRejectMutateAsyncMock).toHaveBeenCalledWith({
+				approvalIds: ["approval-1"],
+				reason: "Missing receipt",
+			});
+			expect(toastSuccessMock).toHaveBeenCalledWith("1 request rejected");
+			expect(toastErrorMock).toHaveBeenCalledWith(
+				"1 request failed\nAlready handled",
+			);
+		});
+		expect(refetchMock).toHaveBeenCalled();
+	});
+
+	it("bulk approve selected approvals only sends selected items eligible for bulk approval", async () => {
+		approvalInboxMock.mockReturnValue({
+			data: {
+				pages: [
+					makeApprovalInboxPage([
+						makeApprovalInboxItem({ id: "approval-1" }),
+						makeApprovalInboxItem({
+							id: "approval-2",
+							requester: {
+								id: "employee-2",
+								name: "Morgan Manager",
+								email: "morgan@example.com",
+								image: null,
+								teamId: "team-1",
+							},
+							capabilities: {
+								canApprove: true,
+								canReject: true,
+								canBulkApprove: false,
+								requiresRejectReason: true,
+							},
+						}),
+						makeApprovalInboxItem({
+							id: "approval-3",
+							requester: {
+								id: "employee-3",
+								name: "Riley Reviewer",
+								email: "riley@example.com",
+								image: null,
+								teamId: "team-1",
+							},
+							capabilities: {
+								canApprove: false,
+								canReject: true,
+								canBulkApprove: true,
+								requiresRejectReason: true,
+							},
+						}),
+					]),
+				],
+			},
+			isLoading: false,
+			isError: false,
+			error: null,
+			isFetching: false,
+			fetchNextPage: vi.fn(),
+			hasNextPage: false,
+			isFetchingNextPage: false,
+			refetch: refetchMock,
+		});
+
+		render(<ApprovalInboxPage />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Select All" }));
+		fireEvent.click(screen.getByRole("button", { name: /Approve Selected/ }));
+
+		await waitFor(() => {
+			expect(bulkApproveMutateAsyncMock).toHaveBeenCalledWith(["approval-1"]);
+		});
+	});
+
+	it("bulk approve selected approvals ignores duplicate rapid submissions while in flight", async () => {
+		let resolveApproval: (value: { succeeded: []; failed: [] }) => void = () =>
+			undefined;
+		bulkApproveMutateAsyncMock.mockImplementation(
+			() =>
+				new Promise((resolve) => {
+					resolveApproval = resolve;
+				}),
+		);
+
+		render(<ApprovalInboxPage />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Select All" }));
+		const approveButton = screen.getByRole("button", {
+			name: /Approve Selected/,
+		});
+		fireEvent.click(approveButton);
+		fireEvent.click(approveButton);
+
+		expect(bulkApproveMutateAsyncMock).toHaveBeenCalledTimes(1);
+
+		resolveApproval({ succeeded: [], failed: [] });
+
+		await waitFor(() => expect(refetchMock).toHaveBeenCalled());
+	});
+
+	it("bulk approve selected approvals no-ops when no selected items are eligible", () => {
+		approvalInboxMock.mockReturnValue({
+			data: {
+				pages: [
+					makeApprovalInboxPage([
+						makeApprovalInboxItem({
+							capabilities: {
+								canApprove: false,
+								canReject: true,
+								canBulkApprove: true,
+								requiresRejectReason: true,
+							},
+						}),
+					]),
+				],
+			},
+			isLoading: false,
+			isError: false,
+			error: null,
+			isFetching: false,
+			fetchNextPage: vi.fn(),
+			hasNextPage: false,
+			isFetchingNextPage: false,
+			refetch: refetchMock,
+		});
+
+		render(<ApprovalInboxPage />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Select All" }));
+		const approveButton = screen.getByRole("button", {
+			name: /Approve Selected/,
+		});
+		expect(approveButton).toHaveProperty("disabled", true);
+
+		fireEvent.click(approveButton);
+
+		expect(bulkApproveMutateAsyncMock).not.toHaveBeenCalled();
+	});
+
+	it("bulk reject selected approvals only sends selected items eligible for rejection", async () => {
+		approvalInboxMock.mockReturnValue({
+			data: {
+				pages: [
+					makeApprovalInboxPage([
+						makeApprovalInboxItem({ id: "approval-1" }),
+						makeApprovalInboxItem({
+							id: "approval-2",
+							requester: {
+								id: "employee-2",
+								name: "Morgan Manager",
+								email: "morgan@example.com",
+								image: null,
+								teamId: "team-1",
+							},
+							capabilities: {
+								canApprove: true,
+								canReject: false,
+								canBulkApprove: true,
+								requiresRejectReason: true,
+							},
+						}),
+					]),
+				],
+			},
+			isLoading: false,
+			isError: false,
+			error: null,
+			isFetching: false,
+			fetchNextPage: vi.fn(),
+			hasNextPage: false,
+			isFetchingNextPage: false,
+			refetch: refetchMock,
+		});
+
+		render(<ApprovalInboxPage />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Select All" }));
+		fireEvent.click(screen.getByRole("button", { name: /Reject Selected/ }));
+		fireEvent.change(screen.getByLabelText("Reason for rejection"), {
+			target: { value: "Missing receipt" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Confirm Rejection" }));
+
+		await waitFor(() => {
+			expect(bulkRejectMutateAsyncMock).toHaveBeenCalledWith({
+				approvalIds: ["approval-1"],
+				reason: "Missing receipt",
+			});
+		});
+	});
+
+	it("select all leaves out the viewer's own requests (#686)", () => {
+		approvalInboxMock.mockReturnValue({
+			data: {
+				pages: [
+					makeApprovalInboxPage([
+						makeApprovalInboxItem({ id: "approval-1" }),
+						makeApprovalInboxItem({
+							id: "own-approval",
+							capabilities: {
+								canApprove: false,
+								canReject: false,
+								canBulkApprove: false,
+								requiresRejectReason: true,
+								ownRequest: true,
+							},
+						}),
+					]),
+				],
+			},
+			isLoading: false,
+			isError: false,
+			error: null,
+			isFetching: false,
+			fetchNextPage: vi.fn(),
+			hasNextPage: false,
+			isFetchingNextPage: false,
+			refetch: refetchMock,
+		});
+
+		render(<ApprovalInboxPage />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Select All" }));
+
+		expect(
+			screen.getByRole("button", { name: /Approve Selected \(\s*1\s*\)/ }),
+		).toBeTruthy();
+	});
+
+	it("bulk reject selected approvals no-ops when no selected items are eligible", () => {
+		approvalInboxMock.mockReturnValue({
+			data: {
+				pages: [
+					makeApprovalInboxPage([
+						makeApprovalInboxItem({
+							capabilities: {
+								canApprove: true,
+								canReject: false,
+								canBulkApprove: true,
+								requiresRejectReason: true,
+							},
+						}),
+					]),
+				],
+			},
+			isLoading: false,
+			isError: false,
+			error: null,
+			isFetching: false,
+			fetchNextPage: vi.fn(),
+			hasNextPage: false,
+			isFetchingNextPage: false,
+			refetch: refetchMock,
+		});
+
+		render(<ApprovalInboxPage />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Select All" }));
+		const rejectButton = screen.getByRole("button", {
+			name: /Reject Selected/,
+		});
+		expect(rejectButton).toHaveProperty("disabled", true);
+
+		fireEvent.click(rejectButton);
+
+		expect(screen.queryByLabelText("Reason for rejection")).toBeNull();
+		expect(bulkRejectMutateAsyncMock).not.toHaveBeenCalled();
+	});
+
+	it("clears the full selection after a fast-lane approval succeeds", async () => {
+		bulkApproveMutateAsyncMock.mockResolvedValue({
+			succeeded: [
+				{ id: "approval-1", type: "absence_entry", status: "approved" },
+			],
+			failed: [],
+		});
+		approvalInboxMock.mockReturnValue({
+			data: {
+				pages: [
+					makeApprovalInboxPage([
+						makeApprovalInboxItem(),
+						makeApprovalInboxItem({
+							id: "approval-2",
+							type: "travel_expense_claim",
+							entityId: "travel-1",
+							requester: {
+								id: "employee-2",
+								name: "Morgan Manager",
+								email: "morgan@example.com",
+								image: null,
+								teamId: "team-1",
+							},
+							summary: {
+								title: "Travel expense",
+								subtitle: "Receipt review",
+								detail: "Client travel reimbursement",
+								badge: null,
+							},
+							triage: {
+								priority: "normal",
+								riskLevel: "medium",
+								riskReasons: ["needs_review"],
+								fastLaneGroup: null,
+								isPayrollRelevant: false,
+								explanation: "Receipt requires review.",
+							},
+						}),
+					]),
+				],
+			},
+			isLoading: false,
+			isError: false,
+			error: null,
+			isFetching: false,
+			fetchNextPage: vi.fn(),
+			hasNextPage: false,
+			isFetchingNextPage: false,
+			refetch: refetchMock,
+		});
+
+		render(<ApprovalInboxPage />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Select All" }));
+		expect(
+			screen.getByRole("button", { name: /Approve Selected/ }),
+		).toBeTruthy();
+		fireEvent.click(
+			screen.getByRole("button", { name: "Approve Low-risk absences" }),
+		);
+
+		await waitFor(() => {
+			expect(bulkApproveMutateAsyncMock).toHaveBeenCalledWith({
+				approvalIds: ["approval-1"],
+				fastLane: {
+					group: "low_risk_absence",
+					reviewedContexts: {
+						"approval-1": {
+							organizationId: "org-1",
+							requestId: "approval-1",
+							entityId: "absence-1",
+							revision: "revision-1",
+							scope: "submitted_request",
+						},
+					},
+				},
+			});
+			expect(
+				screen.queryByRole("button", { name: /Approve Selected/ }),
+			).toBeNull();
+		});
+	});
+
+	it("does not render a second empty state below the table", () => {
+		approvalInboxMock.mockReturnValue({
+			data: {
+				pages: [makeApprovalInboxPage([])],
+			},
+			isLoading: false,
+			isError: false,
+			error: null,
+			isFetching: false,
+			fetchNextPage: vi.fn(),
+			hasNextPage: false,
+			isFetchingNextPage: false,
+			refetch: refetchMock,
+		});
+
+		render(<ApprovalInboxPage />);
+
+		expect(screen.getAllByText("No pending requests")).toHaveLength(1);
+	});
+
+	it("clears selected approvals when filters change before bulk actions run", () => {
+		render(<ApprovalInboxPage />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Select All" }));
+		expect(
+			screen.getByRole("button", { name: /Approve Selected/ }),
+		).toBeTruthy();
+
+		fireEvent.click(screen.getByRole("button", { name: "Search Avery" }));
+
+		expect(
+			screen.queryByRole("button", { name: /Approve Selected/ }),
+		).toBeNull();
+		expect(bulkApproveMutateAsyncMock).not.toHaveBeenCalled();
+	});
+
+	it("keeps inbox content mounted while search results are loading", () => {
+		approvalInboxMock.mockReturnValue({
+			data: {
+				pages: [makeApprovalInboxPage()],
+			},
+			isLoading: true,
+			isError: false,
+			error: null,
+			isFetching: true,
+			fetchNextPage: vi.fn(),
+			hasNextPage: false,
+			isFetchingNextPage: false,
+			refetch: refetchMock,
+		});
+
+		render(<ApprovalInboxPage />);
+
+		expect(screen.getByText("Approval Inbox")).toBeTruthy();
+		expect(screen.getByText("Avery Employee")).toBeTruthy();
+		expect(screen.queryByText("loading")).toBeNull();
+	});
+
+	it("renders duplicate inbox warnings once", () => {
+		approvalInboxMock.mockReturnValue({
+			data: {
+				pages: [
+					makeApprovalInboxPage(undefined, {
+						warnings: [
+							{
+								source: "Import warning",
+								message: "Some approvals could not be loaded.",
+							},
+							{
+								source: "Import warning",
+								message: "Some approvals could not be loaded.",
+							},
+						],
+					}),
+				],
+			},
+			isLoading: false,
+			isError: false,
+			error: null,
+			isFetching: false,
+			fetchNextPage: vi.fn(),
+			hasNextPage: false,
+			isFetchingNextPage: false,
+			refetch: refetchMock,
+		});
+
+		render(<ApprovalInboxPage />);
+
+		expect(screen.getAllByText("Import warning")).toHaveLength(1);
+		expect(
+			screen.getAllByText("Some approvals could not be loaded."),
+		).toHaveLength(1);
+	});
+
+	it("warns once per failed approval type, by its name, in the viewer's language (#1978)", () => {
+		const german: Record<string, string> = {
+			"approvals:approvals.types.travel_expense_claim": "Reisekosten",
+			"approvals:approvals.inboxWarning.notLoaded": "Konnten nicht geladen werden.",
+			"approvals:approvals.inboxWarning.notCounted": "Konnten nicht gezählt werden.",
+		};
+		translateMock.mockImplementation(
+			(key: string, defaultValue?: string) => german[key] ?? defaultValue ?? key,
+		);
+		const failed = (failure: "notLoaded" | "notCounted") => ({
+			source: "travel_expense_claim",
+			message: "Travel Expense approvals could not be loaded.",
+			localized: {
+				key: `approvals:approvals.inboxWarning.${failure}`,
+				fallback: "English",
+			},
+		});
+		approvalInboxMock.mockReturnValue({
+			data: {
+				pages: [
+					// A later page can fail differently for the same source.
+					makeApprovalInboxPage(undefined, { warnings: [failed("notLoaded")] }),
+					makeApprovalInboxPage(undefined, { warnings: [failed("notCounted")] }),
+				],
+			},
+			isLoading: false,
+			isError: false,
+			error: null,
+			isFetching: false,
+			fetchNextPage: vi.fn(),
+			hasNextPage: false,
+			isFetchingNextPage: false,
+			refetch: refetchMock,
+		});
+
+		render(<ApprovalInboxPage />);
+
+		expect(screen.getAllByText("Reisekosten")).toHaveLength(1);
+		expect(screen.getByText("Konnten nicht geladen werden.")).toBeTruthy();
+		expect(screen.queryByText("Konnten nicht gezählt werden.")).toBeNull();
+		expect(screen.queryByText("travel_expense_claim")).toBeNull();
+		expect(screen.queryByText(/could not be/)).toBeNull();
+	});
+
+	it("keeps a source's gravest warning across pages, not its first (#1978)", () => {
+		const failed = (failure: "count" | "list", key: "notCounted" | "notLoaded") => ({
+			source: "travel_expense_claim",
+			message: `Travel Expense approvals: ${failure}`,
+			localized: { key: `approvals:approvals.inboxWarning.${key}`, fallback: `Failed ${key}.` },
+			failure,
+		});
+		approvalInboxMock.mockReturnValue({
+			data: {
+				pages: [
+					// The first page only missed the count; a later page missed the rows themselves.
+					makeApprovalInboxPage(undefined, { warnings: [failed("count", "notCounted")] }),
+					makeApprovalInboxPage(undefined, { warnings: [failed("list", "notLoaded")] }),
+				],
+			},
+			isLoading: false,
+			isError: false,
+			error: null,
+			isFetching: false,
+			fetchNextPage: vi.fn(),
+			hasNextPage: false,
+			isFetchingNextPage: false,
+			refetch: refetchMock,
+		});
+
+		render(<ApprovalInboxPage />);
+
+		expect(screen.getByText("Failed notLoaded.")).toBeTruthy();
+		expect(screen.queryByText("Failed notCounted.")).toBeNull();
+	});
+});

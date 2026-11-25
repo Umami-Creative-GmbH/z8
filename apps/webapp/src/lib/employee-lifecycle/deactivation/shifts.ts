@@ -136,7 +136,7 @@ export async function applyShiftsToOpen(
 	if (plan.shiftsToOpen.length === 0) return { applied: { openedShiftIds: [] }, afterCommit: [] };
 	const opened = await tx
 		.update(shift)
-		.set({ employeeId: null, updatedAt: currentTimestamp() })
+		.set({ employeeId: null, updatedAt: currentTimestamp(), assignmentChangedAt: currentTimestamp() })
 		.where(
 			and(
 				eq(shift.organizationId, ctx.organizationId),

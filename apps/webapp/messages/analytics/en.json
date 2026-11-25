@@ -1,14 +1,12 @@
 {
   "analytics": {
     "access": {
-      "noEmployeeFeature": "view analytics",
       "restrictedDescription": "Analytics is only available to administrators and managers.",
       "restrictedTitle": "Access Restricted"
     },
     "common": {
       "days": "Days",
       "employee": "Employee",
-      "employees": "Employees",
       "hours": "Hours",
       "loadingOrganizationSettings": "Loading organization settings before enabling presets.",
       "noDataAvailable": "No data available",
@@ -17,17 +15,16 @@
       "overtimeHours": "Overtime Hours",
       "team": "Team",
       "totalHours": "Total Hours",
-      "unavailable": "Unavailable",
       "undertime": "Undertime",
       "undertimeHours": "Undertime Hours"
     },
     "layout": {
       "description": "Comprehensive insights into team performance, work hours, and absence patterns",
       "tabs": {
+        "absencesAndVacation": "Absences & Vacation",
         "overtimeBurnDown": "Overtime Burn-Down",
         "overview": "Overview",
         "teamPerformance": "Team Performance",
-        "vacationTrends": "Vacation Trends",
         "workHours": "Work Hours"
       },
       "title": "Analytics"
@@ -100,31 +97,8 @@
       "errors": {
         "retryDescription": "Some analytics could not be loaded. Previously loaded values, if shown, may be out of date."
       },
-      "kpis": {
-        "approvalRate": {
-          "description": "Of decided requests approved",
-          "title": "Approval Rate",
-          "unavailableDescription": "Approval analytics could not be loaded"
-        },
-        "avgWorkHours": {
-          "description": "Per employee in selected period",
-          "title": "Avg Work Hours"
-        },
-        "totalAbsenceDays": {
-          "description": "Total days in selected period",
-          "title": "Total Absence Days"
-        },
-        "totalEmployees": {
-          "description": "Active employees in organization",
-          "title": "Total Employees"
-        }
-      },
       "loadingLabel": "Loading analytics data",
-      "refreshing": "Refreshing analytics…",
-      "workHoursByTeam": {
-        "description": "Total work hours logged per team",
-        "title": "Work Hours by Team"
-      }
+      "refreshing": "Refreshing analytics…"
     },
     "teamPerformance": {
       "avgPerEmployee": "Avg per Employee",

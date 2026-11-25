@@ -51,6 +51,7 @@ export async function resolveGoLiveGroup(
 		.select({
 			draftId: employeeInvitationDraft.id,
 			teamId: employeeInvitationDraft.teamId,
+			engagementKind: employeeInvitationDraft.engagementKind,
 			teamName: team.name,
 			firstName: employeeInvitationDraft.firstName,
 			lastName: employeeInvitationDraft.lastName,
@@ -92,6 +93,7 @@ export async function resolveGoLiveGroup(
 			draftId: row.draftId,
 			email: row.email,
 			teamId: row.teamId,
+			engagementKind: row.engagementKind,
 			displayName: name || row.email,
 		});
 	}

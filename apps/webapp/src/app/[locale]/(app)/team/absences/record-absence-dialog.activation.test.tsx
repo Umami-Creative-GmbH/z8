@@ -224,6 +224,46 @@ it("assembled current workspace retains list on calendar read failure and retire
 	expect(screen.queryByText("Review Person")).toBeNull();
 });
 
+it("offers a contractor only unavailability, and an employee every other category (#1996)", async () => {
+	const unavailability = {
+		...category,
+		id: "unavailable",
+		name: "Review unavailable",
+		type: "contractor_unavailability",
+	};
+	const contractor = {
+		...row,
+		id: "review-contractor",
+		name: "Review Contractor",
+		engagementKinds: ["contractor" as const],
+	};
+	const user = userEvent.setup();
+	render(
+		<Providers>
+			<TeamAbsencesWorkspace
+				{...props}
+				categories={[category, unavailability]}
+				listResult={{
+					...props.listResult,
+					data: { ...props.listResult.data, rows: [row, contractor], total: 2 },
+				}}
+			/>
+		</Providers>,
+	);
+	const offered = async (name: string) => {
+		await user.click(await screen.findByRole("button", { name: `Record absence for ${name}` }));
+		await user.click(screen.getByRole("combobox", { name: /Category/i }));
+		const options = (await screen.findAllByRole("option")).map((option) => option.textContent);
+		await user.keyboard("{Escape}");
+		await user.keyboard("{Escape}");
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+		return options;
+	};
+
+	expect(await offered("Review Contractor")).toEqual(["Review unavailable"]);
+	expect(await offered("Review Person")).toEqual(["Review home office"]);
+});
+
 it.each(["Activity", "employee", "availability"] as const)(
 	"retires a queued public submit across %s return before onSubmit",
 	async (retirement) => {

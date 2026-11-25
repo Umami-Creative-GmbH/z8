@@ -155,6 +155,7 @@ it("lets explicitly authorized planners read absent authorization without gainin
 			employeeId: fixture.employeeId,
 			status: "not_enrolled",
 			authorizedClasses: [],
+			declaredClasses: [],
 			classes: [],
 		},
 	});
@@ -268,6 +269,7 @@ it("returns only effective classes and driving restrictions and reflects expiry 
 			employeeId: fixture.employeeId,
 			status: "active",
 			authorizedClasses: ["B"],
+			declaredClasses: [],
 			classes: [
 				{
 					code: "B",
@@ -288,6 +290,7 @@ it("returns only effective classes and driving restrictions and reflects expiry 
 			employeeId: fixture.employeeId,
 			status: "suspended",
 			authorizedClasses: [],
+			declaredClasses: [],
 			classes: [
 				{
 					code: "B",
@@ -404,6 +407,7 @@ it("serves operational GET reads privately with the same current permission and 
 			employeeId: fixture.employeeId,
 			status: "not_enrolled",
 			authorizedClasses: [],
+			declaredClasses: [],
 			classes: [],
 		},
 	});

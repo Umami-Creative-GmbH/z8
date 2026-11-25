@@ -878,6 +878,7 @@
       "setDescriptionPlaceholder": "Valfri beskrivning för denna kategoriuppsättning",
       "setName": "Namn",
       "setNamePlaceholder": "t.ex. Resekategorier",
+      "setNameRequired": "Namn på kategoriuppsättning krävs",
       "setNameTaken": "Det finns redan en kategoriuppsättning med detta namn.",
       "setUpdated": "Kategoriuppsättningen har uppdaterats",
       "setUpdateFailed": "Kunde inte uppdatera kategoriuppsättningen",

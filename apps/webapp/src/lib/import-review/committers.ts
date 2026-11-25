@@ -14,6 +14,11 @@ import {
 	timeEntry,
 	workCategory,
 } from "@/db/schema";
+import { loadEngagementKindsOnDays } from "@/lib/absences/absence-engagement";
+import {
+	absenceEngagementRefusal,
+	ENGAGEMENT_CATEGORY_REFUSAL_MESSAGES,
+} from "@/lib/absences/category-rules";
 import {
 	assertHistoricalVacationNotOverlapping,
 	historicalVacationRefusalOf,
@@ -282,7 +287,7 @@ async function assertEmployeeInOrganization(
 	database: CommitDb,
 	employeeId: string,
 	organizationId: string,
-) {
+): Promise<void> {
 	const found = await database.query.employee.findFirst({
 		where: and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)),
 	});
@@ -475,6 +480,21 @@ async function ensureAbsenceCategory(
 	return created.id;
 }
 
+/** The type of the category an unmapped import is written with: an existing one, else custom. */
+async function importedCategoryType(
+	database: CommitDb,
+	organizationId: string,
+	categoryName: string,
+): Promise<string> {
+	const named = await database.query.absenceCategory.findFirst({
+		where: and(
+			eq(absenceCategory.organizationId, organizationId),
+			eq(absenceCategory.name, categoryName),
+		),
+	});
+	return named?.type ?? "custom";
+}
+
 async function commitAbsence(
 	database: CommitDb,
 	row: typeof importStagedRow.$inferSelect,
@@ -504,6 +524,31 @@ async function commitAbsence(
 					),
 				})
 			: null);
+	// An External Contractor gets only unavailability, an employee never (#1996), decided by the
+	// stints the absence's days fall in. An unmapped category is written as the custom
+	// "Imported absence" category below.
+	const categoryName = payload.categoryName?.trim() || "Imported absence";
+	const categoryType: string = knownCategory
+		? knownCategory.type
+		: await importedCategoryType(database, job.organizationId, categoryName);
+	const engagementRefusal = absenceEngagementRefusal(
+		await loadEngagementKindsOnDays(database, {
+			organizationId: job.organizationId,
+			employeeId: payload.employeeId,
+			startDate,
+			endDate,
+		}),
+		categoryType,
+	);
+	if (engagementRefusal) {
+		return blockRow(
+			database,
+			row.id,
+			job,
+			ENGAGEMENT_CATEGORY_REFUSAL_MESSAGES[engagementRefusal],
+			options,
+		);
+	}
 	// An absence touching a closed month is blocked, never written (#762).
 	try {
 		await assertAbsenceDaysOpen(database, {
@@ -529,11 +574,7 @@ async function commitAbsence(
 
 	const categoryId =
 		reviewed?.category.id ??
-		(await ensureAbsenceCategory(
-			database,
-			job.organizationId,
-			payload.categoryName?.trim() || "Imported absence",
-		));
+		(await ensureAbsenceCategory(database, job.organizationId, categoryName));
 	const [absence] = await database
 		.insert(absenceEntry)
 		.values({

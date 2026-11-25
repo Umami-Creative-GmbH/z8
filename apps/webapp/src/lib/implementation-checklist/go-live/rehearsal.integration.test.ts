@@ -54,14 +54,14 @@ describe("go-live rehearsal (PostgreSQL)", () => {
 		input: { role?: "employee" | "manager" | "admin"; teamId?: string; name?: string } = {},
 	) {
 		const seeded = await fixture.seedEmployee({ organizationId });
-		await sql(`update employee set role = $1, team_id = $2 where id = $3`, [
+		await sql(`update employee set role = $1 where id = $2`, [
 			input.role ?? "employee",
-			input.teamId ?? null,
 			seeded.employeeId,
 		]);
 		if (input.name)
 			await sql(`update "user" set name = $1 where id = $2`, [input.name, seeded.userId]);
 		if (input.teamId) {
+			await fixture.placeInTeam(seeded.employeeId, input.teamId);
 			await sql(
 				`insert into team_membership (organization_id, team_id, employee_id) values ($1, $2, $3)`,
 				[organizationId, input.teamId, seeded.employeeId],
@@ -655,6 +655,15 @@ describe("go-live rehearsal (PostgreSQL)", () => {
 			employmentTerms: "not-applicable",
 			personnelIdentifier: { status: "not-applicable" },
 		});
+	});
+
+	it("rehearses an external contractor with no work policy applying, not a missing one", async () => {
+		await workPolicy("Default", { type: "organization" });
+		const contractor = await fixture.seedEmployee({ organizationId, engagementKind: "contractor" });
+
+		const rehearsal = await rehearse(`employee:${contractor.employeeId}`);
+
+		expect(rehearsal.workPolicy).toEqual({ status: "not_applicable" });
 	});
 
 	it("leaves no new rows in any table: no work records, approvals, notifications, deliveries or audit entries", async () => {

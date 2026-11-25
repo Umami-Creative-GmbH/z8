@@ -1,4 +1,4 @@
-import { type SQL, sql } from "drizzle-orm";
+import { type SQL, type SQLWrapper, sql } from "drizzle-orm";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import type { ApprovalInboxPriority, ApprovalInboxRiskLevel } from "./types";
 
@@ -21,6 +21,8 @@ export interface CanonicalInboxVisibilityInput {
 
 export interface CanonicalInboxFilters {
 	teamId?: string;
+	/** Only these requesters' approvals (#1980); none for an empty list. */
+	requesterEmployeeIds?: readonly string[];
 	priority?: ApprovalInboxPriority;
 	minAgeDays?: number;
 	dateRange?: { from: Date; to: Date };
@@ -111,6 +113,8 @@ export function canonicalInboxFilters(
 	const conditions: SQL[] = [];
 	if (filters.teamId)
 		conditions.push(sql`requester.team_id = ${filters.teamId}::uuid`);
+	if (filters.requesterEmployeeIds)
+		conditions.push(requesterEmployeeIdCondition(sql`requester.id`, filters.requesterEmployeeIds));
 	if (filters.priority) {
 		conditions.push(
 			sql`${canonicalInboxPriorityRank(now)} = ${PRIORITY_RANK[filters.priority]}`,
@@ -137,6 +141,18 @@ export function canonicalInboxFilters(
 	return conditions.length > 0
 		? sql`and ${sql.join(conditions, sql` and `)}`
 		: sql``;
+}
+
+/**
+ * The uuid requester column is one of these employees; never true for none. The ids are one
+ * array parameter, so an organization-wide list stays clear of PostgreSQL's bind limit.
+ */
+export function requesterEmployeeIdCondition(
+	column: SQLWrapper,
+	employeeIds: readonly string[],
+): SQL {
+	if (employeeIds.length === 0) return sql`false`;
+	return sql`${column} = any(${sql.param([...employeeIds])}::uuid[])`;
 }
 
 /** One assignment or several, as `and ...`, or nothing. */

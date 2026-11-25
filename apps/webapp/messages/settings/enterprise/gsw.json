@@ -246,15 +246,27 @@
         "regenerateTokenFailed": "Token konnte nicht neu generiert werden",
         "regenerateTokenSuccess": "Neues Verifizierungstoken generiert",
         "regenerating": "Wird neu generiert…",
+        "registration": "Regischtrierig",
+        "registrationHelp": "Erlaub neue Lüt, da es Konto z erstelle. Wänn deaktiviert, chönd sich nur Lüt mit ere Iilaadig aamälde.",
+        "routingInstruction": "Für e Subdomain füeg en CNAME-Iitrag hii, wo {domain} uf {target} verwiist. Für e Apex-Domain füeg en A-Iitrag hii, wo uf d Z8 Load-Balancer-IP verwiist. Schalt CDN-Proxying für de Iitrag uus.",
         "saveConfiguration": "Konfiguration speichern",
         "secretKey": "Geheimer Schlüssel",
         "secretKeyPlaceholder": "Geheimen Schlüssel eingeben",
         "secretKeyRequired": "Erforderlich beim Festlegen eines Site-Keys",
+        "signInMethods": "Aamäldemethode",
         "siteKey": "Site-Key",
         "socialProviders": "Soziale Anbieter",
         "socialProvidersHelp": "Social-Login-Optionen für diese Domain aktivieren",
         "sso": "Single Sign-On (SSO)",
+        "ssoButtonIcon": "SSO-Button-Icon",
+        "ssoButtonLabel": "SSO-Button-Beschriftig (optional)",
         "ssoHelp": "OIDC-basierte Unternehmensanmeldung erlauben",
+        "ssoIconBadge": "Badge",
+        "ssoIconFingerprint": "Fingerabdruck",
+        "ssoIconKey": "Schlüssel",
+        "ssoIconLock": "Schloss",
+        "ssoIconShield": "Schild",
+        "ssoUnavailableHelp": "Richte zerscht en SSO-Aabieter unter Identitäts-Iirichtig ii und verifiziere en.",
         "status": {
           "pending": "Ausstehende Überprüfung",
           "verified": "Überprüft"
@@ -337,65 +349,30 @@
       "enableProviderHelp": "De Provider aktiviere oder deaktiviere",
       "identity": {
         "accessPolicy": {
-          "action": {
-            "save": "Zuegriffsrichtlinie spychere"
-          },
-          "defaultRoleTemplate": "Standard-Rollenvorlag",
-          "description": "Domain festlegen, Einladungen versenden und SSO-Durchsetzung nach erfolgreichem Pilotversuch aktivieren.",
           "noDefaultTemplate": "Keine Standardvorlage",
           "placeholder": {
             "roleTemplate": "Rollen-Vorlage auswählen"
           },
           "requireSso": "SSO erforderlich",
-          "requireSsoHelp": "Mitarbeitende müssen den Enterprise-IdP verwenden.",
           "restrictDomain": "Auf verifizierte Domain beschränken",
-          "restrictDomainHelp": "Konten ausserhalb der gewählten Domain blockieren.",
-          "restrictInvites": "Einladungen einschränken",
-          "restrictInvitesHelp": "Nur Einladungen zulassen, die der Zugriffsrichtlinie entsprechen.",
-          "title": "Zugriffsrichtlinie"
-        },
-        "badge": {
-          "now": "Jetzt",
-          "queued": "In der Warteschlange",
-          "ready": "Bereit"
+          "restrictInvites": "Einladungen einschränken"
         },
         "domain": {
-          "action": {
-            "checkStatus": "Domain-Status prüfen"
-          },
-          "description": "Validieren Sie die Mandantengrenze, bevor Sie SSO für Mitarbeitende erzwingen.",
-          "help": "Die DNS-Verifizierung nutzt die bestehenden SSO-Domain-Verifizierungsaktionen. Schliessen Sie diese Verifizierung ab, bevor Sie die Durchsetzung aktivieren.",
-          "notSelected": "Nicht ausgewählt",
           "selected": "Ausgewählte Domain",
           "status": {
-            "pending": "Ausstehend",
             "verified": "Verifiziert"
-          },
-          "title": "Domain"
+          }
         },
-        "hero": {
-          "title": "Checkliste für den operativen Betrieb"
-        },
-        "progress": "{completed} von {total} Schritten abgeschlossen",
         "provider": {
-          "action": {
-            "save": "Anbieter speichern"
-          },
-          "description": "Wählen Sie die Voreinstellung für den Identitätsanbieter, das Protokoll, die Anbieter-ID und die E-Mail-Domain.",
           "error": {
             "domainRequired": "Domain ist erforderlich",
             "providerIdRequired": "Anbieter-ID ist erforderlich"
           },
           "label": {
-            "domain": "E-Mail-Domain",
-            "preset": "Anbieter-Voreinstellung",
-            "protocol": "Protokoll",
             "providerId": "Anbieter-ID"
           },
           "placeholder": {
             "domain": "z. B. beispiel.com…",
-            "protocol": "Protokoll auswählen",
-            "provider": "Anbieter auswählen",
             "providerId": "z. B. acme-okta…"
           },
           "preset": {
@@ -411,28 +388,14 @@
             "okta": {
               "description": "Verwenden Sie Okta Workforce Identity für SAML- oder OIDC-Single-Sign-On."
             }
-          },
-          "title": "Anbieter"
-        },
-        "rail": {
-          "title": "Bereitschafts-Check"
+          }
         },
         "review": {
           "action": {
             "activate": "Enterprise-Identität aktivieren"
           },
-          "activationSummary": "Aktivierungszusammenfassung",
-          "description": "Überprüfen Sie die geschützten Aktivierungsprüfungen, bevor Sie die Kontrollen für die Enterprise-Identität aktivieren.",
           "lockoutWarning": "Warnung vor Aussperrung des aktuellen Administrators",
-          "lockoutWarningHelp": "Stellen Sie sicher, dass sich Ihr aktuelles Administratorkonto über den konfigurierten Anbieter anmelden kann, bevor Sie die Aktivierung vornehmen. Die Durchsetzung kann den Passwort-Fallback für die ausgewählte Domain blockieren.",
-          "missingRequirement": "{item} ist vor der Aktivierung erforderlich",
-          "prerequisitesComplete": "Anbieter, verifizierte Domain und SSO-Testvoraussetzungen sind erfüllt.",
-          "requirement": {
-            "domain": "Verifizierte Domain",
-            "provider": "Aabieter",
-            "ssoTest": "SSO-Test"
-          },
-          "title": "Überprüfe & Aktiviere"
+          "lockoutWarningHelp": "Stellen Sie sicher, dass sich Ihr aktuelles Administratorkonto über den konfigurierten Anbieter anmelden kann, bevor Sie die Aktivierung vornehmen. Die Durchsetzung kann den Passwort-Fallback für die ausgewählte Domain blockieren."
         },
         "scim": {
           "action": {
@@ -500,7 +463,6 @@
             "rotating": "wird rotiert",
             "verified": "verifiziert"
           },
-          "title": "SCIM-Provisioning",
           "toast": {
             "createError": "SCIM-Verbindung konnte nicht erstellt werden.",
             "reconcileError": "SCIM-Erstellung konnte nicht abgeglichen werden.",
@@ -510,14 +472,9 @@
           },
           "verification": "Verifizierig",
           "verification.awaiting": "Wartet uf Provider-Verwendig",
-          "verification.observed": "Beobachtet",
-          "wizardDescription": "Verwalteti Benutzerbereitstellig konfiguriere, ohni d Enterprise-Aktivierig z ändere."
+          "verification.observed": "Beobachtet"
         },
         "sso": {
-          "action": {
-            "register": "SSO-Aabieter registriere"
-          },
-          "description": "Registrier de externi IdP mit OIDC-Client-Credentials oder SAML-Metadate.",
           "error": {
             "saveProviderFirst": "Speicher Aabieter und Domain, bevor du SSO registriersch"
           },
@@ -535,53 +492,19 @@
               "okta": "https://acme.okta.com…"
             },
             "metadata": "IdP-Metadate-XML iifüge…"
-          },
-          "saml": {
-            "acsPath": "Browser-relative ACS-Pfad: {path}",
-            "acsUrl": "Konfigurier din IdP mit dere Assertion Consumer Service (ACS) URL: {path}"
-          },
-          "title": "SSO-Konfiguration"
+          }
         },
         "ssoTest": {
-          "action": {
-            "recordFail": "Datensatz fehlgschlage",
-            "recordPass": "Datensatz erfolgreich"
-          },
           "defaultFailure": "Live-SSO-Test isch fehlgschlage",
-          "description": "Erfass s Ergebnis vomene Live-SSO-Test, bevor du d Durchsetzig aktiviersch.",
           "error": {
             "saveProviderFirst": "Speicher de Aabieter, bevor du en Test erfassisch"
           },
-          "label": {
-            "email": "Test-User-E-Mail",
-            "failureNote": "Fehlermeldig"
-          },
           "status": {
-            "failed": "Fehlgschlage",
-            "notRun": "Nöd usgfüehrt",
-            "passed": "Erfolgreich"
-          },
-          "title": "Test-User"
+            "notRun": "Nöd usgfüehrt"
+          }
         },
         "status": {
-          "activated": "Aktiviert",
-          "draft": "Entwurf"
-        },
-        "step": {
-          "accessPolicy": "Zuegangsrichtlinie",
-          "accessPolicy.description": "Durchsetzigsregle festlege",
-          "domain": "Domain",
-          "domain.description": "Mandantegränze bestätige",
-          "provider": "Aabieter",
-          "provider.description": "Wähl d Identitätsquelle us",
-          "review": "Überprüfe & Aktiviere",
-          "review.description": "Aktivierigsschutz",
-          "scim": "SCIM-Provisioning",
-          "scim.description": "SCIM-Provisioning-Verbindig verbinde und verwalte",
-          "sso": "SSO-Konfiguration",
-          "sso.description": "OIDC oder SAML registriere",
-          "ssoTest": "Test-Benutzer",
-          "ssoTest.description": "Live-Aamäldigsergebnis uufzeichne"
+          "activated": "Aktiviert"
         },
         "toast": {
           "accessPolicyFailed": "Zuegangsrichtlinie hät nöd chönne gspeicheret werde",
@@ -589,7 +512,6 @@
           "activated": "Enterprise-Identitäts-Setup aktiviert",
           "activateFailed": "Setup hät nöd chönne aktiviert werde",
           "domainStatusFailed": "Domain-Status hät nöd chönne aktualisiert werde",
-          "domainStatusRefreshed": "Domain-Status aktualisiert",
           "providerSaved": "Identitäts-Provider gspeicheret",
           "providerSaveFailed": "Provider hät nöd chönne gspeicheret werde",
           "ssoRegistered": "SSO-Provider registriert",
@@ -597,6 +519,171 @@
           "ssoTestFailed": "SSO-Test als fehlgschlage markiert",
           "ssoTestPassed": "SSO-Test als erfolgreich markiert",
           "ssoTestRecordFailed": "SSO-Test hät nöd chönne uufzeichnet werde"
+        },
+        "wizard": {
+          "accessPolicy": {
+            "description": "Entscheid, wie streng d Enterprise-Aamäldig duregsetzt wird. Für d Mitarbeitende änderet sich nüüt, bis d Iirichtig im letschte Schritt aktiviersch.",
+            "domainsLink": "Domains öffne",
+            "legend": "Schalt d Regle ii, wo bruuchsch. Alli sind optional.",
+            "nav": "Zuegangsregle",
+            "requireSsoDomains": "Dafür mues au {domain} unter Domains hinzuegfüegt und verifiziert sii.",
+            "requireSsoHelp": "Lüüt mitere @{domain}-E-Mail müend sich über {provider} aamälde statt es Passwort z bruuche.",
+            "restrictDomainHelp": "Iilaadigscodes chönd nur vo Lüüt mitere @{domain}-E-Mail-Adrässe iiglöst werde.",
+            "restrictInvitesHelp": "Iilaadige chönd nur an @{domain}-E-Mail-Adrässe gschickt werde.",
+            "save": "Speichere und wiitermache",
+            "title": "Zuegangsregle uswähle"
+          },
+          "action": {
+            "back": "Zrugg",
+            "next": "Nöchschte Schritt: {step}",
+            "skip": "Zu {step} überspringe"
+          },
+          "activeNotice": "Enterprise-Aamäldig isch aktiv für {domain}. Du chasch jede Schritt une überprüefe.",
+          "description": "Laa Mitarbeitendi sich mit ihrem Gschäfts-Account vom Identitäts-Aabieter vo dinere Firma bi Z8 aamälde. Din Fortschritt wird nach jedem Schritt gspeicheret, sodass jedereziit unterbreche und spöter wiitermache chasch.",
+          "domain": {
+            "continue": "Wiiter zum Test-Aamälde",
+            "copyName": "Name kopiere",
+            "copyValue": "Wert kopiere",
+            "create": "DNS-Iitrag erstelle",
+            "createHelp": "Z8 generiert en eimoolige Wert für dich zum Veröffentliche. Wenn du scho eine unter SSO-Aabieter erstellt häsch, chasch zum letschte Schritt überspringe.",
+            "description": "Füeg en DNS-Iitrag hinzue, zum bewiise, dass dini Firma die Domain kontrolliert. Nur verifizierte Domains chönd Enterprise-Aamäldig nutze.",
+            "fallbackName": "dini Domain",
+            "fullNameHint": "Wenn din DNS-Aabieter nach em volle Name fröögt, bruuch {fullName}.",
+            "nav": "Domain verifiziere",
+            "needsConnection": "Verbind zerscht din Identitäts-Aabieter. Z8 erstellt de DNS-Iitrag für die Verbindig.",
+            "notVerified": "No nöd verifiziert",
+            "publishHelp": "Mäld dich bi dim DNS-Aabieter aa, wie z. B. Cloudflare, GoDaddy oder IONOS, und füeg en neue TXT-Iitrag genau so ii, wie's aazeigt wird. Wenn öpper anders dini Domain verwaltet, schick dere Person die Wert.",
+            "recordName": "Name (au Host gnännt)",
+            "recordType": "Typ",
+            "recordValue": "Wert (au Inhalt gnännt)",
+            "stepCreate": "Erstell de DNS-Iitrag",
+            "stepPublish": "Füeg en det ii, wo dini Domain verwaltet wird",
+            "stepVerify": "Laa Z8 de Iitrag überprüefe",
+            "title": "Bestätig, dass dir {domain} ghört",
+            "toast": {
+              "notFound": "Z8 hät de DNS-Iitrag no nöd gfunde. Überprüef de Name und de Wert und probier's dänn in es paar Minute namal.",
+              "verified": "Domain verifiziert"
+            },
+            "verifiedHelp": "Z8 hät din DNS-Iitrag gfunde. Du chasch en eifach laa sii.",
+            "verify": "Domain verifiziere",
+            "verifyHelp": "Neui Iiträg erschined meistens innert es paar Minute, es chan aber bis zu 48 Stunde duure. Du chasch die Siite verlaa und spöter namal luege."
+          },
+          "nav": {
+            "label": "Iirichtigs-Schritt"
+          },
+          "prerequisite": {
+            "action": "Zu {step} gaa",
+            "title": "Zerscht no ein Schritt"
+          },
+          "progress": "{completed} vo {total} erforderliche Schritt erledigt",
+          "progressLabel": "Iirichtigs-Fortschritt",
+          "provider": {
+            "changeWarning": "Dä Aabieter isch scho verbunde. Wenn d Aabieter-ID oder d E-Mail-Domain änderisch, muesch dich namal neu verbinde und verifiziere.",
+            "description": "Sei Z8, wele Dienscht dini Firma für Gschäfts-Accounts nutzt und weli E-Mail-Domain dini Mitarbeitende händ.",
+            "domainHelp": "Mitarbeitendi, wo d E-Mail-Adrässe uf die Domain endet, mälded sich über din Aabieter aa.",
+            "domainInvalid": "Gib nume de Teil nach em @ ii, zum Bieschpiil example.com.",
+            "domainLabel": "Gschäfts-E-Mail-Domain",
+            "genericName": "diin Identity Provider",
+            "nav": "Identity Provider",
+            "oidc": "OpenID Connect (empfole)",
+            "oidcHelp": "Schnäller iigrichtet und vo de meischte Provider unterstützt. Wähl das, wänn du der nöd sicher bisch.",
+            "prepAdmin": "Administrator-Zuegang zu diim Identity Provider, wie z. B. Okta oder Microsoft Entra ID",
+            "prepDns": "Zuegang zu de DNS-Iistellige vo diinere Domain, zum en TXT-Iitrag hinzuezfüege",
+            "prepIntro": "D'Iirichtig duuret öppe 15 Minute. Halt folgendes parat:",
+            "prepTester": "S Gschäftskonto vonere Kollegin oder emene Kolleg, oder es Testkonto, zum s Aamälde uszprobiere",
+            "prepTitle": "Bevor du aafangsch",
+            "presetLegend": "Wele Identity Provider bruucht diis Undernähme?",
+            "protocolLegend": "Wie söll Z8 verbunde wärde?",
+            "providerIdHelp": "En Churzname für die Verbindig, wo i de Aamäldelinks bruucht wird. Chliibuechstabe, Zahle und Bindestrich, zum Bieschpiil acme-okta.",
+            "providerIdInvalid": "Bruuch nume Chliibuechstabe, Zahle und Bindestrich, ohni Bindestrich am Aafang oder Ändi.",
+            "saml": "SAML 2.0",
+            "samlHelp": "Bruuch das, wänn diis IT-Team SAML voruussetzt. Du muesch es XML-Metadate-File iifüege.",
+            "save": "Spychere und wiitermache",
+            "singleProtocol": "{provider} verbindet sich mit OpenID Connect (OIDC).",
+            "title": "Wähl diin Identity Provider"
+          },
+          "review": {
+            "blocked": "Schlüss d Schritt ab, wo mit „To do“ markiert sind, zum aktiviere. D Verbindig, d Domain-Verifizierig und en erfolgriiche Aamäldetest sind nötig.",
+            "checklist": "Checklischte",
+            "description": "Überprüef diis Setup und schalt dänn d Enterprise-Aamäldig ii.",
+            "nav": "Aktiviere",
+            "noRules": "Kei Regle iigschaltet",
+            "notSet": "Nöd gsetzt",
+            "open": "Schritt öffne",
+            "provider": "Identity Provider",
+            "ready": "Alles Erforderliche isch erledigt. Du chasch jetzt aktiviere.",
+            "reapply": "Scho aktiv. Aktiviere s namal nach Änderige a de Zuegriffsregle, zum si aazwände.",
+            "rules": "Zuegriffsregle",
+            "scim": "Benutzer-Sync (SCIM)",
+            "scimOff": "Nöd iigrichtet",
+            "scimOn": "Verbunde",
+            "summary": "Diini Iistellige",
+            "test": "Aamäldetest",
+            "title": "Überprüefe und aktiviere"
+          },
+          "scim": {
+            "description": "Laa {provider} über SCIM Z8-Kontene für diich erstelle, aktualisiere und deaktiviere. Du chasch das überspringe und spöter iirichte.",
+            "nav": "Benutzer synchronisiere",
+            "roleHelp": "Wähl e Rollevorlag uus, bevor d Verbindig erstellsch. Neui Kontene started mit dere Rolle.",
+            "roleLabel": "Rolle für Persone, wo dur diin Provider erstellt wärded",
+            "skipHelp": "Überspring dä Schritt, wänn diin Provider SCIM nöd unterstützt oder du d Lüt lieber sälber zu Z8 hinzuefüegsch. Mitarbeitendi chönd sich trotzdem per Enterprise-Aamäldig aamälde.",
+            "title": "Benutzer automatisch synchronisiere"
+          },
+          "sso": {
+            "acsLabel": "ACS-URL",
+            "clientIdHelp": "Wird au Applikations-ID gnännt.",
+            "clientIdRequired": "Gib d Client-ID ii.",
+            "clientSecretHelp": "Sicher gspycheret und wird nie wider aazeigt.",
+            "clientSecretRequired": "Gib s Client-Secret ii.",
+            "connected": "Verbunde als {providerId}",
+            "connectedHelp": "Zum d Verbindigsdetail ändere, entfern dä Provider under SSO-Provider und verbind en da wider neu.",
+            "continue": "Witer zur Domain-Verifizierig",
+            "copyAcs": "ACS-URL kopiere",
+            "description": "Erstell en App für Z8 in {provider} und füeg d Details, wo du überchunsch, da ii.",
+            "issuerHelp": "D Webadrässe, wo din Provider identifiziert. Si isch i de Iistellige vo de App ufgfüehrt und fangt mit https:// aa.",
+            "issuerRequired": "Gib d Issuer-URL vo dim Provider ii.",
+            "manageLink": "SSO-Provider öffne",
+            "metadataRequired": "Füeg s Metadate-XML vo dim Provider ii.",
+            "nav": "Verbinde",
+            "needsProvider": "Wähl zerst din Identity Provider und dini E-Mail-Domain uus, damit Z8 d Verbindigsdetails cha vorbereite.",
+            "partOne": "Erstell en App für Z8 in {provider}",
+            "partTwo": "Füeg d Details vo {provider} ii",
+            "samlIntro": "Erstell e SAML-App in {provider} und trag die Adrässe als Assertion Consumer Service (ACS) oder Reply-URL ii. Lad danach s Metadate-XML vo de App abe.",
+            "save": "Provider verbinde",
+            "title": "{provider} mit Z8 verbinde"
+          },
+          "ssoTest": {
+            "description": "Bevor du öppis aktiviersch, überprüef, ob sich en Mitarbeiter würkli über {provider} cha aamälde.",
+            "domainFirst": "{domain} isch no nöd verifiziert. D Aamäldig über din Provider funktioniert villicht ersch, wenn das erledigt isch.",
+            "emailHelp": "Idealerwiis s Konto vomene Kolleg statt dim eigene Administrator-Konto.",
+            "emailLabel": "Für de Test bruuchti E-Mail",
+            "failed": "De letscht Test isch fählgschlage",
+            "failedHelp": "Hüüfigi Ursache: D Callback-URL stimmt nöd exakt überii, s Client Secret isch falsch oder abgloffe, oder de Testbenutzer isch i de App in {provider} nöd zuegwise.",
+            "goToDomain": "Domain verifiziere",
+            "howPrivate": "Öffne es privats oder Incognito-Browserfänschter. Lah das Fänschter offe, damit du als Administrator aagmäldet bliibsch, falls öppis schiefgaht.",
+            "howRecord": "Chumm da ane zrugg und trag ii, ob s klappt hät.",
+            "howSignIn": "Gang uf d Z8-Aamäldesite und mäld di mit ere Gschäfts-E-Mail-Adrässe aa, wo uf @{domain} ändet.",
+            "howTitle": "So testisch es",
+            "nav": "Aamäldig teste",
+            "needsConnection": "Verbind din Identity Provider, bevor du d Aamäldig testisch.",
+            "noteLabel": "Was isch schiefglaufe? (nur falls es fählgschlage isch)",
+            "notePlaceholder": "Zum Bispil d Fehlermäldig, wo du gseh häsch…",
+            "passed": "Aamäldig hät für {email} funktioniert",
+            "recordFail": "Aamäldig fählgschlage",
+            "recordPass": "Aamäldig hät funktioniert",
+            "recordTitle": "Ergebnis ufzeichne",
+            "selfReported": "Z8 cha dä Test nöd überprüefe, drum wird s Ergebnis so gspycheret, wie du s mäldisch. S Spychere vom Provider und s Verifiziere vo DNS bewiset nöd, dass d Aamäldig funktioniert.",
+            "title": "Aamäldig mit emene echte Konto teste"
+          },
+          "status": {
+            "done": "Erledigt",
+            "inProgress": "In Bearbeitig",
+            "notActive": "No nöd aktiv",
+            "optional": "Optional",
+            "toDo": "Uusstehend"
+          },
+          "stepOf": "Schritt {current} vo {total}",
+          "title": "Enterprise-Aamäldig irichte"
         }
       },
       "keepExistingSecretHelp": "Leer lah, zum s bestehende Secret z bhalte",
@@ -648,6 +735,9 @@
         "addError": "SSO-Provider konnte nicht hinzugefügt werden",
         "addSuccess": "SSO-Provider erfolgreich hinzugefügt",
         "addTitle": "SSO-Provider hinzufügen",
+        "copyError": "Hät nöd id Zwüscheablag chönne kopiert werde",
+        "copyIssuerUrl": "Issuer-URL kopiere",
+        "copyProviderId": "Provider-ID kopiere",
         "deleteConfirm": "Anbieter löschen",
         "deleteDialogDescription": "Sind Sie sicher, dass Sie diesen SSO-Provider löschen möchten? Benutzer können sich dann nicht mehr über diesen Identitätsanbieter anmelden.",
         "deleteDialogTitleNamed": "SSO-Anbieter {provider} löschen?",
@@ -655,6 +745,16 @@
         "deleteProviderAria": "SSO-Aabieter {provider} lösche",
         "deleteSuccess": "SSO-Provider gelöscht",
         "description": "Fügen Sie OIDC-Identitätsanbieter hinzu, um SSO für Ihre Organisation zu aktivieren.",
+        "dns": {
+          "copyFqdn": "Vollständig qualifizierte Name kopiere",
+          "copyHost": "Record-Name kopiere",
+          "copyValue": "TXT-Token kopiere",
+          "description": "Erstell de Record bi dim DNS-Provider für {domain} und wähl danach «Verifiziere». DNS-Änderige chönd es paar Minute duure, bis si sich verteilt händ.",
+          "fqdnHint": "Wenn din DNS-Provider de vollständig qualifizierti Name erwartet, bruuch:",
+          "noToken": "Generier es TXT-Token, zum de DNS-Iitrag gseh, wo bewyst, dass dir die Domain ghört.",
+          "title": "Füeg dä TXT-Iitrag zu dim DNS dezue",
+          "type": "Typ"
+        },
         "domainInvalid": "Bitte geben Sie eine gültige Domain ein (z. B. example.com)",
         "domainVerified": "Domain verifiziert",
         "emailDomain": "E-Mail-Domain",
@@ -673,7 +773,6 @@
           "copyCallback": "Callback-URL kopiere",
           "copyFailed": "Zuegriff uf d Zwüscheablag isch fählgschlage. Wähl de Text us und kopier en vo Hand.",
           "domainPending": "Domain nöd verifiziert",
-          "domainStatus": "Domain-Verifizierig",
           "domainVerified": "Domain verifiziert",
           "entra": {
             "clientHelp": "Kopier d Aawendigs-(Client-)ID us de Übersicht, nöd d Objekt-ID.",
@@ -743,7 +842,6 @@
           },
           "manual": "Andere Provider / manuells OIDC",
           "manualAvailable": "Bruuchsch en andere Provider? Wähl die manuell OIDC-Konfiguration im Iirichtigs-Berych.",
-          "manualTestHelp": "Das isch es vom Administrator gmolde Login-Ergebnis, keis automatisch überprüefts Verbindigsteschtergebnis. Füer es Test-Login mit emene vorgsehene Benutzer imene separate Browser-Fenschter dure, lah die Administrator-Sitzig offe und erfass s beobachtete Ergebnis (Erfolg oder Fähler) do. S Spychere vom Provider und s Überprüefe vom DNS bewiise nonig, dass s Login funktioniert.",
           "openSetup": "Gfüehrti Iirichtig öffne",
           "provider": "Identity Provider",
           "required": "Das Fäld isch erforderlich.",
@@ -755,10 +853,10 @@
         "providerId": "Provider-ID",
         "providerIdHelp": "Ein eindeutiger Bezeichner für diesen Provider (kleingeschrieben, keine Leerzeichen)",
         "providerIdInvalid": "Die Provider-ID darf nur Kleinbuchstaben, Zahlen und Bindestriche enthalten",
+        "regenerateToken": "TXT-Token neu generiere",
         "title": "Identitätsanbieter",
         "tokenError": "Domain-Verifizierungstoken konnte nicht generiert werden",
         "tokenGenerated": "Verifizierungstoken generiert",
-        "txtToken": "TXT-Token:",
         "validUrlRequired": "Bitte geben Sie eine gültige URL ein",
         "verify": "Verifizieren",
         "verifyError": "Domain-Verifizierung fehlgeschlagen. Überprüfen Sie Ihren DNS-TXT-Eintrag und versuchen Sie es erneut."

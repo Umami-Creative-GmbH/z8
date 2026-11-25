@@ -878,6 +878,7 @@
       "setDescriptionPlaceholder": "Përshkrim opsional për këtë grup kategorish",
       "setName": "Emri",
       "setNamePlaceholder": "p.sh., Kategoritë e udhëtimit",
+      "setNameRequired": "Kërkohet emri i grupit të kategorive",
       "setNameTaken": "Një grup kategorish me këtë emër ekziston tashmë.",
       "setUpdated": "Grupi i kategorive u përditësua",
       "setUpdateFailed": "Përditësimi i grupit të kategorive dështoi",

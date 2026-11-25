@@ -36,6 +36,7 @@ const APPROVAL_TYPES: { value: ApprovalInboxType; label: string }[] = [
 	{ value: "travel_expense_claim", label: "Travel Expenses" },
 	{ value: "travel_expense_report", label: "Expense Reports" },
 	{ value: "period_submission", label: "Period Submissions" },
+	{ value: "compliance_exception", label: "Compliance Exceptions" },
 ];
 
 export function ApprovalInboxToolbar({

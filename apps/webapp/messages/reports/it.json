@@ -440,6 +440,11 @@
       "workDays": "{count} giorni lavorativi",
       "workedFromHome": "{hours}h lavorate da casa"
     },
+    "tabs": {
+      "projects": "Progetti",
+      "timeAndAbsences": "Ore e assenze",
+      "vehicles": "Veicoli"
+    },
     "title": "Report dipendenti",
     "toast": {
       "failedGenerate": "Generazione del report non riuscita",

@@ -246,15 +246,27 @@
         "regenerateTokenFailed": "Échec de la régénération du jeton",
         "regenerateTokenSuccess": "Nouveau jeton de vérification généré",
         "regenerating": "Régénération en cours…",
+        "registration": "Inscription",
+        "registrationHelp": "Autoriser de nouvelles personnes à créer un compte ici. Si cette option est désactivée, seules les personnes disposant d'une invitation peuvent s'inscrire.",
+        "routingInstruction": "Pour un sous-domaine, ajoutez un enregistrement CNAME pointant {domain} vers {target}. Pour un domaine racine, ajoutez un enregistrement A pointant vers l'adresse IP de l'équilibreur de charge Z8. Désactivez le proxy CDN pour cet enregistrement.",
         "saveConfiguration": "Enregistrer la configuration",
         "secretKey": "Clé secrète",
         "secretKeyPlaceholder": "Entrez la clé secrète",
         "secretKeyRequired": "Requis lors de la définition d'une clé de site",
+        "signInMethods": "Méthodes de connexion",
         "siteKey": "Clé de site",
         "socialProviders": "Fournisseurs sociaux",
         "socialProvidersHelp": "Activer les options de connexion sociale pour ce domaine",
         "sso": "Authentification unique (SSO)",
+        "ssoButtonIcon": "Icône du bouton SSO",
+        "ssoButtonLabel": "Libellé du bouton SSO (facultatif)",
         "ssoHelp": "Autoriser la connexion d'entreprise basée sur OIDC",
+        "ssoIconBadge": "Badge d'identification",
+        "ssoIconFingerprint": "Empreinte digitale",
+        "ssoIconKey": "Clé",
+        "ssoIconLock": "Verrou",
+        "ssoIconShield": "Bouclier",
+        "ssoUnavailableHelp": "Configurez et vérifiez d'abord un fournisseur SSO dans Configuration de l'identité.",
         "status": {
           "pending": "Vérification en attente",
           "verified": "Vérifié"
@@ -337,65 +349,30 @@
       "enableProviderHelp": "Activer ou désactiver ce fournisseur",
       "identity": {
         "accessPolicy": {
-          "action": {
-            "save": "Enregistrer la politique d'accès"
-          },
-          "defaultRoleTemplate": "Modèle de rôle par défaut",
-          "description": "Définissez le domaine, l'invitation et l'application du SSO après la réussite du test pilote.",
           "noDefaultTemplate": "Aucun modèle par défaut",
           "placeholder": {
             "roleTemplate": "Sélectionner un modèle de rôle"
           },
           "requireSso": "Exiger le SSO",
-          "requireSsoHelp": "Les employés doivent utiliser l'IdP d'entreprise.",
           "restrictDomain": "Restreindre au domaine vérifié",
-          "restrictDomainHelp": "Bloquer les comptes en dehors du domaine sélectionné.",
-          "restrictInvites": "Restreindre les invitations",
-          "restrictInvitesHelp": "Autoriser uniquement les invitations conformes à la politique d'accès.",
-          "title": "Politique d'accès"
-        },
-        "badge": {
-          "now": "Maintenant",
-          "queued": "En file d'attente",
-          "ready": "Prêt"
+          "restrictInvites": "Restreindre les invitations"
         },
         "domain": {
-          "action": {
-            "checkStatus": "Vérifier le statut du domaine"
-          },
-          "description": "Validez la limite du tenant avant d'imposer le SSO aux employés.",
-          "help": "La vérification DNS utilise les actions de vérification de domaine SSO existantes. Terminez cette vérification avant d'activer l'application.",
-          "notSelected": "Non sélectionné",
           "selected": "Domaine sélectionné",
           "status": {
-            "pending": "En attente",
             "verified": "Vérifié"
-          },
-          "title": "Domaine"
+          }
         },
-        "hero": {
-          "title": "Liste de contrôle des opérations"
-        },
-        "progress": "{completed} étapes sur {total} terminées",
         "provider": {
-          "action": {
-            "save": "Enregistrer le fournisseur"
-          },
-          "description": "Choisissez le préréglage du fournisseur d'identité, le protocole, l'ID du fournisseur et le domaine e-mail.",
           "error": {
             "domainRequired": "Le domaine est requis",
             "providerIdRequired": "L'ID du fournisseur est requis"
           },
           "label": {
-            "domain": "Domaine e-mail",
-            "preset": "Préréglage du fournisseur",
-            "protocol": "Protocole",
             "providerId": "ID du fournisseur"
           },
           "placeholder": {
             "domain": "ex. exemple.com…",
-            "protocol": "Sélectionner le protocole",
-            "provider": "Sélectionner le fournisseur",
             "providerId": "ex. acme-okta…"
           },
           "preset": {
@@ -411,28 +388,14 @@
             "okta": {
               "description": "Utilisez Okta Workforce Identity pour l'authentification unique (SSO) SAML ou OIDC."
             }
-          },
-          "title": "Fournisseur"
-        },
-        "rail": {
-          "title": "Barre de préparation"
+          }
         },
         "review": {
           "action": {
             "activate": "Activer l'identité d'entreprise"
           },
-          "activationSummary": "Résumé de l'activation",
-          "description": "Examinez les contrôles d'activation protégés avant d'activer les contrôles d'identité d'entreprise.",
           "lockoutWarning": "Avertissement de verrouillage de l'administrateur actuel",
-          "lockoutWarningHelp": "Confirmez que votre compte administrateur actuel peut se connecter via le fournisseur configuré avant l'activation. L'application peut bloquer le recours au mot de passe pour le domaine sélectionné.",
-          "missingRequirement": "{item} est requis avant l'activation",
-          "prerequisitesComplete": "Le fournisseur, le domaine vérifié et les prérequis du test SSO sont terminés.",
-          "requirement": {
-            "domain": "Domaine vérifié",
-            "provider": "Fournisseur",
-            "ssoTest": "Test SSO"
-          },
-          "title": "Examiner et activer"
+          "lockoutWarningHelp": "Confirmez que votre compte administrateur actuel peut se connecter via le fournisseur configuré avant l'activation. L'application peut bloquer le recours au mot de passe pour le domaine sélectionné."
         },
         "scim": {
           "action": {
@@ -500,7 +463,6 @@
             "rotating": "rotation en cours",
             "verified": "vérifié"
           },
-          "title": "Provisionnement SCIM",
           "toast": {
             "createError": "Impossible de créer la connexion SCIM.",
             "reconcileError": "Impossible de réconcilier la création SCIM.",
@@ -510,14 +472,9 @@
           },
           "verification": "Vérification",
           "verification.awaiting": "En attente d'utilisation par le fournisseur",
-          "verification.observed": "Observé",
-          "wizardDescription": "Configurez le provisionnement géré des utilisateurs sans modifier l'activation de l'entreprise."
+          "verification.observed": "Observé"
         },
         "sso": {
-          "action": {
-            "register": "Enregistrer le fournisseur SSO"
-          },
-          "description": "Enregistrez l'IdP externe en utilisant les identifiants client OIDC ou les métadonnées SAML.",
           "error": {
             "saveProviderFirst": "Enregistrez le fournisseur et le domaine avant d'enregistrer le SSO"
           },
@@ -535,53 +492,19 @@
               "okta": "https://acme.okta.com…"
             },
             "metadata": "Coller le XML des métadonnées IdP…"
-          },
-          "saml": {
-            "acsPath": "Chemin ACS relatif au navigateur : {path}",
-            "acsUrl": "Configurez votre IdP avec cette URL de service consommateur d'assertions (ACS) : {path}"
-          },
-          "title": "Configuration SSO"
+          }
         },
         "ssoTest": {
-          "action": {
-            "recordFail": "Échec de l'enregistrement",
-            "recordPass": "Succès de l'enregistrement"
-          },
           "defaultFailure": "Le test SSO en direct a échoué",
-          "description": "Enregistrez le résultat d'un test SSO externe en direct avant l'application.",
           "error": {
             "saveProviderFirst": "Enregistrez le fournisseur avant d'enregistrer un test"
           },
-          "label": {
-            "email": "E-mail de l'utilisateur de test",
-            "failureNote": "Note d'échec"
-          },
           "status": {
-            "failed": "Échoué",
-            "notRun": "Non exécuté",
-            "passed": "Réussi"
-          },
-          "title": "Utilisateur de test"
+            "notRun": "Non exécuté"
+          }
         },
         "status": {
-          "activated": "Activé",
-          "draft": "Brouillon"
-        },
-        "step": {
-          "accessPolicy": "Politique d'accès",
-          "accessPolicy.description": "Définir les règles d'application",
-          "domain": "Domaine",
-          "domain.description": "Confirmer la limite du locataire",
-          "provider": "Fournisseur",
-          "provider.description": "Choisir la source d'identité",
-          "review": "Réviser et activer",
-          "review.description": "Activation de la protection",
-          "scim": "Provisionnement SCIM",
-          "scim.description": "Connectez et gérez votre connexion de provisionnement SCIM",
-          "sso": "Configuration SSO",
-          "sso.description": "Enregistrer OIDC ou SAML",
-          "ssoTest": "Utilisateur de test",
-          "ssoTest.description": "Enregistrer le résultat de la connexion en direct"
+          "activated": "Activé"
         },
         "toast": {
           "accessPolicyFailed": "Échec de l'enregistrement de la politique d'accès",
@@ -589,7 +512,6 @@
           "activated": "Configuration de l'identité d'entreprise activée",
           "activateFailed": "Échec de l'activation de la configuration",
           "domainStatusFailed": "Échec de l'actualisation du statut du domaine",
-          "domainStatusRefreshed": "Statut du domaine actualisé",
           "providerSaved": "Fournisseur d'identité enregistré",
           "providerSaveFailed": "Échec de l'enregistrement du fournisseur",
           "ssoRegistered": "Fournisseur SSO enregistré",
@@ -597,6 +519,171 @@
           "ssoTestFailed": "Test SSO marqué comme échoué",
           "ssoTestPassed": "Test SSO marqué comme réussi",
           "ssoTestRecordFailed": "Échec de l'enregistrement du test SSO"
+        },
+        "wizard": {
+          "accessPolicy": {
+            "description": "Définissez le niveau d'exigence de la connexion d'entreprise. Rien ne changera pour les employés tant que vous n'aurez pas activé la configuration lors de la dernière étape.",
+            "domainsLink": "Ouvrir Domaines",
+            "legend": "Activez les règles de votre choix. Elles sont toutes facultatives.",
+            "nav": "Règles d'accès",
+            "requireSsoDomains": "Nécessite également l'ajout et la vérification de {domain} sous Domaines.",
+            "requireSsoHelp": "Les personnes disposant d'une adresse e-mail en @{domain} doivent se connecter via {provider} au lieu d'utiliser un mot de passe.",
+            "restrictDomainHelp": "Les codes d'invitation ne peuvent être utilisés que par des personnes disposant d'une adresse e-mail en @{domain}.",
+            "restrictInvitesHelp": "Les invitations ne peuvent être envoyées qu'à des adresses e-mail en @{domain}.",
+            "save": "Enregistrer et continuer",
+            "title": "Choisir les règles d'accès"
+          },
+          "action": {
+            "back": "Retour",
+            "next": "Suivant : {step}",
+            "skip": "Passer à {step}"
+          },
+          "activeNotice": "La connexion d'entreprise est active pour {domain}. Vous pouvez vérifier chaque étape ci-dessous.",
+          "description": "Permettez aux employés de se connecter à Z8 avec leur compte professionnel provenant du fournisseur d'identité de votre entreprise. Votre progression est enregistrée après chaque étape, vous pouvez donc interrompre et reprendre à tout moment.",
+          "domain": {
+            "continue": "Continuer pour tester la connexion",
+            "copyName": "Copier le nom",
+            "copyValue": "Copier la valeur",
+            "create": "Créer un enregistrement DNS",
+            "createHelp": "Z8 génère une valeur unique que vous devez publier. Si vous en avez déjà créé une sous Fournisseurs SSO, vous pouvez passer à la dernière étape.",
+            "description": "Ajoutez un enregistrement DNS pour prouver que votre entreprise contrôle ce domaine. Seuls les domaines vérifiés peuvent utiliser la connexion d'entreprise.",
+            "fallbackName": "votre domaine",
+            "fullNameHint": "Si votre fournisseur DNS vous demande le nom complet, utilisez {fullName}.",
+            "nav": "Vérifier le domaine",
+            "needsConnection": "Connectez d'abord votre fournisseur d'identité. Z8 créera l'enregistrement DNS pour cette connexion.",
+            "notVerified": "Pas encore vérifié",
+            "publishHelp": "Connectez-vous à votre fournisseur DNS, comme Cloudflare, GoDaddy ou IONOS, et ajoutez un nouvel enregistrement TXT exactement comme indiqué. Si une autre personne gère votre domaine, transmettez-lui ces valeurs.",
+            "recordName": "Nom (également appelé hôte)",
+            "recordType": "Type",
+            "recordValue": "Valeur (également appelée contenu)",
+            "stepCreate": "Créer l'enregistrement DNS",
+            "stepPublish": "Ajoutez-le là où votre domaine est géré",
+            "stepVerify": "Laisser Z8 vérifier l'enregistrement",
+            "title": "Vérifiez que vous possédez {domain}",
+            "toast": {
+              "notFound": "Z8 n'a pas encore trouvé l'enregistrement DNS. Vérifiez le nom et la valeur, puis réessayez dans quelques minutes.",
+              "verified": "Domaine vérifié"
+            },
+            "verifiedHelp": "Z8 a trouvé votre enregistrement DNS. Vous pouvez le laisser en place.",
+            "verify": "Vérifier le domaine",
+            "verifyHelp": "Les nouveaux enregistrements apparaissent généralement en quelques minutes, mais cela peut prendre jusqu'à 48 heures. Vous pouvez quitter cette page et vérifier à nouveau plus tard."
+          },
+          "nav": {
+            "label": "Étapes de configuration"
+          },
+          "prerequisite": {
+            "action": "Aller à {step}",
+            "title": "Une étape à effectuer d'abord"
+          },
+          "progress": "{completed} sur {total} étapes obligatoires effectuées",
+          "progressLabel": "Progression de la configuration",
+          "provider": {
+            "changeWarning": "Ce fournisseur est déjà connecté. Si vous modifiez l'identifiant du fournisseur ou le domaine de messagerie, vous devrez vous reconnecter et recommencer la vérification.",
+            "description": "Indiquez à Z8 quel service votre entreprise utilise pour les comptes professionnels et quel domaine de messagerie possèdent vos employés.",
+            "domainHelp": "Les employés dont l'adresse e-mail se termine par ce domaine se connecteront via votre fournisseur.",
+            "domainInvalid": "Saisissez uniquement la partie située après l'@, par exemple exemple.com.",
+            "domainLabel": "Domaine de messagerie professionnelle",
+            "genericName": "votre fournisseur d'identité",
+            "nav": "Fournisseur d'identité",
+            "oidc": "OpenID Connect (recommandé)",
+            "oidcHelp": "Plus rapide à configurer et pris en charge par la plupart des fournisseurs. Choisissez cette option en cas de doute.",
+            "prepAdmin": "Accès administrateur à votre fournisseur d'identité, comme Okta ou Microsoft Entra ID",
+            "prepDns": "Accès aux paramètres DNS de votre domaine, pour ajouter un enregistrement TXT",
+            "prepIntro": "La configuration prend environ 15 minutes. Munissez-vous des éléments suivants :",
+            "prepTester": "Le compte professionnel d'un collègue ou un compte de test pour essayer de vous connecter",
+            "prepTitle": "Avant de commencer",
+            "presetLegend": "Quel fournisseur d'identité votre entreprise utilise-t-elle ?",
+            "protocolLegend": "Comment Z8 doit-il se connecter ?",
+            "providerIdHelp": "Un nom court pour cette connexion, utilisé dans les liens de connexion. Lettres minuscules, chiffres et traits d'union, par exemple acme-okta.",
+            "providerIdInvalid": "Utilisez uniquement des lettres minuscules, des chiffres et des traits d'union, sans trait d'union au début ou à la fin.",
+            "saml": "SAML 2.0",
+            "samlHelp": "Utilisez cette option si votre équipe informatique requiert SAML. Vous devrez coller un fichier de métadonnées XML.",
+            "save": "Enregistrer et continuer",
+            "singleProtocol": "{provider} se connecte avec OpenID Connect (OIDC).",
+            "title": "Choisissez votre fournisseur d'identité"
+          },
+          "review": {
+            "blocked": "Terminez les étapes marquées « À faire » pour activer. La connexion, la vérification du domaine et un test de connexion réussi sont obligatoires.",
+            "checklist": "Liste de contrôle",
+            "description": "Vérifiez votre configuration, puis activez la connexion d'entreprise.",
+            "nav": "Activer",
+            "noRules": "Aucune règle activée",
+            "notSet": "Non défini",
+            "open": "Ouvrir l'étape",
+            "provider": "Fournisseur d'identité",
+            "ready": "Toutes les étapes requises sont terminées. Vous pouvez maintenant procéder à l'activation.",
+            "reapply": "Déjà actif. Réactivez après avoir modifié les règles d'accès pour les appliquer.",
+            "rules": "Règles d'accès",
+            "scim": "Synchronisation des utilisateurs (SCIM)",
+            "scimOff": "Non configuré",
+            "scimOn": "Connecté",
+            "summary": "Vos paramètres",
+            "test": "Test de connexion",
+            "title": "Vérifier et activer"
+          },
+          "scim": {
+            "description": "Permettez à {provider} de créer, mettre à jour et désactiver des comptes Z8 à votre place via SCIM. Vous pouvez ignorer cette étape et la configurer plus tard.",
+            "nav": "Synchroniser les utilisateurs",
+            "roleHelp": "Choisissez un modèle de rôle avant de créer la connexion. Les nouveaux comptes commenceront avec ce rôle.",
+            "roleLabel": "Rôle pour les personnes créées par votre fournisseur",
+            "skipHelp": "Ignorez cette étape si votre fournisseur ne prend pas en charge SCIM ou si vous préférez ajouter vous-même des membres à Z8. Les collaborateurs pourront toujours se connecter via la connexion d'entreprise.",
+            "title": "Synchroniser automatiquement les utilisateurs"
+          },
+          "sso": {
+            "acsLabel": "URL ACS",
+            "clientIdHelp": "Également appelé ID d'application.",
+            "clientIdRequired": "Saisissez l'ID client.",
+            "clientSecretHelp": "Stocké en toute sécurité et ne sera plus jamais affiché.",
+            "clientSecretRequired": "Saisissez le secret client.",
+            "connected": "Connecté en tant que {providerId}",
+            "connectedHelp": "Pour modifier les paramètres de connexion, supprimez ce fournisseur sous Fournisseurs SSO et reconnectez-le ici.",
+            "continue": "Continuer vers la vérification du domaine",
+            "copyAcs": "Copier l'URL ACS",
+            "description": "Créez une application pour Z8 dans {provider}, puis collez les informations fournies ici.",
+            "issuerHelp": "L'adresse Web qui identifie votre fournisseur. Elle figure dans les paramètres de l'application et commence par https://.",
+            "issuerRequired": "Saisissez l'URL de l'émetteur fournie par votre fournisseur.",
+            "manageLink": "Ouvrir les fournisseurs SSO",
+            "metadataRequired": "Collez le XML de métadonnées de votre fournisseur.",
+            "nav": "Connecter",
+            "needsProvider": "Choisissez d'abord votre fournisseur d'identité et votre domaine de messagerie afin que Z8 puisse préparer les détails de connexion.",
+            "partOne": "Créer une application pour Z8 dans {provider}",
+            "partTwo": "Coller les informations de {provider}",
+            "samlIntro": "Créez une application SAML dans {provider} et saisissez cette adresse en tant qu'URL ACS (Assertion Consumer Service) ou URL de réponse. Téléchargez ensuite le XML de métadonnées de l'application.",
+            "save": "Connecter le fournisseur",
+            "title": "Connecter {provider} à Z8"
+          },
+          "ssoTest": {
+            "description": "Avant d'activer quoi que ce soit, confirmez qu'un employé peut effectivement se connecter via {provider}.",
+            "domainFirst": "{domain} n'est pas encore vérifié. La connexion via votre fournisseur pourrait ne pas fonctionner tant qu'il ne l'est pas.",
+            "emailHelp": "Idéalement le compte d'un collègue plutôt que votre propre compte administrateur.",
+            "emailLabel": "E-mail utilisé pour le test",
+            "failed": "Le dernier test a échoué",
+            "failedHelp": "Causes fréquentes : l'URL de rappel ne correspond pas exactement, le secret client est incorrect ou a expiré, ou l'utilisateur de test n'est pas assigné à l'application dans {provider}.",
+            "goToDomain": "Vérifier le domaine",
+            "howPrivate": "Ouvrez une fenêtre de navigation privée. Laissez cette fenêtre ouverte afin de rester connecté en tant qu'administrateur en cas de problème.",
+            "howRecord": "Revenez ici et indiquez si cela a fonctionné.",
+            "howSignIn": "Accédez à la page de connexion de Z8 et connectez-vous avec une adresse e-mail professionnelle se terminant par @{domain}.",
+            "howTitle": "Comment tester",
+            "nav": "Tester la connexion",
+            "needsConnection": "Connectez votre fournisseur d'identité avant de tester la connexion.",
+            "noteLabel": "Quel a été le problème ? (uniquement en cas d'échec)",
+            "notePlaceholder": "Par exemple, le message d'erreur affiché…",
+            "passed": "La connexion a fonctionné pour {email}",
+            "recordFail": "La connexion a échoué",
+            "recordPass": "La connexion a fonctionné",
+            "recordTitle": "Enregistrer le résultat",
+            "selfReported": "Z8 ne peut pas observer ce test, le résultat est donc enregistré tel que vous le signalez. L'enregistrement du fournisseur et la vérification du DNS ne garantissent pas le bon fonctionnement de la connexion.",
+            "title": "Tester la connexion avec un compte réel"
+          },
+          "status": {
+            "done": "Terminé",
+            "inProgress": "En cours",
+            "notActive": "Pas encore actif",
+            "optional": "Facultatif",
+            "toDo": "À faire"
+          },
+          "stepOf": "Étape {current} sur {total}",
+          "title": "Configurer la connexion d'entreprise"
         }
       },
       "keepExistingSecretHelp": "Laisser vide pour conserver le secret existant",
@@ -648,6 +735,9 @@
         "addError": "Échec de l'ajout du fournisseur SSO",
         "addSuccess": "Fournisseur SSO ajouté avec succès",
         "addTitle": "Ajouter un fournisseur SSO",
+        "copyError": "Impossible de copier dans le presse-papiers",
+        "copyIssuerUrl": "Copier l'URL de l'émetteur",
+        "copyProviderId": "Copier l'ID du fournisseur",
         "deleteConfirm": "Supprimer le fournisseur",
         "deleteDialogDescription": "Êtes-vous sûr de vouloir supprimer ce fournisseur SSO ? Les utilisateurs ne pourront plus se connecter en utilisant ce fournisseur d'identité.",
         "deleteDialogTitleNamed": "Supprimer le fournisseur SSO {provider} ?",
@@ -655,6 +745,16 @@
         "deleteProviderAria": "Supprimer le fournisseur SSO {provider}",
         "deleteSuccess": "Fournisseur SSO supprimé",
         "description": "Ajoutez des fournisseurs d'identité OIDC pour activer le SSO pour votre organisation.",
+        "dns": {
+          "copyFqdn": "Copier le nom de domaine complet",
+          "copyHost": "Copier le nom de l'enregistrement",
+          "copyValue": "Copier le jeton TXT",
+          "description": "Créez l'enregistrement auprès de votre fournisseur DNS pour {domain}, puis sélectionnez Vérifier. La propagation des modifications DNS peut prendre quelques minutes.",
+          "fqdnHint": "Si votre fournisseur DNS exige le nom de domaine complet, utilisez :",
+          "noToken": "Générez un jeton TXT pour afficher l'enregistrement DNS prouvant que vous êtes propriétaire de ce domaine.",
+          "title": "Ajoutez cet enregistrement TXT à votre DNS",
+          "type": "Type"
+        },
         "domainInvalid": "Veuillez saisir un domaine valide (par ex., exemple.com)",
         "domainVerified": "Domaine vérifié",
         "emailDomain": "Domaine d'e-mail",
@@ -673,7 +773,6 @@
           "copyCallback": "Copier l'URL de rappel",
           "copyFailed": "Échec de l'accès au presse-papiers. Sélectionnez et copiez le texte manuellement.",
           "domainPending": "Domaine non vérifié",
-          "domainStatus": "Vérification du domaine",
           "domainVerified": "Domaine vérifié",
           "entra": {
             "clientHelp": "Copiez l'ID d'application (client) depuis Vue d'ensemble, et non l'ID d'objet.",
@@ -743,7 +842,6 @@
           },
           "manual": "Autre fournisseur / OIDC manuel",
           "manualAvailable": "Vous utilisez un autre fournisseur ? Choisissez la configuration manuelle d'OIDC dans le panneau de configuration.",
-          "manualTestHelp": "Il s'agit d'un résultat de connexion signalé par l'administrateur, et non d'un test de connexion vérifié automatiquement. Testez la connexion avec un utilisateur pilote dans une session de navigateur distincte, laissez cette session administrateur ouverte, puis enregistrez ici la réussite ou l'échec constaté. L'enregistrement du fournisseur et la vérification du DNS ne prouvent pas que la connexion fonctionne.",
           "openSetup": "Ouvrir la configuration guidée",
           "provider": "Fournisseur d'identité",
           "required": "Ce champ est obligatoire.",
@@ -755,10 +853,10 @@
         "providerId": "ID du fournisseur",
         "providerIdHelp": "Un identifiant unique pour ce fournisseur (minuscules, sans espaces)",
         "providerIdInvalid": "L'ID du fournisseur doit contenir uniquement des lettres minuscules, des chiffres et des traits d'union",
+        "regenerateToken": "Régénérer le jeton TXT",
         "title": "Fournisseurs d'identité",
         "tokenError": "Échec de la génération du jeton de vérification de domaine",
         "tokenGenerated": "Jeton de vérification généré",
-        "txtToken": "Jeton TXT :",
         "validUrlRequired": "Veuillez saisir une URL valide",
         "verify": "Vérifier",
         "verifyError": "La vérification du domaine a échoué. Vérifiez votre enregistrement DNS TXT et réessayez."

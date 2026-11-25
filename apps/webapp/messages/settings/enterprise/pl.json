@@ -246,15 +246,27 @@
         "regenerateTokenFailed": "Nie udało się wygenerować ponownie tokena",
         "regenerateTokenSuccess": "Wygenerowano nowy token weryfikacyjny",
         "regenerating": "Generowanie…",
+        "registration": "Rejestracja",
+        "registrationHelp": "Zezwalaj nowym osobom na tworzenie konta w tym miejscu. Gdy ta opcja jest wyłączona, zarejestrować mogą się tylko osoby z zaproszeniem.",
+        "routingInstruction": "W przypadku subdomeny dodaj rekord CNAME wskazujący {domain} na {target}. W przypadku domeny głównej dodaj rekord A wskazujący na adres IP modułu równoważenia obciążenia Z8. Wyłącz proxy CDN dla tego rekordu.",
         "saveConfiguration": "Zapisz konfigurację",
         "secretKey": "Klucz tajny",
         "secretKeyPlaceholder": "Wprowadź klucz tajny",
         "secretKeyRequired": "Wymagane podczas ustawiania klucza witryny",
+        "signInMethods": "Metody logowania",
         "siteKey": "Klucz witryny",
         "socialProviders": "Dostawcy społecznościowi",
         "socialProvidersHelp": "Włącz opcje logowania społecznościowego dla tej domeny",
         "sso": "Logowanie jednokrotne (SSO)",
+        "ssoButtonIcon": "Ikona przycisku SSO",
+        "ssoButtonLabel": "Etykieta przycisku SSO (opcjonalnie)",
         "ssoHelp": "Zezwalaj na logowanie korporacyjne oparte na OIDC",
+        "ssoIconBadge": "Identyfikator",
+        "ssoIconFingerprint": "Odcisk palca",
+        "ssoIconKey": "Klucz",
+        "ssoIconLock": "Kłódka",
+        "ssoIconShield": "Tarcza",
+        "ssoUnavailableHelp": "Najpierw skonfiguruj i zweryfikuj dostawcę SSO w sekcji Konfiguracja tożsamości.",
         "status": {
           "pending": "Oczekuje na weryfikację",
           "verified": "Zweryfikowano"
@@ -337,65 +349,30 @@
       "enableProviderHelp": "Włącz lub wyłącz tego dostawcę",
       "identity": {
         "accessPolicy": {
-          "action": {
-            "save": "Zapisz politykę dostępu"
-          },
-          "defaultRoleTemplate": "Domyślny szablon roli",
-          "description": "Ustaw domenę, zaproszenia i wymuszanie SSO po pomyślnym zakończeniu testów pilotażowych.",
           "noDefaultTemplate": "Brak domyślnego szablonu",
           "placeholder": {
             "roleTemplate": "Wybierz szablon roli"
           },
           "requireSso": "Wymagaj SSO",
-          "requireSsoHelp": "Pracownicy muszą korzystać z firmowego dostawcy tożsamości (IdP).",
           "restrictDomain": "Ogranicz do zweryfikowanej domeny",
-          "restrictDomainHelp": "Blokuj konta spoza wybranej domeny.",
-          "restrictInvites": "Ogranicz zaproszenia",
-          "restrictInvitesHelp": "Zezwalaj tylko na zaproszenia zgodne z polityką dostępu.",
-          "title": "Polityka dostępu"
-        },
-        "badge": {
-          "now": "Teraz",
-          "queued": "W kolejce",
-          "ready": "Gotowe"
+          "restrictInvites": "Ogranicz zaproszenia"
         },
         "domain": {
-          "action": {
-            "checkStatus": "Sprawdź status domeny"
-          },
-          "description": "Zweryfikuj granice dzierżawy przed wymuszeniem SSO dla pracowników.",
-          "help": "Weryfikacja DNS wykorzystuje istniejące działania weryfikacji domeny SSO. Zakończ tę weryfikację przed aktywacją wymuszania.",
-          "notSelected": "Nie wybrano",
           "selected": "Wybrana domena",
           "status": {
-            "pending": "Oczekujące",
             "verified": "Zweryfikowano"
-          },
-          "title": "Domena"
+          }
         },
-        "hero": {
-          "title": "Lista kontrolna operacji"
-        },
-        "progress": "Ukończono {completed} z {total} kroków",
         "provider": {
-          "action": {
-            "save": "Zapisz dostawcę"
-          },
-          "description": "Wybierz ustawienia wstępne dostawcy tożsamości, protokół, identyfikator dostawcy i domenę e-mail.",
           "error": {
             "domainRequired": "Domena jest wymagana",
             "providerIdRequired": "Identyfikator dostawcy jest wymagany"
           },
           "label": {
-            "domain": "Domena e-mail",
-            "preset": "Ustawienia wstępne dostawcy",
-            "protocol": "Protokół",
             "providerId": "Identyfikator dostawcy"
           },
           "placeholder": {
             "domain": "np. example.com…",
-            "protocol": "Wybierz protokół",
-            "provider": "Wybierz dostawcę",
             "providerId": "np. acme-okta…"
           },
           "preset": {
@@ -411,28 +388,14 @@
             "okta": {
               "description": "Użyj Okta Workforce Identity do logowania jednokrotnego SAML lub OIDC."
             }
-          },
-          "title": "Dostawca"
-        },
-        "rail": {
-          "title": "Pasek gotowości"
+          }
         },
         "review": {
           "action": {
             "activate": "Aktywuj tożsamość korporacyjną"
           },
-          "activationSummary": "Podsumowanie aktywacji",
-          "description": "Przejrzyj zabezpieczone kontrole aktywacji przed włączeniem mechanizmów kontroli tożsamości korporacyjnej.",
           "lockoutWarning": "Ostrzeżenie o blokadzie bieżącego administratora",
-          "lockoutWarningHelp": "Przed aktywacją upewnij się, że Twoje bieżące konto administratora może zalogować się przez skonfigurowanego dostawcę. Wymuszanie może zablokować logowanie hasłem dla wybranej domeny.",
-          "missingRequirement": "{item} jest wymagany przed aktywacją",
-          "prerequisitesComplete": "Dostawca, zweryfikowana domena i wymagania wstępne testu SSO zostały spełnione.",
-          "requirement": {
-            "domain": "Zweryfikowana domena",
-            "provider": "Dostawca",
-            "ssoTest": "Test SSO"
-          },
-          "title": "Przejrzyj i aktywuj"
+          "lockoutWarningHelp": "Przed aktywacją upewnij się, że Twoje bieżące konto administratora może zalogować się przez skonfigurowanego dostawcę. Wymuszanie może zablokować logowanie hasłem dla wybranej domeny."
         },
         "scim": {
           "action": {
@@ -500,7 +463,6 @@
             "rotating": "rotowanie",
             "verified": "zweryfikowano"
           },
-          "title": "Aprowizacja SCIM",
           "toast": {
             "createError": "Nie można utworzyć połączenia SCIM.",
             "reconcileError": "Nie można uzgodnić utworzenia SCIM.",
@@ -510,14 +472,9 @@
           },
           "verification": "Weryfikacja",
           "verification.awaiting": "Oczekiwanie na użycie przez dostawcę",
-          "verification.observed": "Zaobserwowane",
-          "wizardDescription": "Skonfiguruj zarządzane aprowizowanie użytkowników bez zmiany aktywacji przedsiębiorstwa."
+          "verification.observed": "Zaobserwowane"
         },
         "sso": {
-          "action": {
-            "register": "Zarejestruj dostawcę SSO"
-          },
-          "description": "Zarejestruj zewnętrznego dostawcę tożsamości (IdP) przy użyciu danych uwierzytelniających klienta OIDC lub metadanych SAML.",
           "error": {
             "saveProviderFirst": "Zapisz dostawcę i domenę przed rejestracją SSO"
           },
@@ -535,53 +492,19 @@
               "okta": "https://acme.okta.com…"
             },
             "metadata": "Wklej XML metadanych IdP…"
-          },
-          "saml": {
-            "acsPath": "Ścieżka ACS względna dla przeglądarki: {path}",
-            "acsUrl": "Skonfiguruj swojego dostawcę IdP za pomocą tego adresu URL usługi Assertion Consumer Service (ACS): {path}"
-          },
-          "title": "Konfiguracja SSO"
+          }
         },
         "ssoTest": {
-          "action": {
-            "recordFail": "Zapisz niepowodzenie",
-            "recordPass": "Zapisz powodzenie"
-          },
           "defaultFailure": "Test SSO na żywo nie powiódł się",
-          "description": "Zapisz wynik testu SSO na żywo przed wymuszeniem.",
           "error": {
             "saveProviderFirst": "Zapisz dostawcę przed zapisaniem testu"
           },
-          "label": {
-            "email": "Adres e-mail użytkownika testowego",
-            "failureNote": "Uwaga dotycząca niepowodzenia"
-          },
           "status": {
-            "failed": "Niepowodzenie",
-            "notRun": "Nieuruchomiony",
-            "passed": "Powodzenie"
-          },
-          "title": "Użytkownik testowy"
+            "notRun": "Nieuruchomiony"
+          }
         },
         "status": {
-          "activated": "Aktywowano",
-          "draft": "Wersja robocza"
-        },
-        "step": {
-          "accessPolicy": "Zasady dostępu",
-          "accessPolicy.description": "Ustaw zasady wymuszania",
-          "domain": "Domena",
-          "domain.description": "Potwierdź granicę dzierżawy",
-          "provider": "Dostawca",
-          "provider.description": "Wybierz źródło tożsamości",
-          "review": "Przejrzyj i aktywuj",
-          "review.description": "Aktywacja zabezpieczenia",
-          "scim": "Aprowizacja SCIM",
-          "scim.description": "Połącz i zarządzaj połączeniem aprowizacji SCIM",
-          "sso": "Konfiguracja SSO",
-          "sso.description": "Zarejestruj OIDC lub SAML",
-          "ssoTest": "Użytkownik testowy",
-          "ssoTest.description": "Zapisz wynik logowania na żywo"
+          "activated": "Aktywowano"
         },
         "toast": {
           "accessPolicyFailed": "Nie udało się zapisać polityki dostępu",
@@ -589,7 +512,6 @@
           "activated": "Konfiguracja tożsamości korporacyjnej aktywowana",
           "activateFailed": "Nie udało się aktywować konfiguracji",
           "domainStatusFailed": "Nie udało się odświeżyć statusu domeny",
-          "domainStatusRefreshed": "Status domeny odświeżony",
           "providerSaved": "Dostawca tożsamości zapisany",
           "providerSaveFailed": "Nie udało się zapisać dostawcy",
           "ssoRegistered": "Dostawca SSO zarejestrowany",
@@ -597,6 +519,171 @@
           "ssoTestFailed": "Test SSO oznaczony jako nieudany",
           "ssoTestPassed": "Test SSO oznaczony jako udany",
           "ssoTestRecordFailed": "Nie udało się zapisać testu SSO"
+        },
+        "wizard": {
+          "accessPolicy": {
+            "description": "Zdecyduj, jak rygorystycznie ma być wymuszane logowanie firmowe. Dla pracowników nic się nie zmieni, dopóki nie aktywujesz konfiguracji w ostatnim kroku.",
+            "domainsLink": "Otwórz domeny",
+            "legend": "Włącz reguły, których potrzebujesz. Wszystkie są opcjonalne.",
+            "nav": "Reguły dostępu",
+            "requireSsoDomains": "Wymaga to również dodania i zweryfikowania domeny {domain} w sekcji Domeny.",
+            "requireSsoHelp": "Osoby z adresem e-mail w domenie @{domain} muszą logować się za pośrednictwem dostawcy {provider} zamiast używać hasła.",
+            "restrictDomainHelp": "Kody zaproszeń mogą być realizowane tylko przez osoby z adresem e-mail w domenie @{domain}.",
+            "restrictInvitesHelp": "Zaproszenia można wysyłać tylko na adresy e-mail w domenie @{domain}.",
+            "save": "Zapisz i kontynuuj",
+            "title": "Wybierz reguły dostępu"
+          },
+          "action": {
+            "back": "Wstecz",
+            "next": "Dalej: {step}",
+            "skip": "Przejdź do: {step}"
+          },
+          "activeNotice": "Logowanie firmowe jest aktywne dla domeny {domain}. Poniżej możesz przejrzeć poszczególne kroki.",
+          "description": "Zezwól pracownikom na logowanie się do Z8 za pomocą konta służbowego od dostawcy tożsamości w Twojej firmie. Twoje postępy są zapisywane po każdym kroku, więc możesz przerwać i wrócić w dowolnym momencie.",
+          "domain": {
+            "continue": "Kontynuuj, aby przetestować logowanie",
+            "copyName": "Kopiuj nazwę",
+            "copyValue": "Kopiuj wartość",
+            "create": "Utwórz rekord DNS",
+            "createHelp": "Z8 generuje unikalną wartość do opublikowania. Jeśli została już utworzona w sekcji Dostawcy SSO, możesz przejść do ostatniego kroku.",
+            "description": "Dodaj jeden rekord DNS, aby potwierdzić, że Twoja firma zarządza tą domeną. Tylko zweryfikowane domeny mogą korzystać z logowania firmowego.",
+            "fallbackName": "twoja domena",
+            "fullNameHint": "Jeśli Twój dostawca DNS wymaga pełnej nazwy, użyj {fullName}.",
+            "nav": "Zweryfikuj domenę",
+            "needsConnection": "Najpierw połącz swojego dostawcę tożsamości. Z8 utworzy rekord DNS dla tego połączenia.",
+            "notVerified": "Jeszcze niezweryfikowane",
+            "publishHelp": "Zaloguj się do swojego dostawcy DNS, takiego jak Cloudflare, GoDaddy lub IONOS, i dodaj nowy rekord TXT dokładnie w podany sposób. Jeśli ktoś inny zarządza Twoją domeną, prześlij mu te wartości.",
+            "recordName": "Nazwa (nazywana również hostem)",
+            "recordType": "Typ",
+            "recordValue": "Wartość (nazywana również zawartością)",
+            "stepCreate": "Utwórz rekord DNS",
+            "stepPublish": "Dodaj go w miejscu zarządzania domeną",
+            "stepVerify": "Pozwól Z8 sprawdzić rekord",
+            "title": "Potwierdź, że jesteś właścicielem domeny {domain}",
+            "toast": {
+              "notFound": "Z8 nie może jeszcze znaleźć rekordu DNS. Sprawdź nazwę oraz wartość i spróbuj ponownie za kilka minut.",
+              "verified": "Domena zweryfikowana"
+            },
+            "verifiedHelp": "Z8 znalazło Twój rekord DNS. Możesz pozostawić go bez zmian.",
+            "verify": "Zweryfikuj domenę",
+            "verifyHelp": "Nowe rekordy pojawiają się zwykle w ciągu kilku minut, ale może to potrwać do 48 godzin. Możesz opuścić tę stronę i sprawdzić ponownie później."
+          },
+          "nav": {
+            "label": "Kroki konfiguracji"
+          },
+          "prerequisite": {
+            "action": "Przejdź do: {step}",
+            "title": "Najpierw pozostał jeszcze jeden krok"
+          },
+          "progress": "Ukończono {completed} z {total} wymaganych kroków",
+          "progressLabel": "Postęp konfiguracji",
+          "provider": {
+            "changeWarning": "Ten dostawca jest już połączony. Zmiana identyfikatora dostawcy lub domeny e-mail oznacza, że konieczne będzie ponowne połączenie i weryfikacja.",
+            "description": "Wskaż Z8, z jakiej usługi Twoja firma korzysta w przypadku kont służbowych oraz jaką domenę e-mail mają pracownicy.",
+            "domainHelp": "Pracownicy, których adres e-mail kończy się tą domeną, będą logować się za pośrednictwem Twojego dostawcy.",
+            "domainInvalid": "Wprowadź tylko część po znaku @, na przykład example.com.",
+            "domainLabel": "Domena służbowego adresu e-mail",
+            "genericName": "twój dostawca tożsamości",
+            "nav": "Dostawca tożsamości",
+            "oidc": "OpenID Connect (zalecane)",
+            "oidcHelp": "Szybsza konfiguracja i obsługa przez większość dostawców. Wybierz tę opcję, jeśli nie masz pewności.",
+            "prepAdmin": "Dostęp administratora do dostawcy tożsamości, takiego jak Okta lub Microsoft Entra ID",
+            "prepDns": "Dostęp do ustawień DNS domeny w celu dodania jednego rekordu TXT",
+            "prepIntro": "Konfiguracja zajmuje około 15 minut. Przygotuj następujące elementy:",
+            "prepTester": "Konto służbowe współpracownika lub konto testowe, aby spróbować się zalogować",
+            "prepTitle": "Zanim zaczniesz",
+            "presetLegend": "Z jakiego dostawcy tożsamości korzysta Twoja firma?",
+            "protocolLegend": "W jaki sposób Z8 ma się łączyć?",
+            "providerIdHelp": "Krótka nazwa tego połączenia używana w linkach do logowania. Małe litery, cyfry i łączniki, na przykład acme-okta.",
+            "providerIdInvalid": "Używaj tylko małych liter, cyfr i łączników, bez łącznika na początku lub na końcu.",
+            "saml": "SAML 2.0",
+            "samlHelp": "Wybierz tę opcję, jeśli Twój zespół IT wymaga protokołu SAML. Wkleisz plik metadanych XML.",
+            "save": "Zapisz i kontynuuj",
+            "singleProtocol": "{provider} łączy się za pomocą OpenID Connect (OIDC).",
+            "title": "Wybierz dostawcę tożsamości"
+          },
+          "review": {
+            "blocked": "Ukończ kroki oznaczone jako „Do zrobienia”, aby aktywować. Wymagane jest połączenie, weryfikacja domeny i pomyślny test logowania.",
+            "checklist": "Lista kontrolna",
+            "description": "Sprawdź konfigurację, a następnie włącz logowanie korporacyjne.",
+            "nav": "Aktywuj",
+            "noRules": "Brak włączonych reguł",
+            "notSet": "Nie ustawiono",
+            "open": "Otwórz krok",
+            "provider": "Dostawca tożsamości",
+            "ready": "Wszystkie wymagane czynności zostały wykonane. Możesz teraz aktywować.",
+            "reapply": "Już aktywne. Po zmianie reguł dostępu aktywuj ponownie, aby je zastosować.",
+            "rules": "Reguły dostępu",
+            "scim": "Synchronizacja użytkowników (SCIM)",
+            "scimOff": "Nie skonfigurowano",
+            "scimOn": "Połączono",
+            "summary": "Twoje ustawienia",
+            "test": "Test logowania",
+            "title": "Przejrzyj i aktywuj"
+          },
+          "scim": {
+            "description": "Zezwól usłudze {provider} na tworzenie, aktualizowanie i dezaktywowanie kont Z8 za pomocą standardu SCIM. Możesz pominąć ten krok i skonfigurować to później.",
+            "nav": "Synchronizuj użytkowników",
+            "roleHelp": "Wybierz szablon roli przed utworzeniem połączenia. Nowe konta otrzymają na start tę rolę.",
+            "roleLabel": "Rola dla osób utworzonych przez Twojego dostawcę",
+            "skipHelp": "Pomiń ten krok, jeśli Twój dostawca nie obsługuje standardu SCIM lub wolisz samodzielnie dodawać osoby do Z8. Pracownicy nadal mogą logować się za pomocą logowania korporacyjnego.",
+            "title": "Synchronizuj użytkowników automatycznie"
+          },
+          "sso": {
+            "acsLabel": "Adres URL ACS",
+            "clientIdHelp": "Nazywany również identyfikatorem aplikacji.",
+            "clientIdRequired": "Wprowadź identyfikator klienta.",
+            "clientSecretHelp": "Przechowywane bezpiecznie i nigdy więcej niepokazywane.",
+            "clientSecretRequired": "Wprowadź klucz tajny klienta.",
+            "connected": "Połączono jako {providerId}",
+            "connectedHelp": "Aby zmienić szczegóły połączenia, usuń tego dostawcę w sekcji Dostawcy SSO i połącz go ponownie tutaj.",
+            "continue": "Przejdź do weryfikacji domeny",
+            "copyAcs": "Skopiuj adres URL ACS",
+            "description": "Utwórz aplikację dla Z8 w {provider}, a następnie wklej tutaj otrzymane dane.",
+            "issuerHelp": "Adres internetowy identyfikujący Twojego dostawcę. Znajduje się w ustawieniach aplikacji i zaczyna się od https://.",
+            "issuerRequired": "Wprowadź adres URL wystawcy od swojego dostawcy.",
+            "manageLink": "Otwórz dostawców SSO",
+            "metadataRequired": "Wklej kod XML z metadanymi od swojego dostawcy.",
+            "nav": "Połącz",
+            "needsProvider": "Najpierw wybierz dostawcę tożsamości i domenę e-mail, aby Z8 mogło przygotować szczegóły połączenia.",
+            "partOne": "Utwórz aplikację dla Z8 w {provider}",
+            "partTwo": "Wklej dane z {provider}",
+            "samlIntro": "Utwórz aplikację SAML w {provider} i wprowadź ten adres jako adres URL usługi ACS (Assertion Consumer Service) lub adres URL odpowiedzi. Następnie pobierz plik XML z metadanymi aplikacji.",
+            "save": "Połącz dostawcę",
+            "title": "Połącz {provider} z Z8"
+          },
+          "ssoTest": {
+            "description": "Zanim cokolwiek włączysz, upewnij się, że pracownik może rzeczywiście zalogować się za pośrednictwem {provider}.",
+            "domainFirst": "Domena {domain} nie została jeszcze zweryfikowana. Logowanie za pośrednictwem dostawcy może nie działać, dopóki weryfikacja nie zostanie zakończona.",
+            "emailHelp": "Najlepiej konto współpracownika zamiast Twojego własnego konta administratora.",
+            "emailLabel": "Adres e-mail użyty do testu",
+            "failed": "Ostatni test zakończył się niepowodzeniem",
+            "failedHelp": "Częste przyczyny: adres URL wywołania zwrotnego nie zgadza się dokładnie, klucz tajny klienta jest nieprawidłowy lub wygasł albo użytkownik testowy nie jest przypisany do aplikacji w {provider}.",
+            "goToDomain": "Zweryfikuj domenę",
+            "howPrivate": "Otwórz okno przeglądarki w trybie prywatnym lub incognito. Pozostaw to okno otwarte, aby zachować zalogowanie jako administrator w razie wystąpienia problemów.",
+            "howRecord": "Wróć tutaj i zapisz, czy operacja się powiodła.",
+            "howSignIn": "Przejdź do strony logowania Z8 i zaloguj się za pomocą służbowego adresu e-mail kończącego się na @{domain}.",
+            "howTitle": "Jak przeprowadzić test",
+            "nav": "Przetestuj logowanie",
+            "needsConnection": "Połącz swojego dostawcę tożsamości przed przetestowaniem logowania.",
+            "noteLabel": "Co poszło nie tak? (tylko w przypadku niepowodzenia)",
+            "notePlaceholder": "Na przykład komunikat o błędzie, który się wyświetlił…",
+            "passed": "Logowanie powiodło się dla {email}",
+            "recordFail": "Logowanie nie powiodło się",
+            "recordPass": "Logowanie powiodło się",
+            "recordTitle": "Zapisz wynik",
+            "selfReported": "Z8 nie może monitorować tego testu, dlatego wynik jest zapisywany zgodnie z Twoim zgłoszeniem. Zapisanie dostawcy i weryfikacja DNS nie potwierdzają, że logowanie działa.",
+            "title": "Przetestuj logowanie za pomocą prawdziwego konta"
+          },
+          "status": {
+            "done": "Gotowe",
+            "inProgress": "W toku",
+            "notActive": "Jeszcze nieaktywne",
+            "optional": "Opcjonalnie",
+            "toDo": "Do zrobienia"
+          },
+          "stepOf": "Krok {current} z {total}",
+          "title": "Skonfiguruj logowanie firmowe"
         }
       },
       "keepExistingSecretHelp": "Pozostaw puste, aby zachować istniejący klucz tajny",
@@ -648,6 +735,9 @@
         "addError": "Nie udało się dodać dostawcy SSO",
         "addSuccess": "Pomyślnie dodano dostawcę SSO",
         "addTitle": "Dodaj dostawcę SSO",
+        "copyError": "Nie udało się skopiować do schowka",
+        "copyIssuerUrl": "Skopiuj adres URL wystawcy",
+        "copyProviderId": "Skopiuj identyfikator dostawcy",
         "deleteConfirm": "Usuń dostawcę",
         "deleteDialogDescription": "Czy na pewno chcesz usunąć tego dostawcę SSO? Użytkownicy nie będą już mogli logować się za pomocą tego dostawcy tożsamości.",
         "deleteDialogTitleNamed": "Usunąć dostawcę SSO {provider}?",
@@ -655,6 +745,16 @@
         "deleteProviderAria": "Usuń dostawcę SSO {provider}",
         "deleteSuccess": "Dostawca SSO usunięty",
         "description": "Dodaj dostawców tożsamości OIDC, aby włączyć SSO dla swojej organizacji.",
+        "dns": {
+          "copyFqdn": "Skopiuj w pełni kwalifikowaną nazwę",
+          "copyHost": "Skopiuj nazwę rekordu",
+          "copyValue": "Skopiuj token TXT",
+          "description": "Utwórz rekord u swojego dostawcy DNS dla domeny {domain}, a następnie wybierz Zweryfikuj. Propagacja zmian w DNS może potrwać kilka minut.",
+          "fqdnHint": "Jeśli Twój dostawca DNS wymaga w pełni kwalifikowanej nazwy, użyj:",
+          "noToken": "Wygeneruj token TXT, aby wyświetlić rekord DNS potwierdzający własność tej domeny.",
+          "title": "Dodaj ten rekord TXT do swojego DNS",
+          "type": "Typ"
+        },
         "domainInvalid": "Wprowadź poprawną domenę (np. example.com)",
         "domainVerified": "Domena zweryfikowana",
         "emailDomain": "Domena e-mail",
@@ -673,7 +773,6 @@
           "copyCallback": "Skopiuj adres URL wywołania zwrotnego",
           "copyFailed": "Dostęp do schowka nie powiódł się. Zaznacz i skopiuj tekst ręcznie.",
           "domainPending": "Domena niezweryfikowana",
-          "domainStatus": "Weryfikacja domeny",
           "domainVerified": "Domena zweryfikowana",
           "entra": {
             "clientHelp": "Skopiuj identyfikator aplikacji (klienta) z sekcji Przegląd, a nie identyfikator obiektu.",
@@ -743,7 +842,6 @@
           },
           "manual": "Inny dostawca / ręczna konfiguracja OIDC",
           "manualAvailable": "Korzystasz z innego dostawcy? Wybierz ręczną konfigurację OIDC w panelu konfiguracji.",
-          "manualTestHelp": "Jest to wynik logowania zgłoszony przez administratora, a nie automatycznie zweryfikowany test połączenia. Przeprowadź pilotażowe logowanie z docelowym użytkownikiem w osobnej sesji przeglądarki, pozostaw tę sesję administratora otwartą, a następnie zarejestruj tutaj wynik (powodzenie lub niepowodzenie). Zapisanie dostawcy i weryfikacja DNS nie potwierdzają, że logowanie działa.",
           "openSetup": "Otwórz konfigurację z przewodnikiem",
           "provider": "Dostawca tożsamości",
           "required": "To pole jest wymagane.",
@@ -755,10 +853,10 @@
         "providerId": "Identyfikator dostawcy",
         "providerIdHelp": "Unikalny identyfikator dla tego dostawcy (małe litery, bez spacji)",
         "providerIdInvalid": "Identyfikator dostawcy może zawierać tylko małe litery, cyfry i myślniki",
+        "regenerateToken": "Wygeneruj ponownie token TXT",
         "title": "Dostawcy tożsamości",
         "tokenError": "Nie udało się wygenerować tokena weryfikacji domeny",
         "tokenGenerated": "Wygenerowano token weryfikacyjny",
-        "txtToken": "Token TXT:",
         "validUrlRequired": "Wprowadź poprawny adres URL",
         "verify": "Weryfikuj",
         "verifyError": "Weryfikacja domeny nie powiodła się. Sprawdź swój rekord DNS TXT i spróbuj ponownie."

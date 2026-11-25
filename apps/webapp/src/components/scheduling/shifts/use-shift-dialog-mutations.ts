@@ -5,11 +5,22 @@ import { useTranslate } from "@tolgee/react";
 import { toast } from "sonner";
 import { deleteShift, upsertShift } from "@/app/[locale]/(app)/scheduling/actions";
 import type { ShiftMetadata } from "@/app/[locale]/(app)/scheduling/types";
+import type { RefusalMessages } from "@/lib/organization-action/action-error-message";
 import { queryKeys } from "@/lib/query/keys";
 import { SKILL_OVERRIDE_REASON_REQUIRED } from "@/lib/scheduling/skill-override-refusal";
+import { STATUTORY_PUBLICATION_BLOCKED } from "@/lib/statutory/scheduling/publication-block";
+import { schedulingActionErrorMessage } from "../scheduling-action-error";
 import type { ShiftDialogFormValues } from "./use-shift-dialog-form";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
+
+/** How a refused save of a shift is worded, in the shift dialog and the scheduler alike. */
+export const SHIFT_UPDATE_REFUSALS = {
+	[STATUTORY_PUBLICATION_BLOCKED]: [
+		"scheduling:scheduling.scheduler.shiftUpdate.statutoryBlocked",
+		"This change to a published shift breaks youth protection limits (JArbSchG) beyond what was already published. Change the shift so it breaks no limit anew or further. A sector exception can only be acknowledged for a saved shift: to plan this with one, add it as a draft shift, acknowledge the exception, then publish it.",
+	],
+} satisfies RefusalMessages<typeof STATUTORY_PUBLICATION_BLOCKED>;
 
 /** The server wants a skill override reason for this assignment context (#893). */
 class SkillOverrideReasonRequired extends Error {
@@ -97,10 +108,11 @@ export function useShiftUpsertMutation({
 				skillOverrideReason: values.skillOverrideReason?.trim() || undefined,
 			});
 			if (!result.success) {
+				// Flow, not wording: the dialog asks for the reason next to the skill warning.
 				if (result.refusal === SKILL_OVERRIDE_REASON_REQUIRED) {
 					throw new SkillOverrideReasonRequired(assignmentContextOf(values));
 				}
-				throw new Error(result.error);
+				throw new Error(schedulingActionErrorMessage(t, result, SHIFT_UPDATE_REFUSALS));
 			}
 			return result.data;
 		},

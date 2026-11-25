@@ -146,12 +146,14 @@ export const ROUTE_NAMESPACES: Record<string, AppNamespace[]> = {
 	],
 	"/settings/audit-export": ["common", "settings/generic", "settings/auditExport"],
 	"/settings/calendar": ["common", "settings/generic", "settings/integrations"],
+	// scheduling: the Reviews & Conflicts inbox words statutory findings as Scheduling does (#1994).
 	"/settings/contracts": [
 		"common",
 		"settings/generic",
 		"settings/workPolicies",
 		"settings/rules",
 		"settings/people",
+		"scheduling",
 	],
 	"/settings/demo": ["common", "settings/generic", "settings/demo"],
 	"/settings/employees": ["common", "settings/generic", "settings/people", "settings/workPolicies"],

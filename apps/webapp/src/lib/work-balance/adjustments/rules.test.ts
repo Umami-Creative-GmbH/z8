@@ -117,6 +117,18 @@ describe("refusing an overtime payout", () => {
 		).toBeNull();
 	});
 
+	it("refuses a payout on a day of an External Contractor stint, whatever the balance (#1997)", () => {
+		expect(
+			refuseOvertimePayout({
+				amountMinutes: 300,
+				day: today,
+				today,
+				balanceAtEndOfDayMinutes: 720,
+				externalContractorDay: true,
+			}),
+		).toBe("external_contractor_day");
+	});
+
 	it("refuses a payout of zero or less", () => {
 		for (const amountMinutes of [0, -30]) {
 			expect(

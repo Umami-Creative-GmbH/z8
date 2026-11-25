@@ -73,6 +73,11 @@
     "portalOpenFailed": "Nie udało się otworzyć portalu rozliczeniowego",
     "priceSeatMonth": "{price} €/użytkownika/mies.",
     "priceSeatMonthYearly": "{price} €/użytkownika/mies. (płatne rocznie)",
+    "recovery": {
+      "billingAndSubscription": "Płatności i subskrypcja",
+      "navigationLabel": "Nawigacja odzyskiwania płatności",
+      "suspensionNotice": "Powiadomienie o zawieszeniu"
+    },
     "seatBilledAnnually": "{price} €/użytkownika płatne rocznie",
     "seatLines": {
       "full": "Pełne miejsca",

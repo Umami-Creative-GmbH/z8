@@ -441,7 +441,9 @@
       "description": "Vizualizează și gestionează toți utilizatorii de pe platformă",
       "filters": {
         "allUsers": "Toți utilizatorii",
-        "banned": "Blocați"
+        "banned": "Blocați",
+        "clearOrganization": "Șterge filtrul organizației",
+        "organization": "Organizație: {name}"
       },
       "pagination": {
         "showing": "Se afișează de la {from} la {to} din {total} utilizatori"

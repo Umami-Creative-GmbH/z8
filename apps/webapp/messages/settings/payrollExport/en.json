@@ -1,6 +1,8 @@
 {
   "settings": {
     "payrollExport": {
+      "connectorsDescription": "Configure payroll export connectors and wage type mappings",
+      "connectorsTitle": "Payroll Connectors & Wage Types",
       "datev": {
         "beraternummer": "Consultant number",
         "beraternummerTooltip": "Your DATEV consultant number (1-7 digits)",
@@ -19,7 +21,6 @@
         "saveSuccess": "Configuration saved",
         "title": "DATEV Master Data"
       },
-      "description": "Export work periods to payroll systems like DATEV or Personio",
       "expenseMappings": {
         "apiConnectors": "Personio, Workday and the SuccessFactors API don't carry expense reimbursements.",
         "codeLabel": "{line}, {format} wage type",
@@ -58,8 +59,9 @@
         "dateRange": "Date Range",
         "description": "Export work periods and absences to DATEV Lohn & Gehalt format",
         "employees": "Employees",
-        "employeesSelected": "{count} selected",
         "endDate": "End Date",
+        "contractorTimeExcluded": "Payroll exports include only time worked as an employee. Time worked as an External Contractor is always left out, even if you pick the person.",
+        "engagementPickerHint": "This only narrows the list of people to pick from. With nobody selected, the export includes everyone.",
         "error": "Export failed",
         "exportButtonDatev": "Export to DATEV",
         "exportButtonLexware": "Export to Lexware",
@@ -100,10 +102,13 @@
         "download": "Download export",
         "downloadError": "Failed to get download URL",
         "employees": "employees",
+        "includesSettledDays": "Settled days included",
+        "loadError": "Export history could not be loaded.",
         "noExports": "No exports yet",
         "noExportsHint": "Start a payroll export on the Export tab. Finished exports appear here for download.",
         "payrollRun": "{count, plural, one {Payroll run: # expense report} other {Payroll run: # expense reports}}",
         "periods": "periods",
+        "settledDaysLeftOut": "{count, plural, one {# settled day left out} other {# settled days left out}}",
         "status": {
           "completed": "Completed",
           "failed": "Failed",
@@ -185,6 +190,7 @@
         },
         "workCategory": "Work Category"
       },
+      "openPayrollWorkspace": "Run exports in Payroll",
       "personio": {
         "clientId": "Client ID",
         "clientIdHelp": "Client ID help",
@@ -242,6 +248,9 @@
         "saveSuccess": "Configuration saved",
         "title": "Sage Payroll"
       },
+      "sections": {
+        "targets": "Payroll Targets"
+      },
       "specialCategory": {
         "overtime": "Overtime"
       },
@@ -278,8 +287,6 @@
       },
       "tabs": {
         "datev": "DATEV",
-        "export": "Export",
-        "history": "History",
         "lexware": "Lexware",
         "mappings": "Wage Types",
         "personio": "Personio",
@@ -287,7 +294,17 @@
         "successfactors": "SAP SuccessFactors",
         "workday": "Workday"
       },
-      "title": "Payroll Export",
+      "targets": {
+        "datevSubtitle": "DATEV Lohn & Gehalt (CSV)",
+        "lexwareSubtitle": "Lexware lohn+gehalt (CSV)",
+        "personioSubtitle": "Personio API",
+        "sageSubtitle": "Sage Lohn (CSV)",
+        "statusConfigured": "Configured",
+        "statusNeedsCredentials": "Needs credentials",
+        "statusNotConfigured": "Not configured",
+        "successfactorsSubtitle": "API & CSV",
+        "workdaySubtitle": "Workday API"
+      },
       "workday": {
         "apiTimeoutMs": "API Timeout (ms)",
         "batchSize": "Batch Size",
@@ -367,12 +384,12 @@
         "warning": "Warning"
       },
       "description": "Check whether a payroll period is ready before exporting time, absence, and payroll data.",
+      "loadError": "Organization payroll readiness checks could not be loaded.",
       "openPayrollExport": "Open payroll export",
       "period": {
         "currentMonth": "Current month",
         "navLabel": "Payroll period",
         "previousMonth": "Previous month",
-        "scope": "Payroll period: {period} (UTC)",
         "showMonth": "Show {month}"
       },
       "status": {

@@ -512,6 +512,34 @@ describe("ExportForm", () => {
 		});
 	}, 15_000);
 
+	it("says the engagement filter only narrows the picker, not what the export includes (#1995)", async () => {
+		getFilterOptionsActionMock.mockResolvedValue({
+			success: true,
+			data: {
+				employees: [
+					{ id: "ada", firstName: "Ada", lastName: "Lovelace", engagementKind: "employee" },
+					{ id: "grace", firstName: "Grace", lastName: "Hopper", engagementKind: "contractor" },
+				],
+				teams: [],
+				projects: [],
+			},
+		});
+		render(
+			<ExportForm
+				organizationId="org_123"
+				exportAvailability={fullyConfiguredAvailability}
+				config={null}
+			/>,
+		);
+		const hint =
+			"This only narrows the list of people to pick from. With nobody selected, the export includes everyone.";
+
+		const employeesOnly = await screen.findByRole("radio", { name: "Employees" });
+		expect(screen.queryByText(hint)).toBeNull();
+		fireEvent.click(employeesOnly);
+		expect(screen.getByText(hint)).toBeTruthy();
+	}, 15_000);
+
 	describe("format options", () => {
 		const registered = PAYROLL_EXPORT_FORMATS as unknown as object[];
 

@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
 	type AnyPgColumn,
 	boolean,
+	check,
 	foreignKey,
 	index,
 	pgTable,
@@ -11,6 +12,7 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
+import type { EngagementKind } from "@/lib/engagement/engagement-kind";
 import { PERSONNEL_NUMBER_WHITESPACE_SQL } from "@/lib/organization/personnel-number";
 // Import auth tables for FK references
 import { organization, user } from "../auth-schema";
@@ -118,10 +120,7 @@ export const locationSubarea = pgTable(
 	(table) => [
 		index("locationSubarea_locationId_idx").on(table.locationId),
 		index("locationSubarea_isActive_idx").on(table.isActive),
-		uniqueIndex("locationSubarea_location_name_idx").on(
-			table.locationId,
-			table.name,
-		),
+		uniqueIndex("locationSubarea_location_name_idx").on(table.locationId, table.name),
 	],
 );
 
@@ -151,7 +150,9 @@ export const employee = pgTable(
 		// Job information
 		role: roleEnum("role").default("employee").notNull(),
 		employeeNumber: text("employee_number"),
-		personnelNumberManagedByScim: boolean("personnel_number_managed_by_scim").default(false).notNull(),
+		personnelNumberManagedByScim: boolean("personnel_number_managed_by_scim")
+			.default(false)
+			.notNull(),
 		position: text("position"),
 		startDate: timestamp("start_date"),
 		endDate: timestamp("end_date"),
@@ -164,6 +165,11 @@ export const employee = pgTable(
 		// only in the terms (Organization ADR 0002).
 		contractType: contractTypeEnum("contract_type").default("fixed").notNull(),
 
+		// Employee or External Contractor, in force today (#1995). Every employment period
+		// records the kind of its stint; a trigger refuses changing it in place on an
+		// active period (migration 0329).
+		engagementKind: text("engagement_kind").$type<EngagementKind>().default("employee").notNull(),
+
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 		updatedAt: timestamp("updated_at")
 			.$onUpdate(() => currentTimestamp())
@@ -174,10 +180,7 @@ export const employee = pgTable(
 		index("employee_organizationId_idx").on(table.organizationId),
 		index("employee_teamId_idx").on(table.teamId),
 		index("employee_userId_isActive_idx").on(table.userId, table.isActive),
-		uniqueIndex("employee_organizationId_userId_unique_idx").on(
-			table.organizationId,
-			table.userId,
-		),
+		uniqueIndex("employee_organizationId_userId_unique_idx").on(table.organizationId, table.userId),
 		// A personnel number is unique per organization among current and former employees,
 		// compared trimmed and ignoring case (#881, migration 0232).
 		uniqueIndex("employee_organization_personnel_number_unique_idx")
@@ -189,6 +192,14 @@ export const employee = pgTable(
 				sql`btrim(${table.employeeNumber}, ${sql.raw(PERSONNEL_NUMBER_WHITESPACE_SQL)}) <> ''`,
 			),
 		unique("employee_id_organizationId_idx").on(table.id, table.organizationId),
+		index("employee_organization_engagement_kind_idx").on(
+			table.organizationId,
+			table.engagementKind,
+		),
+		check(
+			"employee_engagement_kind_check",
+			sql`${table.engagementKind} IN ('employee', 'contractor')`,
+		),
 	],
 );
 
@@ -219,14 +230,8 @@ export const employeeManagers = pgTable(
 		index("employeeManagers_employeeId_idx").on(table.employeeId),
 		index("employeeManagers_managerId_idx").on(table.managerId),
 		// Prevent duplicate manager assignments
-		uniqueIndex("employeeManagers_unique_idx").on(
-			table.employeeId,
-			table.managerId,
-		),
-		index("employeeManagers_managerId_isPrimary_idx").on(
-			table.managerId,
-			table.isPrimary,
-		),
+		uniqueIndex("employeeManagers_unique_idx").on(table.employeeId, table.managerId),
+		index("employeeManagers_managerId_isPrimary_idx").on(table.managerId, table.isPrimary),
 	],
 );
 
@@ -246,10 +251,7 @@ export const teamMembership = pgTable(
 		index("teamMembership_organizationId_idx").on(table.organizationId),
 		index("teamMembership_teamId_idx").on(table.teamId),
 		index("teamMembership_employeeId_idx").on(table.employeeId),
-		uniqueIndex("teamMembership_team_employee_idx").on(
-			table.teamId,
-			table.employeeId,
-		),
+		uniqueIndex("teamMembership_team_employee_idx").on(table.teamId, table.employeeId),
 		foreignKey({
 			columns: [table.teamId, table.organizationId],
 			foreignColumns: [team.id, team.organizationId],
@@ -285,10 +287,7 @@ export const locationEmployee = pgTable(
 	(table) => [
 		index("locationEmployee_locationId_idx").on(table.locationId),
 		index("locationEmployee_employeeId_idx").on(table.employeeId),
-		uniqueIndex("locationEmployee_unique_idx").on(
-			table.locationId,
-			table.employeeId,
-		),
+		uniqueIndex("locationEmployee_unique_idx").on(table.locationId, table.employeeId),
 	],
 );
 
@@ -312,10 +311,7 @@ export const subareaEmployee = pgTable(
 	(table) => [
 		index("subareaEmployee_subareaId_idx").on(table.subareaId),
 		index("subareaEmployee_employeeId_idx").on(table.employeeId),
-		uniqueIndex("subareaEmployee_unique_idx").on(
-			table.subareaId,
-			table.employeeId,
-		),
+		uniqueIndex("subareaEmployee_unique_idx").on(table.subareaId, table.employeeId),
 	],
 );
 
@@ -338,15 +334,9 @@ export const teamPermissions = pgTable(
 
 		// Four permission flags
 		canCreateTeams: boolean("can_create_teams").default(false).notNull(),
-		canManageTeamMembers: boolean("can_manage_team_members")
-			.default(false)
-			.notNull(),
-		canManageTeamSettings: boolean("can_manage_team_settings")
-			.default(false)
-			.notNull(),
-		canApproveTeamRequests: boolean("can_approve_team_requests")
-			.default(false)
-			.notNull(),
+		canManageTeamMembers: boolean("can_manage_team_members").default(false).notNull(),
+		canManageTeamSettings: boolean("can_manage_team_settings").default(false).notNull(),
+		canApproveTeamRequests: boolean("can_approve_team_requests").default(false).notNull(),
 
 		grantedBy: uuid("granted_by")
 			.notNull()

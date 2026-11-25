@@ -1,14 +1,12 @@
 {
   "analytics": {
     "access": {
-      "noEmployeeFeature": "Analysen anzeigen",
       "restrictedDescription": "Analysen sind nur für Administratoren und Manager verfügbar.",
       "restrictedTitle": "Zugriff eingeschränkt"
     },
     "common": {
       "days": "Tage",
       "employee": "Mitarbeiter",
-      "employees": "Mitarbeiter",
       "hours": "Stunden",
       "loadingOrganizationSettings": "Lade Organisationseinstellungen vor dem Aktivieren der Voreinstellungen.",
       "noDataAvailable": "Keini Date verfüegbar",
@@ -17,17 +15,16 @@
       "overtimeHours": "Überziitstunde",
       "team": "Team",
       "totalHours": "Gsamti Stunde",
-      "unavailable": "Nit verfüegbar",
       "undertime": "Underziit",
       "undertimeHours": "Underziitstunde"
     },
     "layout": {
       "description": "Umfassendi Iisichte in Teamleistig, Arbeitsstunde und Absenzmuster",
       "tabs": {
+        "absencesAndVacation": "Absänze & Ferie",
         "overtimeBurnDown": "Überziit-Abbau",
         "overview": "Übersicht",
         "teamPerformance": "Teamleistig",
-        "vacationTrends": "Ferietrends",
         "workHours": "Arbeitsstunde"
       },
       "title": "Analytik"
@@ -100,31 +97,8 @@
       "errors": {
         "retryDescription": "Einige Analysen konnten nicht geladen werden. Zuvor geladene Werte sind, falls angezeigt, möglicherweise veraltet."
       },
-      "kpis": {
-        "approvalRate": {
-          "description": "Von den entschiedenen Anfragen genehmigt",
-          "title": "Genehmigungsquote",
-          "unavailableDescription": "Genehmigungsanalysen konnten nicht geladen werden"
-        },
-        "avgWorkHours": {
-          "description": "Pro Mitarbeiter im gewählten Zeitraum",
-          "title": "Durchschnittliche Arbeitsstunden"
-        },
-        "totalAbsenceDays": {
-          "description": "Gesamttage im gewählten Zeitraum",
-          "title": "Gesamte Absenztage"
-        },
-        "totalEmployees": {
-          "description": "Aktive Mitarbeiter in der Organisation",
-          "title": "Gesamtzahl Mitarbeiter"
-        }
-      },
       "loadingLabel": "Analysedaten werden geladen",
-      "refreshing": "Analysen werden aktualisiert…",
-      "workHoursByTeam": {
-        "description": "Gesamte erfasste Arbeitsstunden pro Team",
-        "title": "Arbeitsstunden nach Team"
-      }
+      "refreshing": "Analysen werden aktualisiert…"
     },
     "teamPerformance": {
       "avgPerEmployee": "Durchschnitt pro Mitarbeiter",

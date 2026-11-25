@@ -71,14 +71,32 @@ describe("German route catalogs", () => {
 			"Reisekosteneinstellungen werden geladen",
 		],
 		["/settings/contracts", "settings.contracts.title", "Verträge"],
-		["/settings/contracts", "settings.contracts.tabs.defaults", "Standards"],
+		["/settings/contracts", "settings.contracts.tabs.defaults", "Standardwerte"],
 		[
 			"/settings/contracts",
 			"settings.contracts.onCall.statutoryMinDaily",
-			"Keine tägliche Abrufdauer vereinbart — nach § 12 Abs. 1 TzBfG gelten mindestens drei aufeinanderfolgende Stunden je Abruf",
+			"Keine Dauer pro Abruf vereinbart – gemäß § 12 Abs. 1 TzBfG gelten mindestens drei aufeinanderfolgende Stunden pro Abruf",
 		],
 		["/settings/employees", "settings.employees.leavingDate.title", "Austrittsdatum"],
-		["/settings/employees", "settings.contracts.employee.effectiveTitle", "Wirksamer Vertrag"],
+		[
+			"/settings/employees",
+			"settings.employees.offboarding.contractorRehireHint",
+			"Ein Externer Dienstleister erhält keinen Arbeitsvertrag, keine Arbeitszeitrichtlinie und keinen Urlaubsanspruch. Dienstleistersätze werden gesondert festgelegt.",
+		],
+		["/settings/employees", "organization.invite.engagement.label", "Einladen als"],
+		// Contractor compensation (#1998): the Employee Detail card and the Contracts tab.
+		[
+			"/settings/employees",
+			"settings.contracts.contractors.title",
+			"Vergütung Externer Dienstleister",
+		],
+		["/settings/contracts", "settings.contracts.tabs.contractors", "Externe Dienstleister"],
+		[
+			"/settings/contracts",
+			"settings.contracts.contractors.rules.halfAndFullDay",
+			"Halbe und ganze Tage",
+		],
+		["/settings/employees", "settings.contracts.employee.effectiveTitle", "Gültiger Vertrag"],
 		["/settings/notification-channels", "settings.discord.connect", "Discord-Bot verbinden"],
 		[
 			"/settings/notification-channels",
@@ -88,7 +106,7 @@ describe("German route catalogs", () => {
 		[
 			"/settings/notification-channels",
 			"settings.discord.errors.invalidBotToken",
-			"Ungültiges Bot-Token. Prüfen Sie Ihre Discord-Bot-Zugangsdaten und versuchen Sie es erneut.",
+			"Ungültiges Bot-Token. Überprüfen Sie die Anmeldedaten Ihres Discord-Bots und versuchen Sie es erneut.",
 		],
 		[
 			"/settings/notification-channels",
@@ -103,12 +121,12 @@ describe("German route catalogs", () => {
 		[
 			"/settings/report-share-links",
 			"settings.reportShareLinks.projectsDisabledNotice.title",
-			"Projekte sind deaktiviert",
+			"„Projekte“ ist deaktiviert",
 		],
 		[
 			"/settings/report-share-links",
 			"settings.reportShareLinks.projectsDisabledNotice.description",
-			"Projekte sind für diese Organisation derzeit deaktiviert, sodass keine neuen Berichtsfreigabe-Links erstellt werden können. Bestehende Links können Sie hier weiterhin einsehen und widerrufen.",
+			"„Projekte“ ist derzeit für diese Organisation deaktiviert, daher können keine neuen Freigabelinks für Berichte erstellt werden. Sie können bestehende Links hier weiterhin überprüfen und widerrufen.",
 		],
 	])("provides German copy for %s: %s", async (route, key, expected) => {
 		const namespaces = getRouteCatalogScope(route)?.namespaces;
@@ -140,6 +158,10 @@ describe("German route catalogs", () => {
 			try {
 				expect(tolgee.t("common:user.theme-toggle", "Toggle theme")).toBe("Design umschalten");
 				expect(tolgee.t("common:user.font-size", "Font size")).toBe("Schriftgröße");
+				// The External Contractor badge of the shared pickers (#1995).
+				expect(tolgee.t("common:engagement.externalContractor", "External Contractor")).toBe(
+					"Externer Dienstleister",
+				);
 			} finally {
 				tolgee.stop();
 			}

@@ -246,15 +246,27 @@
         "regenerateTokenFailed": "Error al regenerar el token",
         "regenerateTokenSuccess": "Nuevo token de verificación generado",
         "regenerating": "Regenerando…",
+        "registration": "Registro",
+        "registrationHelp": "Permitir que nuevas personas creen una cuenta aquí. Cuando está desactivado, solo las personas con una invitación pueden registrarse.",
+        "routingInstruction": "Para un subdominio, agregue un registro CNAME que apunte {domain} a {target}. Para un dominio raíz, agregue un registro A que apunte a la IP del balanceador de carga de Z8. Desactive el proxy de CDN para este registro.",
         "saveConfiguration": "Guardar configuración",
         "secretKey": "Clave secreta",
         "secretKeyPlaceholder": "Ingrese la clave secreta",
         "secretKeyRequired": "Obligatorio al configurar una clave de sitio",
+        "signInMethods": "Métodos de inicio de sesión",
         "siteKey": "Clave de sitio",
         "socialProviders": "Proveedores sociales",
         "socialProvidersHelp": "Habilitar opciones de inicio de sesión social para este dominio",
         "sso": "Inicio de sesión único (SSO)",
+        "ssoButtonIcon": "Icono del botón de SSO",
+        "ssoButtonLabel": "Etiqueta del botón de SSO (opcional)",
         "ssoHelp": "Permitir inicio de sesión empresarial basado en OIDC",
+        "ssoIconBadge": "Tarjeta de identificación",
+        "ssoIconFingerprint": "Huella dactilar",
+        "ssoIconKey": "Llave",
+        "ssoIconLock": "Candado",
+        "ssoIconShield": "Escudo",
+        "ssoUnavailableHelp": "Primero configura y verifica un proveedor de SSO en Configuración de identidad.",
         "status": {
           "pending": "Verificación pendiente",
           "verified": "Verificado"
@@ -337,65 +349,30 @@
       "enableProviderHelp": "Habilitar o deshabilitar este proveedor",
       "identity": {
         "accessPolicy": {
-          "action": {
-            "save": "Guardar política de acceso"
-          },
-          "defaultRoleTemplate": "Plantilla de rol predeterminada",
-          "description": "Establezca el dominio, la invitación y la aplicación de SSO después de que la prueba piloto sea exitosa.",
           "noDefaultTemplate": "Sin plantilla predeterminada",
           "placeholder": {
             "roleTemplate": "Seleccionar plantilla de rol"
           },
           "requireSso": "Requerir SSO",
-          "requireSsoHelp": "Los empleados deben utilizar el IdP empresarial.",
           "restrictDomain": "Restringir al dominio verificado",
-          "restrictDomainHelp": "Bloquear cuentas fuera del dominio seleccionado.",
-          "restrictInvites": "Restringir invitaciones",
-          "restrictInvitesHelp": "Solo permitir invitaciones alineadas con la política de acceso.",
-          "title": "Política de acceso"
-        },
-        "badge": {
-          "now": "Ahora",
-          "queued": "En cola",
-          "ready": "Listo"
+          "restrictInvites": "Restringir invitaciones"
         },
         "domain": {
-          "action": {
-            "checkStatus": "Comprobar estado del dominio"
-          },
-          "description": "Valide el límite del inquilino antes de aplicar SSO para los empleados.",
-          "help": "La verificación de DNS utiliza las acciones de verificación de dominio SSO existentes. Complete esa verificación antes de activar la aplicación.",
-          "notSelected": "No seleccionado",
           "selected": "Dominio seleccionado",
           "status": {
-            "pending": "Pendiente",
             "verified": "Verificado"
-          },
-          "title": "Dominio"
+          }
         },
-        "hero": {
-          "title": "Lista de verificación de comandos operativos"
-        },
-        "progress": "{completed} de {total} pasos completados",
         "provider": {
-          "action": {
-            "save": "Guardar proveedor"
-          },
-          "description": "Elija el ajuste preestablecido del proveedor de identidad, el protocolo, el ID del proveedor y el dominio de correo electrónico.",
           "error": {
             "domainRequired": "El dominio es obligatorio",
             "providerIdRequired": "El ID del proveedor es obligatorio"
           },
           "label": {
-            "domain": "Dominio de correo electrónico",
-            "preset": "Ajuste preestablecido del proveedor",
-            "protocol": "Protocolo",
             "providerId": "ID del proveedor"
           },
           "placeholder": {
             "domain": "p. ej., ejemplo.com…",
-            "protocol": "Seleccionar protocolo",
-            "provider": "Seleccionar proveedor",
             "providerId": "p. ej., acme-okta…"
           },
           "preset": {
@@ -411,28 +388,14 @@
             "okta": {
               "description": "Utilice Okta Workforce Identity para inicio de sesión único (SSO) mediante SAML u OIDC."
             }
-          },
-          "title": "Proveedor"
-        },
-        "rail": {
-          "title": "Lista de preparación"
+          }
         },
         "review": {
           "action": {
             "activate": "Activar identidad empresarial"
           },
-          "activationSummary": "Resumen de activación",
-          "description": "Revise las comprobaciones de seguridad antes de habilitar los controles de identidad empresarial.",
           "lockoutWarning": "Advertencia de bloqueo del administrador actual",
-          "lockoutWarningHelp": "Confirme que su cuenta de administrador actual puede iniciar sesión a través del proveedor configurado antes de la activación. La aplicación puede bloquear el acceso mediante contraseña para el dominio seleccionado.",
-          "missingRequirement": "{item} es obligatorio antes de la activación",
-          "prerequisitesComplete": "Los requisitos previos de proveedor, dominio verificado y prueba de SSO están completos.",
-          "requirement": {
-            "domain": "Dominio verificado",
-            "provider": "Proveedor",
-            "ssoTest": "Prueba de SSO"
-          },
-          "title": "Revisar y activar"
+          "lockoutWarningHelp": "Confirme que su cuenta de administrador actual puede iniciar sesión a través del proveedor configurado antes de la activación. La aplicación puede bloquear el acceso mediante contraseña para el dominio seleccionado."
         },
         "scim": {
           "action": {
@@ -500,7 +463,6 @@
             "rotating": "rotando",
             "verified": "verificado"
           },
-          "title": "Aprovisionamiento SCIM",
           "toast": {
             "createError": "No se pudo crear la conexión SCIM.",
             "reconcileError": "No se pudo conciliar la creación de SCIM.",
@@ -510,14 +472,9 @@
           },
           "verification": "Verificación",
           "verification.awaiting": "En espera del uso del proveedor",
-          "verification.observed": "Observado",
-          "wizardDescription": "Configure el aprovisionamiento de usuarios administrados sin cambiar la activación empresarial."
+          "verification.observed": "Observado"
         },
         "sso": {
-          "action": {
-            "register": "Registrar proveedor de SSO"
-          },
-          "description": "Registre el IdP externo utilizando credenciales de cliente OIDC o metadatos SAML.",
           "error": {
             "saveProviderFirst": "Guarde el proveedor y el dominio antes de registrar el SSO"
           },
@@ -535,53 +492,19 @@
               "okta": "https://acme.okta.com…"
             },
             "metadata": "Pegue el XML de metadatos del IdP…"
-          },
-          "saml": {
-            "acsPath": "Ruta de ACS relativa al navegador: {path}",
-            "acsUrl": "Configure su IdP con esta URL de servicio de consumidor de aserciones (ACS): {path}"
-          },
-          "title": "Configuración de SSO"
+          }
         },
         "ssoTest": {
-          "action": {
-            "recordFail": "Registro fallido",
-            "recordPass": "Registro exitoso"
-          },
           "defaultFailure": "La prueba de SSO en vivo falló",
-          "description": "Registre el resultado de una prueba de SSO externa en vivo antes de la aplicación.",
           "error": {
             "saveProviderFirst": "Guarde el proveedor antes de registrar una prueba"
           },
-          "label": {
-            "email": "Correo electrónico del usuario de prueba",
-            "failureNote": "Nota de error"
-          },
           "status": {
-            "failed": "Fallido",
-            "notRun": "No ejecutado",
-            "passed": "Correcto"
-          },
-          "title": "Usuario de prueba"
+            "notRun": "No ejecutado"
+          }
         },
         "status": {
-          "activated": "Activado",
-          "draft": "Borrador"
-        },
-        "step": {
-          "accessPolicy": "Política de acceso",
-          "accessPolicy.description": "Establecer reglas de cumplimiento",
-          "domain": "Dominio",
-          "domain.description": "Confirmar límite del inquilino",
-          "provider": "Proveedor",
-          "provider.description": "Seleccionar la fuente de identidad",
-          "review": "Revisar y activar",
-          "review.description": "Activación de protección",
-          "scim": "Aprovisionamiento SCIM",
-          "scim.description": "Conecte y administre su conexión de aprovisionamiento SCIM",
-          "sso": "Configuración de SSO",
-          "sso.description": "Registrar OIDC o SAML",
-          "ssoTest": "Usuario de prueba",
-          "ssoTest.description": "Registrar resultado del inicio de sesión en vivo"
+          "activated": "Activado"
         },
         "toast": {
           "accessPolicyFailed": "Error al guardar la política de acceso",
@@ -589,7 +512,6 @@
           "activated": "Configuración de identidad empresarial activada",
           "activateFailed": "Error al activar la configuración",
           "domainStatusFailed": "Error al actualizar el estado del dominio",
-          "domainStatusRefreshed": "Estado del dominio actualizado",
           "providerSaved": "Proveedor de identidad guardado",
           "providerSaveFailed": "Error al guardar el proveedor",
           "ssoRegistered": "Proveedor de SSO registrado",
@@ -597,6 +519,171 @@
           "ssoTestFailed": "Prueba de SSO marcada como fallida",
           "ssoTestPassed": "Prueba de SSO marcada como correcta",
           "ssoTestRecordFailed": "Error al registrar la prueba de SSO"
+        },
+        "wizard": {
+          "accessPolicy": {
+            "description": "Decide qué tan estricto es el inicio de sesión empresarial. Nada cambiará para los empleados hasta que actives la configuración en el último paso.",
+            "domainsLink": "Abrir Dominios",
+            "legend": "Activa las reglas que necesites. Todas son opcionales.",
+            "nav": "Reglas de acceso",
+            "requireSsoDomains": "Esto también requiere que {domain} esté añadido y verificado en Dominios.",
+            "requireSsoHelp": "Las personas con un correo @{domain} deben iniciar sesión a través de {provider} en lugar de usar una contraseña.",
+            "restrictDomainHelp": "Los códigos de invitación solo pueden ser canjeados por personas con una dirección de correo electrónico @{domain}.",
+            "restrictInvitesHelp": "Las invitaciones solo se pueden enviar a direcciones de correo electrónico @{domain}.",
+            "save": "Guardar y continuar",
+            "title": "Elegir reglas de acceso"
+          },
+          "action": {
+            "back": "Atrás",
+            "next": "Siguiente: {step}",
+            "skip": "Saltar a {step}"
+          },
+          "activeNotice": "El inicio de sesión empresarial está activo para {domain}. Puedes revisar cada paso a continuación.",
+          "description": "Permite que los empleados inicien sesión en Z8 con su cuenta de trabajo del proveedor de identidades de tu empresa. Tu progreso se guarda después de cada paso, por lo que puedes detenerte y volver en cualquier momento.",
+          "domain": {
+            "continue": "Continuar para probar el inicio de sesión",
+            "copyName": "Copiar nombre",
+            "copyValue": "Copiar valor",
+            "create": "Crear registro DNS",
+            "createHelp": "Z8 genera un valor único para que lo publiques. Si ya creaste uno en Proveedores de SSO, puedes saltar al último paso.",
+            "description": "Añade un registro DNS para demostrar que tu empresa controla este dominio. Solo los dominios verificados pueden usar el inicio de sesión empresarial.",
+            "fallbackName": "tu dominio",
+            "fullNameHint": "Si tu proveedor de DNS solicita el nombre completo, usa {fullName}.",
+            "nav": "Verificar dominio",
+            "needsConnection": "Conecta primero tu proveedor de identidades. Z8 crea el registro DNS para esa conexión.",
+            "notVerified": "Aún no verificado",
+            "publishHelp": "Inicia sesión en tu proveedor de DNS, como Cloudflare, GoDaddy o IONOS, y añade un nuevo registro TXT exactamente como se muestra. Si otra persona administra tu dominio, envíale estos valores.",
+            "recordName": "Nombre (también llamado host)",
+            "recordType": "Tipo",
+            "recordValue": "Valor (también llamado contenido)",
+            "stepCreate": "Crear el registro DNS",
+            "stepPublish": "Añádelo donde se administra tu dominio",
+            "stepVerify": "Permitir que Z8 compruebe el registro",
+            "title": "Verifica que eres el propietario de {domain}",
+            "toast": {
+              "notFound": "Z8 aún no pudo encontrar el registro DNS. Comprueba el nombre y el valor, y vuelve a intentarlo en unos minutos.",
+              "verified": "Dominio verificado"
+            },
+            "verifiedHelp": "Z8 encontró tu registro DNS. Puedes dejarlo tal como está.",
+            "verify": "Verificar dominio",
+            "verifyHelp": "Los nuevos registros suelen aparecer en unos minutos, pero pueden tardar hasta 48 horas. Puedes salir de esta página y comprobar de nuevo más tarde."
+          },
+          "nav": {
+            "label": "Pasos de configuración"
+          },
+          "prerequisite": {
+            "action": "Ir a {step}",
+            "title": "Falta un paso previo"
+          },
+          "progress": "{completed} de {total} pasos obligatorios completados",
+          "progressLabel": "Progreso de la configuración",
+          "provider": {
+            "changeWarning": "Este proveedor ya está conectado. Cambiar el ID del proveedor o el dominio de correo electrónico significa que tendrás que volver a conectar y verificar.",
+            "description": "Indica a Z8 qué servicio utiliza tu empresa para las cuentas de trabajo y qué dominio de correo electrónico tienen tus empleados.",
+            "domainHelp": "Los empleados cuya dirección de correo electrónico termine en este dominio iniciarán sesión a través de tu proveedor.",
+            "domainInvalid": "Introduce solo la parte posterior a la @; por ejemplo, ejemplo.com.",
+            "domainLabel": "Dominio del correo de trabajo",
+            "genericName": "tu proveedor de identidad",
+            "nav": "Proveedor de identidad",
+            "oidc": "OpenID Connect (recomendado)",
+            "oidcHelp": "Más rápido de configurar y compatible con la mayoría de los proveedores. Elige esta opción si no estás seguro.",
+            "prepAdmin": "Acceso de administrador a tu proveedor de identidad, como Okta o Microsoft Entra ID",
+            "prepDns": "Acceso a la configuración de DNS de tu dominio para añadir un registro TXT",
+            "prepIntro": "La configuración tarda unos 15 minutos. Ten listo lo siguiente:",
+            "prepTester": "La cuenta de trabajo de un compañero o una cuenta de prueba para probar el inicio de sesión",
+            "prepTitle": "Antes de empezar",
+            "presetLegend": "¿Qué proveedor de identidad utiliza tu empresa?",
+            "protocolLegend": "¿Cómo debe conectarse Z8?",
+            "providerIdHelp": "Un nombre corto para esta conexión, utilizado en los enlaces de inicio de sesión. Letras minúsculas, números y guiones, por ejemplo, acme-okta.",
+            "providerIdInvalid": "Usa solo letras minúsculas, números y guiones, sin un guion al principio o al final.",
+            "saml": "SAML 2.0",
+            "samlHelp": "Usa esto si tu equipo de TI requiere SAML. Deberás pegar un archivo de metadatos XML.",
+            "save": "Guardar y continuar",
+            "singleProtocol": "{provider} se conecta con OpenID Connect (OIDC).",
+            "title": "Elige tu proveedor de identidad"
+          },
+          "review": {
+            "blocked": "Completa los pasos marcados como «Pendiente» para activar. Es necesario conectarse, verificar el dominio y realizar una prueba de inicio de sesión correcta.",
+            "checklist": "Lista de comprobación",
+            "description": "Revisa tu configuración y luego activa el inicio de sesión empresarial.",
+            "nav": "Activar",
+            "noRules": "No hay reglas activadas",
+            "notSet": "No establecido",
+            "open": "Abrir paso",
+            "provider": "Proveedor de identidad",
+            "ready": "Se han completado todos los requisitos. Ya puedes activarlo.",
+            "reapply": "Ya está activo. Vuelve a activarlo después de cambiar las reglas de acceso para aplicarlas.",
+            "rules": "Reglas de acceso",
+            "scim": "Sincronización de usuarios (SCIM)",
+            "scimOff": "No configurado",
+            "scimOn": "Conectado",
+            "summary": "Tu configuración",
+            "test": "Prueba de inicio de sesión",
+            "title": "Revisar y activar"
+          },
+          "scim": {
+            "description": "Permite que {provider} cree, actualice y desactive cuentas de Z8 automáticamente mediante SCIM. Puedes omitir este paso y configurarlo más tarde.",
+            "nav": "Sincronizar usuarios",
+            "roleHelp": "Elige una plantilla de rol antes de crear la conexión. Las cuentas nuevas comenzarán con este rol.",
+            "roleLabel": "Rol para los usuarios creados por tu proveedor",
+            "skipHelp": "Omite este paso si tu proveedor no admite SCIM o si prefieres añadir usuarios a Z8 manualmente. Los empleados aún podrán iniciar sesión con el inicio de sesión empresarial.",
+            "title": "Sincronizar usuarios automáticamente"
+          },
+          "sso": {
+            "acsLabel": "URL de ACS",
+            "clientIdHelp": "También llamado ID de aplicación.",
+            "clientIdRequired": "Introduce el ID de cliente.",
+            "clientSecretHelp": "Se almacena de forma segura y no se vuelve a mostrar nunca.",
+            "clientSecretRequired": "Introduce el secreto de cliente.",
+            "connected": "Conectado como {providerId}",
+            "connectedHelp": "Para cambiar los datos de la conexión, elimina este proveedor en Proveedores de SSO y conéctalo de nuevo aquí.",
+            "continue": "Continuar con la verificación del dominio",
+            "copyAcs": "Copiar URL de ACS",
+            "description": "Crea una aplicación para Z8 en {provider} y luego pega aquí los detalles que te proporcione.",
+            "issuerHelp": "La dirección web que identifica a tu proveedor. Aparece en la configuración de la aplicación y comienza con https://.",
+            "issuerRequired": "Introduce la URL del emisor de tu proveedor.",
+            "manageLink": "Abrir proveedores de SSO",
+            "metadataRequired": "Pega el XML de metadatos de tu proveedor.",
+            "nav": "Conectar",
+            "needsProvider": "Primero elige tu proveedor de identidad y dominio de correo electrónico para que Z8 pueda preparar los detalles de la conexión.",
+            "partOne": "Crea una aplicación para Z8 en {provider}",
+            "partTwo": "Pega los detalles de {provider}",
+            "samlIntro": "Crea una aplicación SAML en {provider} e introduce esta dirección como su servicio de consumidor de aserciones (ACS) o URL de respuesta. Luego, descarga el XML de metadatos de la aplicación.",
+            "save": "Conectar proveedor",
+            "title": "Conectar {provider} a Z8"
+          },
+          "ssoTest": {
+            "description": "Antes de activar nada, confirma que un empleado pueda iniciar sesión a través de {provider}.",
+            "domainFirst": "{domain} aún no está verificado. Es posible que el inicio de sesión a través de tu proveedor no funcione hasta que lo esté.",
+            "emailHelp": "Lo ideal es la cuenta de un compañero de trabajo en lugar de tu propia cuenta de administrador.",
+            "emailLabel": "Correo electrónico utilizado para la prueba",
+            "failed": "La última prueba falló",
+            "failedHelp": "Causas comunes: la URL de devolución de llamada no coincide exactamente, el secreto de cliente es incorrecto o ha caducado, o el usuario de prueba no está asignado a la aplicación en {provider}.",
+            "goToDomain": "Verificar dominio",
+            "howPrivate": "Abre una ventana de navegación privada o de incógnito. Mantén esta ventana abierta para seguir teniendo la sesión iniciada como administrador si algo sale mal.",
+            "howRecord": "Vuelve aquí y registra si funcionó.",
+            "howSignIn": "Ve a la página de inicio de sesión de Z8 e inicia sesión con una dirección de correo electrónico de trabajo que termine en @{domain}.",
+            "howTitle": "Cómo realizar la prueba",
+            "nav": "Probar inicio de sesión",
+            "needsConnection": "Conecta tu proveedor de identidad antes de probar el inicio de sesión.",
+            "noteLabel": "¿Qué salió mal? (solo si falló)",
+            "notePlaceholder": "Por ejemplo, el mensaje de error que viste…",
+            "passed": "El inicio de sesión funcionó para {email}",
+            "recordFail": "El inicio de sesión falló",
+            "recordPass": "El inicio de sesión funcionó",
+            "recordTitle": "Registrar el resultado",
+            "selfReported": "Z8 no puede observar esta prueba, por lo que el resultado se guarda tal como lo informes. Guardar el proveedor y verificar el DNS no prueban que el inicio de sesión funcione.",
+            "title": "Probar el inicio de sesión con una cuenta real"
+          },
+          "status": {
+            "done": "Listo",
+            "inProgress": "En curso",
+            "notActive": "Aún no activo",
+            "optional": "Opcional",
+            "toDo": "Por hacer"
+          },
+          "stepOf": "Paso {current} de {total}",
+          "title": "Configurar el inicio de sesión empresarial"
         }
       },
       "keepExistingSecretHelp": "Dejar en blanco para mantener el secreto existente",
@@ -648,6 +735,9 @@
         "addError": "Error al añadir el proveedor de SSO",
         "addSuccess": "Proveedor de SSO añadido correctamente",
         "addTitle": "Añadir proveedor de SSO",
+        "copyError": "No se pudo copiar al portapapeles",
+        "copyIssuerUrl": "Copiar URL del emisor",
+        "copyProviderId": "Copiar ID del proveedor",
         "deleteConfirm": "Eliminar proveedor",
         "deleteDialogDescription": "¿Estás seguro de que quieres eliminar este proveedor de SSO? Los usuarios ya no podrán iniciar sesión utilizando este proveedor de identidad.",
         "deleteDialogTitleNamed": "¿Eliminar el proveedor de SSO {provider}?",
@@ -655,6 +745,16 @@
         "deleteProviderAria": "Eliminar proveedor de SSO {provider}",
         "deleteSuccess": "Proveedor de SSO eliminado",
         "description": "Añade proveedores de identidad OIDC para habilitar el SSO para tu organización.",
+        "dns": {
+          "copyFqdn": "Copiar nombre de dominio completo",
+          "copyHost": "Copiar nombre del registro",
+          "copyValue": "Copiar token TXT",
+          "description": "Crea el registro en tu proveedor de DNS para {domain} y luego selecciona Verificar. Los cambios de DNS pueden tardar unos minutos en propagarse.",
+          "fqdnHint": "Si tu proveedor de DNS requiere el nombre de dominio completo, usa:",
+          "noToken": "Genera un token TXT para ver el registro DNS que demuestra que este dominio te pertenece.",
+          "title": "Añade este registro TXT a tu DNS",
+          "type": "Tipo"
+        },
         "domainInvalid": "Por favor, introduce un dominio válido (ej. ejemplo.com)",
         "domainVerified": "Dominio verificado",
         "emailDomain": "Dominio de correo electrónico",
@@ -673,7 +773,6 @@
           "copyCallback": "Copiar URL de callback",
           "copyFailed": "Error al acceder al portapapeles. Seleccione y copie el texto manualmente.",
           "domainPending": "Dominio no verificado",
-          "domainStatus": "Verificación de dominio",
           "domainVerified": "Dominio verificado",
           "entra": {
             "clientHelp": "Copie el Id. de aplicación (cliente) desde Información general, no el Id. de objeto.",
@@ -743,7 +842,6 @@
           },
           "manual": "Otro proveedor / OIDC manual",
           "manualAvailable": "¿Utiliza otro proveedor? Seleccione la configuración manual de OIDC en el panel de configuración.",
-          "manualTestHelp": "Este es un resultado de inicio de sesión notificado por el administrador, no una prueba de conexión verificada automáticamente. Realice una prueba piloto de inicio de sesión con un usuario previsto en una sesión de navegador independiente, mantenga abierta esta sesión de administrador y luego registre aquí si se superó o falló. Guardar el proveedor y verificar el DNS no demuestran que el inicio de sesión funcione.",
           "openSetup": "Abrir configuración guiada",
           "provider": "Proveedor de identidades",
           "required": "Este campo es obligatorio.",
@@ -755,10 +853,10 @@
         "providerId": "ID del proveedor",
         "providerIdHelp": "Un identificador único para este proveedor (minúsculas, sin espacios)",
         "providerIdInvalid": "El ID del proveedor solo debe contener letras minúsculas, números y guiones",
+        "regenerateToken": "Regenerar token TXT",
         "title": "Proveedores de identidad",
         "tokenError": "Error al generar el token de verificación de dominio",
         "tokenGenerated": "Token de verificación generado",
-        "txtToken": "Token TXT:",
         "validUrlRequired": "Por favor, introduzca una URL válida",
         "verify": "Verificar",
         "verifyError": "La verificación del dominio falló. Compruebe su registro DNS TXT e inténtelo de nuevo."

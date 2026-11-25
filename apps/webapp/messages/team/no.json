@@ -159,7 +159,6 @@
       "scopeFailed": "Kunne ikke laste inn gjeldende kjøreomfang.",
       "scopeLoading": "Laster inn gjeldende kjøreomfang …",
       "scopeManaged": "Ansatte du leder",
-      "title": "Kjøredetaljer mangler",
       "truncated": "Viser de nyeste {count} arbeidsperiodene. Filtrer etter team eller ansatt for å se resten.",
       "updating": "Oppdaterer kjøredetaljer …"
     },

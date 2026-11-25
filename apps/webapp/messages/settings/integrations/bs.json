@@ -204,7 +204,42 @@
       }
     },
     "discord": {
-      "title": "Discord"
+      "applicationId": "ID aplikacije",
+      "botToken": "Token bota",
+      "botTokenHelp": "Pohranjeno šifrovano u Vaultu i koristi se za validaciju i upravljanje vašim botom.",
+      "commandsRegistrationFailed": "Discord bot je povezan, ali se komande sa kosom crtom nisu mogle automatski registrovati. Provjerite dozvole bota, a zatim prekinite vezu i ponovo povežite bota da biste pokušali ponovo.",
+      "connect": "Poveži Discord bota",
+      "connectDescription": "Unesite akreditive iz vaše Discord aplikacije na Discord Developer Portalu.",
+      "connected": "Discord bot je uspješno povezan",
+      "connectError": "Povezivanje Discord bota nije uspjelo",
+      "copied": "Kopirano",
+      "copy": "Kopiraj",
+      "copyInteractionUrl": "Kopiraj URL krajnje tačke interakcije",
+      "copyInteractionUrlFailed": "Nije uspjelo kopiranje URL-a krajnje tačke interakcije. Označite ga i kopirajte ručno.",
+      "disconnect": "Prekini vezu",
+      "disconnectConfirm": {
+        "description": "Ovo će ukloniti pohranjeni token bota i onemogućiti Discord obavještenja i komande sa kosom crtom za vašu organizaciju.",
+        "title": "Prekinuti vezu s Discord botom?"
+      },
+      "disconnected": "Veza s Discord botom je prekinuta",
+      "disconnectError": "Prekidanje veze s Discord botom nije uspjelo",
+      "errors": {
+        "applicationIdMismatch": "ID aplikacije ne odgovara navedenom tokenu bota.",
+        "invalidBotToken": "Nevažeći token bota. Provjerite akreditive svog Discord bota i pokušajte ponovo.",
+        "publicKeyMismatch": "Javni ključ ne odgovara Discord aplikaciji."
+      },
+      "interactionEndpointHelp": "Zalijepite ovaj URL u polje Interactions Endpoint URL u svojoj aplikaciji na Discord Developer Portalu.",
+      "interactionEndpointUrl": "URL krajnje tačke interakcije",
+      "interactionUrlCopied": "URL krajnje tačke interakcije je kopiran",
+      "publicKey": "Javni ključ",
+      "title": "Discord",
+      "validation": {
+        "applicationIdInvalid": "ID aplikacije mora sadržavati samo cifre.",
+        "applicationIdRequired": "ID aplikacije je obavezan.",
+        "botTokenRequired": "Token bota je obavezan.",
+        "publicKeyInvalid": "Javni ključ mora biti heksadecimalni niz od 64 znaka.",
+        "publicKeyRequired": "Javni ključ je obavezan."
+      }
     },
     "slack": {
       "title": "Slack"

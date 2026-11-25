@@ -2,7 +2,7 @@
  * Data fetcher for payroll export
  * Fetches work periods, absences, and configuration from database
  */
-import { and, asc, eq, gt, gte, inArray, isNotNull, isNull, lte, or } from "drizzle-orm";
+import { and, asc, eq, gt, gte, inArray, isNotNull, isNull, lte, ne, or } from "drizzle-orm";
 import {
 	absenceCategory,
 	db,
@@ -15,14 +15,15 @@ import {
 	workCategory,
 } from "@/db";
 import { timeRecord } from "@/db/schema";
+import { CONTRACTOR_UNAVAILABILITY_TYPE } from "@/lib/absences/absence-types";
 import type { InstantRange } from "@/lib/datetime/temporal-boundaries";
 import { dateFromInstant, instantFromDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { findOpenDepartureClockRepairs } from "@/lib/employee-lifecycle/reviews";
 import { createLogger } from "@/lib/logger";
-import {
-	allocateProtectedMinutes,
-	employeePayrollWindow,
-} from "@/lib/payroll-allocation/protected-minutes";
+import { type EmployeeTime, loadEmployeeTime } from "@/lib/engagement/engagement-stints";
+import { loadPayrollScope, type PayrollScope } from "@/lib/engagement/payroll-scope";
+import { allocateEmployeeMinutes } from "@/lib/payroll-allocation/employee-minutes";
+import { employeePayrollWindow } from "@/lib/payroll-allocation/protected-minutes";
 import { absenceRecordDates } from "@/lib/payroll-workspace/absence-record-dates";
 import {
 	assertCanonicalAbsencesReady,
@@ -66,17 +67,22 @@ export async function fetchWorkPeriodsForExport(
 
 	const { startDate, endDate } = getLogicalDateRange(filters);
 	const queryEnvelope = buildPayrollQueryEnvelope(startDate, endDate);
-	const organizationTimezone = await getOrganizationTimezone(organizationId);
-
-	// Unrepaired departure timers are neither complete nor absent: block, never omit.
+	// Unrepaired departure timers are neither complete nor absent: block, never omit. A timer that
+	// ran in an External Contractor stint is no payroll time and blocks nothing (#1997).
+	// Both reads go through the pool, so they run together.
+	const [organizationTimezone, scope] = await Promise.all([
+		getOrganizationTimezone(organizationId),
+		resolveExportScope(organizationId, filters),
+	]);
 	await assertNoOpenDepartureClockRepairs({
 		organizationId,
-		employeeIds: await resolveExportEmployeeIds(organizationId, filters),
+		employeeIds: scope.employeeIds,
 		range: {
 			start: dateFromInstant(queryEnvelope.start),
 			endExclusive: dateFromInstant(queryEnvelope.end),
 		},
-		findRepairs: (query) => findOpenDepartureClockRepairs(db, query),
+		findRepairs: async (query) =>
+			scope.blockingClockRepairs(await findOpenDepartureClockRepairs(db, query)),
 	});
 
 	// Build where conditions
@@ -171,6 +177,8 @@ export async function fetchWorkPeriodsForExport(
 		startDate,
 		endDate,
 		organizationTimezone,
+		// The scope's candidates are every employee whose work the query above can return.
+		employeeTime: scope.employeeTime,
 	});
 
 	return credited.map(({ record: p, minutes, overlap }) => ({
@@ -210,7 +218,7 @@ export async function fetchAbsencesForExport(
 	options: {
 		/** `absences`: read-only absence check for jobs with collected work input (#322). */
 		canonicalReadiness?: "cutover" | "absences";
-		reader?: Pick<typeof db, "query">;
+		reader?: Pick<typeof db, "query" | "select">;
 	} = {},
 ): Promise<AbsenceData[]> {
 	const reader = options.reader ?? db;
@@ -312,15 +320,28 @@ export async function fetchAbsencesForExport(
 
 	logger.info({ count: absences.length }, "Fetched absences for payroll export");
 
-	return absences.map((a) => {
+	// An External Contractor's unavailability is a calendar marker, never a payroll absence (#1996).
+	const payrollAbsences = absences.filter(
+		(a) => a.absence?.absenceCategory?.type !== CONTRACTOR_UNAVAILABILITY_TYPE,
+	);
+	// Only the employee days of an absence are payroll absence days (#1997).
+	const employeeTime = await loadEmployeeTime(
+		reader,
+		organizationId,
+		payrollAbsences.map((a) => a.employeeId),
+	);
+	return payrollAbsences.flatMap((a) => {
 		// Wall clock encoded as UTC; an exclusive next-midnight end (canonical backfill of
 		// legacy entries) belongs to the day before.
-		const { startDate, endDate } = absenceRecordDates({
+		const recordDates = absenceRecordDates({
 			startAt: a.startAt,
 			endAt: a.endAt,
 			startPeriod: a.absence?.startPeriod ?? "full_day",
 			endPeriod: a.absence?.endPeriod ?? "full_day",
 		});
+		const employeeDays = employeeTime.employeeDaysOf(a.employeeId, recordDates);
+		if (!employeeDays) return [];
+		const { startDate, endDate } = employeeDays;
 		return {
 			id: a.id,
 			sourceActorId: a.updatedBy ?? null,
@@ -357,12 +378,17 @@ export async function fetchOvertimePayoutsForExport(
 	}
 
 	const { startDate, endDate } = getLogicalDateRange(filters);
-	const payouts = await listOvertimePayouts(reader, {
+	const scope = await resolveExportScope(organizationId, filters, reader);
+	const listed = await listOvertimePayouts(reader, {
 		organizationId,
-		employeeIds: await resolveExportEmployeeIds(organizationId, filters, reader),
+		employeeIds: [...scope.employeeIds],
 		fromDate: startDate,
 		throughDate: endDate,
 	});
+	// A payout on a day of an External Contractor stint is no payroll line (#1997).
+	const payouts = listed.filter((payout) =>
+		scope.employeeTime.isEmployeeDay(payout.employeeId, payout.day),
+	);
 	if (payouts.length === 0) {
 		return [];
 	}
@@ -509,6 +535,8 @@ export async function getAbsenceCategories(organizationId: string) {
 		where: and(
 			eq(absenceCategory.organizationId, organizationId),
 			eq(absenceCategory.isActive, true),
+			// An External Contractor's unavailability is never a payroll absence (#1996).
+			ne(absenceCategory.type, CONTRACTOR_UNAVAILABILITY_TYPE),
 		),
 		columns: {
 			id: true,
@@ -529,6 +557,8 @@ export async function getEmployeesForFilter(organizationId: string) {
 			firstName: user.firstName,
 			lastName: user.lastName,
 			employeeNumber: employee.employeeNumber,
+			// External Contractors are badged and filterable in the picker (#1995).
+			engagementKind: employee.engagementKind,
 		})
 		.from(employee)
 		.innerJoin(user, eq(employee.userId, user.id))
@@ -644,6 +674,11 @@ export async function countWorkPeriods(
 		startDate,
 		endDate,
 		organizationTimezone,
+		employeeTime: await loadEmployeeTime(
+			db,
+			organizationId,
+			filteredRecords.map((record) => record.employeeId),
+		),
 	}).length;
 }
 
@@ -658,13 +693,19 @@ interface ExportWorkRecord {
 
 /**
  * Credits export work with the shared protected-minute rule in each employee's local payroll
- * window. Zero-credit work contributes nothing and produces no export line; any record that cannot
+ * window, within employee time only (#1997): External Contractor work is never exported and never
+ * blocks. Zero-credit work contributes nothing and produces no export line; any record that cannot
  * be credited blocks the whole export.
  */
 function creditExportWorkPeriods<TRecord extends ExportWorkRecord>(
 	organizationId: string,
 	records: TRecord[],
-	range: { startDate: string; endDate: string; organizationTimezone: string },
+	range: {
+		startDate: string;
+		endDate: string;
+		organizationTimezone: string;
+		employeeTime: EmployeeTime;
+	},
 ): Array<{ record: TRecord; minutes: number; overlap: InstantRange }> {
 	const credited: Array<{
 		record: TRecord;
@@ -680,13 +721,14 @@ function creditExportWorkPeriods<TRecord extends ExportWorkRecord>(
 			record.employee.userSettings?.timezone,
 			range.organizationTimezone,
 		);
-		const allocation = allocateProtectedMinutes(
+		const allocation = allocateEmployeeMinutes(
 			{
 				startAt: instantFromDate(record.startAt),
 				endAt: instantFromDate(record.endAt),
 				storedMinutes: record.durationMinutes,
 			},
 			employeePayrollWindow(range.startDate, range.endDate, timezone),
+			range.employeeTime.stintsOf(record.employeeId),
 		);
 
 		if (allocation.status === "blocked") {
@@ -731,26 +773,57 @@ function serializeFilters(filters: PayrollExportFilters) {
 }
 
 /**
- * The employees whose expense amounts a payroll run carries (#852): the
- * export's employee set, so a payroll access holder's run covers only their
- * payroll scope. An explicitly empty selection covers nobody.
+ * The employees whose work, absences and payouts an export carries: its payroll scope, so a
+ * payroll access holder's export covers only their payroll scope. An explicitly empty selection
+ * covers nobody. A person with no employee time in the period is left out (#1997).
  */
 export async function resolvePayrollRunEmployeeIds(
+	organizationId: string,
+	filters: PayrollExportFilters,
+	reader: Pick<typeof db, "query" | "select"> = db,
+): Promise<string[]> {
+	if (hasEmptyEmployeeScope(filters)) return [];
+	return [...(await resolveExportScope(organizationId, filters, reader)).employeeIds];
+}
+
+/**
+ * The employees whose reports awaiting reimbursement a payroll run of the export classifies
+ * (#852): everyone the export selects, with or without employee time in the period. A report goes
+ * by its own days (#1997), not by the period: a converted person's report of their employee days
+ * is carried even by a run of a period they spent as an External Contractor (its file then has
+ * their money lines alone), and an External Contractor's report is left out of every run, which
+ * says so. An explicitly empty selection covers nobody.
+ */
+export async function resolvePayrollRunExpenseEmployeeIds(
 	organizationId: string,
 	filters: PayrollExportFilters,
 	reader: Pick<typeof db, "query"> = db,
 ): Promise<string[]> {
 	if (hasEmptyEmployeeScope(filters)) return [];
-	return resolveExportEmployeeIds(organizationId, filters, reader);
+	return resolveExportCandidates(organizationId, filters, reader);
 }
 
-/** Employees an export covers: the explicit selection, else the organization (optionally by team). */
-async function resolveExportEmployeeIds(
+/**
+ * The payroll scope of an export: its candidates less anyone without employee time on the
+ * export's dates (#1997). An External Contractor is never part of an employee payroll export,
+ * even when selected by name.
+ */
+async function resolveExportScope(
 	organizationId: string,
 	filters: PayrollExportFilters,
-	reader: Pick<typeof db, "query"> = db,
+	reader: Pick<typeof db, "query" | "select"> = db,
+): Promise<PayrollScope> {
+	const candidates = await resolveExportCandidates(organizationId, filters, reader);
+	return loadPayrollScope(reader, organizationId, candidates, getLogicalDateRange(filters));
+}
+
+/** The explicit selection, else the organization's employees (optionally by team). */
+async function resolveExportCandidates(
+	organizationId: string,
+	filters: PayrollExportFilters,
+	reader: Pick<typeof db, "query">,
 ): Promise<string[]> {
-	if (filters.employeeIds && filters.employeeIds.length > 0) return filters.employeeIds;
+	if (filters.employeeIds && filters.employeeIds.length > 0) return [...filters.employeeIds];
 	const rows = await reader.query.employee.findMany({
 		where:
 			filters.teamIds && filters.teamIds.length > 0

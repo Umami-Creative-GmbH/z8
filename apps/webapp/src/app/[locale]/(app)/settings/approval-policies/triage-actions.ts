@@ -78,7 +78,6 @@ export const saveApprovalTriageSettingsAction = organizationAction(
 					),
 				);
 			revalidatePath("/[locale]/(app)/settings/approval-policies", "page");
-			revalidatePath("/[locale]/(app)/approvals", "page");
 			revalidatePath("/[locale]/(app)/approvals/inbox", "page");
 			return data;
 		}),

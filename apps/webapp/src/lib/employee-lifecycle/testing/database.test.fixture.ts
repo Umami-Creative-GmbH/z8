@@ -30,6 +30,8 @@ export type SeedEmployeeInput = {
 	/** Legacy employee dates; start defaults to the fixture creation instant. */
 	startDate?: Date | null;
 	endDate?: Date | null;
+	/** The engagement kind of the employee and its seeded period (#1995); default employee. */
+	engagementKind?: "employee" | "contractor";
 };
 
 export type LifecycleDatabaseFixture = {
@@ -44,6 +46,12 @@ export type LifecycleDatabaseFixture = {
 	createOrganization(): Promise<string>;
 	/** Seeds user, approved member, active employee and an open recorded period. */
 	seedEmployee(input?: SeedEmployeeInput): Promise<SeededEmployee>;
+	/**
+	 * Sets a teamless employee's primary team and moves the history row the
+	 * capture trigger wrote back to the fixture creation instant, so the team
+	 * is in force at fixed instants before the run date.
+	 */
+	placeInTeam(employeeId: string, teamId: string): Promise<void>;
 	/**
 	 * A database bound to one backend that a test may terminate with
 	 * `pg_terminate_backend(backendPid)` to simulate a process crash.
@@ -95,8 +103,8 @@ export async function createLifecycleDatabaseFixture(
 		);
 		await pool.query(
 			`insert into employee
-			 (id, user_id, organization_id, role, is_active, start_date, end_date, updated_at)
-			 values ($1, $2, $3, $4, $5, $6, $7, $8)`,
+			 (id, user_id, organization_id, role, is_active, start_date, end_date, updated_at, engagement_kind)
+			 values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
 			[
 				employeeId,
 				userId,
@@ -106,17 +114,36 @@ export async function createLifecycleDatabaseFixture(
 				input.startDate === undefined ? createdAt : input.startDate,
 				input.endDate ?? null,
 				createdAt,
+				input.engagementKind ?? "employee",
 			],
 		);
 		if (input.withPeriod !== false) {
 			await pool.query(
 				`insert into employee_employment_period
-				 (id, organization_id, employee_id, status, started_at, start_provenance)
-				 values ($1, $2, $3, 'open', $4, 'recorded')`,
-				[employmentPeriodId, targetOrganizationId, employeeId, createdAt],
+				 (id, organization_id, employee_id, status, started_at, start_provenance, engagement_kind)
+				 values ($1, $2, $3, 'open', $4, 'recorded', $5)`,
+				[
+					employmentPeriodId,
+					targetOrganizationId,
+					employeeId,
+					createdAt,
+					input.engagementKind ?? "employee",
+				],
 			);
 		}
 		return { userId, memberId, employeeId, employmentPeriodId };
+	}
+
+	async function placeInTeam(employeeId: string, teamId: string) {
+		await pool.query(`update employee set team_id = $1 where id = $2`, [teamId, employeeId]);
+		const backdated = await pool.query(
+			`update employee_team_history set effective_from = $1
+			 where employee_id = $2 and team_id = $3 and effective_to is null`,
+			[createdAt, employeeId, teamId],
+		);
+		if (backdated.rowCount !== 1) {
+			throw new Error(`expected one open team history row for employee ${employeeId}`);
+		}
 	}
 
 	const organizationId = await createOrganization(input.organizationId);
@@ -133,6 +160,7 @@ export async function createLifecycleDatabaseFixture(
 		ownerEmployeeId: owner.employeeId,
 		createOrganization,
 		seedEmployee,
+		placeInTeam,
 		async openCrashableConnection() {
 			const crashable = openIntegrationPool({ max: 1, idleTimeoutMillis: 0 });
 			const result = await crashable.query<{ pid: number }>("select pg_backend_pid() as pid");

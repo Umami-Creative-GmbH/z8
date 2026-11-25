@@ -159,7 +159,6 @@
       "scopeFailed": "Fushëveprimi aktual i drejtimit të automjetit nuk mund të ngarkohej.",
       "scopeLoading": "Po ngarkohet fushëveprimi aktual i drejtimit të automjetit…",
       "scopeManaged": "Punonjësit që menaxhoni",
-      "title": "Mungojnë detajet e drejtimit",
       "truncated": "Po shfaqen {count} periudhat më të reja të punës. Filtroni sipas ekipit ose punonjësit për të parë pjesën tjetër.",
       "updating": "Po përditësohen detajet e drejtimit të automjetit…"
     },

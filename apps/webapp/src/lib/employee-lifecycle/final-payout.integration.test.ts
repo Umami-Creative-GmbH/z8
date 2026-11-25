@@ -185,15 +185,23 @@ describe("final overtime payout in the offboarding review on PostgreSQL", () => 
 		);
 	}
 
-	async function review(asUserId: string, subject = departing) {
+	async function reviewResult(asUserId: string, subject = departing) {
 		harness.userId = asUserId;
 		harness.organizationId = fixture.organizationId;
-		const result = await offboardingActions.getEmployeeOffboardingViewAction({
+		return offboardingActions.getEmployeeOffboardingViewAction({
 			employeeId: subject.employeeId,
 		});
+	}
+
+	async function review(asUserId: string, subject = departing) {
+		const result = await reviewResult(asUserId, subject);
 		if (!result.success) throw new Error(`offboarding view failed: ${result.error}`);
 		return result.data;
 	}
+
+	// The offboarding view, and so the final payout it offers, is for org admins
+	// only (Spec #1921 Story 22).
+	const refusedView = { success: false, code: "AuthorizationError" };
 
 	it("shows +6h with a final payout defaulting to the whole remaining balance", async () => {
 		const view = await review(admin.userId);
@@ -212,16 +220,8 @@ describe("final overtime payout in the offboarding review on PostgreSQL", () => 
 		});
 	});
 
-	it("shows a manager the balance without the payout action", async () => {
-		const view = await review(manager.userId);
-
-		expect(view.workBalance).toEqual({
-			balance: {
-				balanceMinutes: 360,
-				computedThroughDate: yesterday.toString(),
-			},
-			finalPayout: null,
-		});
+	it("refuses the offboarding view, balance and payout action to the departed employee's manager", async () => {
+		expect(await reviewResult(manager.userId)).toMatchObject(refusedView);
 	});
 
 	it("records the final payout, which lowers the balance to zero and is audited like any payout", async () => {
@@ -266,12 +266,14 @@ describe("final overtime payout in the offboarding review on PostgreSQL", () => 
 
 		// The balance is information only: the departure's state, follow-up and
 		// capabilities are the same whatever it is.
-		const { workBalance: _before, ...lifecycleBefore } = before;
-		const { workBalance: _after, ...lifecycleAfter } = after;
+		const lifecycleBefore = { ...before };
+		delete lifecycleBefore.workBalance;
+		const lifecycleAfter = { ...after };
+		delete lifecycleAfter.workBalance;
 		expect(lifecycleAfter).toEqual(lifecycleBefore);
 	});
 
-	it("offers the final payout to a manager whose payroll grant covers the employee who left", async () => {
+	it("refuses the offboarding view to a manager even when a payroll grant covers the employee who left", async () => {
 		const payrollManager = await fixture.seedEmployee();
 		await fixture.pool.query(`update employee set role = 'manager' where id = $1`, [
 			payrollManager.employeeId,
@@ -294,48 +296,7 @@ describe("final overtime payout in the offboarding review on PostgreSQL", () => 
 			[fixture.organizationId, grantId, departing.employeeId, fixture.ownerUserId],
 		);
 
-		const view = await review(payrollManager.userId);
-		const finalPayout = view.workBalance?.finalPayout;
-		expect(finalPayout).toEqual({
-			defaultDay: yesterday.toString(),
-			defaultMinutes: 360,
-			latestDay: today.toString(),
-		});
-		// Read-only for the departure itself: the grant only adds the payout.
-		expect(view.capabilities).toEqual({
-			schedule: false,
-			cancel: false,
-			offboardNow: false,
-			rehire: false,
-			resolve: false,
-			recordPastDeparture: false,
-			correctPastDepartureDate: false,
-			recordHistoricalDepartureDate: false,
-		});
-
-		const recorded = await workBalanceActions.recordOvertimePayoutAction({
-			employeeId: departing.employeeId,
-			day: finalPayout?.defaultDay ?? "",
-			hours: 6,
-			minutes: 0,
-			reason: "Final payout on leaving",
-		});
-		expect(recorded).toMatchObject({ success: true });
-		const audit = await fixture.pool.query<{
-			performed_by: string;
-			metadata: unknown;
-		}>(
-			`select performed_by, metadata from audit_log where organization_id = $1 and entity_id = $2`,
-			[fixture.organizationId, recorded.success ? recorded.data.adjustmentId : ""],
-		);
-		expect(audit.rows).toHaveLength(1);
-		expect(audit.rows[0]?.performed_by).toBe(payrollManager.userId);
-		const metadata = audit.rows[0]?.metadata;
-		expect(typeof metadata === "string" ? JSON.parse(metadata) : metadata).toMatchObject({
-			via: "payroll_access_grant",
-			grantId,
-		});
-		expect((await review(payrollManager.userId)).workBalance?.balance?.balanceMinutes).toBe(0);
+		expect(await reviewResult(payrollManager.userId)).toMatchObject(refusedView);
 	});
 
 	it("leaves the review of an employee who is not departing without a work balance", async () => {

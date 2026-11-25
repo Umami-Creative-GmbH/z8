@@ -1,14 +1,12 @@
 {
   "analytics": {
     "access": {
-      "noEmployeeFeature": "voir les analyses",
       "restrictedDescription": "Les analyses ne sont accessibles qu'aux administrateurs et aux gestionnaires.",
       "restrictedTitle": "Accès restreint"
     },
     "common": {
       "days": "Jours",
       "employee": "Employé",
-      "employees": "Employés",
       "hours": "Heures",
       "loadingOrganizationSettings": "Chargement des paramètres de l'organisation avant d'activer les préréglages.",
       "noDataAvailable": "Aucune donnée disponible",
@@ -17,17 +15,16 @@
       "overtimeHours": "Heures supplémentaires",
       "team": "Équipe",
       "totalHours": "Heures totales",
-      "unavailable": "Indisponible",
       "undertime": "Sous-temps",
       "undertimeHours": "Heures de sous-temps"
     },
     "layout": {
       "description": "Aperçu complet de la performance de l'équipe, des heures de travail et des modèles d'absence",
       "tabs": {
+        "absencesAndVacation": "Absences et congés",
         "overtimeBurnDown": "Réduction des heures supplémentaires",
         "overview": "Vue d'ensemble",
         "teamPerformance": "Performance de l'équipe",
-        "vacationTrends": "Tendances des vacances",
         "workHours": "Heures de travail"
       },
       "title": "Analyses"
@@ -100,31 +97,8 @@
       "errors": {
         "retryDescription": "Certaines analyses n'ont pas pu être chargées. Les valeurs précédemment chargées, si elles sont affichées, peuvent être obsolètes."
       },
-      "kpis": {
-        "approvalRate": {
-          "description": "Parmi les demandes traitées, approuvées",
-          "title": "Taux d'approbation",
-          "unavailableDescription": "Les analyses d'approbation n'ont pas pu être chargées"
-        },
-        "avgWorkHours": {
-          "description": "Par employé sur la période sélectionnée",
-          "title": "Heures de travail moyennes"
-        },
-        "totalAbsenceDays": {
-          "description": "Nombre total de jours sur la période sélectionnée",
-          "title": "Total des jours d'absence"
-        },
-        "totalEmployees": {
-          "description": "Employés actifs dans l'organisation",
-          "title": "Total des employés"
-        }
-      },
       "loadingLabel": "Chargement des données d'analyse",
-      "refreshing": "Actualisation des analyses…",
-      "workHoursByTeam": {
-        "description": "Total des heures de travail enregistrées par équipe",
-        "title": "Heures de travail par équipe"
-      }
+      "refreshing": "Actualisation des analyses…"
     },
     "teamPerformance": {
       "avgPerEmployee": "Moyenne par employé",

@@ -479,11 +479,34 @@ export const AbsenceRequestHandler: ApprovalTypeHandler<AbsenceWithRelations> =
 			const days = entity.absenceDays;
 			const daysText = days === 1 ? "1 day" : `${days} days`;
 			const dateRange = formatDateRange(entity.startDate, entity.endDate);
+			// Calendar days as entered; the viewer's locale formats them (#1978).
+			const range = {
+				kind: "plain_date_range" as const,
+				start: entity.startDate,
+				end: entity.endDate,
+			};
 
 			return {
 				title: entity.category.name,
 				subtitle: dateRange,
 				summary: `${daysText} off - ${dateRange}`,
+				localized: {
+					title: {
+						key: "approvals:approvals.canonicalAbsenceCategory",
+						fallback: "{category}",
+						params: { category: entity.category.name },
+					},
+					subtitle: {
+						key: "approvals:approvals.canonicalAbsenceRange",
+						fallback: "{range}",
+						params: { range },
+					},
+					summary: {
+						key: "approvals:approvals.absenceRequest.summary",
+						fallback: "{days, plural, one {# day} other {# days}} off - {range}",
+						params: { days, range },
+					},
+				},
 				badge: {
 					label: entity.category.name,
 					color: entity.category.color,

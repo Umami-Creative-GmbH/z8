@@ -51,6 +51,7 @@ const mockState = vi.hoisted(() => ({
 	getDailyWorkRequirementsForEmployee: vi.fn(),
 	markEmployeeWorkBalanceFullRebuildRequested: vi.fn(),
 	computeEmployeePeriodBalance: vi.fn(),
+	computeUntrackedBalanceMinutes: vi.fn(),
 	upsertEmployeeWorkBalancePeriod: vi.fn(),
 	rebuildEmployeeYearBalanceFromMonths: vi.fn(),
 	readWorkBalanceAdjustments: vi.fn(),
@@ -93,6 +94,7 @@ vi.mock("./adjustments/ledger", () => ({
 
 vi.mock("./period-aggregation", () => ({
 	computeEmployeePeriodBalance: mockState.computeEmployeePeriodBalance,
+	computeUntrackedBalanceMinutes: mockState.computeUntrackedBalanceMinutes,
 	markEmployeeWorkBalanceFullRebuildRequested:
 		mockState.markEmployeeWorkBalanceFullRebuildRequested,
 	rebuildEmployeeYearBalanceFromMonths: mockState.rebuildEmployeeYearBalanceFromMonths,
@@ -281,12 +283,12 @@ describe("work balance helpers", () => {
 
 	it("excludes the current UTC day from all-time balance computation", async () => {
 		mockState.db.select.mockReturnValue({ from: mockState.selectFrom });
-		mockState.selectFrom
-			.mockReturnValueOnce({ where: mockState.selectWhere })
-			.mockReturnValueOnce({ where: mockState.selectWhere });
-		mockState.selectWhere
-			.mockResolvedValueOnce([{ value: new Date("2026-05-10T09:00:00.000Z") }])
-			.mockResolvedValueOnce([{ totalMinutes: 480 }]);
+		mockState.selectFrom.mockReturnValueOnce({ where: mockState.selectWhere });
+		mockState.selectWhere.mockResolvedValueOnce([{ value: new Date("2026-05-10T09:00:00.000Z") }]);
+		mockState.computeUntrackedBalanceMinutes.mockResolvedValueOnce({
+			actualMinutes: 480,
+			requiredMinutes: 480,
+		});
 		mockState.getDailyWorkRequirementsForEmployee.mockResolvedValue({
 			"2026-05-10": { requiredMinutes: 480 },
 		});
@@ -786,15 +788,14 @@ describe("work balance helpers", () => {
 
 	it("uses the first completed work period as the all-time balance start", async () => {
 		mockState.db.select.mockReturnValue({ from: mockState.selectFrom });
-		mockState.selectFrom
-			.mockReturnValueOnce({ where: mockState.selectWhere })
-			.mockReturnValueOnce({ where: mockState.selectWhere });
-		mockState.selectWhere
-			.mockResolvedValueOnce([{ value: new Date("2026-05-10T09:00:00.000Z") }])
-			.mockResolvedValueOnce([{ totalMinutes: 480 }]);
-		mockState.getDailyWorkRequirementsForEmployee.mockResolvedValue({
-			"2026-05-10": { requiredMinutes: 480 },
+		mockState.selectFrom.mockReturnValueOnce({ where: mockState.selectWhere });
+		mockState.selectWhere.mockResolvedValueOnce([{ value: new Date("2026-05-10T09:00:00.000Z") }]);
+		mockState.computeUntrackedBalanceMinutes.mockResolvedValueOnce({
+			actualMinutes: 480,
+			requiredMinutes: 480,
 		});
+		const requirements = { "2026-05-10": { requiredMinutes: 480 } };
+		mockState.getDailyWorkRequirementsForEmployee.mockResolvedValue(requirements);
 
 		const result = await computeEmployeeWorkBalance({
 			employeeId: "employee-1",
@@ -817,12 +818,26 @@ describe("work balance helpers", () => {
 				startDate: new Date("2026-05-10T00:00:00.000Z"),
 			}),
 		);
+		// The month rows' reading of the same UTC days (#1935).
+		expect(mockState.computeUntrackedBalanceMinutes).toHaveBeenCalledWith(
+			mockState.db,
+			{
+				employeeId: "employee-1",
+				organizationId: "org-1",
+				startDate: new Date("2026-05-10T00:00:00.000Z"),
+				endDate: new Date("2026-05-21T23:59:59.999Z"),
+				timezone: "UTC",
+			},
+			requirements,
+		);
 	});
 
 	it("uses employee start date before the first completed work period", async () => {
 		mockState.db.select.mockReturnValue({ from: mockState.selectFrom });
-		mockState.selectFrom.mockReturnValueOnce({ where: mockState.selectWhere });
-		mockState.selectWhere.mockResolvedValueOnce([{ totalMinutes: 480 }]);
+		mockState.computeUntrackedBalanceMinutes.mockResolvedValueOnce({
+			actualMinutes: 480,
+			requiredMinutes: 480,
+		});
 		mockState.db.query.employee.findFirst.mockResolvedValueOnce({
 			id: "employee-1",
 			startDate: new Date("2026-05-01T00:00:00.000Z"),
@@ -870,12 +885,12 @@ describe("work balance helpers", () => {
 
 	it("uses the first completed work period when imported work predates the account", async () => {
 		mockState.db.select.mockReturnValue({ from: mockState.selectFrom });
-		mockState.selectFrom
-			.mockReturnValueOnce({ where: mockState.selectWhere })
-			.mockReturnValueOnce({ where: mockState.selectWhere });
-		mockState.selectWhere
-			.mockResolvedValueOnce([{ value: new Date("2026-05-10T09:00:00.000Z") }])
-			.mockResolvedValueOnce([{ totalMinutes: 480 }]);
+		mockState.selectFrom.mockReturnValueOnce({ where: mockState.selectWhere });
+		mockState.selectWhere.mockResolvedValueOnce([{ value: new Date("2026-05-10T09:00:00.000Z") }]);
+		mockState.computeUntrackedBalanceMinutes.mockResolvedValueOnce({
+			actualMinutes: 480,
+			requiredMinutes: 0,
+		});
 		mockState.db.query.employee.findFirst.mockResolvedValueOnce({
 			id: "employee-1",
 			startDate: null,
@@ -903,12 +918,12 @@ describe("work balance helpers", () => {
 
 	it("includes completed legacy periods even when isActive is stale", async () => {
 		mockState.db.select.mockReturnValue({ from: mockState.selectFrom });
-		mockState.selectFrom
-			.mockReturnValueOnce({ where: mockState.selectWhere })
-			.mockReturnValueOnce({ where: mockState.selectWhere });
-		mockState.selectWhere
-			.mockResolvedValueOnce([{ value: new Date("2026-05-03T09:00:00.000Z") }])
-			.mockResolvedValueOnce([{ totalMinutes: 450 }]);
+		mockState.selectFrom.mockReturnValueOnce({ where: mockState.selectWhere });
+		mockState.selectWhere.mockResolvedValueOnce([{ value: new Date("2026-05-03T09:00:00.000Z") }]);
+		mockState.computeUntrackedBalanceMinutes.mockResolvedValueOnce({
+			actualMinutes: 450,
+			requiredMinutes: 0,
+		});
 		mockState.db.query.employee.findFirst.mockResolvedValueOnce({
 			id: "employee-1",
 			startDate: null,

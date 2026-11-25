@@ -12,6 +12,7 @@ import { ORGANIZATION_CONTEXT_HEADERS } from "@/lib/auth/organization-display-co
 import { getRequestSession } from "@/lib/auth/request-session";
 import { getCurrentSettingsAccess } from "@/lib/auth-helpers";
 import type { ServerActionResult } from "@/lib/effect/result";
+import { engagementFilters } from "@/lib/engagement/engagement-filter";
 import { meetsSettingsAccess } from "@/lib/organization-action/settings-access-level";
 import {
 	getEmployeeManagerChoices,
@@ -30,6 +31,7 @@ const directoryQuery = z.object({
 	search: z.string().max(2000).optional(),
 	role: z.enum(["admin", "manager", "employee", "all"]).optional(),
 	status: z.enum(["current", "former", "draft", "all", "active", "inactive"]).optional(),
+	engagement: z.enum(engagementFilters).optional(),
 	limit: z.coerce.number().int().min(1).max(1000).optional(),
 	offset: z.coerce.number().int().min(0).optional(),
 });

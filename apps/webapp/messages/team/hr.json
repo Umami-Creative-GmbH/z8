@@ -159,7 +159,6 @@
       "scopeFailed": "Trenutačni opseg vožnje nije bilo moguće učitati.",
       "scopeLoading": "Učitavanje trenutačnog opsega vožnje…",
       "scopeManaged": "Zaposlenici kojima upravljate",
-      "title": "Nedostaju podaci o vožnji",
       "truncated": "Prikazuje se najnovijih {count} radnih razdoblja. Filtrirajte po timu ili zaposleniku da biste vidjeli ostala.",
       "updating": "Ažuriranje podataka o vožnji…"
     },

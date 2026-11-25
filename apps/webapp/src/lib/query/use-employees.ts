@@ -9,6 +9,7 @@ import type {
 	PaginatedEmployeeResponse,
 } from "@/app/[locale]/(app)/settings/employees/employee-action-types";
 import { useOrganization } from "@/hooks/use-organization";
+import type { EngagementFilter } from "@/lib/engagement/engagement-filter";
 import {
 	meetsSettingsAccess,
 	type SettingsAccess,
@@ -31,6 +32,8 @@ export function useEmployees(options: UseEmployeesOptions = {}) {
 	const [search, setSearchState] = useState("");
 	const [role, setRoleState] = useState<string>("all");
 	const [status, setStatusState] = useState<EmployeeDirectoryStatus>("current");
+	// All | Employees | External Contractors (#1995).
+	const [engagement, setEngagementState] = useState<EngagementFilter>("all");
 
 	// Pagination state (synced with react-table)
 	const [pagination, setPagination] = useState<PaginationState>({
@@ -43,6 +46,7 @@ export function useEmployees(options: UseEmployeesOptions = {}) {
 		search: search || undefined,
 		role: role === "all" ? undefined : (role as EmployeeListParams["role"]),
 		status: status === "all" ? undefined : status,
+		engagement: engagement === "all" ? undefined : engagement,
 		limit: pagination.pageSize,
 		offset: pagination.pageIndex * pagination.pageSize,
 	};
@@ -95,6 +99,11 @@ export function useEmployees(options: UseEmployeesOptions = {}) {
 		setPagination((prev) => ({ ...prev, pageIndex: 0 }));
 	};
 
+	const setEngagement = (value: EngagementFilter) => {
+		setEngagementState(value);
+		setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+	};
+
 	// Refresh
 	const refresh = () => {
 		if (!canLoad || organization.error) return organization.refetch();
@@ -124,9 +133,11 @@ export function useEmployees(options: UseEmployeesOptions = {}) {
 		search,
 		role,
 		status,
+		engagement,
 		setSearch,
 		setRole,
 		setStatus,
+		setEngagement,
 
 		// Pagination (for react-table)
 		pagination,

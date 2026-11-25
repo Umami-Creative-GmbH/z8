@@ -81,7 +81,6 @@
             "updatePolicyAssignmentFailed": "Failed to update policy assignment"
           },
           "fallsBackToDefaultPolicy": "Falls back to team or organization default policy",
-          "manageAllowances": "manage employee vacation allowances",
           "managers": "Managers",
           "overrideEffectivePolicy": "Override the assigned policy allowance ({days} days) for this employee",
           "partialSave": {
@@ -231,8 +230,7 @@
         "sourceEmployee": "Employee assignment",
         "sourceOrganization": "Organization assignment",
         "sourceTeam": "Team assignment",
-        "teamDescription": "Set a dated policy for a team. Employee assignments take precedence.",
-        "title": "History"
+        "teamDescription": "Set a dated policy for a team. Employee assignments take precedence."
       },
       "next": "Next",
       "noDefaultPolicy": "No Company Default Policy",

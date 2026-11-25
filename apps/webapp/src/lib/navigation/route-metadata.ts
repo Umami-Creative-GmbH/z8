@@ -55,7 +55,7 @@ const SETTINGS_PAGE_HEADING_ROUTES: ReadonlySet<string> = new Set([
 	"/settings/billing",
 	"/settings/calendar",
 	"/settings/clocking",
-	"/settings/compliance",
+	// `/settings/compliance` only redirects to the Approval inbox (#1977).
 	"/settings/compliance/works-council",
 	"/settings/custom-fields",
 	"/settings/customers",

@@ -73,6 +73,11 @@
     "portalOpenFailed": "S Abrechnigsportal hät nöd chönne göffnet wärde",
     "priceSeatMonth": "€{price}/Nutzer/Monat",
     "priceSeatMonthYearly": "€{price}/Nutzer/Monat (jährlich abgrächnet)",
+    "recovery": {
+      "billingAndSubscription": "Abrechnig & Abo",
+      "navigationLabel": "Navigation für d Abrechnigswiderherstellig",
+      "suspensionNotice": "Sperrhiiwis"
+    },
     "seatBilledAnnually": "€{price}/Nutzer jährlich abgrächnet",
     "seatLines": {
       "full": "Voll-Plätz",

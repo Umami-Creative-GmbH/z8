@@ -44,6 +44,7 @@ describe("scheduled automatic clock-out complete path", () => {
 	const clock = { nowInstant: () => at };
 	const effects = {
 		checkCompliance: vi.fn(async () => []),
+		recordYouthProtection: vi.fn(async () => {}),
 		enforceBreaks: vi.fn(async () => ({
 			wasAdjusted: false,
 			affectedWorkPeriodIds: [] as string[],

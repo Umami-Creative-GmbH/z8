@@ -40,6 +40,11 @@ import {
 } from "@/lib/employee-lifecycle/employment-coverage";
 import { loadEmploymentCoverage } from "@/lib/employee-lifecycle/employment-periods";
 import { shiftCalendarDate, shiftDateRangeBounds } from "@/lib/scheduling/shift-date";
+import {
+	type ApprenticeReleaseDay,
+	applyApprenticeReleaseCredits,
+} from "@/lib/statutory/apprenticeship/release-credits";
+import { loadApprenticeReleaseDays } from "@/lib/statutory/apprenticeship/release-facts";
 import { shiftInterval } from "@/lib/scheduling/shift-occasion";
 import {
 	type EmployeeTrackingContext,
@@ -440,7 +445,8 @@ async function buildContractDailyRequirements(params: {
 		if (contract.contributesZeroBalanceDelta) {
 			trustBasedDates.add(dateKey);
 		}
-		if (!contract.isEmployedOnDay) continue;
+		// An External Contractor day has no required time, not even from published shifts (#1996).
+		if (!contract.isEmployedOnDay || contract.engagementKind === "contractor") continue;
 
 		if (contract.contractType === "hourly" || contract.scheduleSource === "published_shifts") {
 			shiftDays.add(dateKey);
@@ -536,6 +542,8 @@ export type EmployeeRequirementInputs = {
 	absences: ApprovedAbsenceRange[];
 	employmentCoverage: EmploymentInterval[] | null;
 	holidays: AssignedHolidayRange[];
+	/** Credited apprentice release days (#1993); loaded per employee when left out. */
+	apprenticeReleaseDays?: ApprenticeReleaseDay[];
 };
 
 /**
@@ -654,10 +662,31 @@ export function loadDailyWorkRequirementsForEmployee(
 			clipRequirementsToEmployment(requirements, employmentCoverage, params.timezone),
 		);
 
+		// Apprentice school and exam release days are paid: they release required time (#1993).
+		const requirementZone = resolveRequirementZone(params.timezone);
+		const releaseDays =
+			preloaded?.inputs?.apprenticeReleaseDays ??
+			(yield* database.query("calendar.apprenticeReleaseDays", async () =>
+				(
+					await loadApprenticeReleaseDays(database.db, {
+						organizationId: params.organizationId,
+						employeeIds: [params.employeeId],
+						from: plainDateAt(instantFromDate(effectiveStartDate), requirementZone).toString(),
+						until: plainDateAt(instantFromDate(params.endDate), requirementZone)
+							.add({ days: 1 })
+							.toString(),
+					})
+				).get(params.employeeId) ?? [],
+			));
+		const releaseCreditedRequirements = applyApprenticeReleaseCredits(
+			employedRequirements,
+			releaseDays,
+		);
+
 		// Existing regression contract matches the call sequence.
 		// oxfmt-ignore
 		const absenceAdjustedRequirements = applyApprovedAbsencesToDailyRequirements(
-				employedRequirements,
+				releaseCreditedRequirements,
 				approvedAbsences,
 			);
 		const assignedHolidays =

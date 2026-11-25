@@ -1,10 +1,15 @@
+import { COMPLIANCE_EXCEPTION_INBOX } from "@/lib/approvals/inbox/compliance-exception-inbox-path";
+
 export interface LegacySettingsRedirectTarget {
 	readonly pathname: string;
 	readonly tab?: string;
+	/** A fixed Approval inbox type filter (`?types=`), replacing any the old URL carried. */
+	readonly types?: string;
 }
 
 /**
- * Legacy settings URLs replaced by centralized 308 permanent redirects in the request proxy (#1963).
+ * Legacy settings URLs (and other retired app routes such as `/approvals`) replaced by centralized
+ * 308 permanent redirects in the request proxy (#1963).
  * Keys are exact locale-stripped paths (without trailing slashes) so canonical sibling or child
  * routes such as `/settings/enterprise/api-keys` or `/settings/employees/[id]` are never hijacked.
  */
@@ -29,6 +34,11 @@ export const LEGACY_SETTINGS_REDIRECTS: Readonly<Record<string, LegacySettingsRe
 	"/settings/approval-escalation": { pathname: "/settings/approval-policies", tab: "escalation" },
 	"/settings/employees/new": { pathname: "/settings/employees" },
 	"/settings/permissions": { pathname: "/settings/roles", tab: "team-permissions" },
+	// The retired two-tab approvals workspace; the Approval inbox is canonical (#1976).
+	"/approvals": { pathname: "/approvals/inbox" },
+	// The standalone ArbZG exception queue; the Approval inbox lists them (#1977, ADR-0005).
+	// Exact match: `/settings/compliance/works-council` stays its own page.
+	"/settings/compliance": COMPLIANCE_EXCEPTION_INBOX,
 };
 
 /**
@@ -50,6 +60,9 @@ export function resolveLegacySettingsRedirect(
 	const mergedSearch = new URLSearchParams(searchParams);
 	if (target.tab !== undefined) {
 		mergedSearch.set("tab", target.tab);
+	}
+	if (target.types !== undefined) {
+		mergedSearch.set("types", target.types);
 	}
 	const query = mergedSearch.toString();
 	return `/${locale}${target.pathname}${query ? `?${query}` : ""}`;

@@ -10,7 +10,6 @@ import { env } from "@/env";
 import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
 import {
-	type ComplianceSummary,
 	TeamsComplianceService,
 	TeamsComplianceServiceLive,
 } from "@/lib/effect/services/teams-compliance.service";
@@ -57,21 +56,41 @@ async function complianceHandler(ctx: BotCommandContext): Promise<BotCommandResp
 			"Executing compliance command",
 		);
 
+		// The runtime is server-only; a static import would keep the shared bot command
+		// registry from loading in a plain-Node worker (escalation-worker-imports.test.ts).
+		const [{ runtime }, { DatabaseService }, settingsAccess] = await Promise.all([
+			import("@/lib/effect/runtime"),
+			import("@/lib/effect/services/database.service"),
+			import("@/lib/organization-action/settings-access"),
+		]);
+
 		// Fetch compliance summary using Effect-TS service
 		const program = Effect.gen(function* () {
 			const complianceService = yield* TeamsComplianceService;
-			return yield* complianceService.getComplianceSummary({
+			const summary = yield* complianceService.getComplianceSummary({
 				managerId: ctx.employeeId,
+				userId: ctx.userId,
 				organizationId: ctx.organizationId,
 				daysBack,
 				timezone: ctx.config.digestTimezone,
 			});
+			// The card links the violations only for a recipient who can open them (#1977).
+			const dbService = yield* DatabaseService;
+			const facts = yield* dbService.query(settingsAccess.SETTINGS_ACCESS_FACTS_QUERY, () =>
+				settingsAccess.loadSettingsAccessFacts(dbService.db, {
+					userId: ctx.userId,
+					organizationId: ctx.organizationId,
+				}),
+			);
+			const access = settingsAccess.settingsAccessOf(facts);
+			return {
+				summary,
+				canOpenViolationsView:
+					access !== null && settingsAccess.meetsSettingsAccess(access, "orgAdmin"),
+			};
 		});
 
-		// The runtime is server-only; a static import would keep the shared bot command
-		// registry from loading in a plain-Node worker (escalation-worker-imports.test.ts).
-		const { runtime } = await import("@/lib/effect/runtime");
-		const summary: ComplianceSummary = await runtime.runPromise(
+		const { summary, canOpenViolationsView } = await runtime.runPromise(
 			program.pipe(Effect.provide(TeamsComplianceServiceLive)),
 		);
 
@@ -95,6 +114,7 @@ async function complianceHandler(ctx: BotCommandContext): Promise<BotCommandResp
 			appUrl,
 			locale: ctx.locale,
 			t,
+			canOpenViolationsView,
 		});
 
 		const issueCount = summary.alerts.length + summary.pendingExceptions.length;

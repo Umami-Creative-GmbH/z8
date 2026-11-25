@@ -441,7 +441,9 @@
       "description": "Alle Benutzer auf der Plattform anzeigen und verwalten",
       "filters": {
         "allUsers": "Alle Benutzer",
-        "banned": "Gesperrt"
+        "banned": "Gesperrt",
+        "clearOrganization": "Organisationsfilter zurücksetzen",
+        "organization": "Organisation: {name}"
       },
       "pagination": {
         "showing": "Zeige {from} bis {to} von {total} Benutzern"

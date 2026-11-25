@@ -189,6 +189,38 @@ describe("navigation manifest", () => {
 		]);
 	});
 
+	it("lists the Approval inbox in the sidebar and Cmd+K exactly for those the inbox guard admits (#1976)", () => {
+		const approvalInboxListed = (
+			employeeRole: "manager" | "employee",
+			approvalInbox: boolean | undefined,
+		) => {
+			const navigationCapabilities = { ...NO_CAPABILITIES, approvalInbox };
+			return {
+				sidebar: buildTeamNav(t, navigationCapabilities, employeeRole, {
+					settingsAccess: "member",
+				}).some((item) => item.url === "/approvals/inbox"),
+				cmdK: buildStaticAppSearchResults({
+					t,
+					employeeRole,
+					settingsAccess: "member",
+					billingEnabled: false,
+					showComplianceNav: false,
+					showPayrollNav: false,
+					navigationCapabilities,
+					featureFlags: { shiftsEnabled: false, projectsEnabled: false },
+				}).some((result) => result.type === "page" && result.href === "/approvals/inbox"),
+			};
+		};
+
+		// A custom-role approver without a manager role passes canAccessApprovalInbox.
+		expect(approvalInboxListed("employee", true)).toEqual({ sidebar: true, cmdK: true });
+		// A manager whose ability lacks the employee principal is turned away by the guard.
+		expect(approvalInboxListed("manager", false)).toEqual({ sidebar: false, cmdK: false });
+		// Without a server decision, the role still decides.
+		expect(approvalInboxListed("manager", undefined)).toEqual({ sidebar: true, cmdK: true });
+		expect(approvalInboxListed("employee", undefined)).toEqual({ sidebar: false, cmdK: false });
+	});
+
 	it("indexes all previously omitted active routes in Cmd+K only when authorized", () => {
 		const authorizedPages = buildStaticAppSearchResults({
 			t,

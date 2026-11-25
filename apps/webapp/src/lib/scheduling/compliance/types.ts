@@ -1,6 +1,8 @@
 import type { PlainDate } from "@/lib/datetime/temporal-core";
+import type { StatutoryFindingSummary, StatutorySeverity } from "@/lib/statutory/finding";
+import type { StatutoryDomain } from "@/lib/statutory/threshold-catalog";
 
-export type ScheduleComplianceFindingType = "restTime" | "maxHours" | "overtime";
+export type ScheduleComplianceFindingType = "restTime" | "maxHours" | "overtime" | "statutory";
 
 export interface ScheduleComplianceRegulation {
 	minRestPeriodMinutes?: number;
@@ -65,7 +67,49 @@ export interface OvertimeFinding {
 	thresholdMinutes: number;
 }
 
-export type ComplianceFinding = RestTimeFinding | MaxHoursFinding | OvertimeFinding;
+/**
+ * A German statutory monitor finding (#1988 seam for #1989–#1993), projected for Scheduling and
+ * Staffing: managers and planners see it, so it carries the wage-free summary only. The pure
+ * evaluator never produces it; `evaluateStatutoryScheduleFindings` contributors do.
+ */
+export interface StatutoryComplianceFinding {
+	type: "statutory";
+	employeeId: string;
+	/** `StatutoryFinding.id`: kind, employee and subject. */
+	findingId: string;
+	/** Monitor-specific kind, e.g. `minijob_monthly_cap`. */
+	statutoryKind: string;
+	domain: StatutoryDomain;
+	severity: StatutorySeverity;
+	subjectKey: string;
+	legalReference: string;
+	summary: StatutoryFindingSummary;
+	/**
+	 * The apprentice release day (`YYYY-MM-DD`) an apprentice release conflict is about (#1993): a
+	 * shift through two release days has a conflict on each. A date, never money.
+	 */
+	releaseDay?: string;
+	/**
+	 * The local day (`YYYY-MM-DD`) a JArbSchG youth-protection finding is about (#1993): daily
+	 * and weekly maximums sit on every piece of work past the cap. A date, never money.
+	 */
+	day?: string;
+	/**
+	 * JArbSchG night work (#1993): the night minutes outside the hours § 14 JArbSchG allows for the
+	 * minor's age, which no sector exception covers. Minutes, never money.
+	 */
+	beyondSectorHours?: number;
+	/** Null when the finding cannot be acknowledged. */
+	acknowledgementStatus: "none" | "current" | "stale" | null;
+	/** True when the organization blocks publishing this finding (JArbSchG hard limits). */
+	blocksPublication: boolean;
+}
+
+export type ComplianceFinding =
+	| RestTimeFinding
+	| MaxHoursFinding
+	| OvertimeFinding
+	| StatutoryComplianceFinding;
 
 export interface ScheduleComplianceSummary {
 	totalFindings: number;
@@ -73,6 +117,7 @@ export interface ScheduleComplianceSummary {
 		restTime: number;
 		maxHours: number;
 		overtime: number;
+		statutory: number;
 	};
 }
 

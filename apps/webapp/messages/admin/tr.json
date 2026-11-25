@@ -441,7 +441,9 @@
       "description": "Platformdaki tüm kullanıcıları görüntüleyin ve yönetin",
       "filters": {
         "allUsers": "Tüm Kullanıcılar",
-        "banned": "Yasaklandı"
+        "banned": "Yasaklandı",
+        "clearOrganization": "Kuruluş filtresini temizle",
+        "organization": "Kuruluş: {name}"
       },
       "pagination": {
         "showing": "{total} kullanıcıdan {from} ile {to} arası gösteriliyor"

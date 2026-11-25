@@ -410,6 +410,9 @@ describe("TravelExpenseClaimHandler", () => {
 						color: null,
 					},
 					icon: "receipt",
+					localized: expect.objectContaining({
+						summary: expect.objectContaining({ key: "approvals:approvals.claimSummary.summary" }),
+					}),
 				},
 			},
 		]);
@@ -646,6 +649,7 @@ describe("TravelExpenseClaimHandler", () => {
 					summary: "Receipt for EUR 120.50",
 					badge: { label: "Berlin rollout", color: null },
 					icon: "receipt",
+					localized: expect.any(Object),
 				},
 			}),
 			entity: expect.objectContaining({

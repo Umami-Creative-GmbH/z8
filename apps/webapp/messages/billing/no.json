@@ -73,6 +73,11 @@
     "portalOpenFailed": "Kunne ikke åpne fakturaportalen",
     "priceSeatMonth": "€{price}/sete/mnd.",
     "priceSeatMonthYearly": "€{price}/sete/mnd. (fakturert årlig)",
+    "recovery": {
+      "billingAndSubscription": "Fakturering og abonnement",
+      "navigationLabel": "Navigasjon for fakturagjenoppretting",
+      "suspensionNotice": "Varsel om suspensjon"
+    },
     "seatBilledAnnually": "€{price}/sete fakturert årlig",
     "seatLines": {
       "full": "Fullverdige plasser",

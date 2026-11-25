@@ -56,7 +56,9 @@ vi.mock("./workspace/payroll-settlement-tab", () => ({
 // Confirming an export as paid is tested on PostgreSQL at the payroll period module (#1899).
 vi.mock("./workspace/payroll-confirm-paid-card", () => ({ PayrollConfirmPaidCard: () => null }));
 vi.mock("./workspace/payroll-export-history-card", () => ({
-	PayrollExportHistoryCard: () => <div data-testid="payroll-export-history-card">Export History</div>,
+	PayrollExportHistoryCard: () => (
+		<div data-testid="payroll-export-history-card">Export History</div>
+	),
 }));
 vi.mock("./workspace/payroll-overview-readiness-section", () => ({
 	PayrollOverviewReadinessSection: () => (
@@ -70,6 +72,8 @@ vi.mock("./workspace/payroll-settlement-figures", () => ({
 	PayrollSettlementFigures: () => null,
 }));
 vi.mock("./workspace/payroll-absences-tab", () => ({ PayrollAbsencesTab: () => null }));
+// On-call reference hours read through their action, scoped and tested on PostgreSQL (#1992).
+vi.mock("./on-call-reference-payroll-card", () => ({ OnCallReferencePayrollCard: () => null }));
 vi.mock("./payroll-baselines-card", () => ({
 	PayrollBaselinesCard: () => null,
 }));

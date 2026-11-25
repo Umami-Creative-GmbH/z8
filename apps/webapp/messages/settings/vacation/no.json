@@ -81,7 +81,6 @@
             "updatePolicyAssignmentFailed": "Kunne ikke oppdatere policytildeling"
           },
           "fallsBackToDefaultPolicy": "Faller tilbake til standardpolicy for team eller organisasjon",
-          "manageAllowances": "administrere ansattes feriekvoter",
           "managers": "Ledere",
           "overrideEffectivePolicy": "Overstyr den tildelte retningslinjekvoten ({days} dager) for denne ansatte",
           "partialSave": {
@@ -231,8 +230,7 @@
         "sourceEmployee": "Ansatt-tildeling",
         "sourceOrganization": "Organisasjonstildeling",
         "sourceTeam": "Teamtildeling",
-        "teamDescription": "Angi en datert retningslinje for et team. Tildelinger til ansatte har forrang.",
-        "title": "Historikk"
+        "teamDescription": "Angi en datert retningslinje for et team. Tildelinger til ansatte har forrang."
       },
       "next": "Neste",
       "noDefaultPolicy": "Ingen standardpolicy for bedriften",

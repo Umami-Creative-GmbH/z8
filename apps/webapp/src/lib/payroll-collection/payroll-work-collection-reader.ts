@@ -36,6 +36,7 @@ import {
 } from "@/db/schema";
 import { dateFromInstant, instantFromDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { findOpenDepartureClockRepairs } from "@/lib/employee-lifecycle/reviews";
+import { type EmployeeTime, loadEmployeeTime } from "@/lib/engagement/engagement-stints";
 import { createLogger } from "@/lib/logger";
 import { readPersonnelIdentifierValues } from "@/lib/payroll-export/personnel-identifier-store";
 import { withAppendEvidenceSnapshot } from "@/lib/time-tracking/append-assurance-reader";
@@ -56,6 +57,7 @@ import {
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import {
 	assessPayrollWorkCollection,
+	identifierEmployeesWithOtherRows,
 	type PayrollCollectionRequest,
 	type PayrollCollectionSnapshot,
 	type PayrollCollectionWorkRecord,
@@ -152,17 +154,29 @@ export async function readPayrollWorkCollectionFromSnapshot(
 	filters: PayrollCollectionFilters,
 	options: Pick<PayrollCollectionRequest, "personnelIdentifier"> = {},
 ): Promise<PayrollWorkCollection> {
-	const employeeIds = await resolveScopeEmployeeIds(reader, organizationId, filters);
+	const candidates = await resolveScopeEmployeeIds(reader, organizationId, filters);
+	// Only people with employee time on the dates are in scope (#1997): an External Contractor
+	// is never collected, blocked or asked for a personnel identifier.
+	const employeeTime = await loadEmployeeTime(reader, organizationId, candidates);
+	const employeeIds = employeeTime.withEmployeeTimeOn(
+		candidates,
+		filters.startDate,
+		filters.endDate,
+	);
 	const request: PayrollCollectionRequest = {
 		organizationId,
 		startDate: filters.startDate,
 		endDate: filters.endDate,
 		employeeIds,
+		selectedEmployeeIds: candidates,
 		teamIds: filters.teamIds ?? null,
 		projectIds: filters.projectIds ?? null,
 		personnelIdentifier: options.personnelIdentifier ?? null,
 	};
-	return assessPayrollWorkCollection(await readPayrollCollectionSnapshot(reader, request), request);
+	return assessPayrollWorkCollection(
+		await readPayrollCollectionSnapshot(reader, request, employeeTime),
+		request,
+	);
 }
 
 async function repairEligibleGaps(
@@ -239,10 +253,22 @@ async function resolveScopeEmployeeIds(
 async function readPayrollCollectionSnapshot(
 	reader: Reader,
 	request: PayrollCollectionRequest,
+	employeeTime: EmployeeTime,
 ): Promise<PayrollCollectionSnapshot> {
 	const { organizationId, employeeIds } = request;
 	const range = calendarDateEnvelope(request.startDate, request.endDate);
 	const diagnosticsScope = { employeeIds, range };
+	// The identifier as of the period's last day, in this snapshot (#821): of the scope and of
+	// anyone selected the export carries other rows for (#1997).
+	const readPersonnelIdentifiers = () =>
+		request.personnelIdentifier
+			? readPersonnelIdentifierValues(reader, {
+					organizationId,
+					customFieldId: request.personnelIdentifier.customFieldId,
+					employeeIds: [...new Set([...employeeIds, ...identifierEmployeesWithOtherRows(request)])],
+					asOf: parsePlainDate(request.endDate),
+				})
+			: Promise.resolve(undefined);
 	if (employeeIds.length === 0) {
 		return {
 			employees: [],
@@ -252,7 +278,7 @@ async function readPayrollCollectionSnapshot(
 				findings: [],
 			},
 			departureRepairs: [],
-			personnelIdentifiers: {},
+			personnelIdentifiers: (await readPersonnelIdentifiers()) ?? {},
 		};
 	}
 
@@ -276,15 +302,7 @@ async function readPayrollCollectionSnapshot(
 			.leftJoin(userSettings, eq(userSettings.userId, employee.userId))
 			.where(and(eq(employee.organizationId, organizationId), inArray(employee.id, chunk))),
 	);
-	// The identifier as of the period's last day, in this snapshot (#821).
-	const personnelIdentifiers = request.personnelIdentifier
-		? await readPersonnelIdentifierValues(reader, {
-				organizationId,
-				customFieldId: request.personnelIdentifier.customFieldId,
-				employeeIds,
-				asOf: parsePlainDate(request.endDate),
-			})
-		: undefined;
+	const personnelIdentifiers = await readPersonnelIdentifiers();
 
 	// Every record that can touch an employee-local window, in any approval state:
 	// open work, reversed endpoints and everything overlapping the widest envelope.
@@ -432,6 +450,7 @@ async function readPayrollCollectionSnapshot(
 			lastName: row.lastName,
 			email: row.email,
 			timezone: resolveEffectiveTimezone(row.timezone, organizationRow?.timezone ?? null),
+			stints: employeeTime.stintsOf(row.id),
 		})),
 		records: recordRows.map((row): PayrollCollectionWorkRecord => {
 			const detail = detailByRecord.get(row.id);

@@ -1,3 +1,9 @@
+import type {
+	ApprovalInboxItem,
+	ApprovalInboxSummary,
+	ApprovalInboxType,
+} from "@/lib/approvals/inbox/types";
+
 export type BriefingActionSeverity = "critical" | "high" | "warning" | "info";
 
 export type BriefingActionCategory =
@@ -30,8 +36,23 @@ export interface BriefingApprovalActionItem extends BriefingActionItem {
 	entityId: string;
 	requesterName: string;
 	summary: string;
+	/** The inbox lets the viewer approve it from the list; else the briefing offers no Approve. */
+	canApprove: boolean;
+	/** The inbox lets the viewer reject it from the list; else the briefing offers no Reject. */
+	canReject: boolean;
 	/** The viewer requested it, so someone else decides it (#686, #697). */
 	ownRequest?: boolean;
+	/**
+	 * Approval needs acceptances only the inbox's detail view collects (#604), or is decided one
+	 * at a time with its details in view (a compliance exception): no one-click approve, the
+	 * briefing sends the manager to the inbox instead (#1980).
+	 */
+	requiresDetailReview?: boolean;
+	/**
+	 * The inbox's localized forms of the summary (#687), translated for the viewer by the panel
+	 * in place of the English `title` (after the requester's name), `description` and `summary`.
+	 */
+	localized?: ApprovalInboxSummary["localized"];
 }
 
 export interface BriefingSummaryCounts {
@@ -71,10 +92,29 @@ export interface ManagerDailyBriefing {
 	date: string;
 	/** The standalone operational check failed; never infer all-clear from its empty fallback. */
 	needsActionError?: string;
-	summary: BriefingSummaryCounts;
+	summary: BriefingSummaryCounts & {
+		/**
+		 * An approval type could not be listed or counted, or the approvals failed to load (#1980):
+		 * `openApprovals` is a lower bound, never a count to call all clear on.
+		 */
+		openApprovalsAtLeast?: true;
+		/** The approvals could not be read at all: no count is known, not even a lower bound. */
+		openApprovalsUnavailable?: true;
+	};
 	needsAction: BriefingActionItem[];
 	sections: {
-		approvals: BriefingSection<BriefingApprovalActionItem>;
+		approvals: BriefingSection<BriefingApprovalActionItem> & {
+			/**
+			 * The approval types the inbox counted but could not list: their items are missing, so
+			 * the panel names them instead of claiming nothing waits.
+			 */
+			unavailableTypes?: ApprovalInboxType[];
+			/**
+			 * The approval types the inbox listed but could not count (#1980): the total misses
+			 * them, so the panel shows it as a lower bound instead of a complete list.
+			 */
+			uncountedTypes?: ApprovalInboxType[];
+		};
 		attendance: BriefingSection;
 		absences: BriefingSection;
 		coverage: BriefingSection;
@@ -124,42 +164,45 @@ export interface BriefingCoverageRule {
 	minimumStaffCount: number;
 }
 
-export interface BriefingApproval {
-	id: string;
-	approvalType: string;
-	entityId: string;
-	typeName: string;
-	requester: {
-		id: string;
-		name: string;
-	};
-	priority: "urgent" | "high" | "normal" | "low";
-	display: {
-		summary: string;
-	};
-}
+/**
+ * A pending approval of the viewer's unified Approval inbox (#1980): every inbox type, with the
+ * capabilities the inbox gives it.
+ */
+export type BriefingApproval = ApprovalInboxItem;
 
-export function approvalToBriefingItem(
-	approval: BriefingApproval,
-	viewerEmployeeId: string,
-): BriefingApprovalActionItem {
+/**
+ * A page of approvals; `totalCount` is every match before the page, when known,
+ * `unavailableTypes` the types whose items could not be listed, and `uncountedTypes` those
+ * whose items listed but whose count failed, so `totalCount` misses them.
+ */
+export type BriefingApprovalBatch = BriefingApproval[] & {
+	totalCount?: number;
+	unavailableTypes?: ApprovalInboxType[];
+	uncountedTypes?: ApprovalInboxType[];
+};
+
+export function approvalToBriefingItem(approval: BriefingApproval): BriefingApprovalActionItem {
+	const { priority } = approval.triage;
 	return {
 		id: `approval:${approval.id}`,
 		category: "approval",
-		severity:
-			approval.priority === "urgent"
-				? "critical"
-				: approval.priority === "high"
-					? "high"
-					: "warning",
-		title: `${approval.requester.name} needs ${approval.typeName} approval`,
-		description: approval.display.summary,
-		href: "/approvals/inbox",
+		severity: priority === "urgent" ? "critical" : priority === "high" ? "high" : "warning",
+		title: `${approval.requester.name}: ${approval.summary.title}`,
+		description: approval.summary.subtitle,
+		href: `/approvals/inbox?types=${approval.type}`,
 		approvalId: approval.id,
-		approvalType: approval.approvalType,
+		approvalType: approval.type,
 		entityId: approval.entityId,
 		requesterName: approval.requester.name,
-		summary: approval.display.summary,
-		...(approval.requester.id === viewerEmployeeId ? { ownRequest: true } : {}),
+		summary: approval.summary.detail,
+		canApprove: approval.capabilities.canApprove,
+		canReject: approval.capabilities.canReject,
+		...(approval.capabilities.ownRequest ? { ownRequest: true } : {}),
+		// A single-decision item (an ArbZG compliance exception, #1977) is reviewed in the inbox with
+		// its type, duration and validity window in view, never approved from a one-line row.
+		...(approval.capabilities.requiresDetailReview || approval.capabilities.singleDecisionOnly
+			? { requiresDetailReview: true }
+			: {}),
+		...(approval.summary.localized ? { localized: approval.summary.localized } : {}),
 	};
 }

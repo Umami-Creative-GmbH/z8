@@ -29,6 +29,7 @@ import type {
 	ApprovalType,
 	UnifiedApprovalItem,
 } from "../domain/types";
+import { requesterEmployeeIdCondition } from "../inbox/canonical-inbox-query";
 
 /**
  * Configuration for building approval request queries
@@ -112,6 +113,13 @@ export function buildBaseConditions(
 
 	if (params.authorizationPredicate) {
 		conditions.push(params.authorizationPredicate);
+	}
+
+	// Only these requesters' approvals, before any page is cut (#1980); none for an empty list.
+	if (params.requesterEmployeeIds) {
+		conditions.push(
+			requesterEmployeeIdCondition(approvalRequest.requestedBy, params.requesterEmployeeIds),
+		);
 	}
 
 	if (!params.includeAllApprovers) {
@@ -270,7 +278,7 @@ export function getApprovalCount(
 	organizationId: string,
 	visibility?: Pick<
 		ApprovalQueryParams,
-		"eligibleApprovalScopes" | "includeAllApprovers" | "coveredApproverIds"
+		"eligibleApprovalScopes" | "includeAllApprovers" | "coveredApproverIds" | "requesterEmployeeIds"
 	>,
 ): Effect.Effect<number, AnyAppError, DatabaseService> {
 	return Effect.gen(function* () {

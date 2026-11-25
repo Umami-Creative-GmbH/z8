@@ -9,18 +9,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSession } from "@/lib/auth-client";
 import { queryKeys } from "@/lib/query";
 import { DrivingStatusLabel } from "./check-evidence";
+import { LicenceClassChip, LicenceClassIcon } from "./licence-class-visuals";
 import {
 	loadDrivingAuthorizationStatus,
 	loadOperationalDrivingEmployees,
 } from "./operational-client";
 
-/** This query never participates in clock commands, vehicle context loading or button admission. */
-export function DrivingAuthorizationAdvisory({
-	employeeId,
-}: {
-	employeeId?: string;
-}) {
-	const { t } = useTranslate();
+type DrivingAuthorizationStatus = Extract<
+	Awaited<ReturnType<typeof loadDrivingAuthorizationStatus>>,
+	{ success: true }
+>["data"];
+type DrivingAuthorizationStatusData = NonNullable<DrivingAuthorizationStatus>;
+
+function useDrivingAuthorizationStatus(employeeId: string | undefined) {
 	const { data: session } = useSession();
 	const organizationId = session?.session.activeOrganizationId;
 	const userId = session?.user.id;
@@ -38,13 +39,26 @@ export function DrivingAuthorizationAdvisory({
 		refetchInterval: 60_000,
 		retry: false,
 	});
-	if (!organizationId || !userId) return null;
+	const signedIn = !!organizationId && !!userId;
+	const answer = !query.isError && query.data?.success ? query.data.data : null;
 	// The server answers `null` unless the visibility reader shows the advisory (feature on,
 	// intended driver). Render nothing until it has answered, so others never see a flash.
-	if (query.isPending) return null;
-	if (!query.isError && query.data?.success && query.data.data === null)
-		return null;
-	const data = !query.isError && query.data?.success ? query.data.data : null;
+	const hidden =
+		!signedIn ||
+		query.isPending ||
+		(!query.isError && !!query.data?.success && query.data.data === null);
+	return { query, hidden, data: answer };
+}
+
+/** This query never participates in clock commands, vehicle context loading or button admission. */
+export function DrivingAuthorizationAdvisory({
+	employeeId,
+}: {
+	employeeId?: string;
+}) {
+	const { t } = useTranslate();
+	const { query, hidden, data } = useDrivingAuthorizationStatus(employeeId);
+	if (hidden) return null;
 	return (
 		<aside
 			className="space-y-2 rounded-md border p-3 text-sm"
@@ -59,19 +73,7 @@ export function DrivingAuthorizationAdvisory({
 					aria-live="polite"
 					className="min-w-0 break-words font-medium"
 				>
-					{query.isFetching ? (
-						t(
-							"drivingLicence.operational.loading",
-							"Loading driving authorization…",
-						)
-					) : data ? (
-						<DrivingStatusLabel status={data.status} />
-					) : (
-						t(
-							"drivingLicence.operational.unavailable",
-							"Driving authorization status is unavailable.",
-						)
-					)}
+					<AdvisoryStatusText isFetching={query.isFetching} data={data} />
 				</p>
 				<Button
 					type="button"
@@ -88,26 +90,11 @@ export function DrivingAuthorizationAdvisory({
 					<IconRefresh className="size-4" aria-hidden="true" />
 				</Button>
 			</div>
-			{!query.isFetching && data?.classes.length ? (
-				<ul className="space-y-1">
-					{data.classes.map((entry) => (
-						<li key={entry.code} className="flex flex-wrap gap-x-2">
-							<strong translate="no">{entry.code}</strong>
-							<span>
-								{entry.status === "active"
-									? t("drivingLicence.class.active", "Authorized")
-									: entry.status === "ended"
-										? t("drivingLicence.class.ended", "Ended")
-										: t("drivingLicence.class.suspended", "Suspended")}
-							</span>
-							{entry.restrictions ? (
-								<span className="w-full break-words text-muted-foreground">
-									{entry.restrictions}
-								</span>
-							) : null}
-						</li>
-					))}
-				</ul>
+			{!query.isFetching && data ? (
+				<>
+					<AdvisoryClassList classes={data.classes} />
+					<AdvisoryDeclaredClasses codes={data.declaredClasses} />
+				</>
 			) : null}
 			<p className="text-xs text-muted-foreground">
 				{t(
@@ -116,6 +103,83 @@ export function DrivingAuthorizationAdvisory({
 				)}
 			</p>
 		</aside>
+	);
+}
+
+function AdvisoryStatusText({
+	isFetching,
+	data,
+}: {
+	isFetching: boolean;
+	data: DrivingAuthorizationStatus;
+}) {
+	const { t } = useTranslate();
+	if (isFetching)
+		return t(
+			"drivingLicence.operational.loading",
+			"Loading driving authorization…",
+		);
+	if (data) return <DrivingStatusLabel status={data.status} />;
+	return t(
+		"drivingLicence.operational.unavailable",
+		"Driving authorization status is unavailable.",
+	);
+}
+
+function AdvisoryClassList({
+	classes,
+}: {
+	classes: DrivingAuthorizationStatusData["classes"];
+}) {
+	const { t } = useTranslate();
+	if (!classes.length) return null;
+	const statusText = (status: (typeof classes)[number]["status"]) => {
+		if (status === "active")
+			return t("drivingLicence.class.active", "Authorized");
+		if (status === "ended") return t("drivingLicence.class.ended", "Ended");
+		return t("drivingLicence.class.suspended", "Suspended");
+	};
+	return (
+		<ul className="space-y-1">
+			{classes.map((entry) => (
+				<li key={entry.code} className="flex flex-wrap items-center gap-x-2">
+					<LicenceClassIcon code={entry.code} size="sm" className="text-muted-foreground" />
+					<strong translate="no">{entry.code}</strong>
+					<span>{statusText(entry.status)}</span>
+					{entry.restrictions ? (
+						<span className="w-full break-words text-muted-foreground">
+							{entry.restrictions}
+						</span>
+					) : null}
+				</li>
+			))}
+		</ul>
+	);
+}
+
+function AdvisoryDeclaredClasses({
+	codes,
+}: {
+	codes: DrivingAuthorizationStatusData["declaredClasses"];
+}) {
+	const { t } = useTranslate();
+	if (!codes?.length) return null;
+	return (
+		<div className="space-y-1.5 border-t border-dashed pt-2">
+			<p className="text-xs font-medium text-muted-foreground">
+				{t(
+					"drivingLicence.operational.declared",
+					"Declared, not checked yet. Not an authorization to drive.",
+				)}
+			</p>
+			<ul className="flex flex-wrap gap-1.5">
+				{codes.map((code) => (
+					<li key={code}>
+						<LicenceClassChip code={code} />
+					</li>
+				))}
+			</ul>
+		</div>
 	);
 }
 export function OperationalDrivingStatusPanel() {

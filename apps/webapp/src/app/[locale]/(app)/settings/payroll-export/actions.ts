@@ -201,6 +201,7 @@ export interface FilterOptions {
 		firstName: string | null;
 		lastName: string | null;
 		employeeNumber: string | null;
+		engagementKind?: "employee" | "contractor";
 	}>;
 	teams: Array<{ id: string; name: string }>;
 	projects: Array<{ id: string; name: string }>;

@@ -1,6 +1,8 @@
 {
   "settings": {
     "payrollExport": {
+      "connectorsDescription": "Lohnexport-Konnektore und Lohnart-Zueordnige konfiguriere",
+      "connectorsTitle": "Lohn-Konnektore & Lohnarte",
       "datev": {
         "beraternummer": "Beraternummer",
         "beraternummerTooltip": "Dini DATEV-Beraternummer (1-7 Stelle)",
@@ -19,7 +21,6 @@
         "saveSuccess": "Konfiguration gspeicheret",
         "title": "DATEV Stammdate"
       },
-      "description": "Arbeitsziite für Lohnabrechnigssystem wie DATEV oder Personio exportiere",
       "expenseMappings": {
         "apiConnectors": "Personio, Workday und die SuccessFactors-API übertragen keine Spesenrückerstattungen.",
         "codeLabel": "{line}, {format} Lohnart",
@@ -58,7 +59,6 @@
         "dateRange": "Ziitruum",
         "description": "Arbeitsziite und Absenze is DATEV Lohn & Gehalt Format exportiere",
         "employees": "Mitarbeiter",
-        "employeesSelected": "{count} usgwählt",
         "endDate": "Enddatum",
         "error": "Export fehlgschlage",
         "exportButtonDatev": "Export zu DATEV",
@@ -100,10 +100,13 @@
         "download": "Export abelade",
         "downloadError": "Download-URL konnte nöd abgruefe werde",
         "employees": "Mitarbeiter",
+        "includesSettledDays": "Abgrechneti Täg debii",
+        "loadError": "Exportverlauf hät nöd chönne glade werde.",
         "noExports": "No kei Export vorhande",
         "noExportsHint": "Starten Sie einen Lohnexport auf dem Tab «Export». Abgeschlossene Exporte erscheinen hier zum Herunterladen.",
         "payrollRun": "{count, plural, one {Lohnlauf: # Spesenabrechnung} other {Lohnlauf: # Spesenabrechnungen}}",
         "periods": "Periode",
+        "settledDaysLeftOut": "{count, plural, one {# abgrechnete Tag usgloo} other {# abgrechneti Täg usgloo}}",
         "status": {
           "completed": "Abgschlosse",
           "failed": "Fehlgschlage",
@@ -185,6 +188,7 @@
         },
         "workCategory": "Arbeitskategorie"
       },
+      "openPayrollWorkspace": "Export i de Lohnabrechnig usfüehre",
       "personio": {
         "clientId": "Client-ID",
         "clientIdHelp": "Hilfe zur Client-ID",
@@ -242,6 +246,9 @@
         "saveSuccess": "Konfiguration gspycheret",
         "title": "Sage Lohnabrächnig"
       },
+      "sections": {
+        "targets": "Lohnexport-Zil"
+      },
       "specialCategory": {
         "overtime": "Überziit"
       },
@@ -278,8 +285,6 @@
       },
       "tabs": {
         "datev": "DATEV",
-        "export": "Export",
-        "history": "Verlauf",
         "lexware": "Lexware",
         "mappings": "Lohnarte",
         "personio": "Personio",
@@ -287,7 +292,17 @@
         "successfactors": "SAP SuccessFactors",
         "workday": "Workday"
       },
-      "title": "Lohnabrechnungs-Export",
+      "targets": {
+        "datevSubtitle": "DATEV Lohn & Gehalt (CSV)",
+        "lexwareSubtitle": "Lexware lohn+gehalt (CSV)",
+        "personioSubtitle": "Personio API",
+        "sageSubtitle": "Sage Lohn (CSV)",
+        "statusConfigured": "Konfiguriert",
+        "statusNeedsCredentials": "Bruucht Aameldedate",
+        "statusNotConfigured": "Nöd konfiguriert",
+        "successfactorsSubtitle": "API & CSV",
+        "workdaySubtitle": "Workday API"
+      },
       "workday": {
         "apiTimeoutMs": "API-Timeout (ms)",
         "batchSize": "Batch-Grössi",
@@ -367,12 +382,12 @@
         "warning": "Warnig"
       },
       "description": "Prüefe, öb en Lohnabrechnigszyklus bereit isch, bevor Ziit-, Absenz- und Lohn-Date exportiert wärded.",
+      "loadError": "Bereitschaftsprüefige für d'Lohnabrechnig vo de Organisation händ nöd chönne glade werde.",
       "openPayrollExport": "Lohnexport öffne",
       "period": {
         "currentMonth": "Aktueller Monat",
         "navLabel": "Lohnperiode",
         "previousMonth": "Vorheriger Monat",
-        "scope": "Lohnperiode: {period} (UTC)",
         "showMonth": "{month} anzeigen"
       },
       "status": {

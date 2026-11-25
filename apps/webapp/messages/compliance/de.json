@@ -5,7 +5,7 @@
         "accessControls": "Zugriffskontrollen fassen nur sensible Audit-Log-Ereignisse zusammen, die bereits heute erfasst werden.",
         "auditEvidence": "Audit-Nachweise nutzen die Live-Audit-Export-Konfiguration, Audit-Paket-Anfragen und aktuelle Verifizierungsergebnisse.",
         "title": "Abdeckung",
-        "workforceCompliance": "Die Compliance der Belegschaft basiert auf den Verstößen gegen Arbeitsrichtlinien der letzten 7 Tage und ausstehenden Ausnahmeanträgen."
+        "workforceCompliance": "Die Compliance der Belegschaft basiert auf den Verstößen gegen Arbeitsrichtlinien der letzten 7 Tage und ausstehenden Ausnahmeanträgen sowie auf den offenen Befunden und Bestätigungen der gesetzlichen Prüfungen (Minijob, kurzfristige Beschäftigung, Werkstudierende, Arbeit auf Abruf, Jugendarbeitsschutz und Auszubildende)."
       },
       "events": {
         "auditEvidenceFailures": {
@@ -53,7 +53,10 @@
           "generalPolicyViolations": "Sonstige Richtlinienverstöße: {count}",
           "overtimeViolations": "Überstundenverstöße: {count}",
           "pendingExceptions": "Ausstehende Ausnahmen: {count}",
-          "restPeriodViolations": "Ruhezeitverstöße: {count}"
+          "restPeriodViolations": "Ruhezeitverstöße: {count}",
+          "statutoryFindings": "Gesetzliche Befunde: {critical} kritisch, {warning, plural, one {# Warnung} other {# Warnungen}}",
+          "statutoryAcknowledgements": "Gesetzliche Bestätigungen: {pending} ausstehend, {stale} durch neuere Arbeit oder Schichten ungültig",
+          "statutoryUnavailable": "Einige gesetzliche Prüfungen konnten nicht geladen werden."
         }
       },
       "footer": {
@@ -66,7 +69,14 @@
         "openAuditExport": "Audit-Export öffnen",
         "openAuditLog": "Audit-Protokoll öffnen",
         "openComplianceSettings": "Compliance-Einstellungen öffnen",
-        "reviewAuditExport": "Audit-Export überprüfen"
+        "reviewAuditExport": "Audit-Export überprüfen",
+        "statutoryDomain": {
+          "minijob": "Minijob: {count} offen",
+          "short_term": "Kurzfristig: {count} offen",
+          "working_student": "Werkstudierende: {count} offen",
+          "on_call": "Abrufarbeit: {count} offen",
+          "youth_apprentice": "Jugendliche & Azubis: {count} offen"
+        }
       },
       "loading": "Compliance-Signale werden geladen",
       "overview": "Compliance-Übersicht",
@@ -100,11 +110,12 @@
         },
         "workforceCompliance": {
           "headline": {
-            "critical": "Verstöße gegen die Personalrichtlinien erfordern eine Überprüfung",
-            "healthy": "Es wurden keine aktuellen Probleme bei den Personalrichtlinien erkannt",
+            "critical": "Verstöße gegen die Personalrichtlinien oder gesetzliche Befunde erfordern eine Überprüfung",
+            "healthy": "Es wurden keine aktuellen Probleme bei den Personalrichtlinien und keine offenen gesetzlichen Befunde erkannt",
             "warning": "Die Einhaltung der Personalrichtlinien weicht ab"
           },
-          "title": "Personal-Compliance"
+          "title": "Personal-Compliance",
+          "statutoryReviews": "Gesetzliche Prüfungen"
         }
       },
       "status": {
@@ -128,9 +139,12 @@
       "loadError": "Ausstehende Ausnahmeanträge konnten nicht geladen werden.",
       "plannedDuration": "Geplant",
       "plannedDurationHelp": "Schätzen Sie, wie viel zusätzliche Zeit Sie über das Limit hinaus benötigen.",
+      "plannedHours": "Geplante Stunden",
+      "plannedHoursInvalid": "Geben Sie ganze Stunden zwischen 0 und 12 ein.",
+      "plannedMinutes": "Geplante Minuten",
+      "plannedMinutesInvalid": "Geben Sie ganze Minuten zwischen 0 und 59 ein.",
       "reason": "Grund für die Ausnahme",
       "reasonPlaceholder": "Erklären Sie, warum Sie diese Ausnahme benötigen (z. B. dringende Projektfrist, wichtiges Kundentreffen)...",
-      "reasonRequired": "Grund erforderlich",
       "reasonRequiredDescription": "Bitte geben Sie einen Grund für Ihren Ausnahmeantrag an.",
       "rejectDescription": "Geben Sie einen Grund für die Ablehnung dieses Ausnahmeantrags an (optional)",
       "rejected": "Ausnahme abgelehnt",
@@ -139,6 +153,7 @@
       "rejectFor": "Ausnahme ({type}) für {name} ablehnen",
       "rejectionPlaceholder": "Grund für die Ablehnung dieser Ausnahme eingeben...",
       "rejectionReason": "Grund für die Ablehnung",
+      "rejectionReasonTooLong": "Der Grund darf maximal 500 Zeichen lang sein.",
       "rejectTitle": "Ausnahmeantrag ablehnen",
       "requestDescription": "Beantragen Sie eine Vorabgenehmigung bei Ihrem Vorgesetzten, um trotz Compliance-Beschränkungen fortzufahren. Genehmigte Ausnahmen sind 24 Stunden lang gültig.",
       "requestedAt": "Beantragt",

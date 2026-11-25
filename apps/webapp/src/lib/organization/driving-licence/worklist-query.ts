@@ -58,20 +58,23 @@ export function drivingLicenceNextDeadline(
 
 /**
  * A check is due now when nothing is active and the record has not ended (not yet checked,
- * suspended). Those come first, then the soonest next deadline, then ended records.
+ * suspended), or when the employee declared a class nobody has checked yet (#2003). Those come
+ * first, then the soonest next deadline, then ended records.
  */
 function urgency(row: {
 	status: AuthorizationStatus;
 	nextDeadline: DrivingLicenceNextDeadline | null;
+	declaredUnchecked?: readonly string[];
 }) {
 	if (row.status === "ended") return 2;
-	return row.nextDeadline ? 1 : 0;
+	return row.nextDeadline && !row.declaredUnchecked?.length ? 1 : 0;
 }
 type SortableRow = {
 	name: string;
 	employeeId: string;
 	status: AuthorizationStatus;
 	nextDeadline: DrivingLicenceNextDeadline | null;
+	declaredUnchecked?: readonly string[];
 	team?: { name: string } | null;
 };
 function compareByDeadline(left: SortableRow, right: SortableRow) {

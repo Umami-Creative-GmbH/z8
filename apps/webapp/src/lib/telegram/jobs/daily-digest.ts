@@ -107,7 +107,14 @@ export async function processTelegramBotDigest(
 	if (conversations.length === 0) return 0;
 
 	const appUrl = env.APP_URL || "https://z8-time.app";
-	const { buildDigestDataForManager } = await import("@/lib/teams/jobs/daily-digest");
+	const [{ buildDigestDataForManager }, { complianceExceptionInboxScopesFor }] = await Promise.all([
+		import("@/lib/teams/jobs/daily-digest"),
+		import("@/lib/approvals/inbox/compliance-exception-inbox"),
+	]);
+	const complianceScopes = complianceExceptionInboxScopesFor({
+		organizationId: bot.organizationId,
+		userIds: conversations.map((conv) => conv.userId),
+	});
 
 	const results = await Promise.allSettled(
 		conversations.map(async (conv) => {
@@ -149,6 +156,7 @@ export async function processTelegramBotDigest(
 						bot.organizationId,
 						display.timezone,
 						display.locale,
+						await complianceScopes.of({ userId: conv.userId, employeeId: emp.id }),
 					);
 
 					const t = await getBotTranslate(display.locale);

@@ -50,6 +50,10 @@ import {
 } from "./check-types";
 import type { DrivingLicenceActor } from "./context";
 import { assertDrivingLicenceControlOn } from "./control-state";
+import {
+	readDeclaredLicenceClasses,
+	replaceDeclaredLicenceClassesByCheck,
+} from "./declared-classes-store";
 import { drivingAuthorizationDeadline } from "./deadlines";
 import { intendedDriverCondition, isDrivingLicenceIntendedDriver } from "./intended-drivers";
 import { lockDrivingLicenceOrganization } from "./locks";
@@ -315,6 +319,13 @@ export async function readEffectiveDrivingAuthorization(
 	const authorizedClasses = classes
 		.filter((c) => c.status === "active")
 		.map((c) => c.code);
+	// The intended driver's own statement (#2003). It grants nothing and never changes the status.
+	const declared = intendedDriver
+		? await readDeclaredLicenceClasses(database, organizationId, employeeId)
+		: null;
+	const authorized = new Set(authorizedClasses);
+	const declaredUnchecked =
+		declared?.classes.map((entry) => entry.code).filter((code) => !authorized.has(code)) ?? [];
 	// Classes that ended when the employee stopped being an intended driver stay listed as
 	// history but don't count: once intended again they are not yet checked (#1425).
 	const current = classes.filter((_, index) => !endedAsNoLongerIntended(rows[index]));
@@ -352,6 +363,10 @@ export async function readEffectiveDrivingAuthorization(
 		personWideReason: intendedDriver ? personWideReason : null,
 		authorizedClasses,
 		classes,
+		/** What the intended driver declared themselves; null when nothing is declared. */
+		declared,
+		/** Declared classes that are not authorized: what a verifier still has to check. */
+		declaredUnchecked,
 		timezone: policy?.timezone ?? null,
 	};
 }
@@ -723,6 +738,12 @@ export async function completeDrivingLicenceCheck(
 				recordedAt: dateFromInstant(now),
 				actorUserId: actor.userId,
 			});
+		// The check's result replaces what the employee declared for the inspected classes (#2003).
+		await replaceDeclaredLicenceClassesByCheck(tx, {
+			organizationId: actor.organizationId,
+			employeeId: input.employeeId,
+			inspected: input.classes.map((inspected) => inspected.code),
+		});
 		await finishDrivingLicenceRetentionChange(
 			tx,
 			actor.organizationId,

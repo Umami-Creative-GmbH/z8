@@ -73,6 +73,11 @@
     "portalOpenFailed": "Échec de l'ouverture du portail de facturation",
     "priceSeatMonth": "€{price}/siège/mois",
     "priceSeatMonthYearly": "€{price}/siège/mois (facturé annuellement)",
+    "recovery": {
+      "billingAndSubscription": "Facturation et abonnement",
+      "navigationLabel": "Navigation de recouvrement de facturation",
+      "suspensionNotice": "Avis de suspension"
+    },
     "seatBilledAnnually": "€{price}/siège facturé annuellement",
     "seatLines": {
       "full": "Places complètes",

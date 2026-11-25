@@ -204,7 +204,42 @@
       }
     },
     "discord": {
-      "title": "Discord"
+      "applicationId": "Applikasjons-ID",
+      "botToken": "Bot-token",
+      "botTokenHelp": "Lagres kryptert i Vault og brukes til å validere og drifte boten din.",
+      "commandsRegistrationFailed": "Discord-boten er tilkoblet, men skråstrekkommandoer kunne ikke registreres automatisk. Kontroller botens tillatelser, og koble deretter boten fra og til igjen for å prøve på nytt.",
+      "connect": "Koble til Discord-bot",
+      "connectDescription": "Oppgi påloggingsinformasjonen fra Discord-applikasjonen din i Discord Developer Portal.",
+      "connected": "Discord-boten ble koblet til",
+      "connectError": "Kunne ikke koble til Discord-bot",
+      "copied": "Kopiert",
+      "copy": "Kopier",
+      "copyInteractionUrl": "Kopier URL for interaksjonsendepunkt",
+      "copyInteractionUrlFailed": "URL-en for interaksjonsendepunktet kunne ikke kopieres. Merk den og kopier den manuelt.",
+      "disconnect": "Koble fra",
+      "disconnectConfirm": {
+        "description": "Dette vil fjerne det lagrede bot-tokenet og deaktivere Discord-varsler og skråstrekkommandoer for organisasjonen din.",
+        "title": "Koble fra Discord-bot?"
+      },
+      "disconnected": "Discord-bot koblet fra",
+      "disconnectError": "Kunne ikke koble fra Discord-bot",
+      "errors": {
+        "applicationIdMismatch": "Applikasjons-ID samsvarer ikke med det oppgitte bot-tokenet.",
+        "invalidBotToken": "Ugyldig bot-token. Kontroller Discord-botens påloggingsinformasjon og prøv på nytt.",
+        "publicKeyMismatch": "Offentlig nøkkel samsvarer ikke med Discord-applikasjonen."
+      },
+      "interactionEndpointHelp": "Lim inn denne URL-en i feltet «Interactions Endpoint URL» i applikasjonen din i Discord Developer Portal.",
+      "interactionEndpointUrl": "URL for interaksjonsendepunkt",
+      "interactionUrlCopied": "URL for interaksjonsendepunkt kopiert",
+      "publicKey": "Offentlig nøkkel",
+      "title": "Discord",
+      "validation": {
+        "applicationIdInvalid": "Applikasjons-ID kan bare inneholde sifre.",
+        "applicationIdRequired": "Applikasjons-ID er obligatorisk.",
+        "botTokenRequired": "Bot-token er obligatorisk.",
+        "publicKeyInvalid": "Offentlig nøkkel må være en heksadesimal streng på 64 tegn.",
+        "publicKeyRequired": "Offentlig nøkkel er obligatorisk."
+      }
     },
     "slack": {
       "title": "Slack"

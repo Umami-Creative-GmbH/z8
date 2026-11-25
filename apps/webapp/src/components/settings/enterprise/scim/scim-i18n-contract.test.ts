@@ -193,7 +193,7 @@ describe("managed SCIM i18n contract", () => {
 		for (const locale of locales) {
 			const values = [
 				...messages(scimCatalog(locale)),
-				identityCatalog(locale).step["scim.description"],
+				identityCatalog(locale).wizard.scim.description,
 			];
 
 			for (const value of values) {

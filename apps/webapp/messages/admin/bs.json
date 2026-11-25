@@ -441,7 +441,9 @@
       "description": "Pregledajte i upravljajte svim korisnicima na platformi",
       "filters": {
         "allUsers": "Svi korisnici",
-        "banned": "Blokirani"
+        "banned": "Blokirani",
+        "clearOrganization": "Očisti filter organizacije",
+        "organization": "Organizacija: {name}"
       },
       "pagination": {
         "showing": "Prikazano od {from} do {to} od {total} korisnika"

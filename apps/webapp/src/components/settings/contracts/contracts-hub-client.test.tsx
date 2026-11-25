@@ -64,8 +64,21 @@ vi.mock("@/app/[locale]/(app)/settings/contracts/bulk-actions", () => ({
 	commitCsvImportBatchAction: vi.fn(),
 }));
 
+vi.mock("@/app/[locale]/(app)/settings/contracts/minijob-review-actions", () => ({
+	listMinijobExceedanceReviewsAction: vi.fn(async () => ({ success: true, data: [] })),
+	acknowledgeMinijobExceedanceAction: vi.fn(),
+}));
+
 vi.mock("@/app/[locale]/(app)/settings/employees/employee-offboarding.actions", () => ({
 	resolveDepartureReviewAction: mocks.resolveDepartureReviewAction,
+}));
+
+vi.mock("./working-student-reviews-section", () => ({
+	WorkingStudentReviewsSection: () => null,
+}));
+
+vi.mock("./statutory-monitor-findings-section", () => ({
+	StatutoryMonitorFindingsSection: () => null,
 }));
 
 vi.mock("@/app/[locale]/(app)/settings/work-policies/actions", () => ({
@@ -173,6 +186,7 @@ describe("ContractsHubClient (#1930)", () => {
 						employeeId: "emp-1",
 						firstName: "Ada",
 						lastName: "Lovelace",
+						engagementKind: "employee",
 						primaryTeamId: null,
 						status: "inheriting",
 						changes: [
@@ -193,6 +207,7 @@ describe("ContractsHubClient (#1930)", () => {
 						employeeId: "emp-2",
 						firstName: "Grace",
 						lastName: "Hopper",
+						engagementKind: "contractor",
 						primaryTeamId: null,
 						status: "diverged",
 						changes: [],
@@ -248,6 +263,11 @@ describe("ContractsHubClient (#1930)", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Preview affected employees" }));
 		expect(await screen.findByText("4 inheriting changes")).toBeTruthy();
 		expect(screen.getByText("1 keeping personal divergences")).toBeTruthy();
+		// External Contractors are badged in the affected-employee lists (#1995).
+		const contractorRow = screen.getByText("Grace Hopper").closest("li");
+		const employeeRow = screen.getByText("Ada Lovelace").closest("li");
+		expect(contractorRow?.textContent).toContain("External Contractor");
+		expect(employeeRow?.textContent).not.toContain("External Contractor");
 	});
 
 	it("shows migrated legacy terms banner with 1-click bulk adopt and conflict/departure review queues", async () => {

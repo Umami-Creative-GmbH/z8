@@ -93,6 +93,32 @@ describe("rehireEmployeeSchema", () => {
 			"validFrom",
 		);
 	});
+
+	describe("the engagement kind of the new period (#1995)", () => {
+		it("rehires an employee unless told otherwise, and still needs their work policy", () => {
+			expect(rehireEmployeeSchema.parse(valid).engagementKind).toBe("employee");
+			const withoutPolicy = rehireEmployeeSchema.safeParse({ ...valid, workPolicyId: null });
+			expect(withoutPolicy.success).toBe(false);
+			expect(withoutPolicy.error?.issues[0]?.path).toEqual(["workPolicyId"]);
+		});
+
+		it("engages an External Contractor without a work policy or an hourly wage", () => {
+			const parsed = rehireEmployeeSchema.parse({
+				...valid,
+				engagementKind: "contractor",
+				workPolicyId: null,
+				contractType: "hourly",
+				hourlyRate: null,
+			});
+			expect(parsed).toMatchObject({ engagementKind: "contractor", workPolicyId: null });
+		});
+
+		it("refuses an unknown engagement kind", () => {
+			expect(
+				rehireEmployeeSchema.safeParse({ ...valid, engagementKind: "freelancer" }).success,
+			).toBe(false);
+		});
+	});
 });
 
 describe("departure command schemas", () => {
@@ -158,7 +184,11 @@ describe("follow-up schemas", () => {
 			assignDepartureReplacementSchema.safeParse({ ...replacement, replacementEmployeeId: null })
 				.success,
 		).toBe(false);
-		const { handoverTaskId: _task, ...stage } = replacement;
+		const stage = {
+			departureId: replacement.departureId,
+			replacementEmployeeId: replacement.replacementEmployeeId,
+			requestId: replacement.requestId,
+		};
 		expect(assignDepartureReplacementSchema.safeParse({ ...stage, reviewId: uuid }).success).toBe(
 			true,
 		);
@@ -174,7 +204,10 @@ describe("follow-up schemas", () => {
 		expect(
 			assignDepartureReplacementSchema.safeParse({ ...target, deactivationId: uuid }).success,
 		).toBe(true);
-		const { handoverTaskId: _task, ...review } = target;
+		const review = {
+			replacementEmployeeId: target.replacementEmployeeId,
+			requestId: target.requestId,
+		};
 		expect(
 			assignDepartureReplacementSchema.safeParse({
 				...review,

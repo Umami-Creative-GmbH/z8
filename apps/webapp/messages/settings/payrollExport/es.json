@@ -1,6 +1,8 @@
 {
   "settings": {
     "payrollExport": {
+      "connectorsDescription": "Configure los conectores de exportación de nómina y las asignaciones de tipos de salario",
+      "connectorsTitle": "Conectores de nómina y tipos de salario",
       "datev": {
         "beraternummer": "Beraternummer",
         "beraternummerTooltip": "Tu número de consultor DATEV (1-7 dígitos)",
@@ -19,7 +21,6 @@
         "saveSuccess": "Configuración guardada",
         "title": "Datos maestros de DATEV"
       },
-      "description": "Exporta periodos de trabajo a sistemas de nómina como DATEV o Personio",
       "expenseMappings": {
         "apiConnectors": "Personio, Workday y la API de SuccessFactors no incluyen reembolsos de gastos.",
         "codeLabel": "{line}, concepto de nómina de {format}",
@@ -58,7 +59,6 @@
         "dateRange": "Rango de fechas",
         "description": "Exportar periodos de trabajo y ausencias al formato DATEV Lohn & Gehalt",
         "employees": "Empleados",
-        "employeesSelected": "{count} seleccionado",
         "endDate": "Fecha de fin",
         "error": "Error en la exportación",
         "exportButtonDatev": "Exportar a DATEV",
@@ -100,10 +100,13 @@
         "download": "Descargar exportación",
         "downloadError": "Error al obtener la URL de descarga",
         "employees": "empleados",
+        "includesSettledDays": "Días liquidados incluidos",
+        "loadError": "No se pudo cargar el historial de exportaciones.",
         "noExports": "Aún no hay exportaciones",
         "noExportsHint": "Inicia una exportación de nómina en la pestaña Exportar. Las exportaciones finalizadas aparecerán aquí para descargarlas.",
         "payrollRun": "{count, plural, one {Ejecución de nómina: # informe de gastos} other {Ejecución de nómina: # informes de gastos}}",
         "periods": "periodos",
+        "settledDaysLeftOut": "{count, plural, one {# día liquidado excluido} other {# días liquidados excluidos}}",
         "status": {
           "completed": "Completado",
           "failed": "Fallido",
@@ -185,6 +188,7 @@
         },
         "workCategory": "Categoría de trabajo"
       },
+      "openPayrollWorkspace": "Ejecutar exportaciones en Nómina",
       "personio": {
         "clientId": "ID de cliente",
         "clientIdHelp": "Ayuda sobre el ID de cliente",
@@ -242,6 +246,9 @@
         "saveSuccess": "Configuración guardada",
         "title": "Sage Lohn"
       },
+      "sections": {
+        "targets": "Destinos de nómina"
+      },
       "specialCategory": {
         "overtime": "Horas extras"
       },
@@ -278,8 +285,6 @@
       },
       "tabs": {
         "datev": "DATEV",
-        "export": "Exportar",
-        "history": "Historial",
         "lexware": "Lexware",
         "mappings": "Tipos de salario",
         "personio": "Personio",
@@ -287,7 +292,17 @@
         "successfactors": "SAP SuccessFactors",
         "workday": "Workday"
       },
-      "title": "Exportación de nómina",
+      "targets": {
+        "datevSubtitle": "DATEV Lohn & Gehalt (CSV)",
+        "lexwareSubtitle": "Lexware lohn+gehalt (CSV)",
+        "personioSubtitle": "API de Personio",
+        "sageSubtitle": "Sage Lohn (CSV)",
+        "statusConfigured": "Configurado",
+        "statusNeedsCredentials": "Requiere credenciales",
+        "statusNotConfigured": "No configurado",
+        "successfactorsSubtitle": "API y CSV",
+        "workdaySubtitle": "API de Workday"
+      },
       "workday": {
         "apiTimeoutMs": "Tiempo de espera de la API (ms)",
         "batchSize": "Tamaño del lote",
@@ -367,12 +382,12 @@
         "warning": "Advertencia"
       },
       "description": "Compruebe si un periodo de nómina está listo antes de exportar datos de tiempo, ausencias y nómina.",
+      "loadError": "No se pudieron cargar las comprobaciones de preparación de nómina de la organización.",
       "openPayrollExport": "Abrir exportación de nómina",
       "period": {
         "currentMonth": "Mes actual",
         "navLabel": "Período de nómina",
         "previousMonth": "Mes anterior",
-        "scope": "Período de nómina: {period} (UTC)",
         "showMonth": "Mostrar {month}"
       },
       "status": {

@@ -152,7 +152,6 @@
       "vacationPolicy": "Vacation",
       "welcome": "Welcome",
       "wellness": "Wellness",
-      "workSchedule": "Schedule",
       "workTemplates": "Templates"
     },
     "vacationPolicy": {
@@ -259,35 +258,6 @@
       "subtitle": "Set up water reminders to stay healthy during your workday. You'll receive gentle notifications to drink water while clocked in.",
       "success": "Water reminder enabled!",
       "title": "Stay Hydrated"
-    },
-    "workSchedule": {
-      "accessUnavailable": "Work schedule access could not be checked. Continuing to the next available step.",
-      "checkingAccess": "Checking work schedule access",
-      "classification": "Work Classification",
-      "classificationDesc": "How you want to track your working hours.",
-      "continue": "Continue",
-      "daily": "Daily",
-      "error": "Failed to set work schedule",
-      "hoursPerWeek": "Hours per Week",
-      "hoursPerWeekDesc": "Typical full-time is 40 hours per week.",
-      "hoursPerWeekPlaceholder": "40",
-      "laterContext": "You can revisit work policies in settings after onboarding.",
-      "monthly": "Monthly",
-      "policyContext": "Continuing saves your onboarding progress. Organization work policies remain in effect; the hours and classification entered here are not saved to a work policy.",
-      "previousAttempt": "A previous request is still finishing. Try again to continue.",
-      "progressSaved": "Onboarding progress saved.",
-      "scheduleTitle": "Work Schedule",
-      "selectClassification": "Select classification",
-      "setupContext": "Review weekly hours and how working hours are tracked together.",
-      "skip": "Skip for now",
-      "skipError": "Failed to skip work schedule setup",
-      "subtitle": "Define your working hours to help track time and manage absences accurately.",
-      "title": "Set your work schedule",
-      "validation": {
-        "hoursNegative": "Hours cannot be negative",
-        "hoursTooMany": "A week has at most 168 hours"
-      },
-      "weekly": "Weekly"
     },
     "workTemplates": {
       "cardDesc": "Create a default work schedule. You can add more templates later in settings.",

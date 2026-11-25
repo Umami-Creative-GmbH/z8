@@ -82,6 +82,11 @@ vi.mock("@/lib/approvals/inbox/read-service", () => ({
 	getApprovalInboxDetail: mockState.getApprovalInboxDetail,
 }));
 
+// Compliance exception scopes are verified in authorized-detail.test.ts (#1977).
+vi.mock("@/lib/approvals/inbox/compliance-exception-inbox", () => ({
+	resolveComplianceExceptionInboxScope: async () => null,
+}));
+
 // Covering deputies' detail access is verified in authorized-detail.test.ts (#1016).
 vi.mock("@/lib/approvals/deputy/deputy-decision-store", () => ({
 	loadDeputyDetailAccess: async () => null,

@@ -1,14 +1,12 @@
 {
   "analytics": {
     "access": {
-      "noEmployeeFeature": "vezi statisticile",
       "restrictedDescription": "Statisticile sunt disponibile doar pentru administratori și manageri.",
       "restrictedTitle": "Acces restricționat"
     },
     "common": {
       "days": "Zile",
       "employee": "Angajat",
-      "employees": "Angajați",
       "hours": "Ore",
       "loadingOrganizationSettings": "Se încarcă setările organizației înainte de activarea presetărilor.",
       "noDataAvailable": "Nu sunt date disponibile",
@@ -17,17 +15,16 @@
       "overtimeHours": "Ore suplimentare",
       "team": "Echipă",
       "totalHours": "Total ore",
-      "unavailable": "Indisponibil",
       "undertime": "Ore sub normă",
       "undertimeHours": "Ore sub normă"
     },
     "layout": {
       "description": "Informații detaliate despre performanța echipei, orele de lucru și tiparele de absență",
       "tabs": {
+        "absencesAndVacation": "Absențe și concedii",
         "overtimeBurnDown": "Reducere ore suplimentare",
         "overview": "Prezentare generală",
         "teamPerformance": "Performanța echipei",
-        "vacationTrends": "Tendințe concedii",
         "workHours": "Ore de lucru"
       },
       "title": "Analize"
@@ -100,31 +97,8 @@
       "errors": {
         "retryDescription": "Unele date de analiză nu au putut fi încărcate. Valorile încărcate anterior, dacă sunt afișate, pot fi neactualizate."
       },
-      "kpis": {
-        "approvalRate": {
-          "description": "Din cererile soluționate au fost aprobate",
-          "title": "Rată de aprobare",
-          "unavailableDescription": "Analizele privind aprobările nu au putut fi încărcate"
-        },
-        "avgWorkHours": {
-          "description": "Per angajat în perioada selectată",
-          "title": "Medie ore de lucru"
-        },
-        "totalAbsenceDays": {
-          "description": "Total zile în perioada selectată",
-          "title": "Total zile de absență"
-        },
-        "totalEmployees": {
-          "description": "Angajați activi în organizație",
-          "title": "Total angajați"
-        }
-      },
       "loadingLabel": "Se încarcă datele analitice",
-      "refreshing": "Se reîmprospătează datele de analiză…",
-      "workHoursByTeam": {
-        "description": "Total ore de lucru înregistrate per echipă",
-        "title": "Ore de lucru după echipă"
-      }
+      "refreshing": "Se reîmprospătează datele de analiză…"
     },
     "teamPerformance": {
       "avgPerEmployee": "Medie per angajat",

@@ -1,6 +1,8 @@
 {
   "settings": {
     "payrollExport": {
+      "connectorsDescription": "Налаштуйте конектори експорту зарплати та зіставлення типів оплати",
+      "connectorsTitle": "Конектори експорту зарплати та типи оплати",
       "datev": {
         "beraternummer": "Номер консультанта",
         "beraternummerTooltip": "Ваш номер консультанта DATEV (1–7 цифр)",
@@ -19,7 +21,6 @@
         "saveSuccess": "Конфігурацію збережено",
         "title": "Основні дані DATEV"
       },
-      "description": "Експортуйте робочі періоди до систем розрахунку заробітної плати, таких як DATEV або Personio",
       "expenseMappings": {
         "apiConnectors": "Personio, Workday та SuccessFactors API не підтримують відшкодування витрат.",
         "codeLabel": "{line}, вид оплати {format}",
@@ -58,7 +59,6 @@
         "dateRange": "Діапазон дат",
         "description": "Експортуйте робочі періоди та відсутності у формат DATEV Lohn & Gehalt",
         "employees": "Співробітники",
-        "employeesSelected": "Вибрано: {count}",
         "endDate": "Дата завершення",
         "error": "Помилка експорту",
         "exportButtonDatev": "Експорт до DATEV",
@@ -100,10 +100,13 @@
         "download": "Завантажити експорт",
         "downloadError": "Не вдалося отримати URL-адресу для завантаження",
         "employees": "працівники",
+        "includesSettledDays": "Враховано розраховані дні",
+        "loadError": "Не вдалося завантажити історію експорту.",
         "noExports": "Експортів ще немає",
         "noExportsHint": "Розпочніть експорт заробітної плати на вкладці «Експорт». Готові файли експорту з'являться тут для завантаження.",
         "payrollRun": "{count, plural, one {Розрахунок зарплати: # звіт про витрати} few {Розрахунок зарплати: # звіти про витрати} many {Розрахунок зарплати: # звітів про витрати} other {Розрахунок зарплати: # звіту про витрати}}",
         "periods": "періоди",
+        "settledDaysLeftOut": "{count, plural, one {# розрахований день не враховано} few {# розраховані дні не враховано} other {# розрахованих днів не враховано} }",
         "status": {
           "completed": "Завершено",
           "failed": "Помилка",
@@ -185,6 +188,7 @@
         },
         "workCategory": "Категорія роботи"
       },
+      "openPayrollWorkspace": "Запускайте експорт у Payroll",
       "personio": {
         "clientId": "Client ID",
         "clientIdHelp": "Довідка щодо Client ID",
@@ -242,6 +246,9 @@
         "saveSuccess": "Конфігурацію збережено",
         "title": "Sage Payroll"
       },
+      "sections": {
+        "targets": "Цільові системи розрахунку зарплати"
+      },
       "specialCategory": {
         "overtime": "Понаднормові"
       },
@@ -278,8 +285,6 @@
       },
       "tabs": {
         "datev": "DATEV",
-        "export": "Експорт",
-        "history": "Історія",
         "lexware": "Lexware",
         "mappings": "Типи оплати праці",
         "personio": "Personio",
@@ -287,7 +292,17 @@
         "successfactors": "SAP SuccessFactors",
         "workday": "Workday"
       },
-      "title": "Експорт нарахування зарплати",
+      "targets": {
+        "datevSubtitle": "DATEV Lohn & Gehalt (CSV)",
+        "lexwareSubtitle": "Lexware lohn+gehalt (CSV)",
+        "personioSubtitle": "Personio API",
+        "sageSubtitle": "Sage Lohn (CSV)",
+        "statusConfigured": "Налаштовано",
+        "statusNeedsCredentials": "Потрібні облікові дані",
+        "statusNotConfigured": "Не налаштовано",
+        "successfactorsSubtitle": "API та CSV",
+        "workdaySubtitle": "Workday API"
+      },
       "workday": {
         "apiTimeoutMs": "Час очікування API (мс)",
         "batchSize": "Розмір пакета",
@@ -367,12 +382,12 @@
         "warning": "Попередження"
       },
       "description": "Перевірте готовність розрахункового періоду перед експортом даних про робочий час, відсутності та нарахування заробітної плати.",
+      "loadError": "Не вдалося завантажити перевірки готовності організації до розрахунку зарплати.",
       "openPayrollExport": "Відкрити експорт зарплати",
       "period": {
         "currentMonth": "Поточний місяць",
         "navLabel": "Розрахунковий період",
         "previousMonth": "Попередній місяць",
-        "scope": "Розрахунковий період: {period} (UTC)",
         "showMonth": "Показати {month}"
       },
       "status": {

@@ -423,7 +423,6 @@
         "descriptionPlaceholder": "En kort beskrivelse av dette teamet",
         "fallbackManagerHelp": "Brukes til godkjenninger når et teammedlem ikke har noen direkte leder.",
         "fallbackManagerLabel": "Reserveleder",
-        "fallbackManagerPlaceholder": "Velg en reserveleder",
         "nameLabel": "Teamnavn",
         "namePlaceholder": "Utvikling, salg, markedsføring...",
         "noFallbackManager": "Ingen reserveleder",

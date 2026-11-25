@@ -169,6 +169,31 @@ describe("POST /api/approvals/inbox/bulk-approve", () => {
 		});
 	});
 
+	it("refuses an employee who only manages Compliance (#1977)", async () => {
+		mockState.getAbility.mockResolvedValue(
+			defineAbilityFor({
+				userId: "user-1",
+				isPlatformAdmin: false,
+				activeOrganizationId: "org-1",
+				orgMembership: { organizationId: "org-1", role: "admin", status: "active" },
+				employee: { id: "employee-1", organizationId: "org-1", role: "employee", teamId: null },
+				permissions: { orgWide: null, byTeamId: new Map() },
+				managedEmployeeIds: [],
+				customRoles: [],
+			} satisfies PrincipalContext),
+		);
+		mockState.findEmployee.mockResolvedValue({
+			id: "employee-1",
+			organizationId: "org-1",
+			role: "employee",
+		});
+
+		const response = await POST(createRequest({ approvalIds: ["approval-1"] }));
+
+		expect(response.status).toBe(403);
+		expect(mockState.bulkApproveApprovalInboxItems).not.toHaveBeenCalled();
+	});
+
 	it("rejects a malformed fast-lane review instead of treating it as manual bulk approval", async () => {
 		const response = await POST(
 			createRequest({
@@ -190,6 +215,7 @@ describe("POST /api/approvals/inbox/bulk-approve", () => {
 			organizationId: "org-1",
 			includeAllApprovers: true,
 			eligibleApprovalScopes: [],
+			canManageCompliance: true,
 		});
 	});
 
@@ -220,6 +246,7 @@ describe("POST /api/approvals/inbox/bulk-approve", () => {
 			organizationId: "org-1",
 			includeAllApprovers: undefined,
 			eligibleApprovalScopes,
+			canManageCompliance: false,
 		});
 	});
 

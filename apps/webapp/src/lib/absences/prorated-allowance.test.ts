@@ -3,6 +3,7 @@ import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import {
 	type EmploymentStint,
 	employmentStintsFromRecords,
+	outsideVacationInYear,
 	resolveVacationAllowance,
 } from "./prorated-allowance";
 
@@ -437,5 +438,77 @@ describe("resolveVacationAllowance", () => {
 			days: 0,
 			reason: { kind: "not_employed" },
 		});
+	});
+
+	it("keeps a non-prorating policy's full allowance for someone only ever employed", () => {
+		const offPolicy = { ...policy, prorateInStartAndExitYear: false };
+		// A part-year joiner and a year without employment alike, as before #1996.
+		for (const employments of [[stint("2026-10-01")], [stint("2020-01-01", "2025-12-31")]])
+			expect(
+				resolveVacationAllowance({ policy: offPolicy, employments, year: 2026 }),
+			).toMatchObject({ days: 30, reason: { kind: "none", cause: "proration_off" } });
+	});
+
+	describe("for someone who was an External Contractor (#1996)", () => {
+		const contractorYear = (
+			employments: EmploymentStint[],
+			overrides: Partial<typeof policy> = {},
+			extra: { customAnnualDays?: string; year?: number } = {},
+		) =>
+			resolveVacationAllowance({
+				policy: { ...policy, ...overrides },
+				employments,
+				wasContractor: true,
+				year: extra.year ?? 2026,
+				customAnnualDays: extra.customAnnualDays,
+			});
+
+		it("gives no allowance in a year without an employee day, whatever the policy", () => {
+			// Employed in 2025, a contractor all of 2026; or a contractor in 2026, employed from 2027.
+			for (const employments of [[stint("2020-01-01", "2025-12-31")], [stint("2027-01-01")]]) {
+				for (const overrides of [
+					{},
+					{ prorateInStartAndExitYear: false },
+					{ accrualType: "monthly" },
+				])
+					expect(contractorYear(employments, overrides)).toEqual({
+						fullAllowance: 30,
+						days: 0,
+						reason: { kind: "not_employed" },
+					});
+				expect(contractorYear(employments, {}, { customAnnualDays: "12" }).days).toBe(0);
+			}
+			expect(contractorYear([stint("2026-01-01")], {}, { year: 2025 }).days).toBe(0);
+		});
+
+		it("keeps the policy's rules in a year with an employee day", () => {
+			expect(
+				contractorYear([stint("2026-10-01")], { prorateInStartAndExitYear: false }),
+			).toMatchObject({ days: 30, reason: { kind: "none", cause: "proration_off" } });
+			expect(contractorYear([stint("2026-10-01")]).days).toBe(8);
+		});
+	});
+});
+
+describe("outsideVacationInYear", () => {
+	it("leaves out someone never employed, every year", () => {
+		expect(outsideVacationInYear({ employments: [], wasContractor: true }, 2026)).toBe(true);
+	});
+
+	it("leaves out a former contractor's years without an employee day only", () => {
+		const person = { employments: [stint("2020-01-01", "2025-12-31")], wasContractor: true };
+		expect(outsideVacationInYear(person, 2025)).toBe(false);
+		expect(outsideVacationInYear(person, 2026)).toBe(true);
+		const joiner = { employments: [stint("2027-01-01")], wasContractor: true };
+		expect(outsideVacationInYear(joiner, 2026)).toBe(true);
+		expect(outsideVacationInYear(joiner, 2027)).toBe(false);
+		// One employee day in the year is enough.
+		const lastDay = { employments: [stint("2020-01-01", "2026-01-01")], wasContractor: true };
+		expect(outsideVacationInYear(lastDay, 2026)).toBe(false);
+	});
+
+	it("never leaves out someone only ever employed", () => {
+		const person = { employments: [stint("2020-01-01", "2025-12-31")], wasContractor: false };
+		expect(outsideVacationInYear(person, 2026)).toBe(false);
 	});
 });

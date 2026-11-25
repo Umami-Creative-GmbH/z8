@@ -244,7 +244,7 @@ export function BillableFiguresCard({ figures, context, description }: BillableF
 						<Badge variant="outline" className="gap-1">
 							{t(
 								"reports.projects.billable.costUnknownCount",
-								"{count, plural, one {# work period has} other {# work periods have}} no cost rate",
+								"{count, plural, one {# work period has} other {# work periods have}} no usable cost rate or contractor rate",
 								{ count: figures.costUnknownWorkCount },
 							)}
 						</Badge>
