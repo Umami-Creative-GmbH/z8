@@ -51,7 +51,7 @@ describe("contractor statement CSV", () => {
 			}),
 		);
 		expect(none[11]).toEqual([]);
-		expect(none[10][0]).toContain("Nur freigegebene Arbeit");
+		expect(none[10][0]).toContain("Nur genehmigte Arbeitszeit");
 	});
 
 	it("itemizes days, their work by project and task, and the totals", () => {
@@ -202,9 +202,9 @@ describe("contractor statement CSV", () => {
 	it("is written in German for a German exporter", () => {
 		const csv = contractorStatementCsv(sampleStatement(), { t: catalogT("de") });
 		const table = rows(csv);
-		expect(table[0]).toEqual(["Zeit- und Honorarnachweis für Externe Dienstleister"]);
-		expect(table[1][0]).toContain("Kein Rechnungs- oder Gutschriftsdokument");
-		expect(table.find((row) => row[0] === "Zeilenart")).toContain("Betrag");
+		expect(table[0]).toEqual(["Zeit- und Honorarnachweis für Auftragnehmer"]);
+		expect(table[1][0]).toContain("Keine Rechnung oder Gutschrift im Gutschriftsverfahren");
+		expect(table.find((row) => row[0] === "Zeilentyp")).toContain("Betrag");
 		expect(table.find((row) => row[0] === "Tag")).toContain(
 			"Halber Tag bis 240 Min., darüber voller Tag",
 		);

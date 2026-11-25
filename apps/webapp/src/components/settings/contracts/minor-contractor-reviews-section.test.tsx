@@ -102,13 +102,13 @@ describe("MinorContractorReviewsSection (#2022)", () => {
 		cleanup();
 
 		show("de", [{ ...review, periodStart: "2027-03-10", periodEnd: "2027-03-11" }]);
-		expect(await screen.findByText("Beauftragt am 10. März 2027")).toBeTruthy();
+		expect(await screen.findByText("Im Einsatz am 10. März 2027")).toBeTruthy();
 	});
 
 	it("names an open-ended engagement by its start, in German", async () => {
 		show("de", [{ ...review, periodEnd: null }]);
 
-		expect(await screen.findByText("Beauftragt seit 4. Jan. 2027")).toBeTruthy();
+		expect(await screen.findByText("Eingesetzt seit 4. Jan. 2027")).toBeTruthy();
 	});
 
 	it("says an engagement's start was not recorded instead of showing a date", async () => {
@@ -128,8 +128,8 @@ describe("MinorContractorReviewsSection (#2022)", () => {
 			{ ...review, findingId: "f2", employeeName: "Ben Roth", periodStart: null },
 		]);
 
-		expect(await screen.findByText("Beginn der Beauftragung nicht erfasst")).toBeTruthy();
-		expect(screen.getByText("Beauftragt bis 31. März 2027 (Beginn nicht erfasst)")).toBeTruthy();
+		expect(await screen.findByText("Einsatzbeginn nicht erfasst")).toBeTruthy();
+		expect(screen.getByText("Eingesetzt bis 31. März 2027 (Beginn nicht erfasst)")).toBeTruthy();
 	});
 
 	// The flags turn true while the window still lies partly inside the engagement, so the notices
@@ -161,12 +161,12 @@ describe("MinorContractorReviewsSection (#2022)", () => {
 
 		expect(
 			await screen.findByText(
-				"Nach dem Ende der Beauftragung am 31. März 2027 bleibt die Person als Externer Dienstleister erfasst. Ihre Schichten und Arbeit nach diesem Tag werden ebenfalls nicht nach dem Jugendarbeitsschutz beurteilt.",
+				"Nach dem Ende des Einsatzes am 31. März 2027 verbleibt die Person als Auftragnehmer im Dienstplan. Ihre Schichten und Arbeitszeiten nach diesem Tag werden ebenfalls nicht nach dem Jugendarbeitsschutz beurteilt.",
 			),
 		).toBeTruthy();
 		expect(
 			screen.getByText(
-				"Vor dem Beginn der Beauftragung am 4. Jan. 2027 ist die Person bereits als Externer Dienstleister erfasst. Ihre Schichten und Arbeit vor diesem Tag werden ebenfalls nicht nach dem Jugendarbeitsschutz beurteilt.",
+				"Vor dem Beginn des Einsatzes am 4. Jan. 2027 steht die Person als Auftragnehmer im Dienstplan. Ihre Schichten und Arbeitszeiten vor diesem Tag werden ebenfalls nicht nach dem Jugendarbeitsschutz beurteilt.",
 			),
 		).toBeTruthy();
 	});
@@ -183,10 +183,10 @@ describe("MinorContractorReviewsSection (#2022)", () => {
 			"The person's engagements or the birthday changed since this list was loaded, or the person is now on the roster as a contractor after the engagement ends. Review it again.",
 		);
 		expect(de["settings.contracts.reviews.minorContractors.description"]).toMatch(
-			/oder die Person nach dem Ende der Beauftragung als Externer Dienstleister erfasst ist\.$/,
+			/oder sobald die Person nach Ende des Einsatzes als Auftragnehmer im Dienstplan steht\.$/,
 		);
 		expect(de["settings.contracts.reviews.minorContractors.refusal.changed"]).toMatch(
-			/nach dem Ende der Beauftragung als Externer Dienstleister erfasst/,
+			/nach dem Ende des Einsatzes nun als Auftragnehmer im Dienstplan eingetragen/,
 		);
 	});
 
