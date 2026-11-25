@@ -20,6 +20,10 @@
           "description": "Senaste ogiltiga verifieringar: {invalidVerifications}",
           "title": "Granskningsverifiering misslyckades"
         },
+        "pendingExceptions": {
+          "description": "{count, plural, other {# efterlevnadsundantag väntar på beslut} }",
+          "title": "Väntande efterlevnadsundantag"
+        },
         "sensitiveAction": {
           "description": "{action} på {entityType}",
           "title": "Känslig åtgärd: {action}"
@@ -53,7 +57,10 @@
           "generalPolicyViolations": "Övriga policyöverträdelser: {count}",
           "overtimeViolations": "Övertidsöverträdelser: {count}",
           "pendingExceptions": "Väntande undantag: {count}",
-          "restPeriodViolations": "Överträdelser av viloperiod: {count}"
+          "restPeriodViolations": "Överträdelser av viloperiod: {count}",
+          "statutoryAcknowledgements": "Lagstadgade bekräftelser: {pending} väntande, {stale} ogiltigförklarade av nyare arbete eller skift",
+          "statutoryFindings": "{warning, plural, one {Lagstadgade anmärkningar: {critical} kritiska, # varning} other {Lagstadgade anmärkningar: {critical} kritiska, # varningar}}",
+          "statutoryUnavailable": "Vissa lagstadgade kontroller kunde inte läsas in."
         }
       },
       "footer": {
@@ -61,12 +68,19 @@
         "refreshMeaning": "Uppdatera läser in registrerade signaler igen; det omvärderar inte upptäckter enligt en ny policy."
       },
       "links": {
-        "inspectCompliance": "Granska efterlevnad",
         "inspectInAuditLog": "Granska i granskningsloggen",
         "openAuditExport": "Öppna granskningsexport",
         "openAuditLog": "Öppna granskningsloggen",
-        "openComplianceSettings": "Öppna inställningar för efterlevnad",
-        "reviewAuditExport": "Granska granskningsexport"
+        "reviewAuditExport": "Granska granskningsexport",
+        "reviewComplianceExceptions": "Granska efterlevnadsundantag",
+        "reviewPolicyViolations": "Granska policyöverträdelser",
+        "statutoryDomain": {
+          "minijob": "Minijobb: {count} öppna",
+          "on_call": "Jour: {count} öppna",
+          "short_term": "Korttidsanställning: {count} öppna",
+          "working_student": "Arbetande studenter: {count} öppna",
+          "youth_apprentice": "Ungdomar och lärlingar: {count} öppna"
+        }
       },
       "loading": "Läser in efterlevnadssignaler",
       "overview": "Efterlevnadsöversikt",
@@ -104,6 +118,7 @@
             "healthy": "Inga nyliga problem med personalpolicy upptäcktes",
             "warning": "Personalens efterlevnad avviker"
           },
+          "statutoryReviews": "Lagstadgade granskningar",
           "title": "Efterlevnad för personalstyrkan"
         }
       },
@@ -121,11 +136,6 @@
       }
     },
     "exception": {
-      "approved": "Undantag godkänt",
-      "approvedDescription": "Efterlevnadsundantaget har godkänts.",
-      "approveFailed": "Kunde inte godkänna",
-      "approveFor": "Godkänn {type}-undantag för {name}",
-      "loadError": "Väntande undantagsförfrågningar kunde inte läsas in.",
       "plannedDuration": "Planerat",
       "plannedDurationHelp": "Uppskatta hur mycket ytterligare tid du förväntar dig att behöva utöver gränsen.",
       "plannedHours": "Planerade timmar",
@@ -135,35 +145,16 @@
       "reason": "Anledning till undantag",
       "reasonPlaceholder": "Förklara varför du behöver detta undantag (t.ex. brådskande projektdeadline, kritiskt kundmöte)...",
       "reasonRequiredDescription": "Ange en anledning till din begäran om undantag.",
-      "rejectDescription": "Ange en anledning till att avslå denna begäran om undantag (valfritt)",
-      "rejected": "Undantag avslaget",
-      "rejectedDescription": "Efterlevnadsundantaget har avslagits.",
-      "rejectFailed": "Kunde inte avslå",
-      "rejectFor": "Avvisa {type}-undantag för {name}",
-      "rejectionPlaceholder": "Ange anledning till att avslå detta undantag...",
-      "rejectionReason": "Anledning till avslag",
-      "rejectionReasonTooLong": "Orsaken får innehålla högst 500 tecken.",
-      "rejectTitle": "Avslå begäran om undantag",
       "requestDescription": "Begär förhandsgodkännande från din chef för att fortsätta trots efterlevnadsbegränsningar. Godkända undantag är giltiga i 24 timmar.",
-      "requestedAt": "Begärd",
       "requestFailed": "Begäran misslyckades",
       "requestSubmitted": "Begäran om undantag har skickats",
       "requestSubmittedDescription": "Din chef kommer att meddelas och kan godkänna eller avslå din begäran.",
       "requestTitle": "Begär efterlevnadsundantag",
       "submit": "Skicka begäran",
-      "type": "Typ av undantag",
-      "types": {
-        "overtimeDaily": "Daglig övertid",
-        "overtimeMonthly": "Månatlig övertid",
-        "overtimeWeekly": "Veckovis övertid",
-        "restPeriod": "Viloperiod"
-      }
+      "type": "Typ av undantag"
     },
     "hasApprovedException": "Du har ett godkänt undantag. Du kan fortsätta.",
     "moreAlerts": "mer",
-    "noExceptions": "Inga väntande begäranden om undantag",
-    "pendingExceptions": "Väntande begäranden om undantag",
-    "pendingExceptionsDescription": "Granska begäranden om undantag som kräver ditt godkännande",
     "requestException": "Begär undantag",
     "restPeriodMessage": "Du behöver {time} mer vila innan du kan stämpla in. Nästa tillåtna instämpling: {nextTime}",
     "restPeriodRequired": "Viloperiod krävs"

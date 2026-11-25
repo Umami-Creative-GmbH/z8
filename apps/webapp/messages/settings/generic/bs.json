@@ -1,5 +1,60 @@
 {
   "settings": {
+    "apprenticeRelease": {
+      "blockWeekTrainingNote": "Na ovim blok-danima dozvoljeno je do 2 sata obuke unutar preduzeća sedmično (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG). Za zaposlenika mlađeg od 18 godina, ovi sati dolaze povrh blok-sedmice, koja se računa s prosječnim sedmičnim radnim vremenom (§ 9 Abs. 2 Nr. 2 JArbSchG), te se ne računaju u dnevna i sedmična ograničenja iz § 8.",
+      "credit": {
+        "exam": "Ispit od {start}: priznato {minutes} min",
+        "fullDays": "{count, plural, one {# radni dan u potpunosti priznat} other {# radnih dana u potpunosti priznato}}",
+        "minutes": "Priznato {minutes} min školskog vremena",
+        "schoolTime": "Škola {start}–{end}: priznato {minutes} min"
+      },
+      "description": "Stručna škola, sedmice blok-nastave i ispitni dani su plaćeno oslobađanje (§ 15 BBiG): priznaju se kao radno vrijeme, nikada se ne oduzimaju od godišnjeg odmora i nikada ne ostavljaju negativan radni saldo.",
+      "empty": "Još nema evidentiranih dana oslobađanja.",
+      "fields": {
+        "date": "Datum",
+        "endsOn": "Posljednji dan",
+        "examEndTime": "Kraj ispita (uključujući pauze)",
+        "examStartTime": "Početak ispita",
+        "examTimeHint": "Ispit oslobađa i priznaje samo svoje trajanje. Ostavite oba polja prazna da oslobodite cijeli dan.",
+        "includePreExamDay": "Također oslobodi radni dan prije pismenog završnog ispita",
+        "kind": "Oslobađanje",
+        "lessons": "Časovi (po 45 min)",
+        "note": "Napomena (opcionalno)",
+        "schoolEndTime": "Kraj škole (uključujući pauze)",
+        "schoolHoursPerWeek": "Školski sati sedmično (puni sati)",
+        "schoolStartTime": "Početak škole",
+        "schoolTimeHint": "Kratak školski dan priznaje školsko vrijeme uključujući pauze. Ostavite oba polja prazna za priznavanje 45 minuta po času."
+      },
+      "kind": {
+        "blockWeek": "Sedmica blok-nastave",
+        "examDay": "Dan ispita",
+        "preExamDay": "Radni dan prije ispita",
+        "schoolDay": "Dan stručne škole"
+      },
+      "lessons": "{count} časova",
+      "record": "Evidentiraj dan oslobađanja",
+      "recorded": "Dan oslobađanja evidentiran",
+      "refusal": {
+        "dayAlreadyReleased": "Ovaj dan je već oslobođen. Prvo uklonite oslobađanje evidentirano za njega.",
+        "examTimeInvalid": "Unesite kada ispit počinje i završava, ili ostavite prazno. Mora se završiti nakon što počne.",
+        "invalidRange": "Provjerite datume: posljednji dan ne smije biti prije prvog.",
+        "invalidValue": "Provjerite časove i školske sate.",
+        "lessonsRequired": "Unesite broj časova.",
+        "noPrecedingWorkingDay": "U sedmici prije ispita nema radnog dana za oslobađanje.",
+        "notApprentice": "Dani oslobađanja mogu se evidentirati samo dok ugovor zaposlenika definira status pripravnika.",
+        "overlap": "Ovo oslobađanje se preklapa s već evidentiranim oslobađanjem.",
+        "reasonRequired": "Objasnite zašto se uklanja dan oslobađanja.",
+        "schoolMinutesRequired": "Unesite planirane školske sate blok-sedmice.",
+        "schoolTimeInvalid": "Unesite kada škola počinje i završava, ili ostavite prazno. Mora se završiti nakon što počne.",
+        "singleDay": "Samo sedmica blok-nastave obuhvata više dana."
+      },
+      "title": "Oslobađanje za školu i ispit",
+      "void": "Ukloni",
+      "voidConfirm": "Ukloni dan oslobađanja",
+      "voided": "Dan oslobađanja uklonjen",
+      "voidReason": "Zašto se uklanja?",
+      "workplaceReturn": "Mlađi od 18: nema povratka na posao nakon ovog punog školskog dana (§ 9 Abs. 1 Nr. 2 JArbSchG)"
+    },
     "approvalSettings": {
       "pageDescription": "Podesite ko odobrava zahtjeve, kada se zakašnjela odobrenja eskaliraju i koje probleme s odobrenjima treba pratiti."
     },
@@ -230,6 +285,7 @@
         "employeeDescription": "Ukupni interni trošak po satu za ovog zaposlenika, koji se koristi za maržu. Odvojeno od plate.",
         "employeeTitle": "Stopa troška",
         "empty": "Još nema stope troška. Marža za rad ovog zaposlenika prikazuje se kao nepoznat trošak.",
+        "emptyContractor": "Još nema troškovne stope. Marža koristi stopu vanjskog ugovarača ove osobe za rad po ugovoru; ostali rad i rad ugovarača bez stope prikazuju se s nepoznatim troškom.",
         "history": "Historija",
         "historyAction": "Historija stope troškova za {name}",
         "hourly": "Po satu",
@@ -652,14 +708,6 @@
         "title": "Nisu sva podnošenja perioda za ovaj mjesec odobrena. Ovo ne zaustavlja zatvaranje:"
       }
     },
-    "compliance": {
-      "description": "Pregledajte i upravljajte zahtjevima članova tima za izuzeće od usklađenosti",
-      "metadata": {
-        "description": "Konfigurišite postavke usklađenosti sa ArbZG i upravljajte zahtjevima za izuzetke",
-        "title": "Postavke usklađenosti | ArbZG"
-      },
-      "title": "ArbZG usklađenost"
-    },
     "customDomains": {
       "title": "Domena i brendiranje"
     },
@@ -1016,7 +1064,7 @@
         "all": "Svi zaposlenici u ovoj organizaciji",
         "allDescription": "Odgovornost prati trenutno članstvo u organizaciji. Verifikatori nikada ne mogu verificirati sami sebe.",
         "attribution": "Dodijelio/la {actor} u {time}",
-        "editor": "Opseg verifikatora",
+        "editTitle": "Uredi odgovornost verifikatora",
         "empty": "Nema dodijeljenih odgovornosti verifikatora",
         "failed": "Nije moguće ažurirati niti pristupiti odgovornosti za provjeru vozačke dozvole. Provjerite svoje dozvole i odabire.",
         "formerEmployee": "Bivši zaposlenici se ne mogu dodati. Odaberite zaposlenike s trenutnog spiska.",
@@ -2116,6 +2164,7 @@
           "unavailable": "Ova provjera nije mogla biti dovršena. Ponovo pokrenite provjere da pokušate opet."
         },
         "payrollSetup": {
+          "externalContractorsSkipped": "{count, plural, one {# vanjski izvođač je preskočen za uvjete zaposlenja i identifikatore osoblja: izvozi za obračun plaća nikada ne uključuju vanjske izvođače.} few {# vanjska izvođača su preskočena za uvjete zaposlenja i identifikatore osoblja: izvozi za obračun plaća nikada ne uključuju vanjske izvođače.} other {# vanjskih izvođača je preskočeno za uvjete zaposlenja i identifikatore osoblja: izvozi za obračun plaća nikada ne uključuju vanjske izvođače.}}",
           "fixEmployees": "Pregledaj zaposlenike",
           "fixPayrollExport": "Otvori postavke izvoza obračuna plaća",
           "inviteesSkipped": "{count, plural, one {# pozvana osoba se preskače za uslove zaposlenja i identifikatore osoblja dok se ne pridruži.} few {# pozvane osobe se preskaču za uslove zaposlenja i identifikatore osoblja dok se ne pridruže.} other {# pozvanih osoba se preskače za uslove zaposlenja i identifikatore osoblja dok se ne pridruže.}}",
@@ -2223,6 +2272,7 @@
           "mappingsMissing": "Nema aktivnih mapiranja vrsta plata",
           "mappingsPresent": "{count, plural, one {# izvozno odredište, vrste plata mapirane} few {# izvozna odredišta, vrste plata mapirane} other {# izvoznih odredišta, vrste plata mapirane}}",
           "notExported": "Organizacija nema aktivno odredište za izvoz obračuna plata, pa nema preduvjeta za obračun plata.",
+          "notNeededExternalContractor": "Nije potrebno: Vanjski izvođač",
           "notYetInvited": "Još ne: još uvijek su pozvani",
           "personnelIdentifier": "Broj zaposlenika",
           "termsConfirmed": "Potvrđeno za danas",
@@ -2258,6 +2308,7 @@
           "name": "Pravilo",
           "none": "Danas nema važećeg pravila rada: nijedno nije dodijeljeno njima, njihovom timu ili organizaciji.",
           "noSchedule": "Nema rasporeda",
+          "notApplicable": "Ne primjenjuju se pravila rada: radi kao vanjski izvođač.",
           "noWorkingDays": "Nema radnih dana",
           "title": "Pravilo rada",
           "workingDays": "Radni dani"
@@ -3085,7 +3136,15 @@
       "updateProfile": "Ažuriraj profil",
       "updateSuccess": "Profil je uspješno ažuriran",
       "uploading": "Prijenos",
-      "uploadProfilePicture": "Prenesi profilnu sliku"
+      "uploadProfilePicture": "Prenesi profilnu sliku",
+      "workingStudent": {
+        "balance": "Preostalo je {remaining} od {limit} sedmica preko 20 sati ({used} iskorišteno u posljednjih 12 mjeseci).",
+        "description": "Kao zaposleni student, možete raditi više od 20 sati u najviše 26 sedmica unutar 12 mjeseci.",
+        "lectureFree": "Evidentirani periodi bez predavanja",
+        "lectureFreeEmpty": "Nema evidentiranih perioda bez predavanja. Zatražite od HR-a da evidentira vaše semestralne pauze.",
+        "noBaseline": "Zakonsko ograničenje se ne primjenjuje na ovu sedmicu.",
+        "title": "Status zaposlenog studenta"
+      }
     },
     "projects": {
       "budgetUsed": "Iskorišteni budžet",

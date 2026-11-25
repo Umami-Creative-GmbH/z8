@@ -101,11 +101,11 @@
       "created": "Skapad",
       "decisionRecorded": "Beslut registrerat",
       "destination": "Destination",
+      "earlierClaim": "Tidigare utlägg",
+      "earlierReceiptIdentity": "Tidigare kvitto: innehållets kontrollsumma registrerades inte.",
       "history": "Beslutshistorik",
       "historyDescription": "Varje steg i detta ärende, äldsta först. Tider visas i UTC.",
       "intermediateApproval": "Godkännande registrerat — inväntar ytterligare godkännande",
-      "legacyClaim": "Äldre anspråk",
-      "legacyReceiptIdentity": "Äldre kvitto: innehållets kontrollsumma registrerades inte.",
       "loading": "Läser in reseräkning…",
       "noReceipts": "Inga kvitton registrerade",
       "notRecorded": "Ej registrerat",
@@ -117,7 +117,7 @@
       "submitted": "Inskickad",
       "title": "Reseräkning",
       "unavailable": "Anspråket hittades inte eller så är behörigheten inte längre tillgänglig.",
-      "unknownDates": "Resedatumkontext registrerades inte (äldre reseräkning)"
+      "unknownEarlierClaimDates": "Resedatumskontext registrerades inte (tidigare utlägg)"
     },
     "errors": {
       "loadDetailRetry": "Det gick inte att läsa in denna reseräkning. Försök igen."
@@ -166,6 +166,7 @@
         "title": "{count, plural, one {# godkänt utlägg väntar på ersättning som ingen utläggsansvarig täcker} other {# godkända utlägg väntar på ersättning som ingen utläggsansvarig täcker}}"
       },
       "description": "Godkända utlägg och vad som fortfarande ska betalas till anställda. Registrering av en återbetalning dokumenterar en betalning som gjorts utanför Z8; inga pengar överförs.",
+      "earlierClaim": "Tidigare {type}-utlägg",
       "employeePaid": "Betalt av anställd {amount}",
       "empty": {
         "allReimbursed": "Inget kvar att registrera: alla godkända utlägg är ersatta.",
@@ -258,7 +259,6 @@
         }
       },
       "inPayrollRun": "Ingår i {run}",
-      "legacyClaim": "Äldre {type}-anspråk",
       "loading": "Läser in ekonomikön…",
       "pagination": {
         "label": "Sidor i ekonomikön",

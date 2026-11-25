@@ -6,19 +6,37 @@
       "decided": "Décision enregistrée. Actualisez pour charger la file d'attente actuelle.",
       "description": "Requêtes en attente d'une décision du responsable.",
       "empty": "Aucune approbation en attente.",
+      "itemTitle": "{requester} : {title}",
       "openInbox": "Ouvrir la boîte de réception",
+      "openInboxForRest": "Ouvrir la boîte de réception pour voir le reste",
+      "openInboxLink": "Ouvrir la boîte de réception",
       "ownRequest": "Votre propre demande : un autre approbateur prend la décision.",
+      "partialFailure": "Certaines approbations n'ont pas pu être chargées : {types}. La liste et le total peuvent être incomplets.",
+      "partialFailureNotCounted": "Certaines approbations n'ont pas pu être comptabilisées : {types}. Le total peut être incomplet.",
       "pendingAriaLabel": "Approbations en attente",
       "reject": "Rejeter",
       "rejectLabel": "Rejeter {title}",
+      "rejectPanel": {
+        "briefingUnavailable": "Impossible d'actualiser les approbations du jour. Fermez ce volet et réessayez.",
+        "description": "Le demandeur verra ce motif avec le refus.",
+        "noLongerRejectable": "Cette demande ne peut plus être refusée ici.",
+        "title": "Refuser la demande"
+      },
       "retry": "Réessayer les approbations",
+      "reviewInInbox": "Examiner dans la boîte de réception",
+      "reviewInInboxNamed": "Examiner dans la boîte de réception : {title}",
       "title": "Approbations",
       "toast": {
         "approved": "Requête approuvée",
         "approveError": "Impossible d'approuver la requête",
         "rejected": "Requête rejetée",
         "rejectError": "Impossible de rejeter la requête"
-      }
+      },
+      "totalAtLeast": "{count}+",
+      "truncated": "{total, plural, one {Affichage de {shown} approbation en attente sur #.} other {Affichage de {shown} approbations en attente sur #.}}",
+      "truncatedAtLeast": "{total, plural, one {Affichage de {shown} approbation en attente sur au moins #.} other {Affichage de {shown} approbations en attente sur au moins #.}}",
+      "waitingInInbox": "{total, plural, one {# approbation en attente se trouve dans la boîte de réception.} other {# approbations en attente se trouvent dans la boîte de réception.}}",
+      "waitingInInboxAtLeast": "{total, plural, one {Au moins # approbation en attente se trouve dans la boîte de réception.} other {Au moins # approbations en attente se trouvent dans la boîte de réception.}}"
     },
     "briefing": {
       "accessUnavailable": "Ce briefing n'est pas disponible pour l'employé et l'organisation actuels.",

@@ -208,7 +208,6 @@
     "adding": "Aggiunta in corso...",
     "all": "Tutti",
     "appName": "Z8",
-    "approve": "Approva",
     "assign": "Assegna",
     "back": "Indietro",
     "backToDashboard": "Torna alla dashboard",
@@ -372,6 +371,94 @@
       "bellLabel": "{count, plural, =0 {Notifiche} other {Notifiche (# non lette)}}"
     },
     "offline": "Offline",
+    "onCall": {
+      "agreementDocumented": "Accordo documentato",
+      "agreementStale": "Turno modificato rispetto all'accordo",
+      "finding": {
+        "nearBand": "Settimana richiesta per {used}, vicina al limite di {limit} della fascia di chiamata",
+        "other": "Regola sul lavoro su chiamata a rischio",
+        "overBand": "Settimana richiesta per {used}, al di sopra della fascia di chiamata di {limit}",
+        "shortCall": "Il turno di {duration} è inferiore alla chiamata minima di {minimum}",
+        "shortNotice": "{days, plural, one {Chiamata con # giorno intero di preavviso; ne sono richiesti {required}} other {Chiamata con # giorni interi di preavviso; ne sono richiesti {required}}}",
+        "shortWorkCall": "Svolta una chiamata di {duration}, inferiore alla chiamata minima di {minimum}",
+        "underBand": "Settimana richiesta per {used}, al di sotto della fascia di chiamata di {limit}"
+      },
+      "findingsTitle": "Verifiche delle ultime quattro e delle prossime quattro settimane",
+      "hoursKind": {
+        "exact": "Ore settimanali concordate esatte",
+        "maximum": "Ore settimanali massime (fino a −20 %)",
+        "minimum": "Ore settimanali minime (fino a +25 %)",
+        "unspecified": "Nessun orario settimanale concordato (si applicano 20 h)"
+      },
+      "minimumCall": "Chiamata minima {duration}",
+      "noFindings": "Nessuna regola sul lavoro su chiamata è a rischio.",
+      "notToday": "Non di turno su chiamata oggi.",
+      "payroll": {
+        "continuedPaySpan": "La prosecuzione della retribuzione è dovuta dal {from} al {until} (§ 3 EFZG)",
+        "description": "Orario di lavoro medio precedente a ciascuna malattia o festività dei dipendenti su chiamata in questo periodo, ai fini della prosecuzione della retribuzione. Nessuna voce qui modifica i giorni già liquidati.",
+        "hide": "Nascondi dettaglio",
+        "holidaysPaidAsHolidays": "I giorni festivi durante la malattia vengono retribuiti in righe separate, non come giorni di malattia: {dates}",
+        "paidSickDays": "{days, plural, one {Indennità di malattia per # giorno in questo periodo} other {Indennità di malattia per # giorni in questo periodo}}",
+        "perDay": "{duration} al giorno",
+        "rangeTooLong": "Le ore di riferimento sono elencate per un massimo di tre mesi alla volta. Seleziona un periodo più breve.",
+        "show": "Mostra dettaglio",
+        "sickPayExhausted": "Nessuna indennità di malattia in questo periodo: le sei settimane di prosecuzione della retribuzione sono terminate il {date} (§ 3 Abs. 1 EFZG)",
+        "sickPayGuidanceLabel": "Indicazioni per le buste paga",
+        "sickPayGuidanceNote": "Le voci di indennità di malattia sono indicative ai sensi del § 3 EFZG; il sistema paghe stabilisce se e in che misura viene corrisposta la prosecuzione della retribuzione.",
+        "sickPayNotOwed": "Nessuna indennità dovuta per questa malattia: è terminata entro le prime quattro settimane di assunzione (§ 3 Abs. 3 EFZG)",
+        "sickPayWaiting": "Nessuna indennità di malattia in questo periodo: il diritto decorre dal {date}, dopo quattro settimane di assunzione (§ 3 Abs. 3 EFZG)",
+        "title": "Ore di riferimento per il lavoro su chiamata (§ 12 TzBfG)"
+      },
+      "reference": {
+        "calculate": "Calcola",
+        "dateRequired": "Scegli una data.",
+        "denominator": "Giorni conteggiati",
+        "denominatorValue": "{counted} di {total} giorni",
+        "description": "Solo a scopo informativo: l'ufficio paghe decide l'importo da retribuire. Nulla qui modifica i giorni liquidati o i mesi chiusi.",
+        "eventDate": "Calcola per un giorno",
+        "excluded": {
+          "notEmployed": "Non impiegato",
+          "paidAbsence": "Congedo o malattia",
+          "publicHoliday": "Festività",
+          "unpaidAbsence": "Assenza non retribuita"
+        },
+        "excludedPeriod": "{days, plural, one {{from} – {until}: {reason} (# giorno)} other {{from} – {until}: {reason} (# giorni)}}",
+        "excludedTitle": "Escluso dalla media",
+        "noEvents": "Nessuna malattia o festività in un giorno di lavoro su chiamata negli ultimi tre mesi.",
+        "none": "—",
+        "numerator": "Tempo lavorato",
+        "perDay": "Media giornaliera",
+        "periodThirteenWeeks": "Periodo di riferimento (13 settimane): {from} – {until}",
+        "periodThreeMonths": "Periodo di riferimento (3 mesi): {from} – {until}",
+        "perWeek": "Media settimanale",
+        "perWorkedDay": "Media per giorno lavorato",
+        "publicHoliday": "Festività il {date}",
+        "shortened": "L'impiego è iniziato durante il periodo di riferimento, pertanto si considera il periodo più breve.",
+        "sickLeave": "Malattia dal {date}",
+        "thirteenWeeks": "13 settimane",
+        "threeMonths": "3 mesi",
+        "title": "Ore di riferimento per indennità di malattia e ferie",
+        "workedDays": "Giorni lavorati"
+      },
+      "reviews": {
+        "acknowledge": "Documenta accordo",
+        "acknowledged": "Accordo documentato",
+        "changed": "Il turno è cambiato dopo il caricamento di questo elenco. Verificalo di nuovo prima di documentare l'accordo.",
+        "description": "Chiamate con breve preavviso, chiamate inferiori al minimo e settimane al di fuori della fascia di disponibilità nelle ultime e prossime quattro settimane. La timbratura non è mai bloccata.",
+        "documented": "Accordo documentato: {reason}",
+        "draft": "Non ancora pubblicato. Pubblica il turno prima di documentare l'accordo del dipendente.",
+        "empty": "Nessuna segnalazione sul lavoro su chiamata da esaminare.",
+        "notOpen": "Il turno non presenta più una segnalazione di breve preavviso.",
+        "notPublished": "Il turno non è ancora pubblicato. Pubblicalo prima di documentare l'accordo del dipendente.",
+        "reason": "Accordo volontario del dipendente (§ 12, comma 3 TzBfG)",
+        "reasonRequired": "Descrivi in che modo il dipendente ha accettato il breve preavviso.",
+        "stale": "Il turno è cambiato dopo la registrazione dell'accordo. Documentalo di nuovo se è ancora valido.",
+        "title": "Lavoro su chiamata (§ 12 TzBfG)"
+      },
+      "statutoryMinimumCall": "Si applica la chiamata minima obbligatoria per legge",
+      "title": "Lavoro su chiamata (§ 12 TzBfG)",
+      "weekly": "{duration} a settimana"
+    },
     "open": "Apri",
     "openEnded": "Senza scadenza",
     "openMenu": "Apri menu",
@@ -425,8 +512,6 @@
     "refreshData": "Aggiorna dati",
     "refreshDataFailed": "Impossibile aggiornare i dati. Riprova.",
     "refreshing": "Aggiornamento in corso...",
-    "reject": "Rifiuta",
-    "rejecting": "Rifiuto in corso…",
     "remove": "Rimuovi",
     "removing": "Rimozione...",
     "reset": "Reimposta",
@@ -596,6 +681,90 @@
     },
     "yes": "Sì"
   },
+  "contractorCompensation": {
+    "dayUnitRules": {
+      "anyWorkFullDay": "Qualsiasi giorno lavorato conta come un giorno intero",
+      "halfAndFullDay": "Mezza giornata fino a {minutes} min, giornata intera per durate superiori",
+      "proratedCapped": "Proporzionato su una giornata di {minutes} minuti, per un massimo di un giorno",
+      "proratedUncapped": "Proporzionato su una giornata di {minutes} minuti, senza limite massimo"
+    }
+  },
+  "contractorStatement": {
+    "approvedOnly": "Viene mostrato solo il lavoro approvato. Le ore in attesa di approvazione verranno aggiunte una volta approvate.",
+    "awaitingApprovalExcluded": "Periodi di lavoro in attesa di approvazione, non inclusi: {count}",
+    "basis": {
+      "daily": "Tariffa giornaliera",
+      "hourly": "Tariffa oraria"
+    },
+    "byProject": "Per progetto",
+    "columns": {
+      "amount": "Importo",
+      "basis": "Pagato da",
+      "currency": "Valuta",
+      "date": "Data",
+      "dayUnitRule": "Regola unità giornaliera",
+      "end": "Fine",
+      "project": "Progetto",
+      "rate": "Tariffa",
+      "rowType": "Tipo di riga",
+      "start": "Inizio",
+      "task": "Attività",
+      "time": "Ora (locale)",
+      "unit": "Unità",
+      "units": "Unità",
+      "workedMinutes": "Minuti lavorati"
+    },
+    "company": "Azienda",
+    "contractor": "Collaboratore",
+    "contractorNumber": "Numero collaboratore",
+    "empty": "Nessun lavoro completato come collaboratore esterno in questo periodo.",
+    "errors": {
+      "failed": "Impossibile creare il prospetto",
+      "invalidPeriod": "Scegli un periodo massimo di un anno in cui il primo giorno non sia successivo all'ultimo.",
+      "notAllowed": "Puoi scaricare solo i tuoi prospetti.",
+      "notContractor": "Questa persona non ha avuto alcun incarico come collaboratore esterno in questo periodo.",
+      "notFound": "Questa persona non è stata trovata nella tua organizzazione."
+    },
+    "export": {
+      "adminDescription": "Scarica il lavoro svolto da questo collaboratore esterno e la relativa valorizzazione in base alle tariffe applicate, per verificare la fattura. È un prospetto di verifica, non una fattura.",
+      "csv": "CSV per fogli di calcolo",
+      "download": "Scarica prospetto",
+      "downloaded": "Prospetto scaricato",
+      "format": "Formato",
+      "from": "Da",
+      "fromRequired": "Scegli il primo giorno",
+      "pdf": "PDF",
+      "selfDescription": "Scarica il lavoro registrato e la relativa valorizzazione in base alle tariffe concordate, per preparare o verificare la fattura. È un prospetto di verifica, non una fattura.",
+      "title": "Prospetto ore e compensi",
+      "to": "A",
+      "toBeforeFrom": "L'ultimo giorno non può essere precedente al primo giorno",
+      "toRequired": "Scegli l'ultimo giorno"
+    },
+    "generated": "Generato (UTC)",
+    "noProject": "Nessun progetto",
+    "noRate": "Nessuna tariffa applicabile",
+    "notice": "Solo prospetto di verifica. Non è una fattura né una nota di accredito autofatturata (Gutschrift): Z8 non emette mai fatture. Elenca il lavoro registrato in Z8 e la relativa valorizzazione in base alle tariffe concordate del collaboratore, in modo da poter verificare la fattura rispetto ad esso.",
+    "organization": "Organizzazione",
+    "page": "Pagina",
+    "period": "Periodo",
+    "referenceCode": "Riferimento PO o centro di costo",
+    "rows": {
+      "day": "Giorno",
+      "total": "Totale",
+      "unpriced": "Non valorizzato",
+      "work": "Lavoro"
+    },
+    "times": "I giorni corrispondono ai giorni del calendario locale del collaboratore; gli orari sono mostrati con l'offset UTC registrato insieme al lavoro.",
+    "title": "Prospetto di verifica di tempi e compensi del collaboratore",
+    "totals": "Totali",
+    "units": {
+      "days": "Giorni",
+      "hours": "Ore"
+    },
+    "unpricedNotice": "Per alcune attività non era prevista una tariffa concordata per quel giorno. Sono elencate senza importo e non sono incluse nei totali.",
+    "vatId": "Partita IVA",
+    "workedHours": "Ore lavorate"
+  },
   "drivingLicence": {
     "applyingInterval": "Applicazione in corso…",
     "applyInterval": "Applica modifica dell'intervallo",
@@ -604,6 +773,9 @@
       "chooseClasses": "Seleziona le categorie effettivamente verificate.",
       "classes": "Categorie effettivamente verificate",
       "classExpiry": "Scadenza categoria (se applicabile)",
+      "declaredBadge": "Dichiarate",
+      "declaredHelp": "Queste categorie e le eventuali date inserite dal dipendente sono preselezionate. Confrontale con la patente originale e correggi eventuali differenze.",
+      "declaredTitle": "{name} ha dichiarato {classes}",
       "documentDates": "Date del documento originale",
       "employeeDeclaration": "Il dipendente ha rilasciato personalmente la dichiarazione sopra riportata durante questo controllo; attesto tale dichiarazione.",
       "expiryDate": "Data di scadenza del documento",
@@ -644,6 +816,8 @@
       },
       "customOrder": "Ordinato in base alla colonna e alla direzione selezionate.",
       "deadline": "{date} ({timezone})",
+      "declared": "{classes} dichiarate",
+      "declaredDue": "Verifica categorie dichiarate",
       "dueNow": "Verifica da effettuare ora",
       "dueOrder": "Prima i controlli in scadenza ora, poi la scadenza successiva.",
       "empty": {
@@ -677,6 +851,31 @@
     "class": {
       "active": "Autorizzato",
       "ended": "Terminato",
+      "group": {
+        "bus": "Autobus",
+        "car": "Autovetture",
+        "motorcycle": "Ciclomotori e motocicli",
+        "tractor": "Trattori",
+        "truck": "Autocarri"
+      },
+      "name": {
+        "A": "Motociclo",
+        "A1": "Motociclo leggero",
+        "A2": "Motociclo medio",
+        "AM": "Ciclomotore",
+        "B": "Autovettura",
+        "BE": "Autovettura con rimorchio",
+        "C": "Autocarro",
+        "C1": "Autocarro leggero",
+        "C1E": "Autocarro leggero con rimorchio",
+        "CE": "Autocarro con rimorchio",
+        "D": "Autobus",
+        "D1": "Minibus",
+        "D1E": "Minibus con rimorchio",
+        "DE": "Autobus con rimorchio",
+        "L": "Trattore lento",
+        "T": "Trattore"
+      },
       "noLongerIntended": "Terminato perché il dipendente non è più un conducente designato. Per guidare di nuovo è necessaria una nuova verifica.",
       "overdue": "Controllo periodico scaduto. Si tratta di una sospensione organizzativa, non di una dichiarazione di revoca dell'abilitazione alla guida per legge.",
       "recheck": "Sono necessari un nuovo controllo dell'originale e una decisione esplicita di reintegro.",
@@ -684,6 +883,36 @@
     },
     "declaration": {
       "text": "Confermo che nessun divieto di guida, revoca o altro impedimento noto ostacola la guida prevista e che rispetto le limitazioni alla guida applicabili."
+    },
+    "declared": {
+      "add": "Aggiungi categorie di patente",
+      "authorized": "Autorizzate",
+      "classExpires": "Scade il {date}",
+      "classExpiry": "{code} ({name}) scade il",
+      "description": "Dichiarate da te, non ancora verificate. Non ti autorizzano a guidare finché un verificatore non controlla la patente originale.",
+      "dialogDescription": "Seleziona tutte le categorie presenti sulla tua patente di guida. Il verificatore le confermerà durante il controllo della patente originale.",
+      "dialogTitle": "Quali categorie sono presenti sulla tua patente?",
+      "documentExpires": "Scadenza della patente",
+      "documentExpiry": "La patente scade il",
+      "documentExpiryHelp": "Campo 4b sulla patente. Lascia vuoto se non è presente sulla tua patente.",
+      "edit": "Modifica",
+      "emptyDescription": "Indica alla tua organizzazione quali categorie di patente possiedi. Aiuta nella pianificazione e prepara la verifica; non ti autorizza a guidare.",
+      "emptyMoreDescription": "Aggiungi una categoria che hai conseguito dopo l'ultima verifica. Verrà chiesto al verificatore di controllarla.",
+      "emptyMoreTitle": "Hai un'altra categoria di patente?",
+      "emptyTitle": "Cosa puoi guidare?",
+      "expiryTitle": "Date di scadenza (facoltativo)",
+      "invalid": "Verifica le categorie e le date selezionate.",
+      "notIntended": "Non sei più un conducente designato, pertanto la tua organizzazione non raccoglie le categorie della tua patente.",
+      "privacy": "Vengono salvate solo le categorie e le date di scadenza, nessun numero di patente o foto. La tua dichiarazione non ti autorizza a guidare.",
+      "remove": "Rimuovi le mie categorie",
+      "removed": "Categorie di patente dichiarate rimosse",
+      "removing": "Rimozione in corso…",
+      "save": "{count, plural, one {Salva # categoria} other {Salva # categorie}}",
+      "saved": "Categorie di patente salvate. Il verificatore le confronterà con la tua patente originale.",
+      "saveFailed": "Impossibile salvare le categorie della patente. La selezione è stata mantenuta; riprova.",
+      "saving": "Salvataggio in corso…",
+      "title": "Le tue categorie di patente dichiarate",
+      "updated": "Aggiornato"
     },
     "delivery": {
       "uncertain": "Le e-mail di promemoria facoltative a te indirizzate hanno un esito di recapito incerto ({count}). Non verranno inviate nuovamente in modo automatico. I promemoria nell'app rimangono disponibili; la consegna dell'e-mail non conferma la lettura."
@@ -846,6 +1075,7 @@
     },
     "operational": {
       "advisory": "Autorizzazione alla guida",
+      "declared": "Dichiarata, non ancora verificata. Non costituisce un'autorizzazione alla guida.",
       "loading": "Caricamento autorizzazione alla guida in corso…",
       "loadingEmployees": "Caricamento dei dipendenti per la pianificazione…",
       "noEmployees": "Nessun dipendente corrispondente.",
@@ -1017,6 +1247,20 @@
     "team": "Team",
     "totalEmployees": "{count} dipendenti",
     "tryDifferentSearch": "Prova a modificare la ricerca o i filtri"
+  },
+  "engagement": {
+    "absenceRefusals": {
+      "contractorRecordsUnavailabilityOnly": "In queste date lavora come Collaboratore esterno: è possibile registrare solo l'indisponibilità.",
+      "spansEngagementChange": "Queste date comprendono un passaggio tra rapporto di lavoro dipendente e lavoro come Collaboratore esterno. Registra ciascuna parte separatamente.",
+      "unavailabilityIsForContractors": "In queste date risulta dipendente: l'indisponibilità è riservata ai Collaboratori esterni."
+    },
+    "externalContractor": "Collaboratore esterno",
+    "filter": {
+      "all": "Tutti",
+      "contractors": "Collaboratori esterni",
+      "employees": "Dipendenti",
+      "label": "Incarico"
+    }
   },
   "errors": {
     "failedToLoad": "Impossibile caricare i dati",
@@ -1487,6 +1731,10 @@
         "message": "Organizza un verificatore disponibile per {employeeName}. Questa attività non concede diritti di ispezione e non proroga alcuna scadenza.",
         "title": "Assegna la responsabilità del verificatore della patente di guida"
       },
+      "drivingLicenceDeclared": {
+        "message": "{employeeName} ha dichiarato le categorie di patente {classes}. Esamina la patente originale per autorizzarle; una semplice dichiarazione non concede alcuna autorizzazione.",
+        "title": "Categorie di patente da verificare"
+      },
       "drivingLicencePersonalTask": {
         "message": "Ricorda a {employeeName} di organizzare un controllo della patente di guida originale. La notifica diretta al dipendente non era disponibile. Il completamento dell'attività non costituisce consegna diretta né lettura.",
         "title": "Ricorda di persona al dipendente"
@@ -1529,6 +1777,11 @@
       "formerEmployeeReportsWithoutManager": {
         "message": "{count, plural, one {# dipendente è ancora collegato solo a un ex responsabile: {names}. Assegna un responsabile attuale.} other {# dipendenti sono ancora collegati solo a un ex responsabile: {names}. Assegna un responsabile attuale.}}",
         "title": "Dipendenti senza un responsabile attuale"
+      },
+      "invitationContractorTermsNeedReview": {
+        "message": "Impossibile applicare la tariffa indicata nell'invito di {name} al momento dell'ingresso. Impostala nel suo compenso come Collaboratore esterno; fino ad allora il suo lavoro rimarrà senza tariffa definita.",
+        "termsExistMessage": "La tariffa indicata nell'invito di {name} non è stata applicata al momento dell'ingresso: per il suo incarico sono già presenti condizioni di compenso, che rimangono valide. Verifica nel suo compenso come Collaboratore esterno se devono essere modificate.",
+        "title": "La tariffa di un Collaboratore esterno richiede una revisione"
       },
       "kioskCommandRefused": {
         "forwardedMessage": "Una {action, select, clock_in {timbratura di ingresso} clock_out {timbratura di uscita} start_break {timbratura di inizio pausa} resume_break {timbratura di fine pausa} other {timbratura}} di {employeeName} alle {time} sul chiosco {kioskName} non è stata registrata: {reason, select, wrong_pin {il PIN era errato} pin_locked {il PIN del chiosco è stato bloccato dopo troppi tentativi errati} no_pin {non era presente alcun PIN del chiosco con cui confrontarlo} pin_unchecked {impossibile verificare il PIN} kiosk_retired {il chiosco è stato revocato o nuovamente associato prima di riconnettersi} contact_unverifiable {Z8 non ha potuto confermare l'ultima connessione del chiosco} outside_window {l'orario era al di fuori dell'intervallo accettato da Z8} clock_untrusted {l'orologio del chiosco non è risultato attendibile} not_assigned {il dipendente non è assegnato alla sede del chiosco} not_adopted {l'organizzazione non accetta timbrature offline da chiosco} month_closed {il mese è chiuso} holiday {il giorno è festivo senza registrazione dell'orario} conflict {è in conflitto con un altro orario registrato} other {Z8 non ha potuto accettarla}}. Registra l'orario per il dipendente o verificalo insieme a lui.",
@@ -1694,6 +1947,11 @@
       "personnelFilePayslipsShared": {
         "message": "La tua busta paga per {payPeriod} è stata condivisa con te.",
         "title": "Nuova busta paga nel tuo fascicolo personale"
+      },
+      "plannedEngagementEndNeedsReview": {
+        "notScheduled": "Impossibile programmare la data di fine incarico prevista per {name} ({plannedEndDate}) come data di cessazione. Programmala nella pagina del dipendente.",
+        "passed": "La data di fine incarico prevista per {name} ({plannedEndDate}) era già trascorsa al momento dell'ingresso, pertanto la data di cessazione è impostata a oggi ({leavingDate}). Modificala se l'incarico prosegue.",
+        "title": "La data di fine incarico prevista richiede una revisione"
       },
       "policyForgottenClockOutReminder": {
         "message": "Hai raggiunto le ore richieste per {day} alle {endTime} ({timezone}). Timbra l'uscita se hai terminato di lavorare."
@@ -2497,6 +2755,13 @@
           "createdAt": "Quando questa attività o consegna è stata registrata per la prima volta, come istante UTC.",
           "deadline_timezone": "Il fuso orario di calendario esplicito utilizzato per le date di scadenza del criterio.",
           "declaration_text": "Il testo esatto della dichiarazione registrato durante l'ispezione originale.",
+          "declared_at": "Data e ora dell'ultimo salvataggio delle categorie dichiarate, come istante UTC.",
+          "declared_class_code": "Una categoria di patente che hai dichiarato di possedere. Non conferisce alcuna autorizzazione alla guida.",
+          "declaredClasses": {
+            "summary": "Le categorie di patente che hai dichiarato personalmente e che non sono ancora state verificate. La verifica le sostituirà; verranno eliminate quando non sarai più un conducente designato."
+          },
+          "declared_class_expiry_date": "La data di scadenza specifica della categoria inserita (categorie C e D); vuoto se non ne è stata inserita alcuna.",
+          "declared_document_expires_on": "La data di scadenza della patente così come inserita; vuoto se non ne è stata inserita alcuna.",
           "document_expires_on": "La data di scadenza del documento, distinta dalla scadenza delle singole categorie.",
           "document_issued_on": "La data di rilascio del documento, senza ora o fuso orario.",
           "document_valid_through": "L'ultimo giorno di calendario coperto dalla validità del documento.",
@@ -2615,6 +2880,25 @@
             "project": "Il progetto a cui si applica la tariffa; vuoto se si applica a tutto il tuo lavoro.",
             "summary": "Le tariffe che l'organizzazione fattura ai clienti per il tuo lavoro."
           },
+          "contractorCompensationTerms": {
+            "capAtOneDay": "Indica se una giornata viene conteggiata al massimo come una giornata, indipendentemente dalla durata del lavoro.",
+            "compensationBasis": "Indica se il compenso è orario (hourly) o giornaliero (daily).",
+            "currency": "La valuta della tariffa.",
+            "dayUnitRule": "Modalità di conteggio di una giornata di lavoro per una tariffa giornaliera: qualsiasi lavoro come giornata intera (any_work_full_day), mezza giornata o giornata intera in base a una soglia (half_and_full_day), oppure proporzionata a una giornata standard (prorated_by_standard_day). Vuoto per tariffa oraria.",
+            "effectiveFrom": "Il primo giorno di applicazione di queste condizioni (AAAA-MM-GG).",
+            "effectiveTo": "Il primo giorno in cui queste condizioni non sono più applicabili (AAAA-MM-GG); vuoto finché restano valide.",
+            "employmentPeriodId": "Il periodo a cui appartengono queste condizioni (il relativo id in employment_periods).",
+            "halfDayThresholdMinutes": "I minuti di lavoro al giorno conteggiati come mezza giornata (fino a questo valore); una durata superiore viene conteggiata come giornata intera.",
+            "rate": "La tua tariffa oraria o giornaliera.",
+            "standardDayMinutes": "I minuti di una giornata standard rispetto ai quali viene misurata una giornata di lavoro.",
+            "summary": "L'andamento nel tempo della tua tariffa oraria o giornaliera come Collaboratore esterno."
+          },
+          "contractorDetails": {
+            "companyName": "L'azienda attraverso cui stipuli il contratto.",
+            "referenceCode": "Il riferimento dell'ordine di acquisto o del centro di costo a cui sono abbinate le tue fatture.",
+            "summary": "I tuoi dettagli contrattuali come Collaboratore esterno.",
+            "vatId": "La tua partita IVA o codice fiscale."
+          },
           "costCenters": {
             "code": "Il codice del centro di costo.",
             "costCenter": "Il nome del centro di costo.",
@@ -2681,6 +2965,7 @@
             "contractType": "Il tuo tipo di contratto.",
             "email": "L'indirizzo email del tuo account utente.",
             "endDate": "Quando si è concluso il tuo rapporto di lavoro; vuoto finché è ancora in corso.",
+            "engagementKind": "Indica se oggi lavori per l'organizzazione come dipendente (employee) o come Collaboratore esterno (contractor).",
             "firstName": "Il tuo nome nella tua scheda dipendente.",
             "gender": "Il tuo genere.",
             "isActive": "Indica se la tua scheda dipendente è attiva.",
@@ -2700,6 +2985,7 @@
           },
           "employmentPeriods": {
             "endedAt": "Quando è terminato il periodo; vuoto finché rimane aperto.",
+            "engagementKind": "Indica se in questo periodo hai lavorato come dipendente (employee) o come Collaboratore esterno (contractor).",
             "startedAt": "Quando è iniziato il periodo.",
             "startProvenance": "L'origine dell'inizio, ad esempio un'assunzione o una riassunzione.",
             "status": "Indica se il periodo è aperto o chiuso.",

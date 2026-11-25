@@ -80,6 +80,7 @@
     "pendingApprovals": "Aprobări în așteptare",
     "pendingExceptionRequests": "{count, plural, one {# cerere de excepție în așteptarea revizuirii} other {# cereri de excepție în așteptarea revizuirii}}",
     "returns": "Revine pe {date}",
+    "reviewComplianceExceptions": "Examinați solicitările de excepție",
     "since": "De la {time}",
     "textClockedInEmployee": "• {name} - de la {clockedInAt} ({duration})",
     "textCompliance": "**⚠️ Conformitate:**",

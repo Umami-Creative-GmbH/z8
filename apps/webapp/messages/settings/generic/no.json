@@ -1,5 +1,60 @@
 {
   "settings": {
+    "apprenticeRelease": {
+      "blockWeekTrainingNote": "Opptil 2 timer bedriftsintern opplæring i uken er tillatt på disse samlingsdagene (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG). For ansatte under 18 år kommer disse timene i tillegg til samlingsuken, som regnes med den gjennomsnittlige ukentlige arbeidstiden (§ 9 Abs. 2 Nr. 2 JArbSchG), og teller ikke mot dags- og ukegrensene i § 8.",
+      "credit": {
+        "exam": "Eksamen fra {start}: {minutes} min godskrevet",
+        "fullDays": "{count, plural, one {# arbeidsdag godskrevet i sin helhet} other {# arbeidsdager godskrevet i sin helhet}}",
+        "minutes": "{minutes} min skoletid godskrevet",
+        "schoolTime": "Skole {start}–{end}: {minutes} min godskrevet"
+      },
+      "description": "Yrkesskole, samlingsuker og eksamensdager gir lønnet fritak (§ 15 BBiG): De godskrives som arbeidstid, trekkes aldri fra ferie og fører aldri til negativ arbeidstidssaldo.",
+      "empty": "Ingen fritaksdager er registrert ennå.",
+      "fields": {
+        "date": "Dato",
+        "endsOn": "Siste dag",
+        "examEndTime": "Eksamen slutter (inkludert pauser)",
+        "examStartTime": "Eksamen starter",
+        "examTimeHint": "Eksamenen gir kun fritak og godskriving for selve eksamenstiden. La begge stå tomme for å gi fritak for hele dagen.",
+        "includePreExamDay": "Gi også fritak for arbeidsdagen før skriftlig avsluttende eksamen",
+        "kind": "Fritak",
+        "lessons": "Undervisningstimer (45 min hver)",
+        "note": "Merknad (valgfritt)",
+        "schoolEndTime": "Skolen slutter (inkludert pauser)",
+        "schoolHoursPerWeek": "Skoletimer per uke (klokketimer)",
+        "schoolStartTime": "Skolen starter",
+        "schoolTimeHint": "En kort skoledag godskriver skoletiden inkludert pauser. La begge stå tomme for å godskrive 45 minutter per undervisningstime."
+      },
+      "kind": {
+        "blockWeek": "Samlingsuke skole",
+        "examDay": "Eksamensdag",
+        "preExamDay": "Arbeidsdag før eksamen",
+        "schoolDay": "Yrkesskoledag"
+      },
+      "lessons": "{count} undervisningstimer",
+      "record": "Registrer fritaksdag",
+      "recorded": "Fritaksdag registrert",
+      "refusal": {
+        "dayAlreadyReleased": "Det er allerede registrert fritak for denne dagen. Fjern det registrerte fritaket først.",
+        "examTimeInvalid": "Angi når eksamenen starter og slutter, eller ingen av delene. Den må slutte etter at den starter.",
+        "invalidRange": "Kontroller datoene: Siste dag kan ikke være før den første.",
+        "invalidValue": "Kontroller undervisningstimene og skoletimene.",
+        "lessonsRequired": "Angi antall undervisningstimer.",
+        "noPrecedingWorkingDay": "Det er ingen arbeidsdag i uken før eksamen å gi fritak for.",
+        "notApprentice": "Fritaksdager kan bare registreres så lenge den ansattes vilkår definerer vedkommende som lærling.",
+        "overlap": "Dette fritaket overlapper et fritak som allerede er registrert.",
+        "reasonRequired": "Forklar hvorfor fritaksdagen fjernes.",
+        "schoolMinutesRequired": "Angi planlagte skoletimer for samlingsuken.",
+        "schoolTimeInvalid": "Angi når skolen starter og slutter, eller ingen av delene. Den må slutte etter at den starter.",
+        "singleDay": "Bare en samlingsuke kan gå over flere dager."
+      },
+      "title": "Fritak for skole og eksamen",
+      "void": "Fjern",
+      "voidConfirm": "Fjern fritaksdag",
+      "voided": "Fritaksdag fjernet",
+      "voidReason": "Hvorfor fjernes den?",
+      "workplaceReturn": "Under 18: Ingen retur til arbeid etter denne fulle skoledagen (§ 9 Abs. 1 Nr. 2 JArbSchG)"
+    },
     "approvalSettings": {
       "pageDescription": "Konfigurer hvem som godkjenner forespørsler, når forfalte godkjenninger eskaleres, og hvilke godkjenningsproblemer som krever oppfølging."
     },
@@ -230,6 +285,7 @@
         "employeeDescription": "Denne ansattes fulle interne kostnad per time, brukt til margin. Atskilt fra lønn.",
         "employeeTitle": "Kostnadssats",
         "empty": "Ingen kostpris ennå. Margin for denne ansattes arbeid vises som ukjent kostnad.",
+        "emptyContractor": "Ingen kostnadssats ennå. Dekningsbidrag bruker denne personens sats for ekstern oppdragstaker for oppdragsarbeid; annet arbeid, samt oppdragsarbeid uten sats, vises som ukjent kostnad.",
         "history": "Historikk",
         "historyAction": "Historikk for kostnadssats for {name}",
         "hourly": "Per time",
@@ -652,14 +708,6 @@
         "title": "Ikke alle periodeinnsendinger for denne måneden er godkjent. Dette hindrer ikke lukkingen:"
       }
     },
-    "compliance": {
-      "description": "Gjennomgå og administrer forespørsler om samsvarsunntak fra teammedlemmer",
-      "metadata": {
-        "description": "Konfigurer innstillinger for ArbZG-samsvar og administrer unntaksforespørsler",
-        "title": "Samsvarsinnstillinger | ArbZG"
-      },
-      "title": "ArbZG-samsvar"
-    },
     "customDomains": {
       "title": "Domene og merkevarebygging"
     },
@@ -1016,7 +1064,7 @@
         "all": "Alle ansatte i denne organisasjonen",
         "allDescription": "Ansvar følger nåværende organisasjonsmedlemskap. Kontrollører kan aldri verifisere seg selv.",
         "attribution": "Tildelt av {actor} {time}",
-        "editor": "Kontrolløromfang",
+        "editTitle": "Rediger kontrolløransvar",
         "empty": "Ingen kontrolløransvar tildelt",
         "failed": "Kunne ikke oppdatere eller få tilgang til ansvar for førerkortkontroll. Sjekk tillatelsene og valgene dine.",
         "formerEmployee": "Tidligere ansatte kan ikke legges til. Velg ansatte fra den nåværende listen.",
@@ -2116,6 +2164,7 @@
           "unavailable": "Denne kontrollen kunne ikke fullføres. Gjenta kontrollene for å prøve igjen."
         },
         "payrollSetup": {
+          "externalContractorsSkipped": "{count, plural, one {# ekstern oppdragstaker utelates for ansettelsesvilkår og personell-ID-er: lønnseksporter inkluderer aldri eksterne oppdragstakere.} other {# eksterne oppdragstakere utelates for ansettelsesvilkår og personell-ID-er: lønnseksporter inkluderer aldri eksterne oppdragstakere.}}",
           "fixEmployees": "Gjennomgå ansatte",
           "fixPayrollExport": "Åpne innstillinger for lønnseksport",
           "inviteesSkipped": "{count, plural, one {# invitert person hoppes over for ansettelsesvilkår og personidentifikatorer frem til vedkommende blir med.} other {# inviterte personer hoppes over for ansettelsesvilkår og personidentifikatorer frem til de blir med.}}",
@@ -2223,6 +2272,7 @@
           "mappingsMissing": "Ingen aktive lønnsarttilordninger",
           "mappingsPresent": "{count, plural, other {# eksportmål, lønnsarter tilordnet} }",
           "notExported": "Organisasjonen har ikke noe aktivt eksportmål for lønn, så det finnes ingen forutsetninger for lønnskjøring.",
+          "notNeededExternalContractor": "Ikke nødvendig: Ekstern oppdragstaker",
           "notYetInvited": "Ikke ennå: de er fortsatt invitert",
           "personnelIdentifier": "Ansattnummer",
           "termsConfirmed": "Bekreftet for i dag",
@@ -2258,6 +2308,7 @@
           "name": "Retningslinje",
           "none": "Ingen gjeldende arbeidsretningslinje i dag: ingen er tildelt dem, teamet deres eller organisasjonen.",
           "noSchedule": "Ingen tidsplan",
+          "notApplicable": "Ingen arbeidspolicy gjelder: vedkommende jobber som ekstern oppdragstaker.",
           "noWorkingDays": "Ingen arbeidsdager",
           "title": "Arbeidsretningslinje",
           "workingDays": "Arbeidsdager"
@@ -3085,7 +3136,15 @@
       "updateProfile": "Oppdater profil",
       "updateSuccess": "Profilen ble oppdatert",
       "uploading": "Laster opp",
-      "uploadProfilePicture": "Last opp profilbilde"
+      "uploadProfilePicture": "Last opp profilbilde",
+      "workingStudent": {
+        "balance": "{remaining} av {limit} uker over 20 timer gjenstår ({used} brukt de siste 12 månedene).",
+        "description": "Som arbeidende student kan du jobbe mer enn 20 timer i maksimalt 26 uker innenfor 12 måneder.",
+        "lectureFree": "Registrerte forelesningsfrie perioder",
+        "lectureFreeEmpty": "Ingen forelesningsfrie perioder registrert. Be HR om å registrere semesterferiene dine.",
+        "noBaseline": "Ingen lovbestemt grense gjelder for denne uken.",
+        "title": "Status som arbeidende student"
+      }
     },
     "projects": {
       "budgetUsed": "Budsjett brukt",

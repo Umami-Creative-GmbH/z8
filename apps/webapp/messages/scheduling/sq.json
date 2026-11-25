@@ -51,6 +51,7 @@
       "overtime": "Orë shtesë: {count}",
       "publishing": "Duke publikuar…",
       "restTime": "Koha e pushimit: {count}",
+      "statutory": "Kufijtë ligjorë: {count}",
       "totalFindings": "{count, plural, other {# gjetje gjithsej} }",
       "warningsDetectedBeforePublish": "U zbuluan paralajmërime përpara publikimit"
     },
@@ -61,6 +62,7 @@
         "maxHours": "Orët maksimale: {count}",
         "overtime": "Orë shtesë: {count}",
         "restTime": "Koha e pushimit: {count}",
+        "statutory": "Kufijtë ligjorë: {count}",
         "title": "Paralajmërime të përputhshmërisë në këtë interval datash"
       },
       "focus": {
@@ -73,7 +75,8 @@
       "open": "Turn i hapur",
       "publish": {
         "failed": "Publikimi i turneve dështoi",
-        "published": "U publikua(n) {count} turn(e)"
+        "published": "U publikua(n) {count} turn(e)",
+        "statutoryBlocked": "Disa turne shkelin kufijtë e mbrojtjes së të rinjve (JArbSchG). Ndryshoni turnet ose konfirmoni një përjashtim ligjor sektorial përpara publikimit."
       },
       "retry": "Riprovo",
       "shiftList": "Lista e turneve",
@@ -82,6 +85,7 @@
         "overlapDescription": "Ky turn mbivendoset me {count} turn(e) tjetër(tëra)",
         "overlapWarning": "Turni u ruajt me paralajmërim mbivendosjeje",
         "skillOverrideReasonRequired": "Punonjësit i mungon një aftësi e kërkuar në këtë ditë. Hapni turnin për të dhënë një arsye.",
+        "statutoryBlocked": "Ky ndryshim në një turn të publikuar shkel kufijtë e mbrojtjes së të rinjve (JArbSchG) përtej asaj që ishte publikuar tashmë. Ndryshoni turnin në mënyrë që të mos shkelë asnjë kufi rishtazi ose më tej. Një përjashtim sektorial mund të konfirmohet vetëm për një turn të ruajtur: për ta planifikuar me një të tillë, shtojeni si turn draft, konfirmoni përjashtimin dhe më pas publikojeni.",
         "updated": "Turni u përditësua"
       },
       "supportFailed": "Shabllonet ose informacioni i përputhshmërisë nuk mund të rifreskoheshin. Kontrolloni përsëri përpara se të publikoni.",
@@ -154,6 +158,7 @@
       "rejectFailed": "Refuzimi i kërkesës dështoi",
       "rejectReason": "Arsyeja e refuzimit (opsionale)",
       "shiftWhen": "{date}, {start}–{end}",
+      "statutoryBlocked": "Miratimi i kësaj kërkese do të shkelte kufijtë e mbrojtjes së të rinjve (JArbSchG) për punonjësin që merr turnin. Refuzoni kërkesën ose kërkojini dikujt tjetër të marrë turnin.",
       "swapSummary": "{requester} dëshiron t'ia kalojë këtë turn {target}",
       "swapWithoutTarget": "{requester} dëshiron ta kalojë këtë turn, por nuk ka caktuar një koleg",
       "title": "Kërkesat për turne",
@@ -207,6 +212,95 @@
         "overtime": "{period, select, daily {Orë shtesë ditore} weekly {Orë shtesë javore} other {Orë shtesë mujore}} ({total} nga {threshold} h)",
         "pendingAbsence": "Mungesë në pritje: {category}",
         "restTime": "Periudha e pushimit shumë e shkurtër ({rest} nga {required} h)"
+      }
+    },
+    "statutory": {
+      "apprenticeship": {
+        "blockWeekTraining": "Javë mësimi në bllok: {used} min punë në ditët e shkollës të kësaj jave, {limit} min trajnim në kompani të lejuara; tejkalohet norma këtë ditë",
+        "blockWeekTrainingNote": "Trajnimi i lejuar (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG) vjen mbi javën e bllokut, e cila llogaritet me kohën mesatare javore të punës (§ 9 Abs. 2 Nr. 2 JArbSchG), dhe nuk llogaritet në kufijtë ditorë dhe javorë të § 8 për personat nën 18 vjeç",
+        "blockWeekTrainingWeek": "Javë mësimi në bllok: {used} min punë në ditët e shkollës të kësaj jave, {limit} min trajnim në kompani të lejuara; tejkalohet norma më {date}",
+        "releaseDayShift": "Ditë lirimi për praktikantin: ditë shkolle, mësimi në bllok ose provimi",
+        "releaseDayShiftOn": "Ditë lirimi për praktikantin më {date}: ditë shkolle, mësimi në bllok ose provimi",
+        "workplaceReturn": "Nën 18 vjeç: nuk punohet këtë ditë, dita e plotë e shkollës profesionale të javës",
+        "workplaceReturnOn": "Nën 18 vjeç: nuk punohet më {date}, dita e plotë e shkollës profesionale të javës"
+      },
+      "domain": {
+        "apprenticeship": "Lirim për praktikantin (BBiG)",
+        "minijob": "Kufiri i Minijob-it",
+        "onCall": "Punë me thirrje (§ 12 TzBfG)",
+        "shortTerm": "Kufiri i punësimit afatshkurtër",
+        "workingStudent": "Kufiri për studentët punonjës",
+        "youthProtection": "Mbrojtja e të rinjve (JArbSchG)"
+      },
+      "findings": {
+        "acknowledgeListLabel": "Gjetje ligjore për t'u konfirmuar",
+        "blockedTitle": "Publikimi u refuzua",
+        "blockingListLabel": "Gjetje që bllokojnë publikimin",
+        "blocksPublishing": "Bllokon publikimin",
+        "close": "Mbyll",
+        "hide": "Fshih gjetjet ligjore ({count})",
+        "hideOfTotal": "Fshih gjetjet ligjore ({count} nga {total})",
+        "listLabel": "Gjetjet ligjore",
+        "openReviews": "Hap te Shqyrtimet dhe Konfliktet",
+        "outsideScope": "{count, plural, one {# gjetje tjetër ka të bëjë me një punonjës që nuk e menaxhoni.} other {# gjetje të tjera kanë të bëjnë me punonjës që nuk i menaxhoni.}}",
+        "outsideScopeOnly": "{count, plural, one {# gjetje ka të bëjë me një punonjës që nuk e menaxhoni.} other {# gjetje kanë të bëjnë me punonjës që nuk i menaxhoni.}}",
+        "severity": {
+          "critical": "Kritike",
+          "info": "Shënim",
+          "warning": "Paralajmërim"
+        },
+        "show": "Shfaq gjetjet ligjore ({count})",
+        "showOfTotal": "Shfaq gjetjet ligjore ({count} nga {total})",
+        "showShifts": "Shfaq turnet e {name}",
+        "unnamedEmployee": "Punonjës pa emër",
+        "weekOf": "Java e {date}"
+      },
+      "jarbschg": {
+        "break": "Nën 18 vjeç: {used} min pushim të marra, kërkohen {limit} min",
+        "dailyMax": "Nën 18 vjeç: {used} min punë në këtë ditë tejkalon kufirin rinor prej {limit} min",
+        "dailyMaxOn": "Nën 18 vjeç: {used} min punë më {date} tejkalon kufirin rinor prej {limit} min",
+        "daysPerWeek": "Nën 18 vjeç: {used} ditë pune këtë javë, lejohen më së shumti {limit}",
+        "holidayProhibited": "Nën 18 vjeç: {used} min punë e ndaluar: asnjë pas orës {cutoff} më 24 ose 31 dhjetor, ose më 25 dhjetor, 1 janar, të Dielën e Pashkëve apo 1 maj; asnjë përjashtim nuk e lejon",
+        "holidayWork": "Nën 18 vjeç: puna në një festë zyrtare kërkon përjashtim ligjor sipas sektorit",
+        "nightWork": "Nën 18 vjeç: {used} min punë nate ndërmjet orës {from} dhe {until}",
+        "nightWorkBeyondSector": "Nën 18 vjeç: {minutes} min punë nate jashtë orarit që lejon përjashtimi i sektorit (nga mosha 15: {from15} deri në {until15}; nga mosha 16 deri në {until16}; nga mosha 17 në furra buke nga {bakeryFrom17}; asnjë nën 15 vjeç); asnjë përjashtim nuk e lejon",
+        "restPeriod": "Nën 18 vjeç: vetëm {used} min pushim para këtij turni, kërkohen {limit} min",
+        "saturdayWork": "Nën 18 vjeç: puna të shtunën kërkon përjashtim ligjor sipas sektorit",
+        "shiftSpan": "Nën 18 vjeç: kohëzgjatja e turnit është {used} min, nga puna e parë deri në përfundim të së fundit; lejohen më së shumti {limit} min (11 orë në mikpritje, bujqësi, blegtori dhe në kantiere ndërtimi)",
+        "shiftSpanOn": "Nën 18 vjeç: kohëzgjatja e turnit më {date} është {used} min, nga puna e parë deri në përfundim të së fundit; lejohen më së shumti {limit} min (11 orë në mikpritje, bujqësi, blegtori dhe në kantiere ndërtimi)",
+        "sundayWork": "Nën 18 vjeç: puna të dielën kërkon përjashtim ligjor sipas sektorit",
+        "uninterrupted": "Nën 18 vjeç: {used} min të punuara pa pushim, lejohen më së shumti {limit} min",
+        "weeklyMax": "Nën 18 vjeç: {used} min punë këtë javë tejkalon kufirin rinor prej {limit} min",
+        "weeklyMaxWeekOf": "Nën 18 vjeç: {used} min punë në javën e {date} tejkalon kufirin rinor prej {limit} min"
+      },
+      "minijob": {
+        "monthlyApproaching": "Po afrohet kufiri mujor i Minijob",
+        "monthlyDocumented": "Kufiri mujor i Minijob u tejkalua (e dokumentuar si e paparashikueshme)",
+        "monthlyExceeded": "Kufiri mujor i Minijob u tejkalua",
+        "rollingApproaching": "Po afrohet kufiri 12-mujor i të ardhurave për Minijob",
+        "rollingExceeded": "Kufiri 12-mujor i të ardhurave për Minijob u tejkalua"
+      },
+      "onCall": {
+        "nearBand": "Në gatishmëri: java në {used}, po afrohet kufiri i intervalit të thirrjes prej {limit}",
+        "overBand": "Në gatishmëri: java në {used}, mbi intervalin e thirrjes prej {limit}",
+        "shortCall": "Në gatishmëri: thirrja prej {duration} është nën minimumin prej {minimum}",
+        "shortNotice": "{days, plural, one {Në gatishmëri: # ditë e plotë njoftim paraprak, kërkohen {required} (§ 12 Abs. 3 TzBfG)} other {Në gatishmëri: # ditë të plota njoftim paraprak, kërkohen {required} (§ 12 Abs. 3 TzBfG)}}",
+        "shortWorkCall": "Në gatishmëri: u krye një thirrje prej {duration}, nën minimumin e thirrjes prej {minimum}",
+        "underBand": "Në gatishmëri: java në {used}, nën intervalin e thirrjes prej {limit}"
+      },
+      "shortTerm": {
+        "calendarDaysExceeded": "Kufiri 3-mujor për punësim afatshkurtër u tejkalua: {used} nga {limit} ditë kalendarike këtë vit",
+        "calendarDaysRemaining": "Punësim afatshkurtër (kufiri 3-mujor): kanë mbetur {remaining} nga {limit} ditë kalendarike këtë vit",
+        "daysExceeded": "Kufiri i ditëve për punësim afatshkurtër u tejkalua: {used} nga {limit} ditë pune këtë vit",
+        "daysRemaining": "Punësim afatshkurtër: kanë mbetur {remaining} nga {limit} ditë pune këtë vit"
+      },
+      "warning": "{area}: kufiri ligjor në rrezik",
+      "warningApproaching": "{area}: po afrohet kufiri ligjor",
+      "warningExceeded": "{area}: kufiri ligjor u tejkalua",
+      "warningPercent": "{area}: {percent} % e kufirit ligjor",
+      "workingStudent": {
+        "ceiling": "Student në marrëdhënie pune: {used} nga {limit} javë mbi 20 orë në 12 muaj",
+        "lectureWeek": "Student në marrëdhënie pune >20 orë në javë leksionesh: {hours} orë pune ditore gjatë ditëve të javës (kufiri {limit} orë)"
       }
     },
     "templates": {

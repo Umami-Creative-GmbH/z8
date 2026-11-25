@@ -16,6 +16,7 @@
     },
     "card": {
       "decision": "Beslutning",
+      "returned": "Returnert",
       "submitted": "Sendt inn"
     },
     "empty": {
@@ -53,7 +54,7 @@
       "title": "Under vurdering"
     },
     "needsAttention": {
-      "description": "Avviste forespørsler som kan kreve en korrigering før de sendes inn på nytt.",
+      "fixDescription": "Returnerte eller avviste forespørsler som krever korrigering før de sendes inn på nytt.",
       "title": "Krever oppmerksomhet"
     },
     "reasonLabel": "Årsak",
@@ -65,26 +66,58 @@
       "absence": {
         "title": "Fraværsforespørsel"
       },
+      "complianceException": {
+        "durationHours": "{hours} t",
+        "durationHoursMinutes": "{hours} t {minutes} min",
+        "durationMinutes": "{minutes} min",
+        "overtimeDaily": "Unntak for daglig overtid",
+        "overtimeMonthly": "Unntak for månedlig overtid",
+        "overtimeWeekly": "Unntak for ukentlig overtid",
+        "planned": "Planlagt: {duration}",
+        "restPeriod": "Unntak for hviletid",
+        "title": "Samsvarsunntak",
+        "validity": "Gyldig: {window} ({timeZone})"
+      },
+      "earlierClaim": {
+        "mileage": "Tidligere krav om kjøregodtgjørelse",
+        "perDiem": "Tidligere diettkrav",
+        "receipt": "Tidligere kvitteringskrav",
+        "title": "Tidligere krav"
+      },
+      "expenseReport": {
+        "adjustmentOf": "Justering av “{title}”",
+        "adjustmentOfUntitled": "Justering av en tidligere rapport",
+        "kind": {
+          "standaloneMileage": "Frittstående kjøregodtgjørelse",
+          "standaloneReceipt": "Frittstående kvittering",
+          "trip": "Reiserapport"
+        },
+        "untitledMileage": "Kjøregodtgjørelse uten tittel",
+        "untitledReceipt": "Kvittering uten tittel",
+        "untitledTrip": "Reise uten tittel"
+      },
       "timeCorrection": {
         "subtitle": "Korrigering av en tidsregistrering",
         "title": "Forespørsel om tidskorrigering"
-      },
-      "travelExpense": {
-        "title": "Reiseregning"
       }
     },
-    "scope": "Dine forespørsler om fravær, tidskorrigering og eldre utlegg i den aktive organisasjonen",
+    "returnNoteLabel": "Gjennomgåers notat",
+    "scopeAllRequests": "Dine forespørsler om fravær, tidskorrigering, samsvarsunntak og utlegg i den aktive organisasjonen",
     "sourceError": {
       "absence": "Kunne ikke laste inn fraværsforespørsler.",
+      "complianceException": "Kunne ikke laste inn samsvarsunntak.",
+      "earlierClaim": "Kunne ikke laste inn tidligere krav.",
+      "expenseReport": "Kunne ikke laste inn utgiftsrapporter.",
       "timeCorrection": "Kunne ikke laste inn forespørsler om tidskorrigering.",
-      "title": "Kunne ikke laste inn enkelte forespørsler.",
-      "travelExpense": "Kunne ikke laste inn reiseutgiftsforespørsler."
+      "title": "Kunne ikke laste inn enkelte forespørsler."
     },
     "status": {
       "approved": "Godkjent",
       "cancelled": "Kansellert",
+      "expired": "Utløpt",
       "inReview": "Til vurdering",
-      "rejected": "Avvist"
+      "rejected": "Avvist",
+      "returned": "Returnert"
     },
     "summary": {
       "ariaLabel": "Forespørselssammendrag",
@@ -96,8 +129,10 @@
     "title": "Mine forespørsler",
     "types": {
       "absence": "Fravær",
-      "timeCorrection": "Tidskorrigering",
-      "travelExpense": "Reiseutgift"
+      "complianceException": "Samsvarsunntak",
+      "earlierClaim": "Tidligere krav",
+      "expenseReport": "Utgiftsrapport",
+      "timeCorrection": "Tidskorrigering"
     },
     "unavailableTitle": "Forespørsler utilgjengelig"
   }

@@ -16,6 +16,7 @@
     },
     "card": {
       "decision": "Odluka",
+      "returned": "Vraćeno",
       "submitted": "Podneseno"
     },
     "empty": {
@@ -53,7 +54,7 @@
       "title": "U pregledu"
     },
     "needsAttention": {
-      "description": "Odbijeni zahtjevi koji mogu zahtijevati ispravak prije ponovnog podnošenja.",
+      "fixDescription": "Vraćeni ili odbijeni zahtjevi koji zahtijevaju ispravak prije ponovnog slanja.",
       "title": "Zahtijeva pozornost"
     },
     "reasonLabel": "Razlog",
@@ -65,26 +66,58 @@
       "absence": {
         "title": "Zahtjev za odsutnost"
       },
+      "complianceException": {
+        "durationHours": "{hours} h",
+        "durationHoursMinutes": "{hours} h {minutes} min",
+        "durationMinutes": "{minutes} min",
+        "overtimeDaily": "Iznimka za dnevni prekovremeni rad",
+        "overtimeMonthly": "Iznimka za mjesečni prekovremeni rad",
+        "overtimeWeekly": "Iznimka za tjedni prekovremeni rad",
+        "planned": "Planirano: {duration}",
+        "restPeriod": "Iznimka za razdoblje odmora",
+        "title": "Iznimka od usklađenosti",
+        "validity": "Vrijedi: {window} ({timeZone})"
+      },
+      "earlierClaim": {
+        "mileage": "Raniji zahtjev za kilometražu",
+        "perDiem": "Raniji zahtjev za dnevnice",
+        "receipt": "Raniji zahtjev za troškove prema računu",
+        "title": "Raniji zahtjev"
+      },
+      "expenseReport": {
+        "adjustmentOf": "Prilagodba stavke „{title}”",
+        "adjustmentOfUntitled": "Prilagodba ranijeg izvješća",
+        "kind": {
+          "standaloneMileage": "Zasebna kilometraža",
+          "standaloneReceipt": "Zaseban račun",
+          "trip": "Izvješće o putovanju"
+        },
+        "untitledMileage": "Kilometraža bez naslova",
+        "untitledReceipt": "Račun bez naslova",
+        "untitledTrip": "Putovanje bez naslova"
+      },
       "timeCorrection": {
         "subtitle": "Ispravak unosa radnog vremena",
         "title": "Zahtjev za ispravak radnog vremena"
-      },
-      "travelExpense": {
-        "title": "Zahtjev za putne troškove"
       }
     },
-    "scope": "Vaši zahtjevi za odsutnost, ispravak vremena i naslijeđeni zahtjevi za troškove u aktivnoj organizaciji",
+    "returnNoteLabel": "Napomena recenzenta",
+    "scopeAllRequests": "Vaši zahtjevi za odsutnost, ispravak radnog vremena, iznimku od usklađenosti i troškove u aktivnoj organizaciji",
     "sourceError": {
       "absence": "Nije moguće učitati zahtjeve za odsutnost.",
+      "complianceException": "Nije bilo moguće učitati iznimke od usklađenosti.",
+      "earlierClaim": "Nije bilo moguće učitati ranija potraživanja.",
+      "expenseReport": "Nije bilo moguće učitati izvješća o troškovima.",
       "timeCorrection": "Nije moguće učitati zahtjeve za ispravak radnog vremena.",
-      "title": "Nije moguće učitati neke zahtjeve.",
-      "travelExpense": "Nije moguće učitati zahtjeve za putne troškove."
+      "title": "Nije moguće učitati neke zahtjeve."
     },
     "status": {
       "approved": "Odobreno",
       "cancelled": "Otkazano",
+      "expired": "Isteklo",
       "inReview": "U pregledu",
-      "rejected": "Odbijeno"
+      "rejected": "Odbijeno",
+      "returned": "Vraćeno"
     },
     "summary": {
       "ariaLabel": "Sažetak zahtjeva",
@@ -96,8 +129,10 @@
     "title": "Moji zahtjevi",
     "types": {
       "absence": "Odsutnost",
-      "timeCorrection": "Ispravak vremena",
-      "travelExpense": "Putni trošak"
+      "complianceException": "Iznimka od usklađenosti",
+      "earlierClaim": "Ranije potraživanje",
+      "expenseReport": "Izvješće o troškovima",
+      "timeCorrection": "Ispravak vremena"
     },
     "unavailableTitle": "Zahtjevi nisu dostupni"
   }

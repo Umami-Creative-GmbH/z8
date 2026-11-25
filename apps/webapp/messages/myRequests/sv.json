@@ -16,6 +16,7 @@
     },
     "card": {
       "decision": "Beslut",
+      "returned": "Returnerad",
       "submitted": "Inskickad"
     },
     "empty": {
@@ -53,7 +54,7 @@
       "title": "Under granskning"
     },
     "needsAttention": {
-      "description": "Avvisade förfrågningar som kan kräva en korrigering innan de skickas in igen.",
+      "fixDescription": "Returnerade eller avvisade förfrågningar som behöver korrigeras innan de skickas in igen.",
       "title": "Kräver åtgärd"
     },
     "reasonLabel": "Anledning",
@@ -65,26 +66,58 @@
       "absence": {
         "title": "Frånvaroansökan"
       },
+      "complianceException": {
+        "durationHours": "{hours} h",
+        "durationHoursMinutes": "{hours} h {minutes} min",
+        "durationMinutes": "{minutes} min",
+        "overtimeDaily": "Undantag för daglig övertid",
+        "overtimeMonthly": "Undantag för månatlig övertid",
+        "overtimeWeekly": "Undantag för veckovis övertid",
+        "planned": "Planerat: {duration}",
+        "restPeriod": "Undantag för viloperiod",
+        "title": "Efterlevnadsundantag",
+        "validity": "Giltig: {window} ({timeZone})"
+      },
+      "earlierClaim": {
+        "mileage": "Tidigare begäran om milersättning",
+        "perDiem": "Tidigare begäran om traktamente",
+        "receipt": "Tidigare begäran om kvitto",
+        "title": "Tidigare begäran"
+      },
+      "expenseReport": {
+        "adjustmentOf": "Justering av ”{title}”",
+        "adjustmentOfUntitled": "Justering av en tidigare rapport",
+        "kind": {
+          "standaloneMileage": "Fristående milersättning",
+          "standaloneReceipt": "Fristående kvitto",
+          "trip": "Reserapport"
+        },
+        "untitledMileage": "Namnlös milersättning",
+        "untitledReceipt": "Namnlöst kvitto",
+        "untitledTrip": "Namnlös resa"
+      },
       "timeCorrection": {
         "subtitle": "Korrigering för en tidsregistrering",
         "title": "Begäran om tidskorrigering"
-      },
-      "travelExpense": {
-        "title": "Reseräkning"
       }
     },
-    "scope": "Dina begäranden om frånvaro, tidskorrigering och äldre utlägg i den aktiva organisationen",
+    "returnNoteLabel": "Granskarens anteckning",
+    "scopeAllRequests": "Dina förfrågningar om frånvaro, tidskorrigering, efterlevnadsundantag och utlägg i den aktiva organisationen",
     "sourceError": {
       "absence": "Frånvaroansökningar kunde inte läsas in.",
+      "complianceException": "Efterlevnadsundantag kunde inte läsas in.",
+      "earlierClaim": "Tidigare anspråk kunde inte läsas in.",
+      "expenseReport": "Utläggsrapporter kunde inte läsas in.",
       "timeCorrection": "Begäranden om tidskorrigering kunde inte läsas in.",
-      "title": "Vissa ansökningar kunde inte läsas in.",
-      "travelExpense": "Reseräkningar kunde inte läsas in."
+      "title": "Vissa ansökningar kunde inte läsas in."
     },
     "status": {
       "approved": "Godkänd",
       "cancelled": "Avbruten",
+      "expired": "Utgången",
       "inReview": "Granskas",
-      "rejected": "Avvisad"
+      "rejected": "Avvisad",
+      "returned": "Returnerad"
     },
     "summary": {
       "ariaLabel": "Sammanfattning av ansökningar",
@@ -96,8 +129,10 @@
     "title": "Mina förfrågningar",
     "types": {
       "absence": "Frånvaro",
-      "timeCorrection": "Tidskorrigering",
-      "travelExpense": "Reseutlägg"
+      "complianceException": "Efterlevnadsundantag",
+      "earlierClaim": "Tidigare anspråk",
+      "expenseReport": "Utläggsrapport",
+      "timeCorrection": "Tidskorrigering"
     },
     "unavailableTitle": "Förfrågningar är inte tillgängliga"
   }

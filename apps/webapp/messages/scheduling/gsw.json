@@ -51,6 +51,7 @@
       "overtime": "Überstunde: {count}",
       "publishing": "Wird veröffentlicht…",
       "restTime": "Ruehziit: {count}",
+      "statutory": "Gesetzliche Grenzwerte: {count}",
       "totalFindings": "{count, plural, one {Insgsamt # Feschtstellig} other {Insgsamt # Feschtstellige}}",
       "warningsDetectedBeforePublish": "Warnige vor em Veröffentliche entdeckt"
     },
@@ -61,6 +62,7 @@
         "maxHours": "Maximali Stunde: {count}",
         "overtime": "Überziit: {count}",
         "restTime": "Ruehziit: {count}",
+        "statutory": "Gesetzliche Grenzwerte: {count}",
         "title": "Compliance-Warnige in däm Ziitruum"
       },
       "focus": {
@@ -73,7 +75,8 @@
       "open": "Offene Schicht",
       "publish": {
         "failed": "Schichte händ nöd chöne veröffentlicht werde",
-        "published": "{count} Schicht(e) veröffentlicht"
+        "published": "{count} Schicht(e) veröffentlicht",
+        "statutoryBlocked": "Einige Schichten verstossen gegen die Jugendarbeitsschutzgrenzen (JArbSchG). Ändern Sie die Schichten oder bestätigen Sie eine gesetzliche Branchenausnahme vor der Veröffentlichung."
       },
       "retry": "Erneut versuchen",
       "shiftList": "Schichtliste",
@@ -82,6 +85,7 @@
         "overlapDescription": "Die Schicht überschniidet sich mit {count} andere Schicht(e)",
         "overlapWarning": "Schicht mit Überschniidigswarnig gspeicheret",
         "skillOverrideReasonRequired": "Dem/der Mitarbeitenden fehlt an diesem Tag eine erforderliche Qualifikation. Öffnen Sie die Schicht, um einen Grund anzugeben.",
+        "statutoryBlocked": "Diese Änderung an einer veröffentlichten Schicht verstösst über das bereits Veröffentlichte hinaus gegen die Jugendarbeitsschutzgrenzen (JArbSchG). Ändern Sie die Schicht so, dass sie keine Grenzwerte neu oder weiter verletzt. Eine Branchenausnahme kann nur für eine gespeicherte Schicht bestätigt werden: Um dies mit einer solchen zu planen, fügen Sie sie als Entwurfsschicht hinzu, bestätigen Sie die Ausnahme und veröffentlichen Sie sie anschliessend.",
         "updated": "Schicht aktualisiert"
       },
       "supportFailed": "Vorlagen oder Compliance-Informationen konnten nicht aktualisiert werden. Vor dem Veröffentlichen erneut prüfen.",
@@ -154,6 +158,7 @@
       "rejectFailed": "Die Anfrage konnte nicht abgelehnt werden",
       "rejectReason": "Grund für die Ablehnung (optional)",
       "shiftWhen": "{date}, {start}–{end}",
+      "statutoryBlocked": "Die Genehmigung dieses Antrags würde die Jugendarbeitsschutzgrenzen (JArbSchG) für die Person verletzen, die die Schicht übernimmt. Lehnen Sie den Antrag ab oder bitten Sie jemand anderen, die Schicht zu übernehmen.",
       "swapSummary": "{requester} möchte diese Schicht an {target} übergeben",
       "swapWithoutTarget": "{requester} möchte diese Schicht abgeben, hat aber keine Kollegin und keinen Kollegen genannt",
       "title": "Schichtanfragen",
@@ -207,6 +212,95 @@
         "overtime": "{period, select, daily {Täglichi} weekly {Wöchentlichi} other {Monatlichi}} Überzit ({total} vo {threshold} h)",
         "pendingAbsence": "Pendanti Abwäseheit: {category}",
         "restTime": "Ruehziit z churz ({rest} vo {required} h)"
+      }
+    },
+    "statutory": {
+      "apprenticeship": {
+        "blockWeekTraining": "Blockwoche: {used} Min. Arbeit an den Schultagen dieser Woche, {limit} Min. betriebliche Ausbildung erlaubt; Freibetrag an diesem Tag überschritten",
+        "blockWeekTrainingNote": "Die zulässige Ausbildung (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG) erfolgt zusätzlich zur Blockwoche, die mit der durchschnittlichen wöchentlichen Arbeitszeit angerechnet wird (§ 9 Abs. 2 Nr. 2 JArbSchG), und zählt nicht zu den täglichen und wöchentlichen Grenzen gemäss § 8 für unter 18-Jährige",
+        "blockWeekTrainingWeek": "Blockwoche: {used} Min. Arbeit an den Schultagen dieser Woche, {limit} Min. betriebliche Ausbildung erlaubt; Freibetrag am {date} überschritten",
+        "releaseDayShift": "Freistellungstag für Lernende: Schul-, Block- oder Prüfungstag",
+        "releaseDayShiftOn": "Freistellungstag für Lernende am {date}: Schul-, Block- oder Prüfungstag",
+        "workplaceReturn": "Unter 18: keine Arbeit an diesem Tag, ganztägiger Berufsschultag der Woche",
+        "workplaceReturnOn": "Unter 18: keine Arbeit am {date}, ganztägiger Berufsschultag der Woche"
+      },
+      "domain": {
+        "apprenticeship": "Freistellung von Lernenden (BBiG)",
+        "minijob": "Minijob-Grenze",
+        "onCall": "Arbeit auf Abruf (§ 12 TzBfG)",
+        "shortTerm": "Grenze für kurzfristige Beschäftigung",
+        "workingStudent": "Werkstudenten-Grenze",
+        "youthProtection": "Jugendarbeitsschutz (JArbSchG)"
+      },
+      "findings": {
+        "acknowledgeListLabel": "Zu bestätigende gesetzliche Feststellungen",
+        "blockedTitle": "Veröffentlichung abgelehnt",
+        "blockingListLabel": "Feststellungen, die die Veröffentlichung blockieren",
+        "blocksPublishing": "Blockiert d Veröffentlichig",
+        "close": "Schlüsse",
+        "hide": "Gsetzlichi Befund usblände ({count})",
+        "hideOfTotal": "Gsetzlichi Befund usblände ({count} vo {total})",
+        "listLabel": "Gsetzlichi Befund",
+        "openReviews": "In «Überprüfige & Konflikt» öffne",
+        "outsideScope": "{count, plural, one {# wiitere Befund betrifft en Mitarbeiter, wo du nöd verwaltisch.} other {# wiiteri Befund beträffed Mitarbeiter, wo du nöd verwaltisch.}}",
+        "outsideScopeOnly": "{count, plural, one {# Befund betrifft en Mitarbeiter, wo du nöd verwaltisch.} other {# Befund beträffed Mitarbeiter, wo du nöd verwaltisch.}}",
+        "severity": {
+          "critical": "Kritisch",
+          "info": "Hiiwiis",
+          "warning": "Warnig"
+        },
+        "show": "Gsetzlichi Befund aazeige ({count})",
+        "showOfTotal": "Gsetzlichi Befund aazeige ({count} vo {total})",
+        "showShifts": "Schichte vo {name} aazeige",
+        "unnamedEmployee": "Mitarbeiter ohni Name",
+        "weekOf": "Wuche vom {date}"
+      },
+      "jarbschg": {
+        "break": "Under 18: {used} Min. Pause gnoo, {limit} Min. erforderlich",
+        "dailyMax": "Under 18: {used} Min. Arbet a däm Tag überschriited d Jugedlimite vo {limit} Min.",
+        "dailyMaxOn": "Under 18: {used} Min. Arbet am {date} überschriited d Jugedlimite vo {limit} Min.",
+        "daysPerWeek": "Under 18: {used} Arbeitstäg i de Wuche, maximal {limit} erlaubt",
+        "holidayProhibited": "Under 18: {used} Min. verboteni Arbet: kaini nach {cutoff} am 24. oder 31. Dezämber, oder am 25. Dezämber, 1. Januar, Oschtersunntig oder 1. Mai; kaini Usnahm erlaubt das",
+        "holidayWork": "Under 18: Arbet amene Fiirtig bruucht e gsetzlichi Branche-Usnahm",
+        "nightWork": "Under 18: {used} Min. Nachtarbet zwüschet {from} und {until}",
+        "nightWorkBeyondSector": "Under 18: {minutes} Min. Nachtarbet usserhalb vo de Ziite, wo e Branche-Usnahm erlaubt (ab 15: {from15} bis {until15}; ab 16 bis {until16}; ab 17 i Bäckereie ab {bakeryFrom17}; kaini under 15); kaini Usnahm erlaubt das",
+        "restPeriod": "Under 18: nur {used} Min. Rueziit vor dere Schicht, {limit} Min. erforderlich",
+        "saturdayWork": "Under 18: Samschtig-Arbet bruucht e gsetzlichi Branche-Usnahm",
+        "shiftSpan": "Under 18: D Schichtduur isch {used} Min., vo de erschte Arbet bis zum Änd vo de letschte; maximal {limit} Min. erlaubt (11 h im Gaschtgwärb, i de Landwirtschaft, Tierhaltig und uf Baustelle)",
+        "shiftSpanOn": "Under 18: D Schichtduur am {date} isch {used} Min., vo de erschte Arbet bis zum Änd vo de letschte; maximal {limit} Min. erlaubt (11 h im Gaschtgwärb, i de Landwirtschaft, Tierhaltig und uf Baustelle)",
+        "sundayWork": "Under 18: Sunntig-Arbet bruucht e gsetzlichi Branche-Usnahm",
+        "uninterrupted": "Under 18: {used} Min. ohni Pause gschaffet, maximal {limit} Min. erlaubt",
+        "weeklyMax": "Under 18: {used} Min. Arbet i de Wuche überschriited d Jugedlimite vo {limit} Min.",
+        "weeklyMaxWeekOf": "Under 18: {used} Min. Arbet i de Wuche vom {date} überschriited d Jugedlimite vo {limit} Min."
+      },
+      "minijob": {
+        "monthlyApproaching": "Monatlichi Minijob-Limite fast erreicht",
+        "monthlyDocumented": "Monatlichi Minijob-Limite überschritte (als unvorhersehbar dokumentiert)",
+        "monthlyExceeded": "Monatlichi Minijob-Limite überschritte",
+        "rollingApproaching": "12-Monats-Verdienschtlimite für Minijob fast erreicht",
+        "rollingExceeded": "12-Monats-Verdienschtlimite für Minijob überschritte"
+      },
+      "onCall": {
+        "nearBand": "Arbet uf Abruef: Wuche bi {used}, nähert sich de Abruffänschter-Limite vo {limit}",
+        "overBand": "Arbet uf Abruef: Wuche bi {used}, über em Abruffänschter vo {limit}",
+        "shortCall": "Arbet uf Abruef: Isatz vo {duration} isch under em Minimum vo {minimum}",
+        "shortNotice": "{days, plural, one {Arbet uf Abruef: # volle Tag Aachündigung, {required} erforderlich (§ 12 Abs. 3 TzBfG)} other {Arbet uf Abruef: # volli Täg Aachündigung, {required} erforderlich (§ 12 Abs. 3 TzBfG)}}",
+        "shortWorkCall": "Arbet uf Abruef: En Isatz vo {duration} gschaffet, under em Mindischtisatz vo {minimum}",
+        "underBand": "Arbet uf Abruef: Wuche bi {used}, under em Abruffänschter vo {limit}"
+      },
+      "shortTerm": {
+        "calendarDaysExceeded": "3-Monats-Limite für churzfrischtigi Bschäftigung überschritte: {used} vo {limit} Kaländertäg i däm Jahr",
+        "calendarDaysRemaining": "Churzfrischtigi Bschäftigung (3-Monats-Limite): no {remaining} vo {limit} Kaländertäg übrig i däm Jahr",
+        "daysExceeded": "Tageslimite für churzfrischtigi Bschäftigung überschritte: {used} vo {limit} Arbeitstäg i däm Jahr",
+        "daysRemaining": "Churzfrischtigi Bschäftigung: no {remaining} vo {limit} Arbeitstäg übrig i däm Jahr"
+      },
+      "warning": "{area}: gsetzlichi Limite gföhrdet",
+      "warningApproaching": "{area}: nähert sich de gsetzliche Limite",
+      "warningExceeded": "{area}: gsetzlichi Limite überschritte",
+      "warningPercent": "{area}: {percent} % vo de gsetzliche Obergrenze",
+      "workingStudent": {
+        "ceiling": "Werkstudent: {used} vo {limit} Wuche über 20 h i 12 Mönet",
+        "lectureWeek": "Werkstudent >20 h i de Vorläsigswuche: {hours} h Tagsüber-Aarbet a Wärchtag (Limit {limit} h)"
       }
     },
     "templates": {

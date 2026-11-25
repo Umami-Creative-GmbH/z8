@@ -409,6 +409,7 @@
         "clearSearch": "Cancella ricerca",
         "clockReview": "Richiede revisione: timbratura di uscita per offboarding",
         "confirmRehire": "Conferma riassunzione",
+        "contractorRehireHint": "Un collaboratore esterno non ha condizioni contrattuali, politiche di lavoro o ferie maturate. Le tariffe dei collaboratori vengono stabilite separatamente.",
         "correctTime": "Correggi orario",
         "currency": "Valuta",
         "currencyInvalid": "Inserisci un codice valuta a tre lettere.",
@@ -423,6 +424,10 @@
         "effectiveDescription": "L'accesso è terminato alle {cutoff} ({timezone}).",
         "employmentGap": "Non impiegato {startDate} – {endDate}",
         "employmentStint": "Impiego {startDate} – {endDate}",
+        "engagement": {
+          "employee": "Dipendente"
+        },
+        "engagementKind": "Incarico",
         "errors": {
           "actorNotAuthorized": "Solo i proprietari e gli amministratori dell'organizzazione possono gestire le uscite dei dipendenti.",
           "departureAlreadyEffective": "Questa uscita è già entrata in vigore. Riassumi il dipendente per ripristinare l'accesso.",
@@ -668,6 +673,7 @@
           "employeeNotFound": "Dipendente non trovato.",
           "exceedsBalance": "La liquidazione è superiore al saldo ore del dipendente alla fine di quel giorno.",
           "exceedsLaterBalance": "La liquidazione porterebbe il saldo ore al di sotto dello zero dopo una successiva liquidazione degli straordinari. Annulla prima tale liquidazione o registra un valore inferiore.",
+          "externalContractorDay": "In questo giorno la persona lavora come collaboratore esterno, pertanto le buste paga non erogherebbero questo compenso. Imposta una data in cui risultava dipendente.",
           "failed": "Impossibile aggiornare il saldo ore. Riprova.",
           "futureDay": "Il giorno non può essere successivo a oggi nel fuso orario del dipendente.",
           "invalidInput": "Verifica il giorno, le ore e i minuti e il motivo.",

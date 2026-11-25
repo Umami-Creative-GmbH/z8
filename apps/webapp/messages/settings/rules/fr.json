@@ -16,6 +16,10 @@
       "createCategoryButton": "Créer une catégorie",
       "deactivate": "Désactiver",
       "defaults": {
+        "contractorUnavailability": {
+          "description": "Note de calendrier indiquant qu'un prestataire externe est indisponible ; ne constitue pas un congé ou une absence",
+          "name": "Indisponible (Prestataire externe)"
+        },
         "timeOffInLieu": {
           "description": "Congé pris sur le solde de travail",
           "name": "Récupération"
@@ -32,6 +36,7 @@
         "activeHelp": "Les catégories actives sont disponibles pour les nouvelles demandes d'absence.",
         "color": "Couleur",
         "colorHelp": "Marqueur de calendrier",
+        "contractorUnavailabilityRules": "L'indisponibilité d'un prestataire externe est uniquement un indicateur de calendrier : elle ne décompte jamais de congés, de temps de travail ou de solde d'heures.",
         "countsAgainstVacation": "Compte dans le solde de congés",
         "countsAgainstVacationHelp": "Déduire les jours approuvés du droit aux congés de l'employé.",
         "deputyRequired": "Remplaçant obligatoire",
@@ -59,6 +64,7 @@
         "translations": "Traductions",
         "translationsHelp": "Libellés localisés optionnels pour les employés utilisant une autre langue dans l'application.",
         "type": "Type",
+        "typeContractorUnavailability": "Indisponibilité du prestataire externe",
         "typeHelp": "Regroupe les rapports et les flux de travail d'absence en aval.",
         "typePlaceholder": "Sélectionner le type de catégorie",
         "typeTimeOffInLieu": "Récupération"

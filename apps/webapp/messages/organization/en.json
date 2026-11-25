@@ -219,6 +219,10 @@
       "allowCreateOrganizations": "Allow this user to create organizations",
       "contractor": {
         "companyName": "Contracting company",
+        "compensation": {
+          "description": "Applies from the start of their engagement once they join. Only organization admins see it; you can also set it later.",
+          "label": "Set the rate now"
+        },
         "legend": "Contractor details (optional)",
         "noProjects": "No active projects yet. You can assign projects later.",
         "plannedEndDate": "Planned engagement end",
@@ -226,11 +230,7 @@
         "plannedEndDateNotFuture": "The planned engagement end must be after today.",
         "projects": "Projects",
         "referenceCode": "PO or cost center",
-        "vatId": "VAT ID",
-        "compensation": {
-          "label": "Set the rate now",
-          "description": "Applies from the start of their engagement once they join. Only organization admins see it; you can also set it later."
-        }
+        "vatId": "VAT ID"
       },
       "description": "Send an invitation to join {organizationName}",
       "emailLabel": "Email Address",
@@ -241,6 +241,9 @@
         "label": "Invite as"
       },
       "error": "Failed to send invitation",
+      "errors": {
+        "projectNotFound": "A chosen project no longer belongs to this organization. Choose the projects again."
+      },
       "kioskOnly": {
         "description": "For staff without a company email. They cannot sign in and clock only at kiosks with their PIN. You can add an email later.",
         "firstName": "First name",
@@ -261,10 +264,7 @@
       "submit": "Send Invitation",
       "success": "Invitation sent successfully",
       "targetTeam": "Target team",
-      "title": "Invite Member",
-      "errors": {
-        "projectNotFound": "A chosen project no longer belongs to this organization. Choose the projects again."
-      }
+      "title": "Invite Member"
     },
     "joinOrCreate": "Join or create one",
     "language": {

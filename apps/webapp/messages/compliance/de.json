@@ -5,7 +5,7 @@
         "accessControls": "Zugriffskontrollen fassen nur sensible Audit-Log-Ereignisse zusammen, die bereits heute erfasst werden.",
         "auditEvidence": "Audit-Nachweise nutzen die Live-Audit-Export-Konfiguration, Audit-Paket-Anfragen und aktuelle Verifizierungsergebnisse.",
         "title": "Abdeckung",
-        "workforceCompliance": "Die Compliance der Belegschaft basiert auf den Verstößen gegen Arbeitsrichtlinien der letzten 7 Tage und ausstehenden Ausnahmeanträgen sowie auf den offenen Befunden und Bestätigungen der gesetzlichen Prüfungen (Minijob, kurzfristige Beschäftigung, Werkstudierende, Arbeit auf Abruf, Jugendarbeitsschutz und Auszubildende)."
+        "workforceCompliance": "Die Compliance der Belegschaft basiert auf den Verstößen gegen Arbeitsrichtlinien der letzten 7 Tage und ausstehenden Ausnahmeanträgen."
       },
       "events": {
         "auditEvidenceFailures": {
@@ -19,6 +19,10 @@
         "auditVerificationFailure": {
           "description": "Kürzlich ungültige Verifizierungen: {invalidVerifications}",
           "title": "Audit-Verifizierung fehlgeschlagen"
+        },
+        "pendingExceptions": {
+          "description": "{count, plural, one {# Compliance-Ausnahme wartet auf eine Entscheidung} other {# Compliance-Ausnahmen warten auf eine Entscheidung}}",
+          "title": "Ausstehende Compliance-Ausnahmen"
         },
         "sensitiveAction": {
           "description": "{action} für {entityType}",
@@ -54,9 +58,9 @@
           "overtimeViolations": "Überstundenverstöße: {count}",
           "pendingExceptions": "Ausstehende Ausnahmen: {count}",
           "restPeriodViolations": "Ruhezeitverstöße: {count}",
-          "statutoryFindings": "Gesetzliche Befunde: {critical} kritisch, {warning, plural, one {# Warnung} other {# Warnungen}}",
-          "statutoryAcknowledgements": "Gesetzliche Bestätigungen: {pending} ausstehend, {stale} durch neuere Arbeit oder Schichten ungültig",
-          "statutoryUnavailable": "Einige gesetzliche Prüfungen konnten nicht geladen werden."
+          "statutoryAcknowledgements": "Gesetzliche Bestätigungen: {pending} ausstehend, {stale} durch neuere Arbeiten oder Schichten ungültig geworden",
+          "statutoryFindings": "{warning, plural, one {Gesetzliche Feststellungen: {critical} kritisch, # Warnung} other {Gesetzliche Feststellungen: {critical} kritisch, # Warnungen}}",
+          "statutoryUnavailable": "Einige gesetzliche Überprüfungen konnten nicht geladen werden."
         }
       },
       "footer": {
@@ -64,18 +68,18 @@
         "refreshMeaning": "Durch Aktualisieren werden erfasste Signale neu geladen; Ergebnisse werden dabei nicht nach einer neuen Richtlinie neu bewertet."
       },
       "links": {
-        "inspectCompliance": "Compliance prüfen",
         "inspectInAuditLog": "Im Audit-Protokoll prüfen",
         "openAuditExport": "Audit-Export öffnen",
         "openAuditLog": "Audit-Protokoll öffnen",
-        "openComplianceSettings": "Compliance-Einstellungen öffnen",
         "reviewAuditExport": "Audit-Export überprüfen",
+        "reviewComplianceExceptions": "Compliance-Ausnahmen überprüfen",
+        "reviewPolicyViolations": "Richtlinienverstöße überprüfen",
         "statutoryDomain": {
           "minijob": "Minijob: {count} offen",
+          "on_call": "Rufbereitschaft: {count} offen",
           "short_term": "Kurzfristig: {count} offen",
           "working_student": "Werkstudierende: {count} offen",
-          "on_call": "Abrufarbeit: {count} offen",
-          "youth_apprentice": "Jugendliche & Azubis: {count} offen"
+          "youth_apprentice": "Jugendliche & Auszubildende: {count} offen"
         }
       },
       "loading": "Compliance-Signale werden geladen",
@@ -110,12 +114,12 @@
         },
         "workforceCompliance": {
           "headline": {
-            "critical": "Verstöße gegen die Personalrichtlinien oder gesetzliche Befunde erfordern eine Überprüfung",
-            "healthy": "Es wurden keine aktuellen Probleme bei den Personalrichtlinien und keine offenen gesetzlichen Befunde erkannt",
+            "critical": "Verstöße gegen die Personalrichtlinien erfordern eine Überprüfung",
+            "healthy": "Es wurden keine aktuellen Probleme bei den Personalrichtlinien erkannt",
             "warning": "Die Einhaltung der Personalrichtlinien weicht ab"
           },
-          "title": "Personal-Compliance",
-          "statutoryReviews": "Gesetzliche Prüfungen"
+          "statutoryReviews": "Gesetzliche Überprüfungen",
+          "title": "Personal-Compliance"
         }
       },
       "status": {
@@ -132,11 +136,6 @@
       }
     },
     "exception": {
-      "approved": "Ausnahme genehmigt",
-      "approvedDescription": "Die Compliance-Ausnahme wurde genehmigt.",
-      "approveFailed": "Genehmigung fehlgeschlagen",
-      "approveFor": "Ausnahme ({type}) für {name} genehmigen",
-      "loadError": "Ausstehende Ausnahmeanträge konnten nicht geladen werden.",
       "plannedDuration": "Geplant",
       "plannedDurationHelp": "Schätzen Sie, wie viel zusätzliche Zeit Sie über das Limit hinaus benötigen.",
       "plannedHours": "Geplante Stunden",
@@ -146,35 +145,16 @@
       "reason": "Grund für die Ausnahme",
       "reasonPlaceholder": "Erklären Sie, warum Sie diese Ausnahme benötigen (z. B. dringende Projektfrist, wichtiges Kundentreffen)...",
       "reasonRequiredDescription": "Bitte geben Sie einen Grund für Ihren Ausnahmeantrag an.",
-      "rejectDescription": "Geben Sie einen Grund für die Ablehnung dieses Ausnahmeantrags an (optional)",
-      "rejected": "Ausnahme abgelehnt",
-      "rejectedDescription": "Die Compliance-Ausnahme wurde abgelehnt.",
-      "rejectFailed": "Ablehnung fehlgeschlagen",
-      "rejectFor": "Ausnahme ({type}) für {name} ablehnen",
-      "rejectionPlaceholder": "Grund für die Ablehnung dieser Ausnahme eingeben...",
-      "rejectionReason": "Grund für die Ablehnung",
-      "rejectionReasonTooLong": "Der Grund darf maximal 500 Zeichen lang sein.",
-      "rejectTitle": "Ausnahmeantrag ablehnen",
       "requestDescription": "Beantragen Sie eine Vorabgenehmigung bei Ihrem Vorgesetzten, um trotz Compliance-Beschränkungen fortzufahren. Genehmigte Ausnahmen sind 24 Stunden lang gültig.",
-      "requestedAt": "Beantragt",
       "requestFailed": "Anfrage fehlgeschlagen",
       "requestSubmitted": "Ausnahmeantrag eingereicht",
       "requestSubmittedDescription": "Ihr Vorgesetzter wird benachrichtigt und kann Ihren Antrag genehmigen oder ablehnen.",
       "requestTitle": "Compliance-Ausnahme beantragen",
       "submit": "Antrag einreichen",
-      "type": "Ausnahmetyp",
-      "types": {
-        "overtimeDaily": "Tägliche Überstunden",
-        "overtimeMonthly": "Monatliche Überstunden",
-        "overtimeWeekly": "Wöchentliche Überstunden",
-        "restPeriod": "Ruhezeit"
-      }
+      "type": "Ausnahmetyp"
     },
     "hasApprovedException": "Sie haben eine genehmigte Ausnahme. Sie können fortfahren.",
     "moreAlerts": "mehr",
-    "noExceptions": "Keine ausstehenden Ausnahmeanträge",
-    "pendingExceptions": "Ausstehende Ausnahmeanträge",
-    "pendingExceptionsDescription": "Überprüfen Sie Ausnahmeanträge, die Ihre Genehmigung erfordern",
     "requestException": "Ausnahme beantragen",
     "restPeriodMessage": "Sie benötigen noch {time} Ruhezeit, bevor Sie sich einstempeln können. Nächste erlaubte Einstempelzeit: {nextTime}",
     "restPeriodRequired": "Ruhezeit erforderlich"

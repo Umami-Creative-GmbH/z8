@@ -409,6 +409,7 @@
         "clearSearch": "Pastro kërkimin",
         "clockReview": "Kërkon shqyrtim: regjistrimi i daljes gjatë largimit",
         "confirmRehire": "Konfirmo ripunësimin",
+        "contractorRehireHint": "Një Kontraktor i jashtëm nuk merr kushte punësimi, politikë pune ose pushime vjetore. Tarifat e kontraktorit caktohen veçmas.",
         "correctTime": "Korrigjo kohën",
         "currency": "Valuta",
         "currencyInvalid": "Futni një kod valute prej tre shkronjash.",
@@ -423,6 +424,10 @@
         "effectiveDescription": "Qasja përfundoi në {cutoff} ({timezone}).",
         "employmentGap": "Jo i punësuar {startDate} – {endDate}",
         "employmentStint": "Punësimi {startDate} – {endDate}",
+        "engagement": {
+          "employee": "Punonjës"
+        },
+        "engagementKind": "Angazhim",
         "errors": {
           "actorNotAuthorized": "Vetëm pronarët dhe administratorët e organizatës mund të menaxhojnë largimet e punonjësve.",
           "departureAlreadyEffective": "Ky largim tashmë ka hyrë në fuqi. Ripunësoni punonjësin për të rikthyer qasjen.",
@@ -668,6 +673,7 @@
           "employeeNotFound": "Punonjësi nuk u gjet.",
           "exceedsBalance": "Pagesa është më e madhe se bilanci i punës së punonjësit në fund të asaj dite.",
           "exceedsLaterBalance": "Pagesa do ta linte bilancin e punës nën zero pas një pagese të mëvonshme të orëve shtesë. Anulojeni atë pagesë së pari ose regjistroni më pak.",
+          "externalContractorDay": "Në këtë ditë personi punon si Kontraktor i jashtëm, kështu që listëpagesa nuk do ta paguante kurrë këtë pagesë. Caktojeni në një ditë kur ata ishin të punësuar.",
           "failed": "Bilanci i punës nuk mund të përditësohej. Provoni përsëri.",
           "futureDay": "Dita nuk mund të jetë pas ditës së sotme në zonën kohore të punonjësit.",
           "invalidInput": "Kontrolloni ditën, orët dhe minutat, si dhe arsyen.",

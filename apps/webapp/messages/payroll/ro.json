@@ -589,12 +589,14 @@
       "reason": {
         "apiConnector": "Acest format este un conector API, care nu include niciodată sumele cheltuielilor.",
         "currencyNotEur": "Nu este în euro: rulările de salarizare conțin doar sume în euro.",
+        "earlierClaim": "Cererile anterioare nu sunt plătite niciodată prin statul de plată.",
+        "externalContractorDays": "Zilele sale se încadrează într-o colaborare de tip Contractant extern: statul de plată nu o include niciodată.",
         "includedInOtherRun": "Inclus în rularea de salarizare neconfirmată {period} ({format}).",
-        "legacyClaim": "Cererile de decontare vechi nu sunt plătite niciodată prin salarizare.",
         "negativeDifference": "O ajustare a redus ceea ce includeau rulările de salarizare anterioare pentru: {kinds}.",
         "noStatutoryBaseline": "Nicio bază legală pentru: {items}.",
         "nothingOwed": "Liniile sale de salarizare nu mai lasă nimic de preluat în salarizare.",
         "reimbursedOutsidePayroll": "Deja plătit parțial prin transfer bancar sau recuperat: salarizarea nu poate prelua restul.",
+        "spansEngagementChange": "Zilele sale acoperă o tranziție între angajat și Contractant extern: statul de plată nu include nicio parte din aceasta.",
         "unmappedWageType": "Niciun tip de salariu nu este mapat pentru acest format pentru: {kinds}."
       },
       "title": "Rapoarte de cheltuieli pe care această rulare de salarizare nu le va include",

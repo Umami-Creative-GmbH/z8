@@ -51,6 +51,7 @@
       "overtime": "Ore suplimentare: {count}",
       "publishing": "Se publică…",
       "restTime": "Timp de odihnă: {count}",
+      "statutory": "Limite legale: {count}",
       "totalFindings": "{count, plural, one {# constatare în total} other {# constatări în total}}",
       "warningsDetectedBeforePublish": "Avertismente detectate înainte de publicare"
     },
@@ -61,6 +62,7 @@
         "maxHours": "Ore maxime: {count}",
         "overtime": "Ore suplimentare: {count}",
         "restTime": "Timp de odihnă: {count}",
+        "statutory": "Limite legale: {count}",
         "title": "Avertismente de conformitate în acest interval de date"
       },
       "focus": {
@@ -73,7 +75,8 @@
       "open": "Tură deschisă",
       "publish": {
         "failed": "Publicarea turelor a eșuat",
-        "published": "S-au publicat {count} tură(e)"
+        "published": "S-au publicat {count} tură(e)",
+        "statutoryBlocked": "Unele ture încalcă limitele de protecție a muncii pentru tineri (JArbSchG). Modificați turele sau confirmați o excepție sectorială legală înainte de publicare."
       },
       "retry": "Reîncearcă",
       "shiftList": "Listă de ture",
@@ -82,6 +85,7 @@
         "overlapDescription": "Această tură se suprapune cu alte {count} tură(e)",
         "overlapWarning": "Tură salvată cu avertisment de suprapunere",
         "skillOverrideReasonRequired": "Angajatul nu deține o competență necesară în această zi. Deschideți tura pentru a introduce un motiv.",
+        "statutoryBlocked": "Această modificare a unei ture publicate încalcă limitele de protecție a muncii pentru tineri (JArbSchG) dincolo de ceea ce a fost deja publicat. Modificați tura astfel încât să nu încalce nicio limită din nou sau suplimentar. O excepție sectorială poate fi confirmată doar pentru o tură salvată: pentru a planifica cu o excepție, adăugați-o ca tură ciornă, confirmați excepția, apoi publicați-o.",
         "updated": "Tură actualizată"
       },
       "supportFailed": "Șabloanele sau informațiile de conformitate nu au putut fi reîmprospătate. Verificați din nou înainte de a publica.",
@@ -154,6 +158,7 @@
       "rejectFailed": "Respingerea cererii a eșuat",
       "rejectReason": "Motivul respingerii (opțional)",
       "shiftWhen": "{date}, {start}–{end}",
+      "statutoryBlocked": "Aprobarea acestei cereri ar încălca limitele de protecție a muncii pentru tineri (JArbSchG) pentru angajatul care preia tura. Respingeți cererea sau cereți altei persoane să preia tura.",
       "swapSummary": "{requester} dorește să cedeze această tură către {target}",
       "swapWithoutTarget": "{requester} dorește să cedeze această tură, dar nu a specificat un coleg",
       "title": "Cereri de tură",
@@ -207,6 +212,95 @@
         "overtime": "{period, select, daily {Ore suplimentare zilnice} weekly {Ore suplimentare săptămânale} other {Ore suplimentare lunare}} ({total} din {threshold} h)",
         "pendingAbsence": "Absență în așteptare: {category}",
         "restTime": "Perioadă de odihnă prea scurtă ({rest} din {required} h)"
+      }
+    },
+    "statutory": {
+      "apprenticeship": {
+        "blockWeekTraining": "Săptămână de formare în bloc: {used} min de muncă în zilele de școală din această săptămână, {limit} min de instruire în companie permise; limita depășită în această zi",
+        "blockWeekTrainingNote": "Instruirea permisă (§ 9 alin. 1 nr. 3 JArbSchG, § 15 alin. 1 teza 3 BBiG) se adaugă la săptămâna de formare în bloc, care se calculează cu timpul mediu săptămânal de lucru (§ 9 alin. 2 nr. 2 JArbSchG) și nu se ia în considerare pentru limitele zilnice și săptămânale conform § 8 pentru persoanele sub 18 ani",
+        "blockWeekTrainingWeek": "Săptămână de formare în bloc: {used} min de muncă în zilele de școală din această săptămână, {limit} min de instruire în companie permise; limita depășită pe {date}",
+        "releaseDayShift": "Zi de scutire pentru ucenic: zi de școală, de formare în bloc sau de examen",
+        "releaseDayShiftOn": "Zi de scutire pentru ucenic pe {date}: zi de școală, de formare în bloc sau de examen",
+        "workplaceReturn": "Sub 18 ani: nu se lucrează în această zi, fiind ziua întreagă de școală profesională din săptămână",
+        "workplaceReturnOn": "Sub 18 ani: nu se lucrează pe {date}, fiind ziua întreagă de școală profesională din săptămână"
+      },
+      "domain": {
+        "apprenticeship": "Scutire pentru ucenici (BBiG)",
+        "minijob": "Limită Minijob",
+        "onCall": "Muncă la cerere (§ 12 TzBfG)",
+        "shortTerm": "Limită pentru angajare pe termen scurt",
+        "workingStudent": "Limită pentru student angajat",
+        "youthProtection": "Protecția tinerilor la locul de muncă (JArbSchG)"
+      },
+      "findings": {
+        "acknowledgeListLabel": "Constatări legale de confirmat",
+        "blockedTitle": "Publicare refuzată",
+        "blockingListLabel": "Constatări care blochează publicarea",
+        "blocksPublishing": "Blochează publicarea",
+        "close": "Închide",
+        "hide": "Ascunde constatările legale ({count})",
+        "hideOfTotal": "Ascunde constatările legale ({count} din {total})",
+        "listLabel": "Constatări legale",
+        "openReviews": "Deschide în Revizuiri și conflicte",
+        "outsideScope": "{count, plural, one {# altă constatare vizează un angajat pe care nu îl gestionați.} other {# alte constatări vizează angajați pe care nu îi gestionați.}}",
+        "outsideScopeOnly": "{count, plural, one {# constatare vizează un angajat pe care nu îl gestionați.} other {# constatări vizează angajați pe care nu îi gestionați.}}",
+        "severity": {
+          "critical": "Critic",
+          "info": "Notă",
+          "warning": "Avertisment"
+        },
+        "show": "Afișează constatările legale ({count})",
+        "showOfTotal": "Afișează constatările legale ({count} din {total})",
+        "showShifts": "Afișează turele lui {name}",
+        "unnamedEmployee": "Angajat fără nume",
+        "weekOf": "Săptămâna din {date}"
+      },
+      "jarbschg": {
+        "break": "Sub 18 ani: {used} min de pauză efectuate, {limit} min necesare",
+        "dailyMax": "Sub 18 ani: {used} min de muncă în această zi depășesc limita de {limit} min pentru minori",
+        "dailyMaxOn": "Sub 18 ani: {used} min de muncă pe {date} depășesc limita de {limit} min pentru minori",
+        "daysPerWeek": "Sub 18 ani: {used} zile lucrătoare în această săptămână, maximum {limit} permise",
+        "holidayProhibited": "Sub 18 ani: {used} min de muncă interzisă: niciuna după {cutoff} pe 24 sau 31 decembrie, ori pe 25 decembrie, 1 ianuarie, duminica de Paște sau 1 mai; nicio excepție nu o permite",
+        "holidayWork": "Sub 18 ani: munca într-o sărbătoare legală necesită o excepție legală sectorială",
+        "nightWork": "Sub 18 ani: {used} min de muncă de noapte între {from} și {until}",
+        "nightWorkBeyondSector": "Sub 18 ani: {minutes} min de muncă de noapte în afara orelor permise de o excepție sectorială (de la 15 ani: {from15} până la {until15}; de la 16 ani până la {until16}; de la 17 ani în brutării de la {bakeryFrom17}; niciuna sub 15 ani); nicio excepție nu o permite",
+        "restPeriod": "Sub 18 ani: doar {used} min de repaus înainte de această tură, {limit} min necesare",
+        "saturdayWork": "Sub 18 ani: munca sâmbăta necesită o excepție legală sectorială",
+        "shiftSpan": "Sub 18 ani: intervalul turei este de {used} min, de la prima activitate până la sfârșitul ultimei; maximum {limit} min permise (11 h în ospitalitate, agricultură, creșterea animalelor și pe șantiere)",
+        "shiftSpanOn": "Sub 18 ani: intervalul turei pe {date} este de {used} min, de la prima activitate până la sfârșitul ultimei; maximum {limit} min permise (11 h în ospitalitate, agricultură, creșterea animalelor și pe șantiere)",
+        "sundayWork": "Sub 18 ani: munca duminica necesită o excepție legală sectorială",
+        "uninterrupted": "Sub 18 ani: {used} min lucrate fără pauză, maximum {limit} min permise",
+        "weeklyMax": "Sub 18 ani: {used} min de muncă în această săptămână depășesc limita de {limit} min pentru minori",
+        "weeklyMaxWeekOf": "Sub 18 ani: {used} min de muncă în săptămâna din {date} depășesc limita de {limit} min pentru minori"
+      },
+      "minijob": {
+        "monthlyApproaching": "Limita lunară pentru minijob se apropie",
+        "monthlyDocumented": "Limita lunară pentru minijob a fost depășită (documentată ca neprevăzută)",
+        "monthlyExceeded": "Limita lunară pentru minijob a fost depășită",
+        "rollingApproaching": "Limita de venit pe 12 luni pentru minijob se apropie",
+        "rollingExceeded": "Limita de venit pe 12 luni pentru minijob a fost depășită"
+      },
+      "onCall": {
+        "nearBand": "Muncă la cerere: săptămâna la {used}, aproape de limita intervalului de solicitare de {limit}",
+        "overBand": "Muncă la cerere: săptămâna la {used}, peste intervalul de solicitare de {limit}",
+        "shortCall": "Muncă la cerere: solicitarea de {duration} este sub minimul de {minimum}",
+        "shortNotice": "{days, plural, one {Muncă la cerere: preaviz de # zi întreagă, {required} necesare (§ 12 Abs. 3 TzBfG)} other {Muncă la cerere: preaviz de # zile întregi, {required} necesare (§ 12 Abs. 3 TzBfG)}}",
+        "shortWorkCall": "Muncă la cerere: s-a lucrat o solicitare de {duration}, sub solicitarea minimă de {minimum}",
+        "underBand": "Muncă la cerere: săptămâna la {used}, sub intervalul de solicitare de {limit}"
+      },
+      "shortTerm": {
+        "calendarDaysExceeded": "Limită de 3 luni pe termen scurt depășită: {used} din {limit} zile calendaristice în acest an",
+        "calendarDaysRemaining": "Muncă pe termen scurt (limită de 3 luni): {remaining} din {limit} zile calendaristice rămase în acest an",
+        "daysExceeded": "Limita de zile pe termen scurt depășită: {used} din {limit} zile lucrătoare în acest an",
+        "daysRemaining": "Muncă pe termen scurt: {remaining} din {limit} zile lucrătoare rămase în acest an"
+      },
+      "warning": "{area}: limită legală în pericol",
+      "warningApproaching": "{area}: se apropie de limita legală",
+      "warningExceeded": "{area}: limită legală depășită",
+      "warningPercent": "{area}: {percent} % din limita legală",
+      "workingStudent": {
+        "ceiling": "Student angajat: {used} din {limit} săptămâni peste 20 h în 12 luni",
+        "lectureWeek": "Student angajat >20 h în săptămâna de cursuri: {hours} h de muncă în timpul zilei în zile lucrătoare (limită {limit} h)"
       }
     },
     "templates": {

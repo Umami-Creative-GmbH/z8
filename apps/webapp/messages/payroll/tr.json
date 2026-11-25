@@ -589,12 +589,14 @@
       "reason": {
         "apiConnector": "Bu biçim bir API bağlayıcısıdır ve hiçbir zaman harcama tutarlarını taşımaz.",
         "currencyNotEur": "Euro cinsinden değil: Bordro çalıştırmaları yalnızca euro tutarlarını taşır.",
+        "earlierClaim": "Önceki talepler hiçbir zaman bordro üzerinden ödenmez.",
+        "externalContractorDays": "Günleri bir Dış Yüklenici görevine denk geliyor: bordro bunu asla kapsamaz.",
         "includedInOtherRun": "Onaylanmamış {period} ({format}) bordro çalıştırmasına dahil edildi.",
-        "legacyClaim": "Eski talepler hiçbir zaman bordro aracılığıyla ödenmez.",
         "negativeDifference": "Yapılan bir düzeltme, önceki bordro çalıştırmalarının şunlar için içerdiği tutarı düşürdü: {kinds}.",
         "noStatutoryBaseline": "Şunlar için yasal taban yok: {items}.",
         "nothingOwed": "Bordro satırları, bordronun taşıyabileceği hiçbir şey bırakmıyor.",
         "reimbursedOutsidePayroll": "Banka havalesiyle kısmen ödendi veya tahsil edildi: Kalan kısım bordroya aktarılamaz.",
+        "spansEngagementChange": "Günleri, çalışan ve Dış Yüklenici arasındaki bir değişikliği kapsıyor: bordro bunun hiçbir kısmını kapsamaz.",
         "unmappedWageType": "Şunlar için bu biçimde eşlenmiş ücret türü yok: {kinds}."
       },
       "title": "Bu bordro çalıştırmasının taşımayacağı harcama raporları",

@@ -80,6 +80,7 @@
     "pendingApprovals": "Ausstehende Genehmigungen",
     "pendingExceptionRequests": "{count, plural, one {# ausstehende Ausnahme-Anfrage wartet auf Überprüfung} other {# ausstehende Ausnahme-Anfragen warten auf Überprüfung}}",
     "returns": "Rückkehr am {date}",
+    "reviewComplianceExceptions": "Ausnahmeanträge überprüfen",
     "since": "Seit {time}",
     "textClockedInEmployee": "• {name} - seit {clockedInAt} ({duration})",
     "textCompliance": "**⚠️ Compliance:**",

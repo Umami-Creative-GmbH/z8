@@ -589,12 +589,14 @@
       "reason": {
         "apiConnector": "Este formato es un conector de API, que nunca incluye importes de gastos.",
         "currencyNotEur": "No está en euros: las ejecuciones de nómina solo admiten importes en euros.",
+        "earlierClaim": "Las reclamaciones anteriores nunca se pagan a través de la nómina.",
+        "externalContractorDays": "Sus días corresponden a una contratación de contratista externo: la nómina nunca lo incluye.",
         "includedInOtherRun": "Incluido en la ejecución de nómina sin confirmar {period} ({format}).",
-        "legacyClaim": "Las reclamaciones heredadas nunca se pagan a través de la nómina.",
         "negativeDifference": "Un ajuste redujo lo que incluían ejecuciones de nómina anteriores para: {kinds}.",
         "noStatutoryBaseline": "Sin base legal para: {items}.",
         "nothingOwed": "Sus líneas de nómina no dejan nada pendiente para que la nómina lo incluya.",
         "reimbursedOutsidePayroll": "Ya se ha pagado parcialmente por transferencia bancaria o recuperado: la nómina no puede asumir el resto.",
+        "spansEngagementChange": "Sus días abarcan un cambio entre empleado y contratista externo: la nómina no incluye ninguna parte.",
         "unmappedWageType": "No hay ningún tipo de salario asignado en este formato para: {kinds}."
       },
       "title": "Informes de gastos que esta ejecución de nómina no incluirá",

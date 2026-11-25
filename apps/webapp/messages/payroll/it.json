@@ -589,12 +589,14 @@
       "reason": {
         "apiConnector": "Questo formato è un connettore API, che non include mai importi di spesa.",
         "currencyNotEur": "Non in euro: le elaborazioni paghe supportano solo importi in euro.",
+        "earlierClaim": "Le richieste precedenti non vengono mai liquidate tramite busta paga.",
+        "externalContractorDays": "I relativi giorni rientrano in un incarico come collaboratore esterno: la busta paga non la gestisce mai.",
         "includedInOtherRun": "Incluso nell'elaborazione paghe non confermata {period} ({format}).",
-        "legacyClaim": "Le note spese legacy non vengono mai liquidate tramite busta paga.",
         "negativeDifference": "Una rettifica ha ridotto l'importo trasferito dalle precedenti elaborazioni paghe per: {kinds}.",
         "noStatutoryBaseline": "Nessuna base normativa per: {items}.",
         "nothingOwed": "Le relative voci non lasciano alcun importo residuo da trasferire nella busta paga.",
         "reimbursedOutsidePayroll": "Già parzialmente pagato tramite bonifico o recuperato: la busta paga non può coprire la parte restante.",
+        "spansEngagementChange": "I relativi giorni comprendono un passaggio tra dipendente e collaboratore esterno: nessuna parte viene elaborata nella busta paga.",
         "unmappedWageType": "Nessuna voce retributiva mappata per questo formato per: {kinds}."
       },
       "title": "Note spese non incluse in questa elaborazione paghe",

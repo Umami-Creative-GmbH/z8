@@ -20,6 +20,10 @@
           "description": "Kürzlich ungültigi Prüefige: {invalidVerifications}",
           "title": "Audit-Prüefig fehlgschlage"
         },
+        "pendingExceptions": {
+          "description": "{count, plural, one {# Compliance-Ausnahme wartet auf einen Entscheid} other {# Compliance-Ausnahmen warten auf einen Entscheid}}",
+          "title": "Ausstehende Compliance-Ausnahmen"
+        },
         "sensitiveAction": {
           "description": "{action} uf {entityType}",
           "title": "Sensibli Aktion: {action}"
@@ -53,7 +57,10 @@
           "generalPolicyViolations": "Anderi Richtlinienverstöss: {count}",
           "overtimeViolations": "Überziitverstöss: {count}",
           "pendingExceptions": "Offeni Uusnahme: {count}",
-          "restPeriodViolations": "Ruehziitverstöss: {count}"
+          "restPeriodViolations": "Ruehziitverstöss: {count}",
+          "statutoryAcknowledgements": "Gesetzliche Bestätigungen: {pending} ausstehend, {stale} durch neuere Arbeit oder Schichten ungültig geworden",
+          "statutoryFindings": "{warning, plural, one {Gesetzliche Feststellungen: {critical} kritisch, # Warnung} other {Gesetzliche Feststellungen: {critical} kritisch, # Warnungen}}",
+          "statutoryUnavailable": "Einige gesetzliche Überprüfungen konnten nicht geladen werden."
         }
       },
       "footer": {
@@ -61,12 +68,19 @@
         "refreshMeaning": "Durch Aktualisieren werden erfasste Signale neu geladen; Befunde werden dabei nicht nach einer neuen Richtlinie neu bewertet."
       },
       "links": {
-        "inspectCompliance": "Compliance prüefe",
         "inspectInAuditLog": "Im Audit-Log prüefe",
         "openAuditExport": "Audit-Export öffne",
         "openAuditLog": "Audit-Protokoll öffne",
-        "openComplianceSettings": "Compliance-Iistellige öffne",
-        "reviewAuditExport": "Audit-Export überprüefe"
+        "reviewAuditExport": "Audit-Export überprüefe",
+        "reviewComplianceExceptions": "Compliance-Ausnahmen überprüfen",
+        "reviewPolicyViolations": "Richtlinienverstösse überprüfen",
+        "statutoryDomain": {
+          "minijob": "Minijob: {count} offen",
+          "on_call": "Pikett: {count} offen",
+          "short_term": "Kurzfristig: {count} offen",
+          "working_student": "Werkstudenten: {count} offen",
+          "youth_apprentice": "Jugendliche & Lernende: {count} offen"
+        }
       },
       "loading": "Compliance-Signale werden geladen",
       "overview": "Compliance-Übersicht",
@@ -104,6 +118,7 @@
             "healthy": "Es sind chürzlich kei Problem mit de Personalrichtlinie gmäldet worde",
             "warning": "D'Personal-Compliance driftet ab"
           },
+          "statutoryReviews": "Gesetzliche Überprüfungen",
           "title": "Personal-Compliance"
         }
       },
@@ -121,11 +136,6 @@
       }
     },
     "exception": {
-      "approved": "Ausnahme genehmigt",
-      "approvedDescription": "Die Compliance-Ausnahme wurde genehmigt.",
-      "approveFailed": "Genehmigung fehlgeschlagen",
-      "approveFor": "Ausnahme ({type}) für {name} genehmigen",
-      "loadError": "Ausstehende Ausnahmeanträge konnten nicht geladen werden.",
       "plannedDuration": "Geplant",
       "plannedDurationHelp": "Schätzen Sie, wie viel zusätzliche Zeit Sie über das Limit hinaus benötigen.",
       "plannedHours": "Planti Stunde",
@@ -135,35 +145,16 @@
       "reason": "Grund für die Ausnahme",
       "reasonPlaceholder": "Erklären Sie, warum Sie diese Ausnahme benötigen (z. B. dringende Projektfrist, wichtiges Kundentreffen)...",
       "reasonRequiredDescription": "Bitte geben Sie einen Grund für Ihren Ausnahmeantrag an.",
-      "rejectDescription": "Geben Sie einen Grund für die Ablehnung dieses Ausnahmeantrags an (optional)",
-      "rejected": "Ausnahme abgelehnt",
-      "rejectedDescription": "Die Compliance-Ausnahme wurde abgelehnt.",
-      "rejectFailed": "Ablehnung fehlgeschlagen",
-      "rejectFor": "Ausnahme ({type}) für {name} ablehnen",
-      "rejectionPlaceholder": "Grund für die Ablehnung dieser Ausnahme eingeben...",
-      "rejectionReason": "Grund für die Ablehnung",
-      "rejectionReasonTooLong": "Der Grund darf maximal 500 Zeichen lang sein.",
-      "rejectTitle": "Ausnahmeantrag ablehnen",
       "requestDescription": "Beantragen Sie eine Vorabgenehmigung bei Ihrem Vorgesetzten, um trotz Compliance-Beschränkungen fortzufahren. Genehmigte Ausnahmen sind 24 Stunden lang gültig.",
-      "requestedAt": "Beantragt",
       "requestFailed": "Anfrage fehlgeschlagen",
       "requestSubmitted": "Ausnahmeantrag eingereicht",
       "requestSubmittedDescription": "Ihr Vorgesetzter wird benachrichtigt und kann Ihren Antrag genehmigen oder ablehnen.",
       "requestTitle": "Compliance-Ausnahme beantragen",
       "submit": "Antrag einreichen",
-      "type": "Ausnahmetyp",
-      "types": {
-        "overtimeDaily": "Tägliche Überzeit",
-        "overtimeMonthly": "Monatliche Überzeit",
-        "overtimeWeekly": "Wöchentliche Überzeit",
-        "restPeriod": "Ruhezeit"
-      }
+      "type": "Ausnahmetyp"
     },
     "hasApprovedException": "Sie haben eine genehmigte Ausnahme. Sie können fortfahren.",
     "moreAlerts": "mehr",
-    "noExceptions": "Keine ausstehenden Ausnahmeanträge",
-    "pendingExceptions": "Ausstehende Ausnahmeanträge",
-    "pendingExceptionsDescription": "Überprüfen Sie Ausnahmeanträge, die Ihre Genehmigung erfordern",
     "requestException": "Ausnahme beantragen",
     "restPeriodMessage": "Sie benötigen noch {time} Ruhezeit, bevor Sie sich einstempeln können. Nächste erlaubte Einstempelzeit: {nextTime}",
     "restPeriodRequired": "Ruhezeit erforderlich"

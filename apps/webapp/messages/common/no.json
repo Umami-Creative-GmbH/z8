@@ -208,7 +208,6 @@
     "adding": "Legger til...",
     "all": "Alle",
     "appName": "Z8",
-    "approve": "Godkjenn",
     "assign": "Tildel",
     "back": "Tilbake",
     "backToDashboard": "Tilbake til kontrollpanelet",
@@ -372,6 +371,94 @@
       "bellLabel": "{count, plural, =0 {Varsler} other {Varsler (# uleste)}}"
     },
     "offline": "Frakoblet",
+    "onCall": {
+      "agreementDocumented": "Avtale dokumentert",
+      "agreementStale": "Vakten er endret siden avtalen",
+      "finding": {
+        "nearBand": "Uke avropt for {used}, nærmer seg grensen for avropsrammen på {limit}",
+        "other": "Tilkallingsregel i fare",
+        "overBand": "Uke avropt for {used}, over avropsrammen på {limit}",
+        "shortCall": "Vakt på {duration} er kortere enn minimumsinnkallingen på {minimum}",
+        "shortNotice": "{days, plural, one {Innkalt med # hel dags varsel; {required} kreves} other {Innkalt med # hele dagers varsel; {required} kreves}}",
+        "shortWorkCall": "Jobbet en innkalling på {duration}, kortere enn minimumsinnkallingen på {minimum}",
+        "underBand": "Uke avropt for {used}, under avropsrammen på {limit}"
+      },
+      "findingsTitle": "Kontroller for de siste og neste fire ukene",
+      "hoursKind": {
+        "exact": "Nøyaktig avtalte uketimer",
+        "maximum": "Maksimalt antall uketimer (ned til −20 %)",
+        "minimum": "Minimalt antall uketimer (opp til +25 %)",
+        "unspecified": "Ingen uketimer avtalt (20 t gjelder)"
+      },
+      "minimumCall": "Minimumsinnkalling {duration}",
+      "noFindings": "Ingen tilkallingsregel er i fare.",
+      "notToday": "Ikke på tilkalling i dag.",
+      "payroll": {
+        "continuedPaySpan": "Det skyldes lønn under sykdom fra {from} til {until} (§ 3 EFZG)",
+        "description": "Gjennomsnittlig arbeidstid før hvert sykefravær eller hver helligdag for tilkallingsansatte i denne perioden, for å klargjøre lønn under sykdom. Ingenting her endrer fastsatte dager.",
+        "hide": "Skjul detaljer",
+        "holidaysPaidAsHolidays": "Helligdager under sykdommen betales som egne rader, ikke som sykedager: {dates}",
+        "paidSickDays": "{days, plural, one {Sykepenger for # dag i denne perioden} other {Sykepenger for # dager i denne perioden}}",
+        "perDay": "{duration} per dag",
+        "rangeTooLong": "Referansetimer vises for maksimalt tre måneder om gangen. Velg en kortere periode.",
+        "show": "Vis detaljer",
+        "sickPayExhausted": "Ingen sykepenger i denne perioden: de seks ukene med lønn under sykdom opphørte {date} (§ 3 Abs. 1 EFZG)",
+        "sickPayGuidanceLabel": "Veiledning for lønnsavregning",
+        "sickPayGuidanceNote": "Sykepengelinjene er veiledende i henhold til § 3 EFZG; lønnssystemet avgjør om og hvor mye lønn under sykdom som utbetales.",
+        "sickPayNotOwed": "Det skyldes ingen sykepenger for denne sykdommen: den opphørte innen de første fire ukene av ansettelsesforholdet (§ 3 Abs. 3 EFZG)",
+        "sickPayWaiting": "Ingen sykepenger i denne perioden: kravet oppstår {date}, etter fire ukers ansettelse (§ 3 Abs. 3 EFZG)",
+        "title": "Referansetimer for tilkalling (§ 12 TzBfG)"
+      },
+      "reference": {
+        "calculate": "Beregn",
+        "dateRequired": "Velg en dato.",
+        "denominator": "Talte dager",
+        "denominatorValue": "{counted} av {total} dager",
+        "description": "Kun til informasjon: lønnskjøringen avgjør hva som utbetales. Ingenting her endrer avregnede dager eller lukkede måneder.",
+        "eventDate": "Beregn for én dag",
+        "excluded": {
+          "notEmployed": "Ikke ansatt",
+          "paidAbsence": "Permisjon eller sykdom",
+          "publicHoliday": "Helligdag",
+          "unpaidAbsence": "Ulønnet fravær"
+        },
+        "excludedPeriod": "{days, plural, one {{from} – {until}: {reason} (# dag)} other {{from} – {until}: {reason} (# dager)}}",
+        "excludedTitle": "Utelatt fra gjennomsnittet",
+        "noEvents": "Ingen sykemelding eller helligdag på en tilkallingsdag de siste tre månedene.",
+        "none": "—",
+        "numerator": "Arbeidet tid",
+        "perDay": "Gjennomsnitt per dag",
+        "periodThirteenWeeks": "Referanseperiode (13 uker): {from} – {until}",
+        "periodThreeMonths": "Referanseperiode (3 måneder): {from} – {until}",
+        "perWeek": "Gjennomsnitt per uke",
+        "perWorkedDay": "Gjennomsnitt per arbeidet dag",
+        "publicHoliday": "Helligdag {date}",
+        "shortened": "Arbeidsforholdet startet i referanseperioden, så den kortere perioden gjelder.",
+        "sickLeave": "Sykemelding fra {date}",
+        "thirteenWeeks": "13 uker",
+        "threeMonths": "3 måneder",
+        "title": "Referansetimer for sykepenger og ferie",
+        "workedDays": "Dager arbeidet"
+      },
+      "reviews": {
+        "acknowledge": "Dokumenter avtale",
+        "acknowledged": "Avtale dokumentert",
+        "changed": "Vakten er endret siden denne listen ble lastet inn. Se over den på nytt før du dokumenterer avtalen.",
+        "description": "Tilkallinger på kort varsel, vakter under minimumstiden og uker utenfor tilkallingsrammen de siste og neste fire ukene. Stempling blokkeres aldri.",
+        "documented": "Avtale dokumentert: {reason}",
+        "draft": "Ikke publisert ennå. Publiser vakten før du dokumenterer den ansattes samtykke.",
+        "empty": "Ingen tilkallingsfunn å gjennomgå.",
+        "notOpen": "Vakten har ikke lenger noe varsel om kort frist.",
+        "notPublished": "Vakten er ikke publisert ennå. Publiser den før du dokumenterer den ansattes samtykke.",
+        "reason": "Ansattes frivillige samtykke (§ 12 Abs. 3 TzBfG)",
+        "reasonRequired": "Beskriv hvordan den ansatte samtykket til det korte varselet.",
+        "stale": "Vakten ble endret etter at avtalen ble dokumentert. Dokumenter den på nytt hvis den fortsatt gjelder.",
+        "title": "Arbeid på tilkalling (§ 12 TzBfG)"
+      },
+      "statutoryMinimumCall": "Lovfestet minimumsinnkalling gjelder",
+      "title": "Arbeid på tilkalling (§ 12 TzBfG)",
+      "weekly": "{duration} per uke"
+    },
     "open": "Åpne",
     "openEnded": "Uten sluttdato",
     "openMenu": "Åpne meny",
@@ -425,8 +512,6 @@
     "refreshData": "Oppdater data",
     "refreshDataFailed": "Kunne ikke oppdatere data. Prøv igjen.",
     "refreshing": "Oppdaterer...",
-    "reject": "Avvis",
-    "rejecting": "Avviser…",
     "remove": "Fjern",
     "removing": "Fjerner...",
     "reset": "Tilbakestill",
@@ -596,6 +681,90 @@
     },
     "yes": "Ja"
   },
+  "contractorCompensation": {
+    "dayUnitRules": {
+      "anyWorkFullDay": "Enhver dag med arbeid teller som en hel dag",
+      "halfAndFullDay": "Halv dag opptil {minutes} min, hel dag over",
+      "proratedCapped": "Forholdsmessig beregnet basert på en dag på {minutes} minutter, maksimalt én dag",
+      "proratedUncapped": "Forholdsmessig beregnet basert på en dag på {minutes} minutter, uten tak"
+    }
+  },
+  "contractorStatement": {
+    "approvedOnly": "Kun godkjent arbeid vises. Arbeid som venter på godkjenning legges til så snart det er godkjent.",
+    "awaitingApprovalExcluded": "Arbeidsperioder som venter på godkjenning, ikke inkludert: {count}",
+    "basis": {
+      "daily": "Dagsats",
+      "hourly": "Timesats"
+    },
+    "byProject": "Etter prosjekt",
+    "columns": {
+      "amount": "Beløp",
+      "basis": "Betalt av",
+      "currency": "Valuta",
+      "date": "Dato",
+      "dayUnitRule": "Regel for dagsenhet",
+      "end": "Slutt",
+      "project": "Prosjekt",
+      "rate": "Sats",
+      "rowType": "Radtype",
+      "start": "Start",
+      "task": "Oppgave",
+      "time": "Tid (lokal)",
+      "unit": "Enhet",
+      "units": "Enheter",
+      "workedMinutes": "Arbeidede minutter"
+    },
+    "company": "Selskap",
+    "contractor": "Oppdragstaker",
+    "contractorNumber": "Oppdragstakernummer",
+    "empty": "Ikke noe fullført arbeid som ekstern oppdragstaker i denne perioden.",
+    "errors": {
+      "failed": "Spesifikasjonen kunne ikke opprettes",
+      "invalidPeriod": "Velg en periode på maksimalt ett år hvor første dag ikke er etter den siste.",
+      "notAllowed": "Du kan bare laste ned dine egne spesifikasjoner.",
+      "notContractor": "Denne personen hadde ingen engasjementer som ekstern oppdragstaker i denne perioden.",
+      "notFound": "Denne personen ble ikke funnet i organisasjonen din."
+    },
+    "export": {
+      "adminDescription": "Last ned hva denne eksterne oppdragstakeren har arbeidet og hva de avtalte satsene priser det til, for å kontrollere fakturaen. En kontrollspesifikasjon, ikke en faktura.",
+      "csv": "CSV for regneark",
+      "download": "Last ned spesifikasjon",
+      "downloaded": "Spesifikasjon lastet ned",
+      "format": "Format",
+      "from": "Fra",
+      "fromRequired": "Velg første dag",
+      "pdf": "PDF",
+      "selfDescription": "Last ned registrert arbeid og hva de avtalte satsene dine priser det til, for å forberede eller kontrollere fakturaen din. En kontrollspesifikasjon, ikke en faktura.",
+      "title": "Time- og honorarspesifikasjon",
+      "to": "Til",
+      "toBeforeFrom": "Den siste dagen kan ikke være før den første dagen",
+      "toRequired": "Velg siste dag"
+    },
+    "generated": "Generert (UTC)",
+    "noProject": "Uten prosjekt",
+    "noRate": "Ingen sats gjelder",
+    "notice": "Kun kontrollspesifikasjon. Ikke en faktura eller kreditnota for egenfakturering (Gutschrift): Z8 utsteder aldri fakturaer. Den lister opp arbeidet som er registrert i Z8 og hva oppdragstakerens avtalte satser priser det til, slik at en faktura kan kontrolleres mot den.",
+    "organization": "Organisasjon",
+    "page": "Side",
+    "period": "Periode",
+    "referenceCode": "PO- eller kostnadsstedsreferanse",
+    "rows": {
+      "day": "Dag",
+      "total": "Totalt",
+      "unpriced": "Ikke priset",
+      "work": "Arbeid"
+    },
+    "times": "Dager er oppdragstakerens lokale kalenderdager; klokkeslett vises med UTC-forskyvningen registrert med arbeidet.",
+    "title": "Bekreftelse på oppdragstakers tid og honorar",
+    "totals": "Totalt",
+    "units": {
+      "days": "Dager",
+      "hours": "Timer"
+    },
+    "unpricedNotice": "Enkelte arbeider hadde ingen avtalt sats den aktuelle dagen. De er oppført uten beløp og er ikke inkludert i totalsummen.",
+    "vatId": "MVA-nummer",
+    "workedHours": "Arbeidstimer"
+  },
   "drivingLicence": {
     "applyingInterval": "Bruker…",
     "applyInterval": "Bruk intervallendring",
@@ -604,6 +773,9 @@
       "chooseClasses": "Velg klassene du faktisk kontrollerte.",
       "classes": "Klasser som faktisk ble kontrollert",
       "classExpiry": "Klassens utløpsdato (hvis aktuelt)",
+      "declaredBadge": "Oppgitt",
+      "declaredHelp": "Disse førerkortklassene og eventuelle datoer den ansatte har lagt inn, er forhåndsvalgt. Sammenlign dem med det originale førerkortet og rett opp eventuelle avvik.",
+      "declaredTitle": "{name} oppga {classes}",
       "documentDates": "Datoer på originaldokument",
       "employeeDeclaration": "Den ansatte ga personlig erklæringen vist ovenfor under denne kontrollen; jeg bekrefter denne erklæringen.",
       "expiryDate": "Dokumentets utløpsdato",
@@ -644,6 +816,8 @@
       },
       "customOrder": "Sortert etter valgt kolonne og retning.",
       "deadline": "{date} ({timezone})",
+      "declared": "Oppgitt {classes}",
+      "declaredDue": "Kontroller oppgitte klasser",
       "dueNow": "Kontroll forfaller nå",
       "dueOrder": "Kontroller som forfaller nå først, deretter neste frist.",
       "empty": {
@@ -677,6 +851,31 @@
     "class": {
       "active": "Autorisert",
       "ended": "Avsluttet",
+      "group": {
+        "bus": "Busser",
+        "car": "Personbiler",
+        "motorcycle": "Mopeder og motorsykler",
+        "tractor": "Traktorer",
+        "truck": "Lastebiler"
+      },
+      "name": {
+        "A": "Motorsykkel",
+        "A1": "Lett motorsykkel",
+        "A2": "Mellomtung motorsykkel",
+        "AM": "Moped",
+        "B": "Personbil",
+        "BE": "Personbil med tilhenger",
+        "C": "Lastebil",
+        "C1": "Lett lastebil",
+        "C1E": "Lett lastebil med tilhenger",
+        "CE": "Lastebil med tilhenger",
+        "D": "Buss",
+        "D1": "Minibuss",
+        "D1E": "Minibuss med tilhenger",
+        "DE": "Buss med tilhenger",
+        "L": "Saktegående traktor",
+        "T": "Traktor"
+      },
       "noLongerIntended": "Avsluttet fordi den ansatte ikke lenger er en tiltenkt sjåfør. For å kjøre igjen kreves en ny kontroll.",
       "overdue": "Rutinekontroll er forfalt. Dette er en organisatorisk suspensjon, ikke en erklæring om at den juridiske førerretten er inndratt.",
       "recheck": "En ny originalkontroll og eksplisitt gjenoppretting kreves.",
@@ -684,6 +883,36 @@
     },
     "declaration": {
       "text": "Jeg bekrefter at ingen kjente kjøreforbud, inndragelser eller andre hindringer forhindrer den tiltenkte kjøringen, og at jeg oppfyller gjeldende kjørebegrensninger."
+    },
+    "declared": {
+      "add": "Legg til førerkortklasser",
+      "authorized": "Godkjent",
+      "classExpires": "Utløper {date}",
+      "classExpiry": "{code} ({name}) utløper den",
+      "description": "Oppgitt av deg, ikke kontrollert ennå. De gir deg ikke førerrett før en kontrollør har sjekket det originale førerkortet ditt.",
+      "dialogDescription": "Velg alle klasser som står på førerkortet ditt. Kontrolløren bekrefter dem ved kontroll av det originale førerkortet.",
+      "dialogTitle": "Hvilke klasser står på førerkortet ditt?",
+      "documentExpires": "Førerkortet utløper",
+      "documentExpiry": "Førerkortet utløper den",
+      "documentExpiryHelp": "Felt 4b på kortet. La stå tomt hvis førerkortet ikke har dette.",
+      "edit": "Rediger",
+      "emptyDescription": "Oppgi hvilke førerkortklasser du har til organisasjonen din. Det hjelper med planlegging og forbereder kontrollen; det gir deg ikke førerrett.",
+      "emptyMoreDescription": "Legg til en klasse du har bestått siden forrige kontroll. Kontrolløren blir bedt om å kontrollere den.",
+      "emptyMoreTitle": "Har du en ny førerkortklasse?",
+      "emptyTitle": "Hva kan du kjøre?",
+      "expiryTitle": "Utløpsdatoer (valgfritt)",
+      "invalid": "Kontroller de valgte klassene og datoene.",
+      "notIntended": "Du er ikke lenger registrert som sjåfør, så organisasjonen din samler ikke inn førerkortklassene dine.",
+      "privacy": "Kun klasser og utløpsdatoer lagres, ikke førerkortnummer eller bilde. Egenerklæringen gir deg ikke kjøretillatelse.",
+      "remove": "Fjern klassene mine",
+      "removed": "Egenerklærte førerkortklasser er fjernet",
+      "removing": "Fjerner…",
+      "save": "{count, plural, one {Lagre # klasse} other {Lagre # klasser}}",
+      "saved": "Førerkortklasser lagret. Kontrolløren vil sjekke dem mot det originale førerkortet ditt.",
+      "saveFailed": "Førerkortklassene dine kunne ikke lagres. Valgene dine er beholdt; prøv igjen.",
+      "saving": "Lagrer…",
+      "title": "Dine egenerklærte førerkortklasser",
+      "updated": "Oppdatert"
     },
     "delivery": {
       "uncertain": "Valgfrie påminnelser på e-post til deg har et usikkert leveringsresultat ({count}). De vil ikke bli sendt på nytt automatisk. Påminnelsene dine i appen er fortsatt tilgjengelige; e-postlevering bekrefter ikke at de er lest."
@@ -846,6 +1075,7 @@
     },
     "operational": {
       "advisory": "Kjøretillatelse",
+      "declared": "Egenerklært, ikke kontrollert ennå. Gir ikke kjøretillatelse.",
       "loading": "Laster inn kjøretillatelse …",
       "loadingEmployees": "Laster ansatte for planlegging…",
       "noEmployees": "Ingen matchende ansatte.",
@@ -1017,6 +1247,20 @@
     "team": "Team",
     "totalEmployees": "{count} ansatte",
     "tryDifferentSearch": "Prøv å justere søket eller filtrene"
+  },
+  "engagement": {
+    "absenceRefusals": {
+      "contractorRecordsUnavailabilityOnly": "På disse datoene jobber de som ekstern oppdragstaker: bare utilgjengelighet kan registreres.",
+      "spansEngagementChange": "Disse datoene spenner over en overgang mellom ansettelse og arbeid som ekstern oppdragstaker. Registrer hver del separat.",
+      "unavailabilityIsForContractors": "På disse datoene er de ansatt: utilgjengelighet gjelder bare for eksterne oppdragstakere."
+    },
+    "externalContractor": "Ekstern oppdragstaker",
+    "filter": {
+      "all": "Alle",
+      "contractors": "Eksterne oppdragstakere",
+      "employees": "Ansatte",
+      "label": "Engasjement"
+    }
   },
   "errors": {
     "failedToLoad": "Kunne ikke laste inn data",
@@ -1487,6 +1731,10 @@
         "message": "Finn en tilgjengelig kontrollør for {employeeName}. Denne oppgaven gir ingen inspeksjonsrettigheter og forlenger ingen frister.",
         "title": "Tildel ansvar som førerkortkontrollør"
       },
+      "drivingLicenceDeclared": {
+        "message": "{employeeName} oppga førerkortklassene {classes}. Kontroller det originale førerkortet for å godkjenne dem; en egenerklæring alene gir ingen rettigheter.",
+        "title": "Førerkortklasser som må kontrolleres"
+      },
       "drivingLicencePersonalTask": {
         "message": "Minn {employeeName} på å avtale en kontroll av originalt førerkort. Direkte varsling til den ansatte var ikke tilgjengelig. Fullføring av oppgaven er ikke direkte levering eller lesing.",
         "title": "Minn den ansatte på personlig"
@@ -1529,6 +1777,11 @@
       "formerEmployeeReportsWithoutManager": {
         "message": "{count, plural, one {# ansatt er fortsatt kun koblet til en tidligere leder: {names}. Tildel en nåværende leder.} other {# ansatte er fortsatt kun koblet til en tidligere leder: {names}. Tildel en nåværende leder.}}",
         "title": "Ansatte uten en nåværende leder"
+      },
+      "invitationContractorTermsNeedReview": {
+        "message": "Satsen fra invitasjonen til {name} kunne ikke tas i bruk da vedkommende ble med. Angi den under kompensasjon for ekstern oppdragstaker; arbeidet forblir upriset frem til da.",
+        "termsExistMessage": "Satsen fra invitasjonen til {name} ble ikke tatt i bruk da vedkommende ble med: engasjementet har allerede kompensasjonsvilkår, som fortsatt gjelder. Vurder under kompensasjon for ekstern oppdragstaker om de bør endres.",
+        "title": "En ekstern oppdragstakers sats må gjennomgås"
       },
       "kioskCommandRefused": {
         "forwardedMessage": "En {action, select, clock_in {innstempling} clock_out {utstempling} start_break {start på pause} resume_break {retur fra pause} other {stempling}} av {employeeName} kl. {time} på kiosken {kioskName} ble ikke registrert: {reason, select, wrong_pin {PIN-koden var feil} pin_locked {kiosk-PIN-koden ble låst etter for mange feil forsøk} no_pin {det var ingen kiosk-PIN-kode å kontrollere mot} pin_unchecked {PIN-koden kunne ikke kontrolleres} kiosk_retired {kiosken ble tilbakekalt eller koblet til på nytt før den koblet til igjen} contact_unverifiable {Z8 kunne ikke bekrefte kioskens forrige tilkobling} outside_window {tidspunktet var utenfor tidsvinduet Z8 godtar} clock_untrusted {kioskklokken kunne ikke stoles på for dette} not_assigned {den ansatte er ikke tilknyttet kioskens plassering} not_adopted {organisasjonen godtar ikke frakoblede kioskstemplinger} month_closed {måneden er stengt} holiday {dagen er en helligdag uten tidsregistrering} conflict {den er i konflikt med annen registrert tid} other {Z8 kunne ikke godta det}}. Registrer tiden for vedkommende eller kontroller den med dem.",
@@ -1694,6 +1947,11 @@
       "personnelFilePayslipsShared": {
         "message": "Lønnsslippen din for {payPeriod} ble delt med deg.",
         "title": "Ny lønnsslipp i personalmappen din"
+      },
+      "plannedEngagementEndNeedsReview": {
+        "notScheduled": "Den planlagte sluttdatoen for engasjementet til {name} ({plannedEndDate}) kunne ikke settes som sluttdato. Angi den på ansattsiden deres.",
+        "passed": "Den planlagte sluttdatoen for engasjementet til {name} ({plannedEndDate}) var passert da de ble med, så sluttdatoen er i dag ({leavingDate}). Endre den hvis engasjementet fortsetter.",
+        "title": "En planlagt sluttdato for engasjement må gjennomgås"
       },
       "policyForgottenClockOutReminder": {
         "message": "Du nådde påkrevd arbeidstid for {day} kl. {endTime} ({timezone}). Stemple ut hvis du er ferdig på jobb."
@@ -2497,6 +2755,13 @@
           "createdAt": "Når denne oppgaven eller leveringen først ble registrert, som et UTC-tidspunkt.",
           "deadline_timezone": "Den eksplisitte kalendertidssonen som brukes for retningslinjens fristdatoer.",
           "declaration_text": "Den nøyaktige erklæringsteksten som ble registrert under den opprinnelige kontrollen.",
+          "declared_at": "Når du sist lagret de egenerklærte klassene dine, som et UTC-tidspunkt.",
+          "declared_class_code": "En førerkortklasse du har oppgitt at du har. Den gir ingen kjøretillatelse.",
+          "declaredClasses": {
+            "summary": "Førerkortklassene du selv har oppgitt, og som ennå ikke er kontrollert. En kontroll erstatter dem; de slettes når du ikke lenger er tiltenkt sjåfør."
+          },
+          "declared_class_expiry_date": "Klassens egen utløpsdato som du oppga (klasse C og D); tomt hvis du ikke oppga noen.",
+          "declared_document_expires_on": "Førerkortets utløpsdato slik du oppga den; tomt hvis du ikke oppga noen.",
           "document_expires_on": "Dokumentets utløpsdato, uavhengig av utløpsdato for individuelle klasser.",
           "document_issued_on": "Dokumentets utstedelsesdato, uten klokkeslett eller tidssone.",
           "document_valid_through": "Den siste kalenderdagen som dekkes av dokumentets gyldighet.",
@@ -2615,6 +2880,25 @@
             "project": "Prosjektet satsen gjelder for; tom for alt arbeidet ditt.",
             "summary": "Satsene organisasjonen fakturerer kunder for arbeidet ditt."
           },
+          "contractorCompensationTerms": {
+            "capAtOneDay": "Hvorvidt en dag teller som maksimalt én dag, uansett hvor lenge arbeidet varer.",
+            "compensationBasis": "Hvorvidt du lønnes per time (hourly) eller per dag (daily).",
+            "currency": "Valutaen for satsen.",
+            "dayUnitRule": "Hvordan en dags arbeid teller for en dagsats: alt arbeid som en hel dag (any_work_full_day), halv eller hel dag basert på en terskel (half_and_full_day), eller proporsjonalt med en standarddag (prorated_by_standard_day). Tomt for timesats.",
+            "effectiveFrom": "Første dag disse vilkårene gjelder (ÅÅÅÅ-MM-DD).",
+            "effectiveTo": "Første dag disse vilkårene ikke lenger gjelder (ÅÅÅÅ-MM-DD); tomt så lenge de gjelder.",
+            "employmentPeriodId": "Perioden disse vilkårene tilhører (dens id i employment_periods).",
+            "halfDayThresholdMinutes": "Opptil så mange minutters arbeid om dagen teller som en halv dag; mer teller som en hel dag.",
+            "rate": "Satsen din per time eller per dag.",
+            "standardDayMinutes": "Antall minutter i en standarddag som en dags arbeid måles mot.",
+            "summary": "Time- eller dagssatsen din som ekstern oppdragstaker over tid."
+          },
+          "contractorDetails": {
+            "companyName": "Selskapet du har kontrakt gjennom.",
+            "referenceCode": "Bestillingsordren eller kostnadsstedreferansen fakturaene dine matches mot.",
+            "summary": "Kontraktopplysningene dine som ekstern oppdragstaker.",
+            "vatId": "Ditt organisasjonsnummer for MVA eller skattereferanse."
+          },
           "costCenters": {
             "code": "Kostnadsstedets kode.",
             "costCenter": "Kostnadsstedets navn.",
@@ -2681,6 +2965,7 @@
             "contractType": "Kontraktstypen din.",
             "email": "E-postadressen til brukerkontoen din.",
             "endDate": "Når ansettelsesforholdet ditt opphørte; tomt så lenge det pågår.",
+            "engagementKind": "Om du jobber for organisasjonen som ansatt (employee) eller som ekstern oppdragstaker (contractor) i dag.",
             "firstName": "Fornavnet ditt i ansattoppføringen din.",
             "gender": "Kjønnet ditt.",
             "isActive": "Hvorvidt ansattoppføringen din er aktiv.",
@@ -2700,6 +2985,7 @@
           },
           "employmentPeriods": {
             "endedAt": "Når perioden ble avsluttet; tomt mens den er åpen.",
+            "engagementKind": "Om du jobbet i denne perioden som ansatt (employee) eller som ekstern oppdragstaker (contractor).",
             "startedAt": "Når perioden startet.",
             "startProvenance": "Hvor starten stammer fra, for eksempel en nyansettelse eller gjenansettelse.",
             "status": "Hvorvidt perioden er åpen eller lukket.",

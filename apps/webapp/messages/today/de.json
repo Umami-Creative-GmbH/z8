@@ -6,19 +6,37 @@
       "decided": "Entscheidung gespeichert. Aktualisieren Sie die Ansicht, um die aktuelle Warteschlange zu laden.",
       "description": "Anfragen, die auf eine Entscheidung des Managers warten.",
       "empty": "Es warten keine Genehmigungen.",
+      "itemTitle": "{requester}: {title}",
       "openInbox": "Posteingang öffnen",
+      "openInboxForRest": "Posteingang öffnen, um den Rest anzuzeigen",
+      "openInboxLink": "Posteingang öffnen",
       "ownRequest": "Eigener Antrag: Ein anderer Genehmiger entscheidet darüber.",
+      "partialFailure": "Einige Genehmigungen konnten nicht geladen werden: {types}. Die Liste und Gesamtzahl sind möglicherweise unvollständig.",
+      "partialFailureNotCounted": "Einige Genehmigungen konnten nicht gezählt werden: {types}. Die Gesamtzahl ist möglicherweise unvollständig.",
       "pendingAriaLabel": "Ausstehende Genehmigungen",
       "reject": "Ablehnen",
       "rejectLabel": "{title} ablehnen",
+      "rejectPanel": {
+        "briefingUnavailable": "Die heutigen Genehmigungen konnten nicht aktualisiert werden. Schließen Sie diesen Bereich und versuchen Sie es erneut.",
+        "description": "Der Antragsteller sieht diese Begründung bei der Ablehnung.",
+        "noLongerRejectable": "Dieser Antrag kann hier nicht mehr abgelehnt werden.",
+        "title": "Antrag ablehnen"
+      },
       "retry": "Genehmigungen erneut versuchen",
+      "reviewInInbox": "Im Posteingang prüfen",
+      "reviewInInboxNamed": "Im Posteingang prüfen: {title}",
       "title": "Genehmigungen",
       "toast": {
         "approved": "Anfrage genehmigt",
         "approveError": "Anfrage kann nicht genehmigt werden",
         "rejected": "Anfrage abgelehnt",
         "rejectError": "Anfrage kann nicht abgelehnt werden"
-      }
+      },
+      "totalAtLeast": "{count}+",
+      "truncated": "{total, plural, one {{shown} von # ausstehenden Genehmigung wird angezeigt.} other {{shown} von # ausstehenden Genehmigungen werden angezeigt.}}",
+      "truncatedAtLeast": "{total, plural, one {{shown} von mindestens # ausstehenden Genehmigung wird angezeigt.} other {{shown} von mindestens # ausstehenden Genehmigungen werden angezeigt.}}",
+      "waitingInInbox": "{total, plural, one {# ausstehende Genehmigung wartet im Posteingang.} other {# ausstehende Genehmigungen warten im Posteingang.}}",
+      "waitingInInboxAtLeast": "{total, plural, one {Mindestens # ausstehende Genehmigung wartet im Posteingang.} other {Mindestens # ausstehende Genehmigungen warten im Posteingang.}}"
     },
     "briefing": {
       "accessUnavailable": "Dieses Briefing ist für den aktuellen Mitarbeiter und die aktuelle Organisation nicht verfügbar.",

@@ -589,12 +589,14 @@
       "reason": {
         "apiConnector": "Dette formatet er en API-kobling, som aldri inneholder utgiftsbeløp.",
         "currencyNotEur": "Ikke i euro: lønnskjøringer håndterer kun eurobeløp.",
+        "earlierClaim": "Tidligere krav utbetales aldri via lønnskjøring.",
+        "externalContractorDays": "Dagene faller innenfor et oppdrag som ekstern oppdragstaker: lønnskjøringen inkluderer det aldri.",
         "includedInOtherRun": "Inkludert i den ubekreftede lønnskjøringen {period} ({format}).",
-        "legacyClaim": "Eldre krav utbetales aldri via lønnskjøring.",
         "negativeDifference": "En justering reduserte hva tidligere lønnskjøringer inneholdt for: {kinds}.",
         "noStatutoryBaseline": "Ikke noe lovbestemt grunnlag for: {items}.",
         "nothingOwed": "Lønnslinjene gjør at det ikke gjenstår noe for lønnskjøringen å ta med.",
         "reimbursedOutsidePayroll": "Allerede delvis utbetalt via bankoverføring eller tilbakekrevd: lønnskjøringen kan ikke ta resten.",
+        "spansEngagementChange": "Dagene strekker seg over et bytte mellom ansatt og ekstern oppdragstaker: lønnskjøringen inkluderer ingen del av det.",
         "unmappedWageType": "Ingen lønnsart er tilordnet dette formatet for: {kinds}."
       },
       "title": "Utgiftsrapporter denne lønnskjøringen ikke tar med",

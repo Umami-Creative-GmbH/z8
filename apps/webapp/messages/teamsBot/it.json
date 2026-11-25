@@ -80,6 +80,7 @@
     "pendingApprovals": "Approvazioni in sospeso",
     "pendingExceptionRequests": "{count, plural, one {# richiesta di eccezione in attesa di revisione} other {# richieste di eccezione in attesa di revisione}}",
     "returns": "Ritorna il {date}",
+    "reviewComplianceExceptions": "Esamina le richieste di eccezione",
     "since": "Dalle {time}",
     "textClockedInEmployee": "• {name} - dalle {clockedInAt} ({duration})",
     "textCompliance": "**⚠️ Conformità:**",

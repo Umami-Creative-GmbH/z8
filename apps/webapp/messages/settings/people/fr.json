@@ -409,6 +409,7 @@
         "clearSearch": "Effacer la recherche",
         "clockReview": "Examen requis : pointage de sortie lors du départ",
         "confirmRehire": "Confirmer la réembauche",
+        "contractorRehireHint": "Un prestataire externe ne dispose d'aucune condition d'emploi, politique de travail ou allocation de congés. Les tarifs du prestataire sont définis séparément.",
         "correctTime": "Corriger l'heure",
         "currency": "Devise",
         "currencyInvalid": "Saisissez un code de devise à trois lettres.",
@@ -423,6 +424,10 @@
         "effectiveDescription": "L'accès a pris fin à {cutoff} ({timezone}).",
         "employmentGap": "Non employé {startDate} – {endDate}",
         "employmentStint": "Période d'emploi {startDate} – {endDate}",
+        "engagement": {
+          "employee": "Salarié"
+        },
+        "engagementKind": "Mission",
         "errors": {
           "actorNotAuthorized": "Seuls les propriétaires et les administrateurs de l'organisation peuvent gérer les départs des employés.",
           "departureAlreadyEffective": "Ce départ a déjà pris effet. Réembauchez l'employé pour rétablir l'accès.",
@@ -668,6 +673,7 @@
           "employeeNotFound": "Employé introuvable.",
           "exceedsBalance": "Le paiement est supérieur au solde de travail de l'employé à la fin de cette journée.",
           "exceedsLaterBalance": "Le paiement ferait passer le solde de travail sous zéro après un paiement ultérieur d'heures supplémentaires. Annulez d'abord ce paiement ou enregistrez un montant inférieur.",
+          "externalContractorDay": "À cette date, la personne travaille en tant que prestataire externe, la paie ne peut donc pas verser ce paiement. Veuillez indiquer une date à laquelle elle était salariée.",
           "failed": "Impossible de mettre à jour le solde de travail. Réessayez.",
           "futureDay": "La date ne peut pas être postérieure à aujourd'hui dans le fuseau horaire de l'employé.",
           "invalidInput": "Vérifiez le jour, les heures et les minutes, ainsi que le motif.",

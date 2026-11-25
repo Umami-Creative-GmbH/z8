@@ -217,9 +217,33 @@
     },
     "invite": {
       "allowCreateOrganizations": "Dopustite ovom korisniku stvaranje organizacija",
+      "contractor": {
+        "companyName": "Ugovorna tvrtka",
+        "compensation": {
+          "description": "Primjenjuje se od početka njihova angažmana nakon što se pridruže. Vidljivo je samo administratorima organizacije; možete to postaviti i kasnije.",
+          "label": "Postavite tarifu sada"
+        },
+        "legend": "Podaci o vanjskom suradniku (neobavezno)",
+        "noProjects": "Još nema aktivnih projekata. Projekte možete dodijeliti kasnije.",
+        "plannedEndDate": "Planirani završetak angažmana",
+        "plannedEndDateDescription": "Zadnji radni dan. Nakon što se pridruže, to postaje zakazani datum odlaska koji ukida njihov pristup i korisničko mjesto.",
+        "plannedEndDateNotFuture": "Planirani završetak angažmana mora biti nakon današnjeg dana.",
+        "projects": "Projekti",
+        "referenceCode": "Broj narudžbenice ili mjesto troška",
+        "vatId": "PDV ID"
+      },
       "description": "Pošaljite pozivnicu za pridruživanje organizaciji {organizationName}",
       "emailLabel": "Adresa e-pošte",
+      "engagement": {
+        "contractorDescription": "Evidentira vrijeme na projektima; bez uvjeta zaposlenja, radnih pravila ili godišnjeg odmora",
+        "employee": "Zaposlenik",
+        "employeeDescription": "Primjenjuju se uvjeti zaposlenja, radna pravila i pravo na godišnji odmor",
+        "label": "Pozovi kao"
+      },
       "error": "Slanje pozivnice nije uspjelo",
+      "errors": {
+        "projectNotFound": "Odabrani projekt više ne pripada ovoj organizaciji. Ponovno odaberite projekte."
+      },
       "kioskOnly": {
         "description": "Za osoblje bez službene e-pošte. Ne mogu se prijaviti i radno vrijeme registriraju samo na kioscima pomoću svog PIN-a. E-poštu možete dodati kasnije.",
         "firstName": "Ime",

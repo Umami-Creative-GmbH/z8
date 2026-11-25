@@ -20,6 +20,10 @@
           "description": "Vérifications invalides récentes : {invalidVerifications}",
           "title": "La vérification d'audit a échoué"
         },
+        "pendingExceptions": {
+          "description": "{count, plural, one {# exception de conformité est en attente de décision} other {# exceptions de conformité sont en attente de décision}}",
+          "title": "Exceptions de conformité en attente"
+        },
         "sensitiveAction": {
           "description": "{action} sur {entityType}",
           "title": "Action sensible : {action}"
@@ -53,7 +57,10 @@
           "generalPolicyViolations": "Autres violations de politique : {count}",
           "overtimeViolations": "Violations des heures supplémentaires : {count}",
           "pendingExceptions": "Exceptions en attente : {count}",
-          "restPeriodViolations": "Violations de la période de repos : {count}"
+          "restPeriodViolations": "Violations de la période de repos : {count}",
+          "statutoryAcknowledgements": "Confirmations réglementaires : {pending} en attente, {stale} invalidées par des périodes de travail ou des quarts plus récents",
+          "statutoryFindings": "{warning, plural, one {Constats réglementaires : {critical} critique, # avertissement} other {Constats réglementaires : {critical} critiques, # avertissements}}",
+          "statutoryUnavailable": "Certains contrôles réglementaires n'ont pas pu être chargés."
         }
       },
       "footer": {
@@ -61,12 +68,19 @@
         "refreshMeaning": "L'actualisation recharge les signaux enregistrés ; elle ne réévalue pas les résultats selon une nouvelle politique."
       },
       "links": {
-        "inspectCompliance": "Inspecter la conformité",
         "inspectInAuditLog": "Inspecter dans le journal d'audit",
         "openAuditExport": "Ouvrir l'exportation d'audit",
         "openAuditLog": "Ouvrir le journal d'audit",
-        "openComplianceSettings": "Ouvrir les paramètres de conformité",
-        "reviewAuditExport": "Examiner l'exportation d'audit"
+        "reviewAuditExport": "Examiner l'exportation d'audit",
+        "reviewComplianceExceptions": "Examiner les exceptions de conformité",
+        "reviewPolicyViolations": "Examiner les violations des règles",
+        "statutoryDomain": {
+          "minijob": "Minijob : {count} en attente",
+          "on_call": "Astreinte : {count} en attente",
+          "short_term": "Court terme : {count} en attente",
+          "working_student": "Étudiants salariés : {count} en attente",
+          "youth_apprentice": "Jeunes et apprentis : {count} en attente"
+        }
       },
       "loading": "Chargement des signaux de conformité",
       "overview": "Aperçu de la conformité",
@@ -104,6 +118,7 @@
             "healthy": "Aucun problème récent de politique du personnel n'a été détecté",
             "warning": "La conformité du personnel dérive"
           },
+          "statutoryReviews": "Vérifications réglementaires",
           "title": "Conformité des effectifs"
         }
       },
@@ -121,11 +136,6 @@
       }
     },
     "exception": {
-      "approved": "Exception approuvée",
-      "approvedDescription": "L'exception de conformité a été approuvée.",
-      "approveFailed": "Échec de l'approbation",
-      "approveFor": "Approuver l'exception {type} pour {name}",
-      "loadError": "Les demandes d'exception en attente n'ont pas pu être chargées.",
       "plannedDuration": "Planifié",
       "plannedDurationHelp": "Estimez le temps supplémentaire dont vous pensez avoir besoin au-delà de la limite.",
       "plannedHours": "Heures planifiées",
@@ -135,35 +145,16 @@
       "reason": "Motif de l'exception",
       "reasonPlaceholder": "Expliquez pourquoi vous avez besoin de cette exception (par ex. date limite de projet urgente, réunion client critique)...",
       "reasonRequiredDescription": "Veuillez fournir un motif pour votre demande d'exception.",
-      "rejectDescription": "Fournissez un motif pour le rejet de cette demande d'exception (facultatif)",
-      "rejected": "Exception rejetée",
-      "rejectedDescription": "L'exception de conformité a été rejetée.",
-      "rejectFailed": "Échec du rejet",
-      "rejectFor": "Rejeter l'exception {type} pour {name}",
-      "rejectionPlaceholder": "Saisissez le motif du rejet de cette exception...",
-      "rejectionReason": "Motif du rejet",
-      "rejectionReasonTooLong": "Le motif doit comporter 500 caractères ou moins.",
-      "rejectTitle": "Rejeter la demande d'exception",
       "requestDescription": "Demandez une pré-approbation à votre responsable pour procéder malgré les restrictions de conformité. Les exceptions approuvées sont valides pendant 24 heures.",
-      "requestedAt": "Demandé",
       "requestFailed": "Échec de la demande",
       "requestSubmitted": "Demande d'exception soumise",
       "requestSubmittedDescription": "Votre responsable sera informé et pourra approuver ou rejeter votre demande.",
       "requestTitle": "Demander une exception de conformité",
       "submit": "Soumettre la demande",
-      "type": "Type d'exception",
-      "types": {
-        "overtimeDaily": "Heures supplémentaires quotidiennes",
-        "overtimeMonthly": "Heures supplémentaires mensuelles",
-        "overtimeWeekly": "Heures supplémentaires hebdomadaires",
-        "restPeriod": "Période de repos"
-      }
+      "type": "Type d'exception"
     },
     "hasApprovedException": "Vous disposez d'une exception approuvée. Vous pouvez continuer.",
     "moreAlerts": "plus",
-    "noExceptions": "Aucune demande d'exception en attente",
-    "pendingExceptions": "Demandes d'exception en attente",
-    "pendingExceptionsDescription": "Examinez les demandes d'exception qui nécessitent votre approbation",
     "requestException": "Demander une exception",
     "restPeriodMessage": "Vous avez besoin de {time} de repos supplémentaire avant de pouvoir pointer. Prochain pointage autorisé : {nextTime}",
     "restPeriodRequired": "Période de repos requise"

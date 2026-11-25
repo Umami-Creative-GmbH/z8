@@ -217,9 +217,33 @@
     },
     "invite": {
       "allowCreateOrganizations": "Permitir que este usuário crie organizações",
+      "contractor": {
+        "companyName": "Empresa contratante",
+        "compensation": {
+          "description": "Aplica-se a partir do início da contratação assim que ingressar. Visível apenas para administradores da organização; você também pode definir isso mais tarde.",
+          "label": "Definir a taxa agora"
+        },
+        "legend": "Detalhes do prestador de serviços (opcional)",
+        "noProjects": "Nenhum projeto ativo ainda. Você pode atribuir projetos mais tarde.",
+        "plannedEndDate": "Término planejado da contratação",
+        "plannedEndDateDescription": "O último dia útil. Após a integração, torna-se uma data de saída programada que encerra o acesso e a licença.",
+        "plannedEndDateNotFuture": "O término planejado da contratação deve ser posterior a hoje.",
+        "projects": "Projetos",
+        "referenceCode": "Pedido de compra ou centro de custo",
+        "vatId": "ID do IVA"
+      },
       "description": "Enviar um convite para participar de {organizationName}",
       "emailLabel": "Endereço de e-mail",
+      "engagement": {
+        "contractorDescription": "Registra o tempo nos projetos; sem termos de emprego, política de trabalho ou férias",
+        "employee": "Funcionário",
+        "employeeDescription": "Aplicam-se termos de emprego, política de trabalho e direito a férias",
+        "label": "Convidar como"
+      },
       "error": "Falha ao enviar convite",
+      "errors": {
+        "projectNotFound": "Um projeto selecionado não pertence mais a esta organização. Escolha os projetos novamente."
+      },
       "kioskOnly": {
         "description": "Para colaboradores sem e-mail da empresa. Eles não podem fazer login e registram ponto apenas em quiosques usando o PIN. Você pode adicionar um e-mail mais tarde.",
         "firstName": "Nome",

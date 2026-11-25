@@ -589,12 +589,14 @@
       "reason": {
         "apiConnector": "Das Format isch en API-Konnektor, wo nie Späsebeträg übertreit.",
         "currencyNotEur": "Nöd in Euro: Lohnläuf überträged nur Euro-Beträg.",
+        "earlierClaim": "Frühere Ansprüche werden nie über die Lohnabrechnung ausgezahlt.",
+        "externalContractorDays": "Die Tage fallen in den Einsatz eines externen Auftragnehmers: Die Lohnabrechnung übernimmt dies nie.",
         "includedInOtherRun": "Im unbestätigte Lohnlauf {period} ({format}) enthalte.",
-        "legacyClaim": "Alti Aasprüch werded nie über d'Lohnabrechnig zahlt.",
         "negativeDifference": "E Aapassig hät das reduziert, was früeneri Lohnläuf gha hend für: {kinds}.",
         "noStatutoryBaseline": "Kei gsetzlichi Grundlag für: {items}.",
         "nothingOwed": "D'Lohnziile lönd nüüt übrig, wo d'Lohnabrechnig chan überneh.",
         "reimbursedOutsidePayroll": "Scho teilwiis per Banküberwiisig zahlt oder zrugggholt: D'Lohnabrechnig chan de Rest nöd überneh.",
+        "spansEngagementChange": "Die Tage umfassen einen Wechsel zwischen Mitarbeiter und externem Auftragnehmer: Die Lohnabrechnung übernimmt keinen Teil davon.",
         "unmappedWageType": "Für das Format isch kei Lohnart zuegordnet für: {kinds}."
       },
       "title": "Späsebricht, wo dä Lohnlauf nöd überneh wird",

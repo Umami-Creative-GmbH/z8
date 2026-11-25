@@ -217,9 +217,33 @@
     },
     "invite": {
       "allowCreateOrganizations": "Tillåt den här användaren att skapa organisationer",
+      "contractor": {
+        "companyName": "Avtalsslutande företag",
+        "compensation": {
+          "description": "Gäller från början av deras uppdrag när de ansluter. Endast organisationsadministratörer ser det; du kan även ange det senare.",
+          "label": "Ange arvodet nu"
+        },
+        "legend": "Uppgifter om uppdragstagare (valfritt)",
+        "noProjects": "Inga aktiva projekt ännu. Du kan tilldela projekt senare.",
+        "plannedEndDate": "Planerat uppdragsslut",
+        "plannedEndDateDescription": "Den sista arbetsdagen. När de ansluter blir det ett schemalagt slutdatum som avslutar deras åtkomst och licens.",
+        "plannedEndDateNotFuture": "Det planerade uppdragsslutet måste vara efter i dag.",
+        "projects": "Projekt",
+        "referenceCode": "Inköpsorder eller kostnadsställe",
+        "vatId": "Momsregistreringsnummer"
+      },
       "description": "Skicka en inbjudan att gå med i {organizationName}",
       "emailLabel": "E-postadress",
+      "engagement": {
+        "contractorDescription": "Registrerar tid på projekt; inga anställningsvillkor, arbetspolicy eller semester",
+        "employee": "Anställd",
+        "employeeDescription": "Anställningsvillkor, arbetspolicy och semesterrätt gäller",
+        "label": "Bjud in som"
+      },
       "error": "Det gick inte att skicka inbjudan",
+      "errors": {
+        "projectNotFound": "Ett valt projekt tillhör inte längre denna organisation. Välj projekten igen."
+      },
       "kioskOnly": {
         "description": "För personal utan företags-e-post. De kan inte logga in och stämplar endast vid kiosker med sin PIN-kod. Du kan lägga till en e-postadress senare.",
         "firstName": "Förnamn",

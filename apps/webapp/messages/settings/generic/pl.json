@@ -1,5 +1,60 @@
 {
   "settings": {
+    "apprenticeRelease": {
+      "blockWeekTrainingNote": "W te dni blokowe dozwolone są maksymalnie 2 godziny szkolenia wewnątrzzakładowego tygodniowo (§ 9 ust. 1 pkt 3 JArbSchG, § 15 ust. 1 zd. 3 BBiG). W przypadku pracownika poniżej 18. roku życia godziny te dolicza się do tygodnia blokowego, który liczy się według średniego tygodniowego czasu pracy (§ 9 ust. 2 pkt 2 JArbSchG), i nie wlicza się ich do limitów dziennych i tygodniowych z § 8.",
+      "credit": {
+        "exam": "Egzamin od {start}: zaliczono {minutes} min",
+        "fullDays": "{count, plural, one {# dzień roboczy zaliczony w całości} few {# dni robocze zaliczone w całości} other {# dni roboczych zaliczonych w całości} }",
+        "minutes": "Zaliczono {minutes} min czasu szkolnego",
+        "schoolTime": "Szkoła {start}–{end}: zaliczono {minutes} min"
+      },
+      "description": "Szkoła zawodowa, tygodnie nauki w systemie blokowym i dni egzaminów to płatne zwolnienie od pracy (§ 15 BBiG): są zaliczane do czasu pracy, nigdy nie są potrącane z urlopu ani nie powodują ujemnego salda czasu pracy.",
+      "empty": "Nie zarejestrowano jeszcze dni zwolnienia.",
+      "fields": {
+        "date": "Data",
+        "endsOn": "Ostatni dzień",
+        "examEndTime": "Koniec egzaminu (z przerwami)",
+        "examStartTime": "Początek egzaminu",
+        "examTimeHint": "Egzamin zwalnia z pracy i jest zaliczany tylko na czas jego trwania. Pozostaw oba pola puste, aby zwolnić cały dzień.",
+        "includePreExamDay": "Zwolnij również dzień roboczy poprzedzający pisemny egzamin końcowy",
+        "kind": "Zwolnienie",
+        "lessons": "Lekcje (po 45 min)",
+        "note": "Notatka (opcjonalnie)",
+        "schoolEndTime": "Koniec zajęć (z przerwami)",
+        "schoolHoursPerWeek": "Godziny nauki tygodniowo (godziny zegarowe)",
+        "schoolStartTime": "Początek zajęć",
+        "schoolTimeHint": "Krótki dzień szkolny zalicza czas nauki wraz z przerwami. Pozostaw oba pola puste, aby zaliczyć 45 minut na każdą lekcję."
+      },
+      "kind": {
+        "blockWeek": "Tydzień nauki w systemie blokowym",
+        "examDay": "Dzień egzaminu",
+        "preExamDay": "Dzień roboczy przed egzaminem",
+        "schoolDay": "Dzień szkoły zawodowej"
+      },
+      "lessons": "{count} lekcji",
+      "record": "Zarejestruj dzień zwolnienia",
+      "recorded": "Zarejestrowano dzień zwolnienia",
+      "refusal": {
+        "dayAlreadyReleased": "Ten dzień jest już objęty zwolnieniem. Najpierw usuń zarejestrowane dla niego zwolnienie.",
+        "examTimeInvalid": "Wprowadź godzinę rozpoczęcia i zakończenia egzaminu lub pozostaw oba pola puste. Godzina zakończenia musi być późniejsza niż godzina rozpoczęcia.",
+        "invalidRange": "Sprawdź daty: ostatni dzień nie może być wcześniejszy niż pierwszy.",
+        "invalidValue": "Sprawdź lekcje i godziny zajęć.",
+        "lessonsRequired": "Wprowadź liczbę lekcji.",
+        "noPrecedingWorkingDay": "W tygodniu poprzedzającym egzamin nie ma dnia roboczego, który można zwolnić.",
+        "notApprentice": "Dni zwolnienia można rejestrować tylko wtedy, gdy warunki zatrudnienia pracownika określają go jako praktykanta.",
+        "overlap": "To zwolnienie nakłada się na już zarejestrowane zwolnienie.",
+        "reasonRequired": "Wyjaśnij powód usunięcia dnia zwolnienia.",
+        "schoolMinutesRequired": "Wprowadź planowane godziny zajęć w tygodniu blokowym.",
+        "schoolTimeInvalid": "Wprowadź godzinę rozpoczęcia i zakończenia zajęć lub pozostaw oba pola puste. Godzina zakończenia musi być późniejsza niż godzina rozpoczęcia.",
+        "singleDay": "Tylko tydzień nauki w systemie blokowym może obejmować wiele dni."
+      },
+      "title": "Zwolnienie na szkołę i egzamin",
+      "void": "Usuń",
+      "voidConfirm": "Usuń dzień zwolnienia",
+      "voided": "Dzień zwolnienia został usunięty",
+      "voidReason": "Dlaczego jest usuwany?",
+      "workplaceReturn": "Poniżej 18. roku życia: brak powrotu do pracy po tym pełnym dniu szkolnym (§ 9 ust. 1 pkt 2 JArbSchG)"
+    },
     "approvalSettings": {
       "pageDescription": "Skonfiguruj, kto zatwierdza wnioski, kiedy zaległe zatwierdzenia podlegają eskalacji oraz które problemy z zatwierdzaniem wymagają podjęcia działań."
     },
@@ -230,6 +285,7 @@
         "employeeDescription": "Całkowity wewnętrzny koszt roboczogodziny tego pracownika, używany do obliczania marży. Niezależny od wynagrodzenia.",
         "employeeTitle": "Stawka kosztowa",
         "empty": "Brak stawki kosztowej. Marża za pracę tego pracownika wyświetla się jako nieznany koszt.",
+        "emptyContractor": "Brak stawki kosztów. Marża uwzględnia stawkę tej osoby jako wykonawcy zewnętrznego dla jej prac kontraktowych; pozostałe prace oraz prace kontraktowe bez stawki są wyświetlane jako koszt nieznany.",
         "history": "Historia",
         "historyAction": "Historia stawki kosztowej dla: {name}",
         "hourly": "Godzinowo",
@@ -652,14 +708,6 @@
         "title": "Nie wszystkie przesłania okresów w tym miesiącu zostały zatwierdzone. Nie blokuje to zamknięcia:"
       }
     },
-    "compliance": {
-      "description": "Przeglądaj i zarządzaj wnioskami o wyjątki od zgodności od członków zespołu",
-      "metadata": {
-        "description": "Skonfiguruj ustawienia zgodności z ArbZG i zarządzaj wnioskami o wyjątki",
-        "title": "Ustawienia zgodności | ArbZG"
-      },
-      "title": "Zgodność z ArbZG"
-    },
     "customDomains": {
       "title": "Domena i branding"
     },
@@ -1016,7 +1064,7 @@
         "all": "Wszyscy pracownicy w tej organizacji",
         "allDescription": "Uprawnienia zależą od bieżącego członkostwa w organizacji. Weryfikatorzy nigdy nie mogą weryfikować samych siebie.",
         "attribution": "Nadane przez: {actor} o {time}",
-        "editor": "Zakres weryfikatora",
+        "editTitle": "Edytuj odpowiedzialność weryfikatora",
         "empty": "Brak przypisanych uprawnień weryfikatora",
         "failed": "Nie udało się zaktualizować uprawnień weryfikatora praw jazdy ani uzyskać do nich dostępu. Sprawdź swoje uprawnienia i wybrane opcje.",
         "formerEmployee": "Nie można dodać byłych pracowników. Wybierz pracowników z aktualnej listy.",
@@ -2116,6 +2164,7 @@
           "unavailable": "Nie udało się ukończyć tego sprawdzenia. Ponów sprawdzanie, aby spróbować ponownie."
         },
         "payrollSetup": {
+          "externalContractorsSkipped": "{count, plural, one {# wykonawca zewnętrzny jest pomijany przy określaniu warunków zatrudnienia i identyfikatorów pracowniczych: eksport listy płac nigdy nie obejmuje wykonawców zewnętrznych.} few {# wykonawcy zewnętrzni są pomijani przy określaniu warunków zatrudnienia i identyfikatorów pracowniczych: eksport listy płac nigdy nie obejmuje wykonawców zewnętrznych.} many {# wykonawców zewnętrznych jest pomijanych przy określaniu warunków zatrudnienia i identyfikatorów pracowniczych: eksport listy płac nigdy nie obejmuje wykonawców zewnętrznych.} other {# wykonawcy zewnętrznego jest pomijane przy określaniu warunków zatrudnienia i identyfikatorów pracowniczych: eksport listy płac nigdy nie obejmuje wykonawców zewnętrznych.}}",
           "fixEmployees": "Przejrzyj pracowników",
           "fixPayrollExport": "Otwórz ustawienia eksportu listy płac",
           "inviteesSkipped": "{count, plural, one {# zaproszona osoba jest pomijana pod kątem warunków zatrudnienia i identyfikatorów pracowniczych do czasu dołączenia.} few {# zaproszone osoby są pomijane pod kątem warunków zatrudnienia i identyfikatorów pracowniczych do czasu dołączenia.} other {# zaproszonych osób jest pomijanych pod kątem warunków zatrudnienia i identyfikatorów pracowniczych do czasu dołączenia.} }",
@@ -2223,6 +2272,7 @@
           "mappingsMissing": "Brak aktywnych mapowań składników płacowych",
           "mappingsPresent": "{count, plural, one {# cel eksportu, składniki płacowe zmapowane} few {# cele eksportu, składniki płacowe zmapowane} other {# celów eksportu, składniki płacowe zmapowane} }",
           "notExported": "Organizacja nie ma aktywnego celu eksportu listy płac, więc nie ma wymagań wstępnych dotyczących listy płac.",
+          "notNeededExternalContractor": "Niewymagane: wykonawca zewnętrzny",
           "notYetInvited": "Jeszcze nie: zaproszenie jest nadal oczekujące",
           "personnelIdentifier": "Numer pracownika",
           "termsConfirmed": "Potwierdzone na dziś",
@@ -2258,6 +2308,7 @@
           "name": "Zasady",
           "none": "Brak obowiązujących zasad pracy na dzisiaj: żadne nie są przypisane do pracownika, jego zespołu ani organizacji.",
           "noSchedule": "Brak harmonogramu",
+          "notApplicable": "Nie obowiązuje żaden regulamin pracy: ta osoba pracuje jako wykonawca zewnętrzny.",
           "noWorkingDays": "Brak dni roboczych",
           "title": "Zasady pracy",
           "workingDays": "Dni robocze"
@@ -3085,7 +3136,15 @@
       "updateProfile": "Aktualizuj profil",
       "updateSuccess": "Profil został pomyślnie zaktualizowany",
       "uploading": "Przesyłanie",
-      "uploadProfilePicture": "Prześlij zdjęcie profilowe"
+      "uploadProfilePicture": "Prześlij zdjęcie profilowe",
+      "workingStudent": {
+        "balance": "Pozostało {remaining} z {limit} tygodni powyżej 20 godzin (wykorzystano {used} w ciągu ostatnich 12 miesięcy).",
+        "description": "Jako student pracujący możesz pracować ponad 20 godzin przez maksymalnie 26 tygodni w ciągu 12 miesięcy.",
+        "lectureFree": "Zarejestrowane okresy wolne od zajęć",
+        "lectureFreeEmpty": "Brak zarejestrowanych okresów wolnych od zajęć. Poproś dział kadr o wprowadzenie przerw semestralnych.",
+        "noBaseline": "W tym tygodniu nie obowiązuje żaden limit ustawowy.",
+        "title": "Status studenta pracującego"
+      }
     },
     "projects": {
       "budgetUsed": "Wykorzystany budżet",

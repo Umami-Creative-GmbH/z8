@@ -80,6 +80,7 @@
     "pendingApprovals": "Pending Approvals",
     "pendingExceptionRequests": "{count, plural, one {# pending exception request awaiting review} other {# pending exception requests awaiting review}}",
     "returns": "Returns {date}",
+    "reviewComplianceExceptions": "Review exception requests",
     "since": "Since {time}",
     "textClockedInEmployee": "• {name} - since {clockedInAt} ({duration})",
     "textCompliance": "**⚠️ Compliance:**",

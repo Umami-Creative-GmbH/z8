@@ -101,11 +101,11 @@
       "created": "Criado",
       "decisionRecorded": "Decisão registrada",
       "destination": "Destino",
+      "earlierClaim": "Solicitação anterior",
+      "earlierReceiptIdentity": "Recibo anterior: o checksum do conteúdo não foi registrado.",
       "history": "Histórico de decisões",
       "historyDescription": "Cada etapa desta solicitação, as mais antigas primeiro. Os horários são exibidos em UTC.",
       "intermediateApproval": "Aprovação registrada — aguardando aprovação adicional",
-      "legacyClaim": "Solicitação legada",
-      "legacyReceiptIdentity": "Recibo legado: o checksum do conteúdo não foi registrado.",
       "loading": "Carregando solicitação…",
       "noReceipts": "Nenhum recibo registrado",
       "notRecorded": "Não registrado",
@@ -117,7 +117,7 @@
       "submitted": "Enviado",
       "title": "Solicitação de despesas de viagem",
       "unavailable": "Solicitação não encontrada ou o acesso não está mais disponível.",
-      "unknownDates": "Contexto da data da viagem não registrado (solicitação legada)"
+      "unknownEarlierClaimDates": "Contexto da data da viagem não registrado (solicitação anterior)"
     },
     "errors": {
       "loadDetailRetry": "Não foi possível carregar esta solicitação. Tente novamente."
@@ -166,6 +166,7 @@
         "title": "{count, plural, one {# despesa aprovada aguarda reembolso e não é coberta por nenhum responsável por despesas} other {# despesas aprovadas aguardam reembolso e não são cobertas por nenhum responsável por despesas}}"
       },
       "description": "Despesas aprovadas e o que ainda é devido aos funcionários. Registrar um reembolso documenta um pagamento feito fora do Z8; nenhum dinheiro é transferido.",
+      "earlierClaim": "Solicitação de {type} anterior",
       "employeePaid": "Pago pelo funcionário: {amount}",
       "empty": {
         "allReimbursed": "Nada pendente para registrar: todas as despesas aprovadas foram reembolsadas.",
@@ -258,7 +259,6 @@
         }
       },
       "inPayrollRun": "Incluído em {run}",
-      "legacyClaim": "Reivindicação herdada de {type}",
       "loading": "Carregando fila financeira…",
       "pagination": {
         "label": "Páginas da fila do financeiro",

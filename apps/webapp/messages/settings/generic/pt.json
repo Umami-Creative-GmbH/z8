@@ -1,5 +1,60 @@
 {
   "settings": {
+    "apprenticeRelease": {
+      "blockWeekTrainingNote": "São permitidas até 2 horas de treinamento na empresa por semana nestes dias de formação em bloco (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG). Para um funcionário menor de 18 anos, essas horas são adicionais à semana em bloco, que conta com a média semanal de horas de trabalho (§ 9 Abs. 2 Nr. 2 JArbSchG), e não contam para os limites diários e semanais do § 8.",
+      "credit": {
+        "exam": "Exame a partir de {start}: {minutes} min creditados",
+        "fullDays": "{count, plural, one {# dia útil creditado integralmente} other {# dias úteis creditados integralmente}}",
+        "minutes": "{minutes} min de tempo escolar creditados",
+        "schoolTime": "Escola {start}–{end}: {minutes} min creditados"
+      },
+      "description": "Escola profissional, semanas de formação em bloco e dias de exame são dispensas remuneradas (§ 15 BBiG): são creditados como tempo de trabalho, nunca deduzidos das férias e nunca geram saldo negativo de trabalho.",
+      "empty": "Nenhum dia de dispensa registrado ainda.",
+      "fields": {
+        "date": "Data",
+        "endsOn": "Último dia",
+        "examEndTime": "Término do exame (incluindo intervalos)",
+        "examStartTime": "Início do exame",
+        "examTimeHint": "O exame dispensa e credita apenas a sua duração. Deixe ambos em branco para dispensar o dia inteiro.",
+        "includePreExamDay": "Dispensar também o dia útil anterior ao exame final escrito",
+        "kind": "Dispensa",
+        "lessons": "Aulas (45 min cada)",
+        "note": "Observação (opcional)",
+        "schoolEndTime": "Término da escola (incluindo intervalos)",
+        "schoolHoursPerWeek": "Horas escolares por semana (horas cronológicas)",
+        "schoolStartTime": "Início da escola",
+        "schoolTimeHint": "Um dia escolar curto credita o horário escolar incluindo intervalos. Deixe ambos em branco para creditar 45 minutos por aula."
+      },
+      "kind": {
+        "blockWeek": "Semana escolar de formação em bloco",
+        "examDay": "Dia de exame",
+        "preExamDay": "Dia útil antes do exame",
+        "schoolDay": "Dia de escola profissional"
+      },
+      "lessons": "{count} aulas",
+      "record": "Registrar dia de dispensa",
+      "recorded": "Dia de dispensa registrado",
+      "refusal": {
+        "dayAlreadyReleased": "Este dia já está com dispensa registrada. Remova primeiro a dispensa registrada para esta data.",
+        "examTimeInvalid": "Informe quando o exame começa e termina, ou deixe ambos em branco. Ele deve terminar depois de começar.",
+        "invalidRange": "Verifique as datas: o último dia não pode ser anterior ao primeiro.",
+        "invalidValue": "Verifique as aulas e as horas escolares.",
+        "lessonsRequired": "Informe o número de aulas.",
+        "noPrecedingWorkingDay": "Não há dia útil na semana anterior ao exame para dispensar.",
+        "notApprentice": "Dias de dispensa só podem ser registrados enquanto o contrato do funcionário o qualificar como aprendiz.",
+        "overlap": "Esta dispensa coincide com uma dispensa já registrada.",
+        "reasonRequired": "Explique o motivo da remoção do dia de dispensa.",
+        "schoolMinutesRequired": "Informe as horas escolares planejadas da semana em bloco.",
+        "schoolTimeInvalid": "Informe quando a escola começa e termina, ou deixe ambos em branco. O término deve ser após o início.",
+        "singleDay": "Apenas uma semana de formação em bloco abrange vários dias."
+      },
+      "title": "Dispensa escolar e de exame",
+      "void": "Remover",
+      "voidConfirm": "Remover dia de dispensa",
+      "voided": "Dia de dispensa removido",
+      "voidReason": "Por que está sendo removido?",
+      "workplaceReturn": "Menor de 18 anos: sem retorno ao trabalho após este dia escolar integral (§ 9 Abs. 1 Nr. 2 JArbSchG)"
+    },
     "approvalSettings": {
       "pageDescription": "Configure quem aprova solicitações, quando aprovações atrasadas são escaladas e quais problemas de aprovação precisam de acompanhamento."
     },
@@ -230,6 +285,7 @@
         "employeeDescription": "O custo interno total por hora deste funcionário, usado para a margem. Separado do salário.",
         "employeeTitle": "Taxa de custo",
         "empty": "Nenhuma taxa de custo ainda. A margem do trabalho deste funcionário é exibida como custo desconhecido.",
+        "emptyContractor": "Ainda sem taxa de custo. A margem usa a taxa de prestador de serviços externo desta pessoa para o trabalho terceirizado; outros trabalhos, e trabalhos terceirizados sem taxa, são exibidos como custo desconhecido.",
         "history": "Histórico",
         "historyAction": "Histórico da taxa de custo de {name}",
         "hourly": "Por hora",
@@ -652,14 +708,6 @@
         "title": "Nem todos os envios de período deste mês foram aprovados. Isso não impede o fechamento:"
       }
     },
-    "compliance": {
-      "description": "Analise e gerencie solicitações de exceção de conformidade dos membros da equipe",
-      "metadata": {
-        "description": "Configure as definições de conformidade com a ArbZG e gerencie solicitações de exceção",
-        "title": "Configurações de conformidade | ArbZG"
-      },
-      "title": "Conformidade ArbZG"
-    },
     "customDomains": {
       "title": "Domínio e identidade visual"
     },
@@ -1016,7 +1064,7 @@
         "all": "Todos os funcionários nesta organização",
         "allDescription": "A responsabilidade segue a filiação atual à organização. Os verificadores nunca podem verificar a si mesmos.",
         "attribution": "Concedido por {actor} em {time}",
-        "editor": "Escopo do verificador",
+        "editTitle": "Editar responsabilidade do verificador",
         "empty": "Nenhuma responsabilidade de verificador atribuída",
         "failed": "Não foi possível atualizar ou acessar a responsabilidade do verificador de carteira de motorista. Verifique suas permissões e seleções.",
         "formerEmployee": "Ex-funcionários não podem ser adicionados. Escolha funcionários da lista atual.",
@@ -2116,6 +2164,7 @@
           "unavailable": "Não foi possível concluir esta verificação. Repita as verificações para tentar novamente."
         },
         "payrollSetup": {
+          "externalContractorsSkipped": "{count, plural, one {# Prestador de serviços externo é ignorado para termos de emprego e identificadores de pessoal: as exportações da folha de pagamento nunca incluem Prestadores de serviços externos.} other {# Prestadores de serviços externos são ignorados para termos de emprego e identificadores de pessoal: as exportações da folha de pagamento nunca incluem Prestadores de serviços externos.}}",
           "fixEmployees": "Revisar colaboradores",
           "fixPayrollExport": "Abrir configurações de exportação da folha de pagamento",
           "inviteesSkipped": "{count, plural, one {# pessoa convidada é ignorada para termos de emprego e identificadores de pessoal até ingressar.} other {# pessoas convidadas são ignoradas para termos de emprego e identificadores de pessoal até ingressarem.}}",
@@ -2223,6 +2272,7 @@
           "mappingsMissing": "Nenhum mapeamento de tipo de salário ativo",
           "mappingsPresent": "{count, plural, one {# destino de exportação, tipos de salário mapeados} other {# destinos de exportação, tipos de salário mapeados}}",
           "notExported": "A organização não tem nenhum destino de exportação de folha de pagamento ativo, portanto não há pré-requisitos de folha de pagamento.",
+          "notNeededExternalContractor": "Não necessário: Prestador de serviços externo",
           "notYetInvited": "Ainda não: o convite ainda está pendente",
           "personnelIdentifier": "Número de pessoal",
           "termsConfirmed": "Confirmado para hoje",
@@ -2258,6 +2308,7 @@
           "name": "Política",
           "none": "Nenhuma política de trabalho em vigor hoje: nenhuma foi atribuída a eles, à sua equipe ou à organização.",
           "noSchedule": "Sem escala",
+          "notApplicable": "Nenhuma política de trabalho se aplica: atua como Prestador de serviços externo.",
           "noWorkingDays": "Sem dias de trabalho",
           "title": "Política de trabalho",
           "workingDays": "Dias de trabalho"
@@ -3085,7 +3136,15 @@
       "updateProfile": "Atualizar Perfil",
       "updateSuccess": "Perfil atualizado com sucesso",
       "uploading": "Enviando",
-      "uploadProfilePicture": "Enviar foto de perfil"
+      "uploadProfilePicture": "Enviar foto de perfil",
+      "workingStudent": {
+        "balance": "{remaining} de {limit} semanas acima de 20 horas restantes ({used} usadas nos últimos 12 meses).",
+        "description": "Como estudante trabalhador, você pode trabalhar mais de 20 horas em no máximo 26 semanas dentro de 12 meses.",
+        "lectureFree": "Períodos sem aulas registrados",
+        "lectureFreeEmpty": "Nenhum período sem aulas registrado. Peça ao RH para registrar seus recessos semestrais.",
+        "noBaseline": "Nenhum limite legal se aplica a esta semana.",
+        "title": "Status de estudante trabalhador"
+      }
     },
     "projects": {
       "budgetUsed": "Orçamento utilizado",

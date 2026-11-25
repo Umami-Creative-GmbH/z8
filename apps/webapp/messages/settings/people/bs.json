@@ -409,6 +409,7 @@
         "clearSearch": "Očisti pretragu",
         "clockReview": "Potreban pregled: odjava radnog vremena pri odlasku",
         "confirmRehire": "Potvrdi ponovno zapošljavanje",
+        "contractorRehireHint": "Vanjski izvođač nema uvjete zaposlenja, pravila rada niti dane godišnjeg odmora. Tarife izvođača postavljaju se zasebno.",
         "correctTime": "Ispravi vrijeme",
         "currency": "Valuta",
         "currencyInvalid": "Unesite troslovni kod valute.",
@@ -423,6 +424,10 @@
         "effectiveDescription": "Pristup je istekao u {cutoff} ({timezone}).",
         "employmentGap": "Nije zaposlen(a) {startDate} – {endDate}",
         "employmentStint": "Zaposlenje {startDate} – {endDate}",
+        "engagement": {
+          "employee": "Zaposlenik"
+        },
+        "engagementKind": "Angažman",
         "errors": {
           "actorNotAuthorized": "Samo vlasnici i administratori organizacije mogu upravljati odlascima zaposlenika.",
           "departureAlreadyEffective": "Ovaj odlazak je već stupio na snagu. Ponovo zaposlite zaposlenika da biste vratili pristup.",
@@ -668,6 +673,7 @@
           "employeeNotFound": "Zaposlenik nije pronađen.",
           "exceedsBalance": "Isplata je veća od radnog salda zaposlenika na kraju tog dana.",
           "exceedsLaterBalance": "Isplata bi ostavila radni saldo ispod nule nakon kasnije isplate prekovremenog rada. Prvo poništite tu isplatu ili evidentirajte manji iznos.",
+          "externalContractorDay": "Na ovaj dan osoba radi kao vanjski izvođač, tako da obračun plaća nikada ne bi izvršio ovu isplatu. Postavite datum na dan kada je bila zaposlena.",
           "failed": "Nije uspjelo ažuriranje radnog salda. Pokušajte ponovo.",
           "futureDay": "Dan ne može biti nakon današnjeg u vremenskoj zoni zaposlenika.",
           "invalidInput": "Provjerite dan, sate i minute, te razlog.",

@@ -16,6 +16,7 @@
     },
     "card": {
       "decision": "Vendimi",
+      "returned": "Kthyer",
       "submitted": "Dorëzuar"
     },
     "empty": {
@@ -53,7 +54,7 @@
       "title": "Në shqyrtim"
     },
     "needsAttention": {
-      "description": "Kërkesat e refuzuara që mund të kërkojnë korrigjim përpara se të ridorëzohen.",
+      "fixDescription": "Kërkesa të kthyera ose të refuzuara që kërkojnë korrigjim përpara se të ridërgohen.",
       "title": "Kërkon vëmendje"
     },
     "reasonLabel": "Arsyeja",
@@ -65,26 +66,58 @@
       "absence": {
         "title": "Kërkesë për mungesë"
       },
+      "complianceException": {
+        "durationHours": "{hours} h",
+        "durationHoursMinutes": "{hours} h {minutes} min",
+        "durationMinutes": "{minutes} min",
+        "overtimeDaily": "Përjashtim për orët shtesë ditore",
+        "overtimeMonthly": "Përjashtim për orët shtesë mujore",
+        "overtimeWeekly": "Përjashtim për orët shtesë javore",
+        "planned": "E planifikuar: {duration}",
+        "restPeriod": "Përjashtim për periudhën e pushimit",
+        "title": "Përjashtim nga përputhshmëria",
+        "validity": "E vlefshme: {window} ({timeZone})"
+      },
+      "earlierClaim": {
+        "mileage": "Kërkesë e mëparshme për kilometrazhin",
+        "perDiem": "Kërkesë e mëparshme për dietën",
+        "receipt": "Kërkesë e mëparshme për faturën",
+        "title": "Kërkesë e mëparshme"
+      },
+      "expenseReport": {
+        "adjustmentOf": "Rregullim i “{title}”",
+        "adjustmentOfUntitled": "Rregullim i një raporti të mëparshëm",
+        "kind": {
+          "standaloneMileage": "Kilometrazh më vete",
+          "standaloneReceipt": "Faturë më vete",
+          "trip": "Raport udhëtimi"
+        },
+        "untitledMileage": "Kilometrazh pa titull",
+        "untitledReceipt": "Faturë pa titull",
+        "untitledTrip": "Udhëtim pa titull"
+      },
       "timeCorrection": {
         "subtitle": "Korrigjim për regjistrimin e orarit",
         "title": "Kërkesë për korrigjimin e orarit"
-      },
-      "travelExpense": {
-        "title": "Kërkesë për shpenzime udhëtimi"
       }
     },
-    "scope": "Kërkesat tuaja për mungesë, korrigjim të orarit dhe shpenzime të mëparshme në organizatën aktive",
+    "returnNoteLabel": "Shënimi i shqyrtuesit",
+    "scopeAllRequests": "Kërkesat tuaja për mungesë, korrigjim të orarit, përjashtim nga përputhshmëria dhe shpenzime në organizatën aktive",
     "sourceError": {
       "absence": "Kërkesat për mungesë nuk mund të ngarkoheshin.",
+      "complianceException": "Përjashtimet nga përputhshmëria nuk mund të ngarkoheshin.",
+      "earlierClaim": "Kërkesat e mëparshme nuk mund të ngarkoheshin.",
+      "expenseReport": "Raportet e shpenzimeve nuk mund të ngarkoheshin.",
       "timeCorrection": "Kërkesat për korrigjimin e orarit nuk mund të ngarkoheshin.",
-      "title": "Disa kërkesa nuk mund të ngarkoheshin.",
-      "travelExpense": "Kërkesat për shpenzimet e udhëtimit nuk mund të ngarkoheshin."
+      "title": "Disa kërkesa nuk mund të ngarkoheshin."
     },
     "status": {
       "approved": "Miratuar",
       "cancelled": "Anuluar",
+      "expired": "Skaduar",
       "inReview": "Në shqyrtim",
-      "rejected": "Refuzuar"
+      "rejected": "Refuzuar",
+      "returned": "Kthyer"
     },
     "summary": {
       "ariaLabel": "Përmbledhja e kërkesës",
@@ -96,8 +129,10 @@
     "title": "Kërkesat e mia",
     "types": {
       "absence": "Mungesë",
-      "timeCorrection": "Korrigjim i orarit",
-      "travelExpense": "Shpenzime udhëtimi"
+      "complianceException": "Përjashtim nga përputhshmëria",
+      "earlierClaim": "Kërkesë e mëparshme",
+      "expenseReport": "Raport shpenzimesh",
+      "timeCorrection": "Korrigjim i orarit"
     },
     "unavailableTitle": "Kërkesat nuk janë të disponueshme"
   }

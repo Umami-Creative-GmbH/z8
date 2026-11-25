@@ -16,6 +16,10 @@
       "createCategoryButton": "Krijo kategori",
       "deactivate": "Çaktivizo",
       "defaults": {
+        "contractorUnavailability": {
+          "description": "Shënim kalendari që një Kontraktor i jashtëm nuk është i disponueshëm; jo pushim vjetor apo leje",
+          "name": "I padisponueshëm (Kontraktor i jashtëm)"
+        },
         "timeOffInLieu": {
           "description": "Leje e marrë në llogari të bilancit të punës",
           "name": "Pushim kompensues"
@@ -32,6 +36,7 @@
         "activeHelp": "Kategoritë aktive janë të disponueshme për kërkesa të reja për mungesë.",
         "color": "Ngjyra",
         "colorHelp": "Shënuesi i kalendarit",
+        "contractorUnavailabilityRules": "Padisponueshmëria e Kontraktorit të jashtëm është vetëm një shënim kalendari: ajo nuk konsumon kurrë pushime, orar pune ose balancën e punës.",
         "countsAgainstVacation": "Zbritet nga bilanci i pushimeve",
         "countsAgainstVacationHelp": "Zbrit ditët e miratuara nga pushimet e lejuara të punonjësit.",
         "deputyRequired": "Kërkohet zëvendësues",
@@ -59,6 +64,7 @@
         "translations": "Përkthimet",
         "translationsHelp": "Emërtime opsionale të lokalizuara për punonjësit që përdorin një gjuhë tjetër në aplikacion.",
         "type": "Lloji",
+        "typeContractorUnavailability": "Padisponueshmëria e Kontraktorit të jashtëm",
         "typeHelp": "Grupon raportet dhe rrjedhat vijuese të punës për mungesat.",
         "typePlaceholder": "Zgjidhni llojin e kategorisë",
         "typeTimeOffInLieu": "Pushim Kompensues"

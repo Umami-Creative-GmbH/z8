@@ -16,6 +16,10 @@
       "createCategoryButton": "Kategori Oluştur",
       "deactivate": "Devre dışı bırak",
       "defaults": {
+        "contractorUnavailability": {
+          "description": "Bir Harici Yüklenicinin müsait olmadığına dair takvim notu; tatil veya izin değildir",
+          "name": "Müsait Değil (Harici Yüklenici)"
+        },
         "timeOffInLieu": {
           "description": "Çalışma bakiyesinden kullanılan izin",
           "name": "Telafi izni"
@@ -32,6 +36,7 @@
         "activeHelp": "Aktif kategoriler yeni izin talepleri için kullanılabilir.",
         "color": "Renk",
         "colorHelp": "Takvim işareti",
+        "contractorUnavailabilityRules": "Harici Yüklenicinin müsait olmama durumu yalnızca bir takvim işaretçisidir: asla izin, çalışma süresi veya çalışma bakiyesini kullanmaz.",
         "countsAgainstVacation": "İzin Bakiyesinden Düşer",
         "countsAgainstVacationHelp": "Onaylanan günleri çalışanın izin hakkından düşer.",
         "deputyRequired": "Vekil zorunlu",
@@ -59,6 +64,7 @@
         "translations": "Çeviriler",
         "translationsHelp": "Farklı bir uygulama dili kullanan çalışanlar için isteğe bağlı yerelleştirilmiş etiketler.",
         "type": "Tür",
+        "typeContractorUnavailability": "Harici Yüklenici müsait olmama durumu",
         "typeHelp": "Raporları ve sonraki izin iş akışlarını gruplandırır.",
         "typePlaceholder": "Kategori türünü seçin",
         "typeTimeOffInLieu": "Telafi İzni"

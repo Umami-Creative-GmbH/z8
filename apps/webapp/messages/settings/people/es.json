@@ -409,6 +409,7 @@
         "clearSearch": "Borrar búsqueda",
         "clockReview": "Requiere revisión: registro de salida por desvinculación",
         "confirmRehire": "Confirmar recontratación",
+        "contractorRehireHint": "Un contratista externo no tiene condiciones de empleo, política de trabajo ni asignación de vacaciones. Las tarifas del contratista se configuran por separado.",
         "correctTime": "Corregir hora",
         "currency": "Moneda",
         "currencyInvalid": "Introduce un código de moneda de tres letras.",
@@ -423,6 +424,10 @@
         "effectiveDescription": "El acceso finalizó el {cutoff} ({timezone}).",
         "employmentGap": "Sin empleo {startDate} – {endDate}",
         "employmentStint": "Empleo {startDate} – {endDate}",
+        "engagement": {
+          "employee": "Empleado"
+        },
+        "engagementKind": "Contratación",
         "errors": {
           "actorNotAuthorized": "Solo los propietarios y administradores de la organización pueden gestionar las bajas de empleados.",
           "departureAlreadyEffective": "Esta baja ya se ha hecho efectiva. Recontrata al empleado para restaurar el acceso.",
@@ -668,6 +673,7 @@
           "employeeNotFound": "Empleado no encontrado.",
           "exceedsBalance": "El pago es superior al saldo de trabajo del empleado al final de ese día.",
           "exceedsLaterBalance": "El pago dejaría el saldo de trabajo por debajo de cero tras un pago posterior de horas extra. Cancela ese pago primero o registra una cantidad menor.",
+          "externalContractorDay": "En este día la persona trabaja como contratista externo, por lo que la nómina nunca liquidaría este pago. Asígnale una fecha en la que figurase como empleada.",
           "failed": "No se pudo actualizar el saldo de trabajo. Inténtalo de nuevo.",
           "futureDay": "El día no puede ser posterior a hoy en la zona horaria del empleado.",
           "invalidInput": "Comprueba el día, las horas y minutos, y el motivo.",

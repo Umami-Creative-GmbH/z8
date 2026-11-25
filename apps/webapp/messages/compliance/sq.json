@@ -20,6 +20,10 @@
           "description": "Verifikimet e fundit të pavlefshme: {invalidVerifications}",
           "title": "Verifikimi i auditimit dështoi"
         },
+        "pendingExceptions": {
+          "description": "{count, plural, one {# përjashtim nga përputhshmëria pret një vendim} other {# përjashtime nga përputhshmëria presin një vendim}}",
+          "title": "Përjashtimet nga përputhshmëria në pritje"
+        },
         "sensitiveAction": {
           "description": "{action} në {entityType}",
           "title": "Veprim i ndjeshëm: {action}"
@@ -53,7 +57,10 @@
           "generalPolicyViolations": "Shkelje të tjera të politikave: {count}",
           "overtimeViolations": "Shkelje të orarit shtesë: {count}",
           "pendingExceptions": "Përjashtime në pritje: {count}",
-          "restPeriodViolations": "Shkelje të periudhës së pushimit: {count}"
+          "restPeriodViolations": "Shkelje të periudhës së pushimit: {count}",
+          "statutoryAcknowledgements": "Konfirmimet ligjore: {pending} në pritje, {stale} të pavlefshme nga puna ose turnet më të reja",
+          "statutoryFindings": "{warning, plural, one {Gjetjet ligjore: {critical} kritike, # paralajmërim} other {Gjetjet ligjore: {critical} kritike, # paralajmërime}}",
+          "statutoryUnavailable": "Disa monitorues ligjorë nuk mund të ngarkoheshin."
         }
       },
       "footer": {
@@ -61,12 +68,19 @@
         "refreshMeaning": "Rifreskimi ringarkon sinjalet e regjistruara; nuk i rivlerëson gjetjet sipas një politike të re."
       },
       "links": {
-        "inspectCompliance": "Inspekto pajtueshmërinë",
         "inspectInAuditLog": "Inspekto në regjistrin e auditimit",
         "openAuditExport": "Hap eksportin e auditimit",
         "openAuditLog": "Hap regjistrin e auditimit",
-        "openComplianceSettings": "Hap cilësimet e përputhshmërisë",
-        "reviewAuditExport": "Shqyrto eksportin e auditimit"
+        "reviewAuditExport": "Shqyrto eksportin e auditimit",
+        "reviewComplianceExceptions": "Shqyrto përjashtimet nga përputhshmëria",
+        "reviewPolicyViolations": "Shqyrto shkeljet e politikave",
+        "statutoryDomain": {
+          "minijob": "Minijob: {count} të hapura",
+          "on_call": "Në gatishmëri: {count} të hapura",
+          "short_term": "Afatshkurtra: {count} të hapura",
+          "working_student": "Studentë në punë: {count} të hapur",
+          "youth_apprentice": "Të rinj dhe praktikantë: {count} të hapur"
+        }
       },
       "loading": "Po ngarkohen sinjalet e përputhshmërisë",
       "overview": "Përmbledhje e pajtueshmërisë",
@@ -104,6 +118,7 @@
             "healthy": "Nuk u zbulua asnjë problem i fundit me politikat e fuqisë punëtore",
             "warning": "Përputhshmëria e fuqisë punëtore po devijon"
           },
+          "statutoryReviews": "Shqyrtimet ligjore",
           "title": "Përputhshmëria e fuqisë punëtore"
         }
       },
@@ -121,11 +136,6 @@
       }
     },
     "exception": {
-      "approved": "Përjashtimi u miratua",
-      "approvedDescription": "Përjashtimi i përputhshmërisë është miratuar.",
-      "approveFailed": "Miratimi dështoi",
-      "approveFor": "Mirato përjashtimin {type} për {name}",
-      "loadError": "Kërkesat e pezulluara për përjashtim nuk mund të ngarkoheshin.",
       "plannedDuration": "E planifikuar",
       "plannedDurationHelp": "Vlerësoni sa kohë shtesë parashikoni se do t'ju nevojitet përtej kufirit.",
       "plannedHours": "Orët e planifikuara",
@@ -135,35 +145,16 @@
       "reason": "Arsyeja e përjashtimit",
       "reasonPlaceholder": "Shpjegoni pse ju nevojitet ky përjashtim (p.sh., afat urgjent i projektit, takim kritik me klientin)...",
       "reasonRequiredDescription": "Ju lutemi jepni një arsye për kërkesën tuaj të përjashtimit.",
-      "rejectDescription": "Jepni një arsye për refuzimin e kësaj kërkese përjashtimi (opsionale)",
-      "rejected": "Përjashtimi u refuzua",
-      "rejectedDescription": "Përjashtimi i përputhshmërisë është refuzuar.",
-      "rejectFailed": "Refuzimi dështoi",
-      "rejectFor": "Refuzo përjashtimin {type} për {name}",
-      "rejectionPlaceholder": "Vendosni arsyen për refuzimin e këtij përjashtimi...",
-      "rejectionReason": "Arsyeja e refuzimit",
-      "rejectionReasonTooLong": "Arsyeja duhet të ketë 500 ose më pak karaktere.",
-      "rejectTitle": "Refuzo kërkesën për përjashtim",
       "requestDescription": "Kërkoni miratim paraprak nga menaxheri juaj për të vazhduar pavarësisht kufizimeve të përputhshmërisë. Përjashtimet e miratuara janë të vlefshme për 24 orë.",
-      "requestedAt": "E kërkuar",
       "requestFailed": "Kërkesa dështoi",
       "requestSubmitted": "Kërkesa për përjashtim u dërgua",
       "requestSubmittedDescription": "Menaxheri juaj do të njoftohet dhe mund të miratojë ose refuzojë kërkesën tuaj.",
       "requestTitle": "Kërko përjashtim të përputhshmërisë",
       "submit": "Dërgo kërkesën",
-      "type": "Lloji i përjashtimit",
-      "types": {
-        "overtimeDaily": "Orët shtesë ditore",
-        "overtimeMonthly": "Orët shtesë mujore",
-        "overtimeWeekly": "Orët shtesë javore",
-        "restPeriod": "Periudha e pushimit"
-      }
+      "type": "Lloji i përjashtimit"
     },
     "hasApprovedException": "Keni një përjashtim të miratuar. Mund të vazhdoni.",
     "moreAlerts": "më shumë",
-    "noExceptions": "Nuk ka kërkesa pezull për përjashtim",
-    "pendingExceptions": "Kërkesat pezull për përjashtim",
-    "pendingExceptionsDescription": "Shqyrtoni kërkesat për përjashtim që kërkojnë miratimin tuaj",
     "requestException": "Kërko përjashtim",
     "restPeriodMessage": "Ju duhen edhe {time} pushim përpara se të mund të regjistroni hyrjen. Hyrja tjetër e lejuar: {nextTime}",
     "restPeriodRequired": "Kërkohet periudhë pushimi"

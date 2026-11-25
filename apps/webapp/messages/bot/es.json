@@ -231,6 +231,7 @@
       "openDashboard": "Abrir panel de Z8",
       "openShifts": "Turnos abiertos:",
       "pendingApprovals": "Aprobaciones pendientes:",
+      "reviewComplianceExceptions": "Revisar solicitudes de excepción",
       "title": "Resumen diario - {date}",
       "viewDashboardAt": "Ver el panel completo en {url}",
       "whosOut": "Quién está ausente:"

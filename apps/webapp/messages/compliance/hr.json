@@ -20,6 +20,10 @@
           "description": "Nedavne nevažeće verifikacije: {invalidVerifications}",
           "title": "Provjera revizije nije uspjela"
         },
+        "pendingExceptions": {
+          "description": "{count, plural, one {# iznimka od usklađenosti čeka na odluku} few {# iznimke od usklađenosti čekaju na odluku} other {# iznimaka od usklađenosti čeka na odluku}}",
+          "title": "Iznimke od usklađenosti na čekanju"
+        },
         "sensitiveAction": {
           "description": "{action} na {entityType}",
           "title": "Osjetljiva radnja: {action}"
@@ -53,7 +57,10 @@
           "generalPolicyViolations": "Ostala kršenja pravila: {count}",
           "overtimeViolations": "Kršenja pravila o prekovremenom radu: {count}",
           "pendingExceptions": "Iznimke na čekanju: {count}",
-          "restPeriodViolations": "Kršenja pravila o razdoblju odmora: {count}"
+          "restPeriodViolations": "Kršenja pravila o razdoblju odmora: {count}",
+          "statutoryAcknowledgements": "Zakonske potvrde: {pending} na čekanju, {stale} poništeno novijim radom ili smjenama",
+          "statutoryFindings": "{warning, plural, one {Zakonski nalazi: {critical} kritičnih, # upozorenje} other {Zakonski nalazi: {critical} kritičnih, # upozorenja} }",
+          "statutoryUnavailable": "Neke zakonske nadzore nije bilo moguće učitati."
         }
       },
       "footer": {
@@ -61,12 +68,19 @@
         "refreshMeaning": "Osvježavanjem se ponovno učitavaju zabilježeni signali; nalazi se ne procjenjuju ponovno prema novoj politici."
       },
       "links": {
-        "inspectCompliance": "Pregledaj usklađenost",
         "inspectInAuditLog": "Pregledaj u revizijskom dnevniku",
         "openAuditExport": "Otvori izvoz revizije",
         "openAuditLog": "Otvori revizijski dnevnik",
-        "openComplianceSettings": "Otvori postavke usklađenosti",
-        "reviewAuditExport": "Pregledaj izvoz revizije"
+        "reviewAuditExport": "Pregledaj izvoz revizije",
+        "reviewComplianceExceptions": "Pregledaj iznimke od usklađenosti",
+        "reviewPolicyViolations": "Pregledaj kršenja pravila",
+        "statutoryDomain": {
+          "minijob": "Minijob: {count} otvoreno",
+          "on_call": "Pripravnost: {count} otvoreno",
+          "short_term": "Kratkotrajni rad: {count} otvoreno",
+          "working_student": "Zaposleni studenti: {count} otvoreno",
+          "youth_apprentice": "Mladi i pripravnici: {count} otvoreno"
+        }
       },
       "loading": "Učitavanje signala usklađenosti",
       "overview": "Pregled usklađenosti",
@@ -104,6 +118,7 @@
             "healthy": "Nisu otkriveni nedavni problemi s pravilima o radnoj snazi",
             "warning": "Usklađenost radne snage odstupa"
           },
+          "statutoryReviews": "Zakonski pregledi",
           "title": "Usklađenost radne snage"
         }
       },
@@ -121,11 +136,6 @@
       }
     },
     "exception": {
-      "approved": "Iznimka odobrena",
-      "approvedDescription": "Iznimka usklađenosti je odobrena.",
-      "approveFailed": "Odobravanje nije uspjelo",
-      "approveFor": "Odobri iznimku ({type}) za {name}",
-      "loadError": "Zahtjevi za iznimke na čekanju nisu se mogli učitati.",
       "plannedDuration": "Planirano",
       "plannedDurationHelp": "Procijenite koliko vam je dodatnog vremena potrebno izvan ograničenja.",
       "plannedHours": "Planirani sati",
@@ -135,35 +145,16 @@
       "reason": "Razlog za iznimku",
       "reasonPlaceholder": "Objasnite zašto vam je potrebna ova iznimka (npr. hitan rok projekta, važan sastanak s klijentom)...",
       "reasonRequiredDescription": "Navedite razlog za svoj zahtjev za iznimku.",
-      "rejectDescription": "Navedite razlog odbijanja ovog zahtjeva za iznimku (neobavezno)",
-      "rejected": "Iznimka odbijena",
-      "rejectedDescription": "Iznimka usklađenosti je odbijena.",
-      "rejectFailed": "Odbijanje nije uspjelo",
-      "rejectFor": "Odbij iznimku ({type}) za {name}",
-      "rejectionPlaceholder": "Unesite razlog za odbijanje ovog izuzeća...",
-      "rejectionReason": "Razlog odbijanja",
-      "rejectionReasonTooLong": "Razlog mora sadržavati najviše 500 znakova.",
-      "rejectTitle": "Odbij zahtjev za iznimku",
       "requestDescription": "Zatražite prethodno odobrenje od svog voditelja za nastavak unatoč ograničenjima usklađenosti. Odobrena izuzeća vrijede 24 sata.",
-      "requestedAt": "Zatraženo",
       "requestFailed": "Zahtjev nije uspio",
       "requestSubmitted": "Zahtjev za izuzeće je poslan",
       "requestSubmittedDescription": "Vaš će voditelj biti obaviješten te može odobriti ili odbiti vaš zahtjev.",
       "requestTitle": "Zatražite izuzeće od usklađenosti",
       "submit": "Podnesite zahtjev",
-      "type": "Vrsta izuzeća",
-      "types": {
-        "overtimeDaily": "Dnevni prekovremeni rad",
-        "overtimeMonthly": "Mjesečni prekovremeni rad",
-        "overtimeWeekly": "Tjedni prekovremeni rad",
-        "restPeriod": "Razdoblje odmora"
-      }
+      "type": "Vrsta izuzeća"
     },
     "hasApprovedException": "Imate odobreno izuzeće. Možete nastaviti.",
     "moreAlerts": "više",
-    "noExceptions": "Nema zahtjeva za izuzeće na čekanju",
-    "pendingExceptions": "Zahtjevi za izuzeće na čekanju",
-    "pendingExceptionsDescription": "Pregledajte zahtjeve za izuzeće koji zahtijevaju vaše odobrenje",
     "requestException": "Zatražite izuzeće",
     "restPeriodMessage": "Potrebno vam je još {time} odmora prije nego što se možete prijaviti. Sljedeća dopuštena prijava: {nextTime}",
     "restPeriodRequired": "Obavezno razdoblje odmora"

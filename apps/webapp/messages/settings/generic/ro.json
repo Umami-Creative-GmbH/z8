@@ -1,5 +1,60 @@
 {
   "settings": {
+    "apprenticeRelease": {
+      "blockWeekTrainingNote": "Sunt permise până la 2 ore de formare profesională în întreprindere pe săptămână în aceste zile de bloc (§ 9 alin. 1 nr. 3 JArbSchG, § 15 alin. 1 teza 3 BBiG). Pentru un angajat sub 18 ani, aceste ore se adaugă la săptămâna de bloc, care se calculează cu timpul mediu săptămânal de lucru (§ 9 alin. 2 nr. 2 JArbSchG), și nu se iau în calcul pentru limitele zilnice și săptămânale din § 8.",
+      "credit": {
+        "exam": "Examen de la {start}: {minutes} min creditate",
+        "fullDays": "{count, plural, one {# zi lucrătoare creditată integral} few {# zile lucrătoare creditate integral} other {# de zile lucrătoare creditate integral}}",
+        "minutes": "{minutes} min de cursuri creditate",
+        "schoolTime": "Școală {start}–{end}: {minutes} min creditate"
+      },
+      "description": "Școala profesională, săptămânile de cursuri comasate și zilele de examen reprezintă scutire plătită (§ 15 BBiG): sunt creditate ca timp de lucru, nu sunt deduse niciodată din concediu și nu generează niciodată un sold negativ de ore de lucru.",
+      "empty": "Nu a fost înregistrată încă nicio zi de scutire.",
+      "fields": {
+        "date": "Dată",
+        "endsOn": "Ultima zi",
+        "examEndTime": "Sfârșitul examenului (inclusiv pauzele)",
+        "examStartTime": "Începutul examenului",
+        "examTimeHint": "Examenul acordă scutire și creditează doar durata sa. Lăsați ambele câmpuri libere pentru a acorda scutire pentru întreaga zi.",
+        "includePreExamDay": "Acordă scutire și pentru ziua lucrătoare dinaintea examenului final scris",
+        "kind": "Scutire",
+        "lessons": "Ore de curs (câte 45 min)",
+        "note": "Notă (opțional)",
+        "schoolEndTime": "Sfârșitul cursurilor (inclusiv pauzele)",
+        "schoolHoursPerWeek": "Ore de școală pe săptămână (ore astronomice)",
+        "schoolStartTime": "Începutul cursurilor",
+        "schoolTimeHint": "O zi scurtă de școală creditează timpul de școală inclusiv pauzele. Lăsați ambele câmpuri libere pentru a credita câte 45 de minute pe oră de curs."
+      },
+      "kind": {
+        "blockWeek": "Săptămână comasată de școală",
+        "examDay": "Zi de examen",
+        "preExamDay": "Zi lucrătoare înainte de examen",
+        "schoolDay": "Zi de școală profesională"
+      },
+      "lessons": "{count} ore de curs",
+      "record": "Înregistrează ziua de scutire",
+      "recorded": "Zi de scutire înregistrată",
+      "refusal": {
+        "dayAlreadyReleased": "Această zi este deja scutită. Eliminați mai întâi scutirea înregistrată pentru ea.",
+        "examTimeInvalid": "Introduceți când începe și când se termină examenul, sau lăsați ambele câmpuri libere. Trebuie să se termine după ce începe.",
+        "invalidRange": "Verificați datele: ultima zi nu trebuie să fie înainte de prima.",
+        "invalidValue": "Verificați orele de curs și orele de școală.",
+        "lessonsRequired": "Introduceți numărul de ore de curs.",
+        "noPrecedingWorkingDay": "Nu există nicio zi lucrătoare în săptămâna dinaintea examenului pentru care să se acorde scutire.",
+        "notApprentice": "Zilele de scutire pot fi înregistrate doar dacă termenii contractuali ai angajatului îl definesc drept ucenic.",
+        "overlap": "Această scutire se suprapune cu o scutire deja înregistrată.",
+        "reasonRequired": "Explicați de ce este eliminată ziua de scutire.",
+        "schoolMinutesRequired": "Introduceți orele de școală planificate pentru săptămâna comasată.",
+        "schoolTimeInvalid": "Introduceți când încep și când se termină cursurile, sau lăsați ambele câmpuri libere. Trebuie să se termine după ce încep.",
+        "singleDay": "Doar o săptămână comasată de cursuri se întinde pe mai multe zile."
+      },
+      "title": "Scutire pentru școală și examene",
+      "void": "Elimină",
+      "voidConfirm": "Elimină ziua de scutire",
+      "voided": "Zi de scutire eliminată",
+      "voidReason": "De ce este eliminată?",
+      "workplaceReturn": "Sub 18 ani: fără întoarcere la muncă după această zi completă de școală (§ 9 alin. 1 nr. 2 JArbSchG)"
+    },
     "approvalSettings": {
       "pageDescription": "Configurați cine aprobă cererile, când sunt escaladate aprobările restante și care probleme de aprobare necesită monitorizare."
     },
@@ -230,6 +285,7 @@
         "employeeDescription": "Costul intern complet pe oră al acestui angajat, utilizat pentru marjă. Separat de salariu.",
         "employeeTitle": "Tarif de cost",
         "empty": "Niciun tarif de cost încă. Marja pentru munca acestui angajat apare ca având cost necunoscut.",
+        "emptyContractor": "Nu există încă un tarif de cost. Marja utilizează tariful de colaborator extern al acestei persoane pentru activitatea sa de contractant; celelalte activități și activitățile de contractant fără tarif apar cu cost necunoscut.",
         "history": "Istoric",
         "historyAction": "Istoricul ratei de cost pentru {name}",
         "hourly": "Orar",
@@ -652,14 +708,6 @@
         "title": "Nu toate trimiterile de perioadă pentru această lună sunt aprobate. Acest lucru nu blochează închiderea:"
       }
     },
-    "compliance": {
-      "description": "Examinați și gestionați solicitările de derogare de la conformitate primite de la membrii echipei",
-      "metadata": {
-        "description": "Configurați setările de conformitate ArbZG și gestionați cererile de derogare",
-        "title": "Setări de conformitate | ArbZG"
-      },
-      "title": "Conformitate ArbZG"
-    },
     "customDomains": {
       "title": "Domeniu și branding"
     },
@@ -1016,7 +1064,7 @@
         "all": "Toți angajații din această organizație",
         "allDescription": "Responsabilitatea urmează calitatea actuală de membru al organizației. Verificatorii nu se pot verifica niciodată pe ei înșiși.",
         "attribution": "Acordat de {actor} la {time}",
-        "editor": "Domeniu de competență al verificatorului",
+        "editTitle": "Editează responsabilitatea verificatorului",
         "empty": "Nicio responsabilitate de verificator atribuită",
         "failed": "Nu s-a putut actualiza sau accesa responsabilitatea de verificator al permisului de conducere. Verificați permisiunile și selecțiile dvs.",
         "formerEmployee": "Foștii angajați nu pot fi adăugați. Alegeți angajați din lista actuală.",
@@ -2116,6 +2164,7 @@
           "unavailable": "Această verificare nu a putut fi finalizată. Reîncercați verificările pentru a încerca din nou."
         },
         "payrollSetup": {
+          "externalContractorsSkipped": "{count, plural, one {# Contractor extern este omis pentru clauzele de angajare și identificatorii de personal: exporturile de salarizare nu includ niciodată Contractori externi.} few {# Contractori externi sunt omiși pentru clauzele de angajare și identificatorii de personal: exporturile de salarizare nu includ niciodată Contractori externi.} other {# de Contractori externi sunt omiși pentru clauzele de angajare și identificatorii de personal: exporturile de salarizare nu includ niciodată Contractori externi.}}",
           "fixEmployees": "Examinați angajații",
           "fixPayrollExport": "Deschideți setările de export pentru salarizare",
           "inviteesSkipped": "{count, plural, one {# persoană invitată este omisă pentru condițiile de angajare și identificatorii de personal până când se alătură.} other {# persoane invitate sunt omise pentru condițiile de angajare și identificatorii de personal până când se alătură.}}",
@@ -2223,6 +2272,7 @@
           "mappingsMissing": "Nicio mapare activă a tipurilor de salariu",
           "mappingsPresent": "{count, plural, one {# destinație de export, tipuri de salariu mapate} few {# destinații de export, tipuri de salariu mapate} other {# de destinații de export, tipuri de salariu mapate}}",
           "notExported": "Organizația nu are nicio destinație activă de export pentru salarizare, prin urmare nu există cerințe prealabile pentru salarizare.",
+          "notNeededExternalContractor": "Nu este necesar: Contractor extern",
           "notYetInvited": "Încă nu: sunt încă invitați",
           "personnelIdentifier": "Număr de personal",
           "termsConfirmed": "Confirmat pentru astăzi",
@@ -2258,6 +2308,7 @@
           "name": "Politică",
           "none": "Nicio politică de lucru aplicabilă astăzi: nu este atribuită niciuna persoanei, echipei sale sau organizației.",
           "noSchedule": "Niciun program",
+          "notApplicable": "Nu se aplică nicio politică de lucru: lucrează ca Contractor extern.",
           "noWorkingDays": "Nicio zi lucrătoare",
           "title": "Politică de lucru",
           "workingDays": "Zile lucrătoare"
@@ -3085,7 +3136,15 @@
       "updateProfile": "Actualizează profilul",
       "updateSuccess": "Profilul a fost actualizat cu succes",
       "uploading": "Se încarcă",
-      "uploadProfilePicture": "Încarcă fotografia de profil"
+      "uploadProfilePicture": "Încarcă fotografia de profil",
+      "workingStudent": {
+        "balance": "{remaining} din {limit} săptămâni cu peste 20 de ore rămase ({used} utilizate în ultimele 12 luni).",
+        "description": "În calitate de student angajat, poți lucra mai mult de 20 de ore în cel mult 26 de săptămâni într-un interval de 12 luni.",
+        "lectureFree": "Perioade fără cursuri înregistrate",
+        "lectureFreeEmpty": "Nu există perioade fără cursuri înregistrate. Solicită departamentului de resurse umane să înregistreze vacanțele semestriale.",
+        "noBaseline": "Nu se aplică nicio limită legală pentru această săptămână.",
+        "title": "Statut de student angajat"
+      }
     },
     "projects": {
       "budgetUsed": "Buget utilizat",

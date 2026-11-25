@@ -16,6 +16,10 @@
       "createCategoryButton": "Criar categoria",
       "deactivate": "Desativar",
       "defaults": {
+        "contractorUnavailability": {
+          "description": "Nota de calendário indicando que um Prestador de serviços externo está indisponível; não é férias nem licença",
+          "name": "Indisponível (Prestador de serviços externo)"
+        },
         "timeOffInLieu": {
           "description": "Folga descontada do saldo de trabalho",
           "name": "Folga compensatória"
@@ -32,6 +36,7 @@
         "activeHelp": "Categorias ativas estão disponíveis para novas solicitações de ausência.",
         "color": "Cor",
         "colorHelp": "Marcador de calendário",
+        "contractorUnavailabilityRules": "A indisponibilidade de um Prestador de serviços externo é apenas uma marcação no calendário: nunca utiliza férias, tempo de trabalho ou o saldo de horas.",
         "countsAgainstVacation": "Conta contra o saldo de férias",
         "countsAgainstVacationHelp": "Deduzir dias aprovados do saldo de férias do funcionário.",
         "deputyRequired": "Substituto obrigatório",
@@ -59,6 +64,7 @@
         "translations": "Traduções",
         "translationsHelp": "Rótulos localizados opcionais para funcionários que usam outro idioma no aplicativo.",
         "type": "Tipo",
+        "typeContractorUnavailability": "Indisponibilidade de Prestador de serviços externo",
         "typeHelp": "Agrupa relatórios e fluxos de trabalho de ausência subsequentes.",
         "typePlaceholder": "Selecione o tipo de categoria",
         "typeTimeOffInLieu": "Folga Compensatória"

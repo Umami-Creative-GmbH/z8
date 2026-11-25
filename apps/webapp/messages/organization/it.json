@@ -217,9 +217,33 @@
     },
     "invite": {
       "allowCreateOrganizations": "Consenti a questo utente di creare organizzazioni",
+      "contractor": {
+        "companyName": "Azienda contraente",
+        "compensation": {
+          "description": "Si applica dall'inizio dell'incarico una volta effettuata l'adesione. È visibile solo agli amministratori dell'organizzazione; puoi impostarla anche in seguito.",
+          "label": "Imposta la tariffa ora"
+        },
+        "legend": "Dettagli del collaboratore esterno (facoltativo)",
+        "noProjects": "Nessun progetto attivo al momento. Puoi assegnare i progetti in seguito.",
+        "plannedEndDate": "Fine prevista dell'incarico",
+        "plannedEndDateDescription": "L'ultimo giorno lavorativo. Una volta effettuata l'adesione, diventa una data di uscita programmata che revoca l'accesso e la postazione.",
+        "plannedEndDateNotFuture": "La fine prevista dell'incarico deve essere successiva a oggi.",
+        "projects": "Progetti",
+        "referenceCode": "Ordine di acquisto o centro di costo",
+        "vatId": "Partita IVA"
+      },
       "description": "Invia un invito per unirti a {organizationName}",
       "emailLabel": "Indirizzo email",
+      "engagement": {
+        "contractorDescription": "Registra le ore sui progetti; nessun termine contrattuale, criterio di lavoro o ferie",
+        "employee": "Dipendente",
+        "employeeDescription": "Si applicano condizioni contrattuali, criteri di lavoro e ferie",
+        "label": "Invita come"
+      },
       "error": "Impossibile inviare l'invito",
+      "errors": {
+        "projectNotFound": "Uno dei progetti selezionati non appartiene più a questa organizzazione. Seleziona nuovamente i progetti."
+      },
       "kioskOnly": {
         "description": "Per il personale senza un'email aziendale. Non possono accedere e timbrano solo tramite chiosco con il loro PIN. È possibile aggiungere un'email in seguito.",
         "firstName": "Nome",

@@ -16,6 +16,7 @@
     },
     "card": {
       "decision": "Karar",
+      "returned": "İade Edildi",
       "submitted": "Gönderildi"
     },
     "empty": {
@@ -53,7 +54,7 @@
       "title": "İnceleniyor"
     },
     "needsAttention": {
-      "description": "Yeniden gönderilmeden önce düzeltme gerektirebilecek reddedilmiş istekler.",
+      "fixDescription": "Yeniden gönderilmeden önce düzeltme gerektiren, iade edilmiş veya reddedilmiş talepler.",
       "title": "Dikkat gerektiriyor"
     },
     "reasonLabel": "Neden",
@@ -65,26 +66,58 @@
       "absence": {
         "title": "İzin isteği"
       },
+      "complianceException": {
+        "durationHours": "{hours} sa",
+        "durationHoursMinutes": "{hours} sa {minutes} dk",
+        "durationMinutes": "{minutes} dk",
+        "overtimeDaily": "Günlük fazla mesai istisnası",
+        "overtimeMonthly": "Aylık fazla mesai istisnası",
+        "overtimeWeekly": "Haftalık fazla mesai istisnası",
+        "planned": "Planlanan: {duration}",
+        "restPeriod": "Dinlenme süresi istisnası",
+        "title": "Uyumluluk istisnası",
+        "validity": "Geçerlilik: {window} ({timeZone})"
+      },
+      "earlierClaim": {
+        "mileage": "Önceki kilometre talebi",
+        "perDiem": "Önceki harcırah talebi",
+        "receipt": "Önceki fiş talebi",
+        "title": "Önceki talep"
+      },
+      "expenseReport": {
+        "adjustmentOf": "“{title}” düzeltmesi",
+        "adjustmentOfUntitled": "Önceki bir raporun düzeltmesi",
+        "kind": {
+          "standaloneMileage": "Bağımsız kilometre",
+          "standaloneReceipt": "Bağımsız fiş",
+          "trip": "Seyahat raporu"
+        },
+        "untitledMileage": "Başlıksız kilometre",
+        "untitledReceipt": "Başlıksız fiş",
+        "untitledTrip": "Başlıksız seyahat"
+      },
       "timeCorrection": {
         "subtitle": "Zaman girişi için düzeltme",
         "title": "Zaman düzeltme isteği"
-      },
-      "travelExpense": {
-        "title": "Seyahat masrafı talebi"
       }
     },
-    "scope": "Etkin kuruluştaki izin, zaman düzeltme ve eski masraf talepleriniz",
+    "returnNoteLabel": "İnceleyenin notu",
+    "scopeAllRequests": "Aktif kuruluştaki devamsızlık, zaman düzeltme, uyumluluk istisnası ve masraf talepleriniz",
     "sourceError": {
       "absence": "İzin istekleri yüklenemedi.",
+      "complianceException": "Uyumluluk istisnaları yüklenemedi.",
+      "earlierClaim": "Önceki talepler yüklenemedi.",
+      "expenseReport": "Masraf raporları yüklenemedi.",
       "timeCorrection": "Zaman düzeltme istekleri yüklenemedi.",
-      "title": "Bazı istekler yüklenemedi.",
-      "travelExpense": "Seyahat masrafı istekleri yüklenemedi."
+      "title": "Bazı istekler yüklenemedi."
     },
     "status": {
       "approved": "Onaylandı",
       "cancelled": "İptal edildi",
+      "expired": "Süresi doldu",
       "inReview": "İnceleniyor",
-      "rejected": "Reddedildi"
+      "rejected": "Reddedildi",
+      "returned": "İade edildi"
     },
     "summary": {
       "ariaLabel": "İstek özeti",
@@ -96,8 +129,10 @@
     "title": "İsteklerim",
     "types": {
       "absence": "İzin",
-      "timeCorrection": "Zaman düzeltme",
-      "travelExpense": "Seyahat masrafı"
+      "complianceException": "Uyumluluk istisnası",
+      "earlierClaim": "Önceki talep",
+      "expenseReport": "Masraf raporu",
+      "timeCorrection": "Zaman düzeltme"
     },
     "unavailableTitle": "İstekler kullanılamıyor"
   }

@@ -1,5 +1,60 @@
 {
   "settings": {
+    "apprenticeRelease": {
+      "blockWeekTrainingNote": "Bis zu 2 Stunde betrieblichi Usbildig pro Wuche sind a däne Blocktäg erlaubt (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG). Für Mitarbeiter under 18 chömed die Stunde zuesätzlich zur Blockwuche dezue, wo mit de durchschnittliche Wuchearbetsziit zellt (§ 9 Abs. 2 Nr. 2 JArbSchG), und zelled nöd zu de Tages- und Wuchelimits vo § 8.",
+      "credit": {
+        "exam": "Prüefig ab {start}: {minutes} Min. aagrächnet",
+        "fullDays": "{count, plural, one {# Wärchtag voll aagrächnet} other {# Wärchtäg voll aagrächnet}}",
+        "minutes": "{minutes} Min. Schuelziit aagrächnet",
+        "schoolTime": "Schuel {start}–{end}: {minutes} Min. aagrächnet"
+      },
+      "description": "Bruefsschuel, Blockwuche und Prüefigstäg sind bezahlti Freistellig (§ 15 BBiG): Sie werded als Arbetsziit aagrächnet, nie vo de Ferie abzoge und hinterlönd nie en negative Arbetszeitsaldo.",
+      "empty": "Noch kei Freistelligstäg erfasst.",
+      "fields": {
+        "date": "Datum",
+        "endsOn": "Letschte Tag",
+        "examEndTime": "Prüefigsändi (inkl. Pause)",
+        "examStartTime": "Prüefigsstart",
+        "examTimeHint": "D Prüefig stellt nur die eigeni Ziit frei und rächnet sie aa. Lah beidi Fälder leer, zum de ganz Tag freizstelle.",
+        "includePreExamDay": "Au de Wärchtag vor de schriftliche Abschlussprüefig freistelle",
+        "kind": "Freistellig",
+        "lessons": "Lektione (je 45 Min.)",
+        "note": "Notiz (optional)",
+        "schoolEndTime": "Schueländi (inkl. Pause)",
+        "schoolHoursPerWeek": "Schuelstunde pro Wuche (Ziitstunde)",
+        "schoolStartTime": "Schuelstart",
+        "schoolTimeHint": "En churze Schueltag rächnet d Schuelziit inklusive Pause aa. Lah beidi Fälder leer, zum 45 Minute pro Lektion aazrächne."
+      },
+      "kind": {
+        "blockWeek": "Blockschuelwuche",
+        "examDay": "Prüefigstag",
+        "preExamDay": "Wärchtag vor de Prüefig",
+        "schoolDay": "Bruefsschueltag"
+      },
+      "lessons": "{count} Lektione",
+      "record": "Freistelligstag erfasse",
+      "recorded": "Freistelligstag erfasst",
+      "refusal": {
+        "dayAlreadyReleased": "Dä Tag isch bereits freigstellt. Entfern zerst die Freistellig, wo für ihn erfasst isch.",
+        "examTimeInvalid": "Gib aa, wenn d Prüefig aafangt und ufhört, oder lah beides leer. Sie mues nach em Start ändi.",
+        "invalidRange": "Überprüef d Date: De letscht Tag dörf nöd vor em erschte ligge.",
+        "invalidValue": "Überprüef d Lektione und d Schuelstunde.",
+        "lessonsRequired": "Gib d Aazahl vo de Lektione ii.",
+        "noPrecedingWorkingDay": "I de Wuche vor de Prüefig git s kei Wärchtag zum Freistelle.",
+        "notApprentice": "Freistelligstäg chönd nur erfasst werde, solang de Mitarbeiter luut Aastellig als Lernende gilt.",
+        "overlap": "Die Freistellig überschniedet sich mit ere Freistellig, wo scho erfasst isch.",
+        "reasonRequired": "Erklär, warum de Freistelligstag entfernt wird.",
+        "schoolMinutesRequired": "Gib die plante Schuelstunde vo de Blockwuche ii.",
+        "schoolTimeInvalid": "Gib aa, wenn d Schuel aafangt und ufhört, oder lah beides leer. Sie mues nach em Start ändi.",
+        "singleDay": "Nur e Blockschuelwuche gaht über mehreri Täg."
+      },
+      "title": "Schuel- und Prüefigsfreistellig",
+      "void": "Entferne",
+      "voidConfirm": "Freistelligstag entferne",
+      "voided": "Freistelligstag entfernt",
+      "voidReason": "Warum wird er entfernt?",
+      "workplaceReturn": "Under 18: Kei Rückkehr zur Arbet nach däm ganze Schueltag (§ 9 Abs. 1 Nr. 2 JArbSchG)"
+    },
     "approvalSettings": {
       "pageDescription": "Konfigurieren Sie, wer Anträge genehmigt, wann überfällige Genehmigungen eskaliert werden und welche Genehmigungsprobleme nachverfolgt werden müssen."
     },
@@ -230,6 +285,7 @@
         "employeeDescription": "Die internen Vollkosten pro Stunde für diese Person, verwendet für die Marge. Getrennt vom Lohn.",
         "employeeTitle": "Kostensatz",
         "empty": "Noch kein Kostensatz. Die Marge für die Arbeit dieser Person wird als unbekannte Kosten ausgewiesen.",
+        "emptyContractor": "Noch kei Choschtesatz vorhande. D Marge bruucht de Satz für externi Uftragnehmer vo dere Person für ihri Uftragsarbet; anderi Arbete und Uftragsarbet ohni Satz werded als Choschte unbekannt aazeigt.",
         "history": "Verlauf",
         "historyAction": "Verlauf des Kostensatzes für {name}",
         "hourly": "Stündlich",
@@ -652,14 +708,6 @@
         "title": "Nöd jedi Periode-Iireichig für de Monet isch gnähmigt. Das stoppt de Abschluss nöd:"
       }
     },
-    "compliance": {
-      "description": "Überprüfen und verwalten Sie Compliance-Ausnahmeanträge von Teammitgliedern",
-      "metadata": {
-        "description": "ArbZG-Compliance-Istellige konfiguriere und Uusnahmeaafrage verwalte",
-        "title": "Compliance-Istellige | ArbZG"
-      },
-      "title": "ArbZG-Compliance"
-    },
     "customDomains": {
       "title": "Domain & Branding"
     },
@@ -1016,7 +1064,7 @@
         "all": "Alli Mitarbeiter i däre Organisation",
         "allDescription": "D Verantwortig richtet sich nach de aktuelle Organisations-Mitglidschaft. Prüefer chönd sich nie sälber überprüefe.",
         "attribution": "Vergeh dur {actor} am {time}",
-        "editor": "Prüfer-Beriich",
+        "editTitle": "Prüfer-Zueständigkeit bearbeite",
         "empty": "Kei Prüfer-Verantwortige zuegwise",
         "failed": "D Zueständigkeit für d Füehreruuswiis-Prüefig hät nöd chönne aktualisiert oder abgruefe wärde. Prüefe Sie Ihri Berechtigunge und Uuswahle.",
         "formerEmployee": "Ehemaligi Mitarbeiter chönd nöd hinzugefüegt werde. Wähl Mitarbeiter us de aktuelle Lischte.",
@@ -2116,6 +2164,7 @@
           "unavailable": "Die Prüefig hät nöd chönne abgschlosse werde. Wiederhol d Prüefige, zum's nomal z probiere."
         },
         "payrollSetup": {
+          "externalContractorsSkipped": "{count, plural, one {# externer Auftragnehmer wird bei Anstellungsbedingungen und Personalnummern übersprungen: Payroll-Exporte enthalten nie externe Auftragnehmer.} other {# externe Auftragnehmer werden bei Anstellungsbedingungen und Personalnummern übersprungen: Payroll-Exporte enthalten nie externe Auftragnehmer.}}",
           "fixEmployees": "Mitarbeiter überprüefe",
           "fixPayrollExport": "Istellige für de Lohnexport öffne",
           "inviteesSkipped": "{count, plural, one {# iigladeni Person wird bi Aastelligsbedingige und Personalnummere übersprunge, bis sie bitritt.} other {# iigladeni Persone werded bi Aastelligsbedingige und Personalnummere übersprunge, bis sie bitreted.}}",
@@ -2223,6 +2272,7 @@
           "mappingsMissing": "Kei aktivi Lohnarte-Zueordnige",
           "mappingsPresent": "{count, plural, other {# Exportziel, Lohnarte zuegordnet} }",
           "notExported": "D Organisation het keis aktivs Lohn-Exportziel, drum git's kei Vorussetzige für d Lohnabrechnig.",
+          "notNeededExternalContractor": "Nicht erforderlich: Externer Auftragnehmer",
           "notYetInvited": "Nonig: Si sind immer no iglade",
           "personnelIdentifier": "Personalnummere",
           "termsConfirmed": "Für hüt bestätigt",
@@ -2258,6 +2308,7 @@
           "name": "Richtlinie",
           "none": "Hüt kei gültigi Arbeitsrichtlinie: Es isch ihne, ihrem Team oder de Organisation keini zuegwise.",
           "noSchedule": "Kei Ziitplan",
+          "notApplicable": "Es gilt keine Arbeitsrichtlinie: Die Person arbeitet als externer Auftragnehmer.",
           "noWorkingDays": "Kei Arbeitstäg",
           "title": "Arbeitsrichtlinie",
           "workingDays": "Arbeitstäg"
@@ -3085,7 +3136,15 @@
       "updateProfile": "Profil aktualisiere",
       "updateSuccess": "Profil erfolgriich aktualisiert",
       "uploading": "Am ufelade",
-      "uploadProfilePicture": "Profilbild ufelade"
+      "uploadProfilePicture": "Profilbild ufelade",
+      "workingStudent": {
+        "balance": "Noch {remaining} von {limit} Wochen über 20 Stunden verbleibend ({used} in den letzten 12 Monaten verbraucht).",
+        "description": "Als Werkstudent dürfen Sie innerhalb von 12 Monaten in höchstens 26 Wochen mehr als 20 Stunden arbeiten.",
+        "lectureFree": "Erfasste vorlesungsfreie Zeiten",
+        "lectureFreeEmpty": "Keine vorlesungsfreien Zeiten erfasst. Bitten Sie die Personalabteilung, Ihre Semesterferien zu erfassen.",
+        "noBaseline": "Für diese Woche gilt keine gesetzliche Begrenzung.",
+        "title": "Werkstudentenstatus"
+      }
     },
     "projects": {
       "budgetUsed": "Verbrauchtes Budget",

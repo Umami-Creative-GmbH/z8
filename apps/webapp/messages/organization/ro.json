@@ -217,9 +217,33 @@
     },
     "invite": {
       "allowCreateOrganizations": "Permite acestui utilizator să creeze organizații",
+      "contractor": {
+        "companyName": "Companie contractantă",
+        "compensation": {
+          "description": "Se aplică de la începutul colaborării, după ce persoana se alătură. Doar administratorii organizației o pot vedea; o puteți seta și mai târziu.",
+          "label": "Setați tariful acum"
+        },
+        "legend": "Detalii contractant (opțional)",
+        "noProjects": "Nu există proiecte active încă. Puteți aloca proiecte mai târziu.",
+        "plannedEndDate": "Încheiere planificată a colaborării",
+        "plannedEndDateDescription": "Ultima zi lucrătoare. Odată ce se alătură, aceasta devine o dată programată de plecare care le anulează accesul și locul alocat.",
+        "plannedEndDateNotFuture": "Data planificată de încheiere a colaborării trebuie să fie după data de astăzi.",
+        "projects": "Proiecte",
+        "referenceCode": "PO sau centru de cost",
+        "vatId": "Cod TVA"
+      },
       "description": "Trimite o invitație de alăturare la {organizationName}",
       "emailLabel": "Adresă de e-mail",
+      "engagement": {
+        "contractorDescription": "Înregistrează timpul pe proiecte; fără condiții de angajare, politică de lucru sau concediu",
+        "employee": "Angajat",
+        "employeeDescription": "Se aplică termenii de angajare, politica de lucru și zilele de concediu",
+        "label": "Invitați ca"
+      },
       "error": "Nu s-a putut trimite invitația",
+      "errors": {
+        "projectNotFound": "Un proiect selectat nu mai aparține acestei organizații. Selectați proiectele din nou."
+      },
       "kioskOnly": {
         "description": "Pentru personalul fără e-mail de companie. Aceștia nu se pot conecta și pot ponta doar la chioșcuri folosind codul PIN. Poți adăuga o adresă de e-mail mai târziu.",
         "firstName": "Prenume",

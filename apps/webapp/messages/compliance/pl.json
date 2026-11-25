@@ -20,6 +20,10 @@
           "description": "Ostatnie nieprawidłowe weryfikacje: {invalidVerifications}",
           "title": "Weryfikacja audytu nie powiodła się"
         },
+        "pendingExceptions": {
+          "description": "{count, plural, one {# wyjątek dotyczący zgodności oczekuje na decyzję} few {# wyjątki dotyczące zgodności oczekują na decyzję} many {# wyjątków dotyczących zgodności oczekuje na decyzję} other {# wyjątku dotyczącego zgodności oczekuje na decyzję}}",
+          "title": "Oczekujące wyjątki dotyczące zgodności"
+        },
         "sensitiveAction": {
           "description": "{action} dla {entityType}",
           "title": "Wrażliwe działanie: {action}"
@@ -53,7 +57,10 @@
           "generalPolicyViolations": "Inne naruszenia polityki: {count}",
           "overtimeViolations": "Naruszenia nadgodzin: {count}",
           "pendingExceptions": "Oczekujące wyjątki: {count}",
-          "restPeriodViolations": "Naruszenia okresów odpoczynku: {count}"
+          "restPeriodViolations": "Naruszenia okresów odpoczynku: {count}",
+          "statutoryAcknowledgements": "Potwierdzenia ustawowe: {pending} oczekujących, {stale} unieważnionych przez nowszą pracę lub zmiany",
+          "statutoryFindings": "{warning, plural, one {Ustalenia ustawowe: {critical} krytycznych, # ostrzeżenie} few {Ustalenia ustawowe: {critical} krytycznych, # ostrzeżenia} other {Ustalenia ustawowe: {critical} krytycznych, # ostrzeżeń} }",
+          "statutoryUnavailable": "Nie udało się załadować niektórych monitorów ustawowych."
         }
       },
       "footer": {
@@ -61,12 +68,19 @@
         "refreshMeaning": "Odświeżenie ponownie wczytuje zarejestrowane sygnały; nie dokonuje ponownej oceny ustaleń według nowej polityki."
       },
       "links": {
-        "inspectCompliance": "Sprawdź zgodność",
         "inspectInAuditLog": "Sprawdź w dzienniku audytu",
         "openAuditExport": "Otwórz eksport audytu",
         "openAuditLog": "Otwórz dziennik audytu",
-        "openComplianceSettings": "Otwórz ustawienia zgodności",
-        "reviewAuditExport": "Przejrzyj eksport audytu"
+        "reviewAuditExport": "Przejrzyj eksport audytu",
+        "reviewComplianceExceptions": "Przejrzyj wyjątki dotyczące zgodności",
+        "reviewPolicyViolations": "Przejrzyj naruszenia zasad",
+        "statutoryDomain": {
+          "minijob": "Minijob: {count} otwartych",
+          "on_call": "Dyżur: {count} otwartych",
+          "short_term": "Krótkoterminowe: {count} otwartych",
+          "working_student": "Pracujący studenci: {count} otwartych",
+          "youth_apprentice": "Młodociani i praktykanci: {count} otwartych"
+        }
       },
       "loading": "Ładowanie sygnałów zgodności",
       "overview": "Przegląd zgodności",
@@ -104,6 +118,7 @@
             "healthy": "Nie wykryto żadnych niedawnych problemów z polityką pracowniczą",
             "warning": "Zgodność pracownicza odbiega od normy"
           },
+          "statutoryReviews": "Przeglądy ustawowe",
           "title": "Zgodność kadrowa"
         }
       },
@@ -121,11 +136,6 @@
       }
     },
     "exception": {
-      "approved": "Wyjątek zatwierdzony",
-      "approvedDescription": "Wyjątek zgodności został zatwierdzony.",
-      "approveFailed": "Nie udało się zatwierdzić",
-      "approveFor": "Zatwierdź wyjątek ({type}) dla: {name}",
-      "loadError": "Nie udało się załadować oczekujących wniosków o wyjątek.",
       "plannedDuration": "Zaplanowane",
       "plannedDurationHelp": "Oszacuj, ile dodatkowego czasu będziesz potrzebować powyżej limitu.",
       "plannedHours": "Planowane godziny",
@@ -135,35 +145,16 @@
       "reason": "Powód wyjątku",
       "reasonPlaceholder": "Wyjaśnij, dlaczego potrzebujesz tego wyjątku (np. pilny termin projektu, ważne spotkanie z klientem)...",
       "reasonRequiredDescription": "Podaj powód wniosku o wyjątek.",
-      "rejectDescription": "Podaj powód odrzucenia tego wniosku o wyjątek (opcjonalnie)",
-      "rejected": "Wyjątek odrzucony",
-      "rejectedDescription": "Wyjątek zgodności został odrzucony.",
-      "rejectFailed": "Nie udało się odrzucić",
-      "rejectFor": "Odrzuć wyjątek ({type}) dla: {name}",
-      "rejectionPlaceholder": "Wpisz powód odrzucenia tego wyjątku...",
-      "rejectionReason": "Powód odrzucenia",
-      "rejectionReasonTooLong": "Powód może zawierać maksymalnie 500 znaków.",
-      "rejectTitle": "Odrzuć wniosek o wyjątek",
       "requestDescription": "Poproś menedżera o wstępną zgodę, aby kontynuować mimo ograniczeń zgodności. Zatwierdzone wyjątki są ważne przez 24 godziny.",
-      "requestedAt": "Zawnioskowano",
       "requestFailed": "Wniosek nie powiódł się",
       "requestSubmitted": "Wniosek o wyjątek przesłany",
       "requestSubmittedDescription": "Twój menedżer otrzyma powiadomienie i będzie mógł zatwierdzić lub odrzucić Twój wniosek.",
       "requestTitle": "Zawnioskuj o wyjątek zgodności",
       "submit": "Wyślij wniosek",
-      "type": "Typ wyjątku",
-      "types": {
-        "overtimeDaily": "Dzienne nadgodziny",
-        "overtimeMonthly": "Miesięczne nadgodziny",
-        "overtimeWeekly": "Tygodniowe nadgodziny",
-        "restPeriod": "Okres odpoczynku"
-      }
+      "type": "Typ wyjątku"
     },
     "hasApprovedException": "Masz zatwierdzony wyjątek. Możesz kontynuować.",
     "moreAlerts": "więcej",
-    "noExceptions": "Brak oczekujących wniosków o wyjątek",
-    "pendingExceptions": "Oczekujące wnioski o wyjątek",
-    "pendingExceptionsDescription": "Przejrzyj wnioski o wyjątek wymagające Twojego zatwierdzenia",
     "requestException": "Zawnioskuj o wyjątek",
     "restPeriodMessage": "Potrzebujesz jeszcze {time} odpoczynku, zanim będziesz mógł się odbić. Następne dozwolone odbicie: {nextTime}",
     "restPeriodRequired": "Wymagany okres odpoczynku"

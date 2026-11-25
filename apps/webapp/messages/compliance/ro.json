@@ -20,6 +20,10 @@
           "description": "Verificări nevalide recente: {invalidVerifications}",
           "title": "Verificarea auditului a eșuat"
         },
+        "pendingExceptions": {
+          "description": "{count, plural, one {# excepție de conformitate așteaptă o decizie} other {# excepții de conformitate așteaptă o decizie}}",
+          "title": "Excepții de conformitate în așteptare"
+        },
         "sensitiveAction": {
           "description": "{action} pe {entityType}",
           "title": "Acțiune sensibilă: {action}"
@@ -53,7 +57,10 @@
           "generalPolicyViolations": "Alte încălcări ale politicilor: {count}",
           "overtimeViolations": "Încălcări privind orele suplimentare: {count}",
           "pendingExceptions": "Excepții în așteptare: {count}",
-          "restPeriodViolations": "Încălcări ale perioadei de odihnă: {count}"
+          "restPeriodViolations": "Încălcări ale perioadei de odihnă: {count}",
+          "statutoryAcknowledgements": "Confirmări legale: {pending} în așteptare, {stale} invalidate de activități sau ture mai recente",
+          "statutoryFindings": "{warning, plural, one {Constatări legale: {critical} critice, # avertisment} other {Constatări legale: {critical} critice, # avertismente}}",
+          "statutoryUnavailable": "Unele monitorizări legale nu au putut fi încărcate."
         }
       },
       "footer": {
@@ -61,12 +68,19 @@
         "refreshMeaning": "Reîmprospătarea reîncarcă semnalele înregistrate; nu reevaluează constatările conform unei noi politici."
       },
       "links": {
-        "inspectCompliance": "Inspectează conformitatea",
         "inspectInAuditLog": "Inspectează în jurnalul de audit",
         "openAuditExport": "Deschide exportul de audit",
         "openAuditLog": "Deschide jurnalul de audit",
-        "openComplianceSettings": "Deschide setările de conformitate",
-        "reviewAuditExport": "Revizuiește exportul de audit"
+        "reviewAuditExport": "Revizuiește exportul de audit",
+        "reviewComplianceExceptions": "Examinați excepțiile de conformitate",
+        "reviewPolicyViolations": "Examinați încălcările de politică",
+        "statutoryDomain": {
+          "minijob": "Minijob: {count} deschise",
+          "on_call": "De gardă: {count} deschise",
+          "short_term": "Termen scurt: {count} deschise",
+          "working_student": "Studenți angajați: {count} deschise",
+          "youth_apprentice": "Tineri și ucenici: {count} deschise"
+        }
       },
       "loading": "Se încarcă semnalele de conformitate",
       "overview": "Prezentare generală a conformității",
@@ -104,6 +118,7 @@
             "healthy": "Nu au fost detectate probleme recente privind politicile forței de muncă",
             "warning": "Conformitatea forței de muncă deviază"
           },
+          "statutoryReviews": "Revizuiri legale",
           "title": "Conformitatea forței de muncă"
         }
       },
@@ -121,11 +136,6 @@
       }
     },
     "exception": {
-      "approved": "Excepție aprobată",
-      "approvedDescription": "Excepția de conformitate a fost aprobată.",
-      "approveFailed": "Aprobarea a eșuat",
-      "approveFor": "Aprobați excepția {type} pentru {name}",
-      "loadError": "Cererile de excepție în așteptare nu au putut fi încărcate.",
       "plannedDuration": "Planificat",
       "plannedDurationHelp": "Estimați cât timp suplimentar preconizați că veți avea nevoie peste limită.",
       "plannedHours": "Ore planificate",
@@ -135,35 +145,16 @@
       "reason": "Motivul excepției",
       "reasonPlaceholder": "Explicați de ce aveți nevoie de această excepție (de ex., termen limită urgent de proiect, întâlnire critică cu clientul)...",
       "reasonRequiredDescription": "Vă rugăm să furnizați un motiv pentru cererea de excepție.",
-      "rejectDescription": "Furnizați un motiv pentru respingerea acestei cereri de excepție (opțional)",
-      "rejected": "Excepție respinsă",
-      "rejectedDescription": "Excepția de conformitate a fost respinsă.",
-      "rejectFailed": "Respingerea a eșuat",
-      "rejectFor": "Respingeți excepția {type} pentru {name}",
-      "rejectionPlaceholder": "Introduceți motivul respingerii acestei excepții...",
-      "rejectionReason": "Motivul respingerii",
-      "rejectionReasonTooLong": "Motivul trebuie să aibă maximum 500 de caractere.",
-      "rejectTitle": "Respingeți cererea de excepție",
       "requestDescription": "Solicitați aprobarea prealabilă a managerului pentru a continua în ciuda restricțiilor de conformitate. Excepțiile aprobate sunt valabile timp de 24 de ore.",
-      "requestedAt": "Solicitat",
       "requestFailed": "Cererea a eșuat",
       "requestSubmitted": "Cererea de excepție a fost trimisă",
       "requestSubmittedDescription": "Managerul dvs. va fi notificat și poate aproba sau respinge cererea.",
       "requestTitle": "Solicită excepție de conformitate",
       "submit": "Trimite cererea",
-      "type": "Tip de excepție",
-      "types": {
-        "overtimeDaily": "Ore suplimentare zilnice",
-        "overtimeMonthly": "Ore suplimentare lunare",
-        "overtimeWeekly": "Ore suplimentare săptămânale",
-        "restPeriod": "Perioadă de repaus"
-      }
+      "type": "Tip de excepție"
     },
     "hasApprovedException": "Aveți o excepție aprobată. Puteți continua.",
     "moreAlerts": "mai mult",
-    "noExceptions": "Nicio cerere de excepție în așteptare",
-    "pendingExceptions": "Cereri de excepție în așteptare",
-    "pendingExceptionsDescription": "Examinați cererile de excepție care necesită aprobarea dvs.",
     "requestException": "Solicită excepție",
     "restPeriodMessage": "Mai aveți nevoie de {time} de odihnă înainte de a putea ponta. Următoarea pontare permisă: {nextTime}",
     "restPeriodRequired": "Perioadă de odihnă obligatorie"

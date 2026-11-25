@@ -51,9 +51,9 @@
       "overtime": "Overtime: {count}",
       "publishing": "Publishing…",
       "restTime": "Rest time: {count}",
+      "statutory": "Statutory limits: {count}",
       "totalFindings": "{count, plural, one {# total finding} other {# total findings}}",
-      "warningsDetectedBeforePublish": "Warnings detected before publish",
-      "statutory": "Statutory limits: {count}"
+      "warningsDetectedBeforePublish": "Warnings detected before publish"
     },
     "scheduler": {
       "assigned": "Assigned",
@@ -62,8 +62,8 @@
         "maxHours": "Max hours: {count}",
         "overtime": "Overtime: {count}",
         "restTime": "Rest time: {count}",
-        "title": "Compliance Warnings in This Date Range",
-        "statutory": "Statutory limits: {count}"
+        "statutory": "Statutory limits: {count}",
+        "title": "Compliance Warnings in This Date Range"
       },
       "focus": {
         "anonymous": "Showing one employee's shifts",
@@ -214,12 +214,24 @@
         "restTime": "Rest period too short ({rest} of {required} h)"
       }
     },
-    "templates": {
-      "empty": "No templates available. Create templates in Settings to quickly add shifts.",
-      "selectHint": "Choose a template, then set the shift date and assignment.",
-      "title": "Shift Templates"
-    },
     "statutory": {
+      "apprenticeship": {
+        "blockWeekTraining": "Block-release week: {used} min of work on this week's school days, {limit} min of in-company training allowed; past the allowance this day",
+        "blockWeekTrainingNote": "The allowed training (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG) comes on top of the block week, which counts with the average weekly working time (§ 9 Abs. 2 Nr. 2 JArbSchG), and does not count towards an under-18's § 8 daily and weekly limits",
+        "blockWeekTrainingWeek": "Block-release week: {used} min of work on this week's school days, {limit} min of in-company training allowed; past the allowance on {date}",
+        "releaseDayShift": "Apprentice release day: school, block-release or exam day",
+        "releaseDayShiftOn": "Apprentice release day on {date}: school, block-release or exam day",
+        "workplaceReturn": "Under 18: no work this day, the week's full vocational school day",
+        "workplaceReturnOn": "Under 18: no work on {date}, the week's full vocational school day"
+      },
+      "domain": {
+        "apprenticeship": "Apprentice release (BBiG)",
+        "minijob": "Minijob limit",
+        "onCall": "On-call work (§ 12 TzBfG)",
+        "shortTerm": "Short-term employment limit",
+        "workingStudent": "Working student limit",
+        "youthProtection": "Youth protection (JArbSchG)"
+      },
       "findings": {
         "acknowledgeListLabel": "Statutory findings to acknowledge",
         "blockedTitle": "Publishing refused",
@@ -243,70 +255,58 @@
         "unnamedEmployee": "Unnamed employee",
         "weekOf": "Week of {date}"
       },
+      "jarbschg": {
+        "break": "Under 18: {used} min of breaks taken, {limit} min required",
+        "dailyMax": "Under 18: {used} min of work this day exceeds the {limit} min youth limit",
+        "dailyMaxOn": "Under 18: {used} min of work on {date} exceeds the {limit} min youth limit",
+        "daysPerWeek": "Under 18: {used} working days this week, at most {limit} allowed",
+        "holidayProhibited": "Under 18: {used} min of prohibited work: none after {cutoff} on 24 or 31 December, or on 25 December, 1 January, Easter Sunday or 1 May; no exception allows it",
+        "holidayWork": "Under 18: work on a public holiday needs a statutory sector exception",
+        "nightWork": "Under 18: {used} min of night work between {from} and {until}",
+        "nightWorkBeyondSector": "Under 18: {minutes} min of night work outside the hours a sector exception allows (from 15: {from15} to {until15}; from 16 until {until16}; from 17 in bakeries from {bakeryFrom17}; none under 15); no exception allows it",
+        "restPeriod": "Under 18: only {used} min of rest before this shift, {limit} min required",
+        "saturdayWork": "Under 18: Saturday work needs a statutory sector exception",
+        "shiftSpan": "Under 18: the shift span is {used} min, from the first work to the end of the last; at most {limit} min allowed (11 h in hospitality, agriculture, animal husbandry and on construction sites)",
+        "shiftSpanOn": "Under 18: the shift span on {date} is {used} min, from the first work to the end of the last; at most {limit} min allowed (11 h in hospitality, agriculture, animal husbandry and on construction sites)",
+        "sundayWork": "Under 18: Sunday work needs a statutory sector exception",
+        "uninterrupted": "Under 18: {used} min worked without a break, at most {limit} min allowed",
+        "weeklyMax": "Under 18: {used} min of work this week exceeds the {limit} min youth limit",
+        "weeklyMaxWeekOf": "Under 18: {used} min of work in the week of {date} exceeds the {limit} min youth limit"
+      },
+      "minijob": {
+        "monthlyApproaching": "Minijob monthly limit approaching",
+        "monthlyDocumented": "Minijob monthly limit exceeded (documented as unforeseeable)",
+        "monthlyExceeded": "Minijob monthly limit exceeded",
+        "rollingApproaching": "Minijob 12-month earnings limit approaching",
+        "rollingExceeded": "Minijob 12-month earnings limit exceeded"
+      },
+      "onCall": {
+        "nearBand": "On-call: week at {used}, approaching the call-off band's limit of {limit}",
+        "overBand": "On-call: week at {used}, above the call-off band of {limit}",
+        "shortCall": "On-call: call of {duration} is below the minimum of {minimum}",
+        "shortNotice": "{days, plural, one {On-call: # full day notice, {required} required (§ 12 Abs. 3 TzBfG)} other {On-call: # full days notice, {required} required (§ 12 Abs. 3 TzBfG)}}",
+        "shortWorkCall": "On-call: worked a call of {duration}, below the minimum call of {minimum}",
+        "underBand": "On-call: week at {used}, below the call-off band of {limit}"
+      },
+      "shortTerm": {
+        "calendarDaysExceeded": "Short-term 3-month limit exceeded: {used} of {limit} calendar days this year",
+        "calendarDaysRemaining": "Short-term employment (3-month limit): {remaining} of {limit} calendar days left this year",
+        "daysExceeded": "Short-term day limit exceeded: {used} of {limit} working days this year",
+        "daysRemaining": "Short-term employment: {remaining} of {limit} working days left this year"
+      },
       "warning": "{area}: statutory limit at risk",
       "warningApproaching": "{area}: approaching the statutory limit",
       "warningExceeded": "{area}: statutory limit exceeded",
       "warningPercent": "{area}: {percent} % of the statutory limit",
-      "domain": {
-        "minijob": "Minijob limit",
-        "shortTerm": "Short-term employment limit",
-        "workingStudent": "Working student limit",
-        "onCall": "On-call work (§ 12 TzBfG)",
-        "youthProtection": "Youth protection (JArbSchG)",
-        "apprenticeship": "Apprentice release (BBiG)"
-      },
-      "jarbschg": {
-        "dailyMax": "Under 18: {used} min of work this day exceeds the {limit} min youth limit",
-        "dailyMaxOn": "Under 18: {used} min of work on {date} exceeds the {limit} min youth limit",
-        "weeklyMax": "Under 18: {used} min of work this week exceeds the {limit} min youth limit",
-        "weeklyMaxWeekOf": "Under 18: {used} min of work in the week of {date} exceeds the {limit} min youth limit",
-        "daysPerWeek": "Under 18: {used} working days this week, at most {limit} allowed",
-        "restPeriod": "Under 18: only {used} min of rest before this shift, {limit} min required",
-        "break": "Under 18: {used} min of breaks taken, {limit} min required",
-        "uninterrupted": "Under 18: {used} min worked without a break, at most {limit} min allowed",
-        "nightWork": "Under 18: {used} min of night work between {from} and {until}",
-        "nightWorkBeyondSector": "Under 18: {minutes} min of night work outside the hours a sector exception allows (from 15: {from15} to {until15}; from 16 until {until16}; from 17 in bakeries from {bakeryFrom17}; none under 15); no exception allows it",
-        "saturdayWork": "Under 18: Saturday work needs a statutory sector exception",
-        "sundayWork": "Under 18: Sunday work needs a statutory sector exception",
-        "holidayWork": "Under 18: work on a public holiday needs a statutory sector exception",
-        "holidayProhibited": "Under 18: {used} min of prohibited work: none after {cutoff} on 24 or 31 December, or on 25 December, 1 January, Easter Sunday or 1 May; no exception allows it",
-        "shiftSpan": "Under 18: the shift span is {used} min, from the first work to the end of the last; at most {limit} min allowed (11 h in hospitality, agriculture, animal husbandry and on construction sites)",
-        "shiftSpanOn": "Under 18: the shift span on {date} is {used} min, from the first work to the end of the last; at most {limit} min allowed (11 h in hospitality, agriculture, animal husbandry and on construction sites)"
-      },
-      "apprenticeship": {
-        "releaseDayShift": "Apprentice release day: school, block-release or exam day",
-        "releaseDayShiftOn": "Apprentice release day on {date}: school, block-release or exam day",
-        "blockWeekTraining": "Block-release week: {used} min of work on this week's school days, {limit} min of in-company training allowed; past the allowance this day",
-        "blockWeekTrainingWeek": "Block-release week: {used} min of work on this week's school days, {limit} min of in-company training allowed; past the allowance on {date}",
-        "blockWeekTrainingNote": "The allowed training (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG) comes on top of the block week, which counts with the average weekly working time (§ 9 Abs. 2 Nr. 2 JArbSchG), and does not count towards an under-18's § 8 daily and weekly limits",
-        "workplaceReturn": "Under 18: no work this day, the week's full vocational school day",
-        "workplaceReturnOn": "Under 18: no work on {date}, the week's full vocational school day"
-      },
-      "shortTerm": {
-        "daysRemaining": "Short-term employment: {remaining} of {limit} working days left this year",
-        "daysExceeded": "Short-term day limit exceeded: {used} of {limit} working days this year",
-        "calendarDaysRemaining": "Short-term employment (3-month limit): {remaining} of {limit} calendar days left this year",
-        "calendarDaysExceeded": "Short-term 3-month limit exceeded: {used} of {limit} calendar days this year"
-      },
-      "minijob": {
-        "monthlyDocumented": "Minijob monthly limit exceeded (documented as unforeseeable)",
-        "monthlyExceeded": "Minijob monthly limit exceeded",
-        "monthlyApproaching": "Minijob monthly limit approaching",
-        "rollingExceeded": "Minijob 12-month earnings limit exceeded",
-        "rollingApproaching": "Minijob 12-month earnings limit approaching"
-      },
-      "onCall": {
-        "shortNotice": "On-call: {days, plural, one {# full day} other {# full days}} notice, {required} required (§ 12 Abs. 3 TzBfG)",
-        "shortCall": "On-call: call of {duration} is below the minimum of {minimum}",
-        "shortWorkCall": "On-call: worked a call of {duration}, below the minimum call of {minimum}",
-        "nearBand": "On-call: week at {used}, approaching the call-off band's limit of {limit}",
-        "overBand": "On-call: week at {used}, above the call-off band of {limit}",
-        "underBand": "On-call: week at {used}, below the call-off band of {limit}"
-      },
       "workingStudent": {
-        "lectureWeek": "Working student >20 h in lecture week: {hours} h of weekday daytime work (limit {limit} h)",
-        "ceiling": "Working student: {used} of {limit} weeks above 20 h in 12 months"
+        "ceiling": "Working student: {used} of {limit} weeks above 20 h in 12 months",
+        "lectureWeek": "Working student >20 h in lecture week: {hours} h of weekday daytime work (limit {limit} h)"
       }
+    },
+    "templates": {
+      "empty": "No templates available. Create templates in Settings to quickly add shifts.",
+      "selectHint": "Choose a template, then set the shift date and assignment.",
+      "title": "Shift Templates"
     }
   }
 }

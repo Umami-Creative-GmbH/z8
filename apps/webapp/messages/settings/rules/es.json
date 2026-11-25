@@ -16,6 +16,10 @@
       "createCategoryButton": "Crear categoría",
       "deactivate": "Desactivar",
       "defaults": {
+        "contractorUnavailability": {
+          "description": "Nota de calendario que indica que un contratista externo no está disponible; no cuenta como vacaciones ni permiso",
+          "name": "No disponible (contratista externo)"
+        },
         "timeOffInLieu": {
           "description": "Tiempo libre descontado del saldo de trabajo",
           "name": "Descanso compensatorio"
@@ -32,6 +36,7 @@
         "activeHelp": "Las categorías activas están disponibles para nuevas solicitudes de ausencia.",
         "color": "Color",
         "colorHelp": "Marcador de calendario",
+        "contractorUnavailabilityRules": "La no disponibilidad de un contratista externo es solo una marca de calendario: nunca consume vacaciones, tiempo de trabajo ni saldo de horas.",
         "countsAgainstVacation": "Cuenta contra el saldo de vacaciones",
         "countsAgainstVacationHelp": "Deducir los días aprobados de la asignación de vacaciones del empleado.",
         "deputyRequired": "Se requiere sustituto",
@@ -59,6 +64,7 @@
         "translations": "Traducciones",
         "translationsHelp": "Etiquetas localizadas opcionales para empleados que utilizan otro idioma en la aplicación.",
         "type": "Tipo",
+        "typeContractorUnavailability": "No disponibilidad del contratista externo",
         "typeHelp": "Agrupa informes y flujos de trabajo de ausencia posteriores.",
         "typePlaceholder": "Seleccionar tipo de categoría",
         "typeTimeOffInLieu": "Descanso Compensatorio"

@@ -6,19 +6,37 @@
       "decided": "Karar kaydedildi. Güncel kuyruğu yüklemek için yenileyin.",
       "description": "Yönetici kararı bekleyen talepler.",
       "empty": "Bekleyen onay bulunmuyor.",
+      "itemTitle": "{requester}: {title}",
       "openInbox": "Gelen kutusunu aç",
+      "openInboxForRest": "Kalanları görmek için gelen kutusunu açın",
+      "openInboxLink": "Gelen kutusunu açın",
       "ownRequest": "Kendi talebiniz: başka bir onaylayıcı karar verir.",
+      "partialFailure": "Bazı onaylar yüklenemedi: {types}. Liste ve toplam eksik olabilir.",
+      "partialFailureNotCounted": "Bazı onaylar sayılamadı: {types}. Toplam eksik olabilir.",
       "pendingAriaLabel": "Bekleyen onaylar",
       "reject": "Reddet",
       "rejectLabel": "{title} öğesini reddet",
+      "rejectPanel": {
+        "briefingUnavailable": "Bugünün onayları yenilenemedi. Bu paneli kapatıp yeniden deneyin.",
+        "description": "Talep sahibi bu nedeni ret ile birlikte görür.",
+        "noLongerRejectable": "Bu talep artık buradan reddedilemez.",
+        "title": "Talebi reddet"
+      },
       "retry": "Onayları tekrar dene",
+      "reviewInInbox": "Gelen kutusunda inceleyin",
+      "reviewInInboxNamed": "Gelen kutusunda inceleyin: {title}",
       "title": "Onaylar",
       "toast": {
         "approved": "Talep onaylandı",
         "approveError": "Talep onaylanamadı",
         "rejected": "Talep reddedildi",
         "rejectError": "Talep reddedilemedi"
-      }
+      },
+      "totalAtLeast": "{count}+",
+      "truncated": "{total, plural, other {Bekleyen # onayın {shown} tanesi gösteriliyor.} }",
+      "truncatedAtLeast": "{total, plural, other {Bekleyen en az # onayın {shown} tanesi gösteriliyor.} }",
+      "waitingInInbox": "{total, plural, other {Gelen kutusunda bekleyen # onay bulunuyor.} }",
+      "waitingInInboxAtLeast": "{total, plural, other {Gelen kutusunda bekleyen en az # onay bulunuyor.} }"
     },
     "briefing": {
       "accessUnavailable": "Bu bilgilendirme mevcut çalışan ve organizasyon için kullanılamıyor.",

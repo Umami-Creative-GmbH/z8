@@ -80,6 +80,7 @@
     "pendingApprovals": "Bekleyen Onaylar",
     "pendingExceptionRequests": "{count, plural, other {# inceleme bekleyen istisna talebi} }",
     "returns": "{date} tarihinde dönüyor",
+    "reviewComplianceExceptions": "İstisna taleplerini inceleyin",
     "since": "{time} saatinden beri",
     "textClockedInEmployee": "• {name} - {clockedInAt} saatinden beri ({duration})",
     "textCompliance": "**⚠️ Uyumluluk:**",

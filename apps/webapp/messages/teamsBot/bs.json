@@ -80,6 +80,7 @@
     "pendingApprovals": "Odobrenja na čekanju",
     "pendingExceptionRequests": "{count, plural, one {# zahtjev za izuzeće na čekanju pregleda} other {# zahtjeva za izuzeće na čekanju pregleda}}",
     "returns": "Vraća se {date}",
+    "reviewComplianceExceptions": "Pregledajte zahtjeve za izuzeće",
     "since": "Od {time}",
     "textClockedInEmployee": "• {name} - od {clockedInAt} ({duration})",
     "textCompliance": "**⚠️ Usklađenost:**",

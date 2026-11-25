@@ -101,11 +101,11 @@
       "created": "Kreirano",
       "decisionRecorded": "Odluka evidentirana",
       "destination": "Odredište",
+      "earlierClaim": "Raniji zahtjev",
+      "earlierReceiptIdentity": "Raniji račun: kontrolni zbir sadržaja nije zabilježen.",
       "history": "Historija odluka",
       "historyDescription": "Svaki korak ovog zahtjeva, najstariji prvi. Vremena su prikazana u UTC-u.",
       "intermediateApproval": "Odobrenje evidentirano — čeka se dalje odobrenje",
-      "legacyClaim": "Naslijeđeni zahtjev",
-      "legacyReceiptIdentity": "Naslijeđeni račun: kontrolni zbir sadržaja nije zabilježen.",
       "loading": "Učitavanje zahtjeva…",
       "noReceipts": "Nema zabilježenih računa",
       "notRecorded": "Nije zabilježeno",
@@ -117,7 +117,7 @@
       "submitted": "Podneseno",
       "title": "Zahtjev za putne troškove",
       "unavailable": "Zahtjev nije pronađen ili pristup više nije dostupan.",
-      "unknownDates": "Kontekst datuma putovanja nije zabilježen (naslijeđeni zahtjev)"
+      "unknownEarlierClaimDates": "Kontekst datuma putovanja nije zabilježen (raniji zahtjev)"
     },
     "errors": {
       "loadDetailRetry": "Nije moguće učitati ovaj zahtjev. Pokušajte ponovo."
@@ -166,6 +166,7 @@
         "title": "{count, plural, one {# odobreni trošak čeka refundaciju koji nijedan službenik za troškove ne pokriva} few {# odobrena troška čekaju refundaciju koje nijedan službenik za troškove ne pokriva} other {# odobrenih troškova čeka refundaciju koje nijedan službenik za troškove ne pokriva}}"
       },
       "description": "Odobreni troškovi i ono što se još duguje zaposlenicima. Evidentiranjem refundacije dokumentuje se plaćanje izvršeno izvan aplikacije Z8; novac se ne prenosi.",
+      "earlierClaim": "Raniji {type} zahtjev",
       "employeePaid": "Plaćeno od strane zaposlenika {amount}",
       "empty": {
         "allReimbursed": "Nema više ništa za evidentiranje: svaki odobreni trošak je refundiran.",
@@ -258,7 +259,6 @@
         }
       },
       "inPayrollRun": "Uključeno u {run}",
-      "legacyClaim": "Naslijeđeni {type} zahtjev",
       "loading": "Učitavanje finansijskog reda čekanja…",
       "pagination": {
         "label": "Stranice finansijskog reda čekanja",

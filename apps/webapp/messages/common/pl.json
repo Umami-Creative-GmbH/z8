@@ -208,7 +208,6 @@
     "adding": "Dodawanie...",
     "all": "Wszystkie",
     "appName": "Z8",
-    "approve": "Zatwierdź",
     "assign": "Przypisz",
     "back": "Wstecz",
     "backToDashboard": "Powrót do panelu",
@@ -372,6 +371,94 @@
       "bellLabel": "{count, plural, =0 {Powiadomienia} other {Powiadomienia (# nieprzeczytanych)}}"
     },
     "offline": "Offline",
+    "onCall": {
+      "agreementDocumented": "Porozumienie udokumentowane",
+      "agreementStale": "Zmiana zmodyfikowana od czasu porozumienia",
+      "finding": {
+        "nearBand": "W tygodniu wezwano na {used}, zbliżając się do limitu przedziału wezwań wynoszącego {limit}",
+        "other": "Reguła pracy na wezwanie jest zagrożona",
+        "overBand": "W tygodniu wezwano na {used}, powyżej przedziału wezwań wynoszącego {limit}",
+        "shortCall": "Zmiana o długości {duration} jest krótsza niż minimalne wezwanie wynoszące {minimum}",
+        "shortNotice": "{days, plural, few {Wezwano z wyprzedzeniem # pełnych dni; wymagane: {required}} many {Wezwano z wyprzedzeniem # pełnych dni; wymagane: {required}} other {Wezwano z wyprzedzeniem # pełnego dnia; wymagane: {required}} }",
+        "shortWorkCall": "Przepracowano wezwanie trwające {duration}, mniej niż minimalne wezwanie wynoszące {minimum}",
+        "underBand": "W tygodniu wezwano na {used}, poniżej przedziału wezwań wynoszącego {limit}"
+      },
+      "findingsTitle": "Weryfikacja ostatnich i kolejnych czterech tygodni",
+      "hoursKind": {
+        "exact": "Dokładnie uzgodniony tygodniowy wymiar godzin",
+        "maximum": "Maksymalny tygodniowy wymiar godzin (do −20%)",
+        "minimum": "Minimalny tygodniowy wymiar godzin (do +25%)",
+        "unspecified": "Brak uzgodnionego tygodniowego wymiaru godzin (obowiązuje 20 godz.)"
+      },
+      "minimumCall": "Minimalne wezwanie: {duration}",
+      "noFindings": "Żadna reguła pracy na wezwanie nie jest zagrożona.",
+      "notToday": "Brak pracy na wezwanie w dniu dzisiejszym.",
+      "payroll": {
+        "continuedPaySpan": "Wynagrodzenie chorobowe przysługuje od {from} do {until} (§ 3 EFZG)",
+        "description": "Średni czas pracy przed każdym zwolnieniem lekarskim lub świętem pracowników na wezwanie w tym okresie, w celu przygotowania wypłaty wynagrodzenia chorobowego. Żadne informacje w tym miejscu nie zmieniają rozliczonych dni.",
+        "hide": "Ukryj podział",
+        "holidaysPaidAsHolidays": "Święta przypadające w trakcie choroby są rozliczane w osobnych wierszach, a nie jako dni chorobowe: {dates}",
+        "paidSickDays": "{days, plural, one {Wynagrodzenie chorobowe za # dzień w tym okresie} few {Wynagrodzenie chorobowe za # dni w tym okresie} many {Wynagrodzenie chorobowe za # dni w tym okresie} other {Wynagrodzenie chorobowe za # dnia w tym okresie}}",
+        "perDay": "{duration} dziennie",
+        "rangeTooLong": "Godziny referencyjne są wyświetlane maksymalnie za trzy miesiące naraz. Wybierz krótszy okres.",
+        "show": "Pokaż podział",
+        "sickPayExhausted": "Brak wynagrodzenia chorobowego w tym okresie: sześciotygodniowy okres kontynuacji wypłaty wynagrodzenia zakończył się w dniu {date} (§ 3 ust. 1 EFZG)",
+        "sickPayGuidanceLabel": "Wskazówki dla działu płac",
+        "sickPayGuidanceNote": "Wiersze dotyczące wynagrodzenia chorobowego stanowią wskazówki na podstawie § 3 EFZG; to system płacowy decyduje o tym, czy i w jakiej wysokości wypłacane jest wynagrodzenie.",
+        "sickPayNotOwed": "Z tytułu tej choroby nie przysługuje wynagrodzenie chorobowe: zakończyła się ona w ciągu pierwszych czterech tygodni zatrudnienia (§ 3 ust. 3 EFZG)",
+        "sickPayWaiting": "Brak wynagrodzenia chorobowego w tym okresie: roszczenie powstaje w dniu {date}, po czterech tygodniach zatrudnienia (§ 3 ust. 3 EFZG)",
+        "title": "Referencyjne godziny pracy na wezwanie (§ 12 TzBfG)"
+      },
+      "reference": {
+        "calculate": "Oblicz",
+        "dateRequired": "Wybierz datę.",
+        "denominator": "Uwzględnione dni",
+        "denominatorValue": "{counted} z {total} dni",
+        "description": "Wyłącznie w celach informacyjnych: dział kadr i płac decyduje o wypłatach. Żadne informacje w tym miejscu nie zmieniają rozliczonych dni ani zamkniętych miesięcy.",
+        "eventDate": "Oblicz dla jednego dnia",
+        "excluded": {
+          "notEmployed": "Brak zatrudnienia",
+          "paidAbsence": "Urlop lub choroba",
+          "publicHoliday": "Święto",
+          "unpaidAbsence": "Nieobecność niepłatna"
+        },
+        "excludedPeriod": "{days, plural, one {{from} – {until}: {reason} (# dzień)} other {{from} – {until}: {reason} (# dni)}}",
+        "excludedTitle": "Pominięte w średniej",
+        "noEvents": "Brak zwolnienia lekarskiego lub święta w dniu pracy na wezwanie w ciągu ostatnich trzech miesięcy.",
+        "none": "—",
+        "numerator": "Przepracowany czas",
+        "perDay": "Średnia na dzień",
+        "periodThirteenWeeks": "Okres referencyjny (13 tygodni): {from} – {until}",
+        "periodThreeMonths": "Okres referencyjny (3 miesiące): {from} – {until}",
+        "perWeek": "Średnia na tydzień",
+        "perWorkedDay": "Średnia na przepracowany dzień",
+        "publicHoliday": "Święto w dniu {date}",
+        "shortened": "Zatrudnienie rozpoczęło się w trakcie okresu referencyjnego, dlatego wlicza się krótszy okres.",
+        "sickLeave": "Zwolnienie lekarskie od {date}",
+        "thirteenWeeks": "13 tygodni",
+        "threeMonths": "3 miesiące",
+        "title": "Godziny referencyjne do wynagrodzenia chorobowego i urlopowego",
+        "workedDays": "Przepracowane dni"
+      },
+      "reviews": {
+        "acknowledge": "Udokumentuj zgodę",
+        "acknowledged": "Zgoda udokumentowana",
+        "changed": "Zmiana została zmodyfikowana od momentu załadowania tej listy. Przejrzyj ją ponownie przed udokumentowaniem zgody.",
+        "description": "Wezwania z krótkim wyprzedzeniem, wezwania poniżej minimum oraz tygodnie poza zakresem wezwań w ostatnich i kolejnych czterech tygodniach. Rejestracja czasu pracy nigdy nie jest blokowana.",
+        "documented": "Udokumentowana zgoda: {reason}",
+        "draft": "Jeszcze nie opublikowano. Opublikuj zmianę przed udokumentowaniem zgody pracownika.",
+        "empty": "Brak uwag dotyczących pracy na wezwanie do przejrzenia.",
+        "notOpen": "Dla tej zmiany nie występuje już uwaga dotycząca krótkiego wyprzedzenia.",
+        "notPublished": "Ta zmiana nie została jeszcze opublikowana. Opublikuj ją przed udokumentowaniem zgody pracownika.",
+        "reason": "Dobrowolna zgoda pracownika (§ 12 ust. 3 TzBfG)",
+        "reasonRequired": "Opisz, w jaki sposób pracownik wyraził zgodę na krótkie wyprzedzenie.",
+        "stale": "Zmiana została zmodyfikowana po udokumentowaniu zgody. Udokumentuj ją ponownie, jeśli nadal obowiązuje.",
+        "title": "Praca na wezwanie (§ 12 TzBfG)"
+      },
+      "statutoryMinimumCall": "Obowiązuje ustawowe minimum wezwania do pracy",
+      "title": "Praca na wezwanie (§ 12 TzBfG)",
+      "weekly": "{duration} na tydzień"
+    },
     "open": "Otwórz",
     "openEnded": "Bezterminowo",
     "openMenu": "Otwórz menu",
@@ -425,8 +512,6 @@
     "refreshData": "Odśwież dane",
     "refreshDataFailed": "Nie udało się odświeżyć danych. Spróbuj ponownie.",
     "refreshing": "Odświeżanie...",
-    "reject": "Odrzuć",
-    "rejecting": "Odrzucanie...",
     "remove": "Usuń",
     "removing": "Usuwanie...",
     "reset": "Resetuj",
@@ -596,6 +681,90 @@
     },
     "yes": "Tak"
   },
+  "contractorCompensation": {
+    "dayUnitRules": {
+      "anyWorkFullDay": "Każdy dzień z pracą liczy się jako pełny dzień",
+      "halfAndFullDay": "Pół dnia do {minutes} min, powyżej pełny dzień",
+      "proratedCapped": "Proporcjonalnie do dnia o długości {minutes} min, maksymalnie jeden dzień",
+      "proratedUncapped": "Proporcjonalnie do dnia o długości {minutes} min, bez limitu"
+    }
+  },
+  "contractorStatement": {
+    "approvedOnly": "Wyświetlana jest tylko zatwierdzona praca. Praca oczekująca na zatwierdzenie zostanie dodana po jej zatwierdzeniu.",
+    "awaitingApprovalExcluded": "Okresy pracy oczekujące na zatwierdzenie, nieuwzględnione: {count}",
+    "basis": {
+      "daily": "Stawka dzienna",
+      "hourly": "Stawka godzinowa"
+    },
+    "byProject": "Według projektu",
+    "columns": {
+      "amount": "Kwota",
+      "basis": "Opłacone przez",
+      "currency": "Waluta",
+      "date": "Data",
+      "dayUnitRule": "Reguła jednostki dziennej",
+      "end": "Koniec",
+      "project": "Projekt",
+      "rate": "Stawka",
+      "rowType": "Typ wiersza",
+      "start": "Początek",
+      "task": "Zadanie",
+      "time": "Czas (lokalny)",
+      "unit": "Jednostka",
+      "units": "Jednostki",
+      "workedMinutes": "Przepracowane minuty"
+    },
+    "company": "Firma",
+    "contractor": "Wykonawca",
+    "contractorNumber": "Numer wykonawcy",
+    "empty": "Brak ukończonych prac jako Zewnętrzny Wykonawca w tym okresie.",
+    "errors": {
+      "failed": "Nie udało się utworzyć zestawienia",
+      "invalidPeriod": "Wybierz okres wynoszący maksymalnie jeden rok, w którym pierwszy dzień nie przypada po ostatnim.",
+      "notAllowed": "Możesz pobierać wyłącznie własne zestawienia.",
+      "notContractor": "Ta osoba nie miała umów jako Zewnętrzny Wykonawca w tym okresie.",
+      "notFound": "Nie znaleziono tej osoby w Twojej organizacji."
+    },
+    "export": {
+      "adminDescription": "Pobierz informacje o przepracowanym czasie tego Zewnętrznego Wykonawcy oraz wycenę według jego stawek, aby zweryfikować fakturę. Jest to zestawienie weryfikacyjne, a nie faktura.",
+      "csv": "Plik CSV do arkuszy kalkulacyjnych",
+      "download": "Pobierz zestawienie",
+      "downloaded": "Pobrano zestawienie",
+      "format": "Format",
+      "from": "Od",
+      "fromRequired": "Wybierz pierwszy dzień",
+      "pdf": "PDF",
+      "selfDescription": "Pobierz informacje o zarejestrowanej pracy oraz wycenę według uzgodnionych stawek, aby przygotować lub zweryfikować fakturę. Jest to zestawienie weryfikacyjne, a nie faktura.",
+      "title": "Zestawienie czasu pracy i opłat",
+      "to": "Do",
+      "toBeforeFrom": "Ostatni dzień nie może przypadać przed pierwszym dniem",
+      "toRequired": "Wybierz ostatni dzień"
+    },
+    "generated": "Wygenerowano (UTC)",
+    "noProject": "Brak projektu",
+    "noRate": "Brak obowiązującej stawki",
+    "notice": "Tylko zestawienie weryfikacyjne. Nie jest to faktura ani nota uznaniowa w ramach samofakturowania (Gutschrift): Z8 nigdy nie wystawia faktur. Zawiera ono listę prac zarejestrowanych w Z8 oraz ich wycenę według uzgodnionych stawek wykonawcy, co pozwala na sprawdzenie zgodności z fakturą.",
+    "organization": "Organizacja",
+    "page": "Strona",
+    "period": "Okres",
+    "referenceCode": "Numer zamówienia (PO) lub centrum kosztów",
+    "rows": {
+      "day": "Dzień",
+      "total": "Łącznie",
+      "unpriced": "Niewycenione",
+      "work": "Praca"
+    },
+    "times": "Dni są lokalnymi dniami kalendarzowymi wykonawcy; godziny są wyświetlane z przesunięciem UTC zarejestrowanym wraz z pracą.",
+    "title": "Zestawienie weryfikacji czasu i wynagrodzenia wykonawcy",
+    "totals": "Sumy",
+    "units": {
+      "days": "Dni",
+      "hours": "Godziny"
+    },
+    "unpricedNotice": "Niektóre prace nie miały ustalonej stawki w danym dniu. Zostały one wymienione bez kwoty i nie są uwzględnione w sumach.",
+    "vatId": "NIP",
+    "workedHours": "Przepracowane godziny"
+  },
   "drivingLicence": {
     "applyingInterval": "Stosowanie…",
     "applyInterval": "Zastosuj zmianę interwału",
@@ -604,6 +773,9 @@
       "chooseClasses": "Wybierz kategorie, które faktycznie sprawdzono.",
       "classes": "Faktycznie sprawdzone kategorie",
       "classExpiry": "Data ważności kategorii (jeśli dotyczy)",
+      "declaredBadge": "Zadeklarowane",
+      "declaredHelp": "Te kategorie oraz wszelkie daty wprowadzone przez pracownika zostały wstępnie zaznaczone. Porównaj je z oryginałem prawa jazdy i popraw ewentualne rozbieżności.",
+      "declaredTitle": "{name} – zadeklarowane kategorie: {classes}",
       "documentDates": "Daty z oryginalnego dokumentu",
       "employeeDeclaration": "Pracownik złożył powyższe oświadczenie osobiście podczas tej kontroli; potwierdzam to oświadczenie.",
       "expiryDate": "Data ważności dokumentu",
@@ -644,6 +816,8 @@
       },
       "customOrder": "Posortowano według wybranej kolumny i kierunku.",
       "deadline": "{date} ({timezone})",
+      "declared": "Zadeklarowano: {classes}",
+      "declaredDue": "Sprawdź zadeklarowane kategorie",
       "dueNow": "Weryfikacja wymagana teraz",
       "dueOrder": "Najpierw kontrole wymagalne teraz, następnie kolejny termin.",
       "empty": {
@@ -677,6 +851,31 @@
     "class": {
       "active": "Uprawniony",
       "ended": "Zakończono",
+      "group": {
+        "bus": "Autobusy",
+        "car": "Samochody osobowe",
+        "motorcycle": "Motorowery i motocykle",
+        "tractor": "Ciągniki",
+        "truck": "Samochody ciężarowe"
+      },
+      "name": {
+        "A": "Motocykl",
+        "A1": "Lekki motocykl",
+        "A2": "Średni motocykl",
+        "AM": "Motorower",
+        "B": "Samochód osobowy",
+        "BE": "Samochód osobowy z przyczepą",
+        "C": "Samochód ciężarowy",
+        "C1": "Lekki samochód ciężarowy",
+        "C1E": "Lekki samochód ciężarowy z przyczepą",
+        "CE": "Samochód ciężarowy z przyczepą",
+        "D": "Autobus",
+        "D1": "Minibus",
+        "D1E": "Minibus z przyczepą",
+        "DE": "Autobus z przyczepą",
+        "L": "Ciągnik wolnobieżny",
+        "T": "Ciągnik"
+      },
       "noLongerIntended": "Zakończono, ponieważ pracownik nie jest już wyznaczonym kierowcą. Ponowne prowadzenie pojazdów wymaga nowej weryfikacji.",
       "overdue": "Zaległa rutynowa kontrola. Jest to zawieszenie organizacyjne, a nie stwierdzenie cofnięcia prawnych uprawnień do kierowania pojazdami.",
       "recheck": "Wymagana jest nowa kontrola oryginału oraz wyraźne przywrócenie uprawnień.",
@@ -684,6 +883,36 @@
     },
     "declaration": {
       "text": "Potwierdzam, że żaden znany mi zakaz prowadzenia pojazdów, odebranie uprawnień ani inna przeszkoda nie uniemożliwia planowanego kierowania pojazdem oraz że spełniam obowiązujące ograniczenia."
+    },
+    "declared": {
+      "add": "Dodaj kategorie prawa jazdy",
+      "authorized": "Uprawnione",
+      "classExpires": "Wygasa: {date}",
+      "classExpiry": "Ważność {code} ({name}) upływa w dniu",
+      "description": "Zadeklarowane przez Ciebie, jeszcze niesprawdzone. Nie uprawniają Cię do kierowania pojazdami, dopóki weryfikator nie sprawdzi oryginału prawa jazdy.",
+      "dialogDescription": "Wybierz wszystkie kategorie ze swojego prawa jazdy. Osoba weryfikująca potwierdzi je podczas sprawdzania Twojego oryginału prawa jazdy.",
+      "dialogTitle": "Jakie kategorie znajdują się na Twoim prawie jazdy?",
+      "documentExpires": "Ważność dokumentu prawa jazdy upływa",
+      "documentExpiry": "Ważność dokumentu prawa jazdy upływa w dniu",
+      "documentExpiryHelp": "Pole 4b na dokumencie. Pozostaw puste, jeśli Twoje prawo jazdy go nie posiada.",
+      "edit": "Edytuj",
+      "emptyDescription": "Poinformuj swoją organizację, jakie posiadasz kategorie prawa jazdy. Pomaga to w planowaniu i przygotowaniu weryfikacji; nie uprawnia jednak do kierowania pojazdami.",
+      "emptyMoreDescription": "Dodaj kategorię uzyskaną od ostatniej weryfikacji. Osoba weryfikująca zostanie poproszona o jej sprawdzenie.",
+      "emptyMoreTitle": "Masz kolejną kategorię prawa jazdy?",
+      "emptyTitle": "Czym możesz kierować?",
+      "expiryTitle": "Daty ważności (opcjonalnie)",
+      "invalid": "Sprawdź wybrane kategorie i daty.",
+      "notIntended": "Nie jesteś już wyznaczonym kierowcą, więc Twoja organizacja nie gromadzi Twoich kategorii prawa jazdy.",
+      "privacy": "Zapisywane są tylko kategorie i daty ważności, bez numeru prawa jazdy ani zdjęcia. Twoje oświadczenie nie uprawnia Cię do prowadzenia pojazdów.",
+      "remove": "Usuń moje kategorie",
+      "removed": "Zadeklarowane kategorie prawa jazdy zostały usunięte",
+      "removing": "Usuwanie…",
+      "save": "{count, plural, one {Zapisz # kategorię} few {Zapisz # kategorie} other {Zapisz # kategorii} }",
+      "saved": "Kategorie prawa jazdy zostały zapisane. Osoba weryfikująca sprawdzi je z Twoim oryginalnym prawem jazdy.",
+      "saveFailed": "Nie udało się zapisać Twoich kategorii prawa jazdy. Twój wybór został zachowany; spróbuj ponownie.",
+      "saving": "Zapisywanie…",
+      "title": "Twoje zadeklarowane kategorie prawa jazdy",
+      "updated": "Zaktualizowano"
     },
     "delivery": {
       "uncertain": "Opcjonalne wiadomości e-mail z przypomnieniem mają niepewny status doręczenia ({count}). Nie zostaną wysłane ponownie automatycznie. Przypomnienia w aplikacji pozostają dostępne; doręczenie wiadomości e-mail nie potwierdza jej przeczytania."
@@ -846,6 +1075,7 @@
     },
     "operational": {
       "advisory": "Uprawnienia do prowadzenia pojazdów",
+      "declared": "Zadeklarowano, jeszcze nie sprawdzono. Nie stanowi upoważnienia do prowadzenia pojazdów.",
       "loading": "Ładowanie uprawnień do prowadzenia pojazdów…",
       "loadingEmployees": "Ładowanie pracowników do planowania…",
       "noEmployees": "Brak pasujących pracowników.",
@@ -1017,6 +1247,20 @@
     "team": "Zespół",
     "totalEmployees": "{count} pracowników",
     "tryDifferentSearch": "Spróbuj zmienić wyszukiwanie lub filtry"
+  },
+  "engagement": {
+    "absenceRefusals": {
+      "contractorRecordsUnavailabilityOnly": "W tych dniach dana osoba pracuje jako Wykonawca zewnętrzny: można zarejestrować wyłącznie niedostępność.",
+      "spansEngagementChange": "Te daty obejmują zmianę między zatrudnieniem a pracą jako Wykonawca zewnętrzny. Zarejestruj każdą część osobno.",
+      "unavailabilityIsForContractors": "W tych dniach dana osoba jest zatrudniona: niedostępność dotyczy tylko Wykonawców zewnętrznych."
+    },
+    "externalContractor": "Wykonawca zewnętrzny",
+    "filter": {
+      "all": "Wszyscy",
+      "contractors": "Wykonawcy zewnętrzni",
+      "employees": "Pracownicy",
+      "label": "Współpraca"
+    }
   },
   "errors": {
     "failedToLoad": "Nie udało się załadować danych",
@@ -1487,6 +1731,10 @@
         "message": "Zorganizuj dostępnego weryfikatora dla {employeeName}. To zadanie nie nadaje uprawnień do kontroli ani nie przedłuża żadnego terminu.",
         "title": "Przypisz odpowiedzialność za weryfikację praw jazdy"
       },
+      "drivingLicenceDeclared": {
+        "message": "{employeeName} deklaruje kategorie prawa jazdy {classes}. Sprawdź oryginalne prawo jazdy, aby je autoryzować; samo oświadczenie nie nadaje uprawnień.",
+        "title": "Kategorie prawa jazdy do sprawdzenia"
+      },
       "drivingLicencePersonalTask": {
         "message": "Przypomnij pracownikowi {employeeName} o konieczności umówienia kontroli oryginału prawa jazdy. Bezpośrednie powiadomienie pracownika było niedostępne. Wykonanie zadania nie oznacza bezpośredniego doręczenia ani odczytania.",
         "title": "Przypomnij pracownikowi osobiście"
@@ -1529,6 +1777,11 @@
       "formerEmployeeReportsWithoutManager": {
         "message": "{count, plural, one {# pracownik jest nadal powiązany tylko z byłym menedżerem: {names}. Przypisz aktualnego menedżera.} few {# pracownicy są nadal powiązani tylko z byłym menedżerem: {names}. Przypisz aktualnego menedżera.} many {# pracowników jest nadal powiązanych tylko z byłym menedżerem: {names}. Przypisz aktualnego menedżera.} other {# pracownika jest nadal powiązanych tylko z byłym menedżerem: {names}. Przypisz aktualnego menedżera.}}",
         "title": "Pracownicy bez aktualnego menedżera"
+      },
+      "invitationContractorTermsNeedReview": {
+        "message": "Stawka z zaproszenia dla użytkownika {name} nie mogła zostać zastosowana w momencie dołączenia. Ustaw ją w wynagrodzeniu Wykonawcy zewnętrznego; do tego czasu praca pozostanie niewyceniona.",
+        "termsExistMessage": "Stawka z zaproszenia dla użytkownika {name} nie została zastosowana w momencie dołączenia: współpraca ma już warunki wynagrodzenia, które nadal obowiązują. Sprawdź w wynagrodzeniu Wykonawcy zewnętrznego, czy należy je zmienić.",
+        "title": "Stawka Wykonawcy zewnętrznego wymaga weryfikacji"
       },
       "kioskCommandRefused": {
         "forwardedMessage": "Zdarzenie: {action, select, clock_in {rozpoczęcie pracy} clock_out {zakończenie pracy} start_break {rozpoczęcie przerwy} resume_break {powrót z przerwy} other {rejestracja czasu}} pracownika {employeeName} o {time} na terminalu {kioskName} nie zostało zarejestrowane: {reason, select, wrong_pin {błędny kod PIN} pin_locked {kod PIN terminala został zablokowany po zbyt wielu nieudanych próbach} no_pin {brak kodu PIN terminala do weryfikacji} pin_unchecked {nie można było sprawdzić kodu PIN} kiosk_retired {terminal został wycofany lub ponownie sparowany przed ponownym połączeniem} contact_unverifiable {system Z8 nie mógł potwierdzić ostatniego połączenia z terminalem} outside_window {czas był poza oknem akceptowanym przez Z8} clock_untrusted {zegar terminala nie był wystarczająco wiarygodny} not_assigned {pracownik nie jest przypisany do lokalizacji terminala} not_adopted {organizacja nie akceptuje rejestracji offline z terminali} month_closed {miesiąc jest zamknięty} holiday {ten dzień jest świętem bez rejestracji czasu pracy} conflict {występuje konflikt z innym zarejestrowanym czasem} other {system Z8 nie mógł go zaakceptować}}. Zarejestruj czas dla pracownika lub sprawdź to z nim.",
@@ -1694,6 +1947,11 @@
       "personnelFilePayslipsShared": {
         "message": "Twój pasek płacowy za okres {payPeriod} został Ci udostępniony.",
         "title": "Nowy pasek płacowy w Twoich aktach osobowych"
+      },
+      "plannedEngagementEndNeedsReview": {
+        "notScheduled": "Planowane zakończenie współpracy z {name} ({plannedEndDate}) nie mogło zostać ustawione jako data odejścia. Ustaw ją na stronie pracownika.",
+        "passed": "Planowane zakończenie współpracy z {name} ({plannedEndDate}) minęło w momencie dołączenia, dlatego datą odejścia jest dzisiaj ({leavingDate}). Zmień ją, jeśli współpraca jest kontynuowana.",
+        "title": "Planowane zakończenie współpracy wymaga weryfikacji"
       },
       "policyForgottenClockOutReminder": {
         "message": "Wymagana liczba godzin dla dnia {day} została osiągnięta o {endTime} ({timezone}). Zarejestruj wyjście, jeśli praca została zakończona."
@@ -2497,6 +2755,13 @@
           "createdAt": "Kiedy to zadanie lub doręczenie zostało po raz pierwszy zarejestrowane (znacznik czasu UTC).",
           "deadline_timezone": "Jawna strefa czasowa kalendarza używana dla terminów określonych w zasadach.",
           "declaration_text": "Dokładna treść oświadczenia zarejestrowana podczas pierwotnej kontroli.",
+          "declared_at": "Data i godzina ostatniego zapisania zadeklarowanych kategorii (jako znacznik czasu UTC).",
+          "declared_class_code": "Kategoria prawa jazdy, której posiadanie zostało zadeklarowane. Nie nadaje uprawnień do prowadzenia pojazdów.",
+          "declaredClasses": {
+            "summary": "Kategorie prawa jazdy zadeklarowane samodzielnie, które nie zostały jeszcze sprawdzone. Weryfikacja je zastępuje; zostaną usunięte, gdy przestaniesz być wyznaczonym kierowcą."
+          },
+          "declared_class_expiry_date": "Wprowadzona data ważności danej kategorii (kategorie C i D); puste, jeśli nie wprowadzono żadnej.",
+          "declared_document_expires_on": "Wprowadzona data ważności dokumentu prawa jazdy; puste, jeśli nie wprowadzono żadnej.",
           "document_expires_on": "Data ważności dokumentu, niezależna od dat ważności poszczególnych kategorii.",
           "document_issued_on": "Data wydania dokumentu, bez godziny i strefy czasowej.",
           "document_valid_through": "Ostatni dzień kalendarzowy objęty ważnością dokumentu.",
@@ -2615,6 +2880,25 @@
             "project": "Projekt, którego dotyczy stawka; puste w przypadku całej Twojej pracy.",
             "summary": "Stawki, którymi organizacja obciąża klientów za Twoją pracę."
           },
+          "contractorCompensationTerms": {
+            "capAtOneDay": "Określa, czy dzień liczy się jako co najwyżej jeden dzień, bez względu na czas trwania pracy.",
+            "compensationBasis": "Określa, czy wynagrodzenie jest wypłacane za godzinę (hourly), czy za dzień (daily).",
+            "currency": "Waluta stawki.",
+            "dayUnitRule": "Sposób naliczania dnia pracy dla stawki dziennej: dowolna praca jako pełny dzień (any_work_full_day), pół lub pełny dzień według progu (half_and_full_day) lub proporcjonalnie do standardowego dnia (prorated_by_standard_day). Puste dla stawki godzinowej.",
+            "effectiveFrom": "Pierwszy dzień obowiązywania tych warunków (RRRR-MM-DD).",
+            "effectiveTo": "Pierwszy dzień, w którym te warunki przestają obowiązywać (RRRR-MM-DD); puste, dopóki obowiązują.",
+            "employmentPeriodId": "Okres, do którego należą te warunki (jego identyfikator w employment_periods).",
+            "halfDayThresholdMinutes": "Maksymalnie tyle minut pracy dziennie liczy się jako pół dnia; więcej liczy się jako pełny dzień.",
+            "rate": "Twoja stawka za godzinę lub za dzień.",
+            "standardDayMinutes": "Liczba minut standardowego dnia, według której mierzony jest dzień pracy.",
+            "summary": "Twoja stawka godzinowa lub dzienna jako Wykonawca zewnętrzny w czasie."
+          },
+          "contractorDetails": {
+            "companyName": "Firma, za pośrednictwem której zawierasz umowę.",
+            "referenceCode": "Numer zamówienia zakupu (PO) lub centrum kosztów, z którym powiązane są Twoje faktury.",
+            "summary": "Twoje dane umowy jako Wykonawca zewnętrzny.",
+            "vatId": "Twój numer NIP lub identyfikator podatkowy."
+          },
           "costCenters": {
             "code": "Kod centrum kosztów.",
             "costCenter": "Nazwa centrum kosztów.",
@@ -2681,6 +2965,7 @@
             "contractType": "Twój rodzaj umowy.",
             "email": "Adres e-mail Twojego konta użytkownika.",
             "endDate": "Kiedy zakończyło się Twoje zatrudnienie; puste, dopóki trwa.",
+            "engagementKind": "Określa, czy pracujesz dziś dla organizacji jako pracownik (employee), czy jako Wykonawca zewnętrzny (contractor).",
             "firstName": "Twoje imię w danych pracowniczych.",
             "gender": "Twoja płeć.",
             "isActive": "Określa, czy Twój rekord pracownika jest aktywny.",
@@ -2700,6 +2985,7 @@
           },
           "employmentPeriods": {
             "endedAt": "Kiedy okres się zakończył; puste, jeśli nadal trwa.",
+            "engagementKind": "Określa, czy w tym okresie praca była wykonywana w charakterze pracownika (employee), czy Wykonawcy zewnętrznego (contractor).",
             "startedAt": "Kiedy okres się rozpoczął.",
             "startProvenance": "Źródło rozpoczęcia, na przykład zatrudnienie lub ponowne zatrudnienie.",
             "status": "Czy okres jest otwarty, czy zamknięty.",

@@ -16,6 +16,7 @@
     },
     "card": {
       "decision": "Decision",
+      "returned": "Returned",
       "submitted": "Submitted"
     },
     "empty": {
@@ -53,7 +54,7 @@
       "title": "In review"
     },
     "needsAttention": {
-      "description": "Rejected requests that may require a correction before resubmission.",
+      "fixDescription": "Returned or rejected requests that need a correction before resubmission.",
       "title": "Needs attention"
     },
     "reasonLabel": "Reason",
@@ -65,26 +66,58 @@
       "absence": {
         "title": "Absence request"
       },
+      "complianceException": {
+        "durationHours": "{hours} h",
+        "durationHoursMinutes": "{hours} h {minutes} min",
+        "durationMinutes": "{minutes} min",
+        "overtimeDaily": "Daily overtime exception",
+        "overtimeMonthly": "Monthly overtime exception",
+        "overtimeWeekly": "Weekly overtime exception",
+        "planned": "Planned: {duration}",
+        "restPeriod": "Rest period exception",
+        "title": "Compliance exception",
+        "validity": "Valid: {window} ({timeZone})"
+      },
+      "earlierClaim": {
+        "mileage": "Earlier mileage claim",
+        "perDiem": "Earlier per diem claim",
+        "receipt": "Earlier receipt claim",
+        "title": "Earlier claim"
+      },
+      "expenseReport": {
+        "adjustmentOf": "Adjustment of “{title}”",
+        "adjustmentOfUntitled": "Adjustment of an earlier report",
+        "kind": {
+          "standaloneMileage": "Standalone mileage",
+          "standaloneReceipt": "Standalone receipt",
+          "trip": "Trip report"
+        },
+        "untitledMileage": "Untitled mileage",
+        "untitledReceipt": "Untitled receipt",
+        "untitledTrip": "Untitled trip"
+      },
       "timeCorrection": {
         "subtitle": "Correction for a time entry",
         "title": "Time correction request"
-      },
-      "travelExpense": {
-        "title": "Travel expense claim"
       }
     },
-    "scope": "Your absence, time-correction and legacy expense requests in the active organization",
+    "returnNoteLabel": "Reviewer's note",
+    "scopeAllRequests": "Your absence, time-correction, compliance exception and expense requests in the active organization",
     "sourceError": {
       "absence": "Absence requests could not be loaded.",
+      "complianceException": "Compliance exceptions could not be loaded.",
+      "earlierClaim": "Earlier claims could not be loaded.",
+      "expenseReport": "Expense reports could not be loaded.",
       "timeCorrection": "Time correction requests could not be loaded.",
-      "title": "Some requests could not be loaded.",
-      "travelExpense": "Travel expense requests could not be loaded."
+      "title": "Some requests could not be loaded."
     },
     "status": {
       "approved": "Approved",
       "cancelled": "Cancelled",
+      "expired": "Expired",
       "inReview": "In review",
-      "rejected": "Rejected"
+      "rejected": "Rejected",
+      "returned": "Returned"
     },
     "summary": {
       "ariaLabel": "Request summary",
@@ -96,8 +129,10 @@
     "title": "My Requests",
     "types": {
       "absence": "Absence",
-      "timeCorrection": "Time correction",
-      "travelExpense": "Travel expense"
+      "complianceException": "Compliance exception",
+      "earlierClaim": "Earlier claim",
+      "expenseReport": "Expense report",
+      "timeCorrection": "Time correction"
     },
     "unavailableTitle": "Requests unavailable"
   }

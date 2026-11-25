@@ -1,5 +1,60 @@
 {
   "settings": {
+    "apprenticeRelease": {
+      "blockWeekTrainingNote": "Se permiten hasta 2 horas semanales de formación en la empresa durante estos días en bloque (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG). Para un empleado menor de 18 años, estas horas se añaden a la semana en bloque, que computa con el promedio de tiempo de trabajo semanal (§ 9 Abs. 2 Nr. 2 JArbSchG), y no computan para los límites diarios y semanales del § 8.",
+      "credit": {
+        "exam": "Examen desde las {start}: {minutes} min computados",
+        "fullDays": "{count, plural, one {# día laborable computado en su totalidad} other {# días laborables computados en su totalidad}}",
+        "minutes": "{minutes} min de tiempo lectivo computados",
+        "schoolTime": "Escuela {start}–{end}: {minutes} min computados"
+      },
+      "description": "La escuela de formación profesional, las semanas en bloque y los días de examen son permisos retribuidos (§ 15 BBiG): se computan como tiempo de trabajo, nunca se descuentan de las vacaciones y nunca generan un saldo de horas negativo.",
+      "empty": "Aún no se han registrado días de permiso.",
+      "fields": {
+        "date": "Fecha",
+        "endsOn": "Último día",
+        "examEndTime": "Fin del examen (incluidos descansos)",
+        "examStartTime": "Inicio del examen",
+        "examTimeHint": "El examen solo dispensa y computa su propia duración. Deje ambos campos vacíos para conceder permiso para todo el día.",
+        "includePreExamDay": "Conceder también permiso el día laborable anterior al examen final escrito",
+        "kind": "Permiso",
+        "lessons": "Clases (45 min cada una)",
+        "note": "Nota (opcional)",
+        "schoolEndTime": "Fin de las clases (incluidos descansos)",
+        "schoolHoursPerWeek": "Horas lectivas por semana (horas reloj)",
+        "schoolStartTime": "Inicio de las clases",
+        "schoolTimeHint": "Una jornada escolar corta computa su tiempo lectivo, incluidos los descansos. Deje ambos campos vacíos para computar 45 minutos por clase."
+      },
+      "kind": {
+        "blockWeek": "Semana escolar en bloque",
+        "examDay": "Día de examen",
+        "preExamDay": "Día laborable previo al examen",
+        "schoolDay": "Día de escuela de formación profesional"
+      },
+      "lessons": "{count} clases",
+      "record": "Registrar día de permiso",
+      "recorded": "Día de permiso registrado",
+      "refusal": {
+        "dayAlreadyReleased": "Este día ya tiene un permiso. Elimine primero el permiso registrado en él.",
+        "examTimeInvalid": "Indique cuándo empieza y termina el examen, o deje ambos en blanco. La hora de fin debe ser posterior a la de inicio.",
+        "invalidRange": "Compruebe las fechas: el último día no puede ser anterior al primero.",
+        "invalidValue": "Compruebe las clases y las horas lectivas.",
+        "lessonsRequired": "Introduzca el número de clases.",
+        "noPrecedingWorkingDay": "No hay ningún día laborable en la semana anterior al examen al que conceder permiso.",
+        "notApprentice": "Los días de permiso solo pueden registrarse mientras las condiciones del empleado lo definan como aprendiz.",
+        "overlap": "Este permiso se solapa con un permiso ya registrado.",
+        "reasonRequired": "Explique por qué se elimina el día de permiso.",
+        "schoolMinutesRequired": "Introduzca las horas lectivas previstas para la semana en bloque.",
+        "schoolTimeInvalid": "Indique cuándo empiezan y terminan las clases, o deje ambos en blanco. La hora de fin debe ser posterior a la de inicio.",
+        "singleDay": "Solo una semana escolar en bloque abarca varios días."
+      },
+      "title": "Permiso por clases y exámenes",
+      "void": "Eliminar",
+      "voidConfirm": "Eliminar día de permiso",
+      "voided": "Día de permiso eliminado",
+      "voidReason": "¿Por qué se elimina?",
+      "workplaceReturn": "Menores de 18: no se vuelve al trabajo tras esta jornada escolar completa (§ 9 Abs. 1 Nr. 2 JArbSchG)"
+    },
     "approvalSettings": {
       "pageDescription": "Configura quién aprueba las solicitudes, cuándo escalan las aprobaciones vencidas y qué problemas de aprobación requieren seguimiento."
     },
@@ -230,6 +285,7 @@
         "employeeDescription": "El costo interno por hora totalmente cargado de este empleado, utilizado para el margen. Es independiente del salario.",
         "employeeTitle": "Tarifa de costo",
         "empty": "Aún no hay tarifa de costo. El margen para el trabajo de este empleado se muestra como costo desconocido.",
+        "emptyContractor": "Aún no hay tarifa de coste. El margen utiliza la tarifa de contratista externo de esta persona para su trabajo como contratista; otros trabajos, y los trabajos de contratista sin tarifa, se muestran como coste desconocido.",
         "history": "Historial",
         "historyAction": "Historial de la tarifa de costo de {name}",
         "hourly": "Por hora",
@@ -652,14 +708,6 @@
         "title": "No todos los envíos de períodos de este mes están aprobados. Esto no impide el cierre:"
       }
     },
-    "compliance": {
-      "description": "Revise y gestione las solicitudes de excepción de cumplimiento de los miembros del equipo",
-      "metadata": {
-        "description": "Configura los ajustes de cumplimiento de ArbZG y gestiona las solicitudes de excepción",
-        "title": "Ajustes de cumplimiento | ArbZG"
-      },
-      "title": "Cumplimiento de la Ley de Tiempo de Trabajo (ArbZG)"
-    },
     "customDomains": {
       "title": "Dominio e imagen de marca"
     },
@@ -1016,7 +1064,7 @@
         "all": "Todos los empleados de esta organización",
         "allDescription": "La responsabilidad sigue la pertenencia actual a la organización. Los verificadores nunca pueden verificarse a sí mismos.",
         "attribution": "Concedido por {actor} a las {time}",
-        "editor": "Alcance del verificador",
+        "editTitle": "Editar responsabilidad del verificador",
         "empty": "No hay responsabilidades de verificador asignadas",
         "failed": "No se pudo actualizar ni acceder a la responsabilidad de verificación del permiso de conducir. Comprueba tus permisos y selecciones.",
         "formerEmployee": "No se pueden añadir exempleados. Elige empleados de la plantilla actual.",
@@ -2116,6 +2164,7 @@
           "unavailable": "No se pudo completar esta comprobación. Reintente las comprobaciones para volver a intentarlo."
         },
         "payrollSetup": {
+          "externalContractorsSkipped": "{count, plural, one {Se omite # contratista externo para las condiciones de empleo y los identificadores de personal: las exportaciones de nómina nunca incluyen contratistas externos.} other {Se omiten # contratistas externos para las condiciones de empleo y los identificadores de personal: las exportaciones de nómina nunca incluyen contratistas externos.}}",
           "fixEmployees": "Revisar empleados",
           "fixPayrollExport": "Abrir configuración de exportación de nóminas",
           "inviteesSkipped": "{count, plural, one {Se omite a # persona invitada para las condiciones laborales y los identificadores de personal hasta que se incorpore.} other {Se omite a # personas invitadas para las condiciones laborales y los identificadores de personal hasta que se incorporen.}}",
@@ -2223,6 +2272,7 @@
           "mappingsMissing": "Sin asignaciones de tipos de salario activas",
           "mappingsPresent": "{count, plural, one {# destino de exportación, tipos de salario asignados} other {# destinos de exportación, tipos de salario asignados}}",
           "notExported": "La organización no tiene ningún destino de exportación de nómina activo, por lo que no hay requisitos previos de nómina.",
+          "notNeededExternalContractor": "No es necesario: contratista externo",
           "notYetInvited": "Aún no: la invitación sigue pendiente",
           "personnelIdentifier": "Número de personal",
           "termsConfirmed": "Confirmado para hoy",
@@ -2258,6 +2308,7 @@
           "name": "Política",
           "none": "Hoy no hay ninguna política de trabajo vigente: no hay ninguna asignada a esta persona, a su equipo ni a la organización.",
           "noSchedule": "Sin horario",
+          "notApplicable": "No se aplica ninguna política de trabajo: trabaja como contratista externo.",
           "noWorkingDays": "Sin días laborables",
           "title": "Política de trabajo",
           "workingDays": "Días laborables"
@@ -3085,7 +3136,15 @@
       "updateProfile": "Actualizar perfil",
       "updateSuccess": "Perfil actualizado correctamente",
       "uploading": "Subiendo",
-      "uploadProfilePicture": "Subir foto de perfil"
+      "uploadProfilePicture": "Subir foto de perfil",
+      "workingStudent": {
+        "balance": "Quedan {remaining} de {limit} semanas por encima de 20 horas ({used} utilizadas en los últimos 12 meses).",
+        "description": "Como estudiante trabajador, puedes trabajar más de 20 horas en un máximo de 26 semanas dentro de un período de 12 meses.",
+        "lectureFree": "Periodos no lectivos registrados",
+        "lectureFreeEmpty": "No hay periodos no lectivos registrados. Pide a RR. HH. que registre tus vacaciones semestrales.",
+        "noBaseline": "No se aplica ningún límite legal a esta semana.",
+        "title": "Estado de estudiante trabajador"
+      }
     },
     "projects": {
       "budgetUsed": "Presupuesto utilizado",

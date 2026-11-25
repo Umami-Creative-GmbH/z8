@@ -101,11 +101,11 @@
       "created": "Created",
       "decisionRecorded": "Decision recorded",
       "destination": "Destination",
+      "earlierClaim": "Earlier claim",
+      "earlierReceiptIdentity": "Earlier receipt: content checksum was not recorded.",
       "history": "Decision history",
       "historyDescription": "Every step of this claim, oldest first. Times are shown in UTC.",
       "intermediateApproval": "Approval recorded — awaiting further approval",
-      "legacyClaim": "Legacy claim",
-      "legacyReceiptIdentity": "Legacy receipt: content checksum was not recorded.",
       "loading": "Loading claim…",
       "noReceipts": "No receipts recorded",
       "notRecorded": "Not recorded",
@@ -117,7 +117,7 @@
       "submitted": "Submitted",
       "title": "Travel expense claim",
       "unavailable": "Claim not found or access is no longer available.",
-      "unknownDates": "Trip date context not recorded (legacy claim)"
+      "unknownEarlierClaimDates": "Trip date context not recorded (earlier claim)"
     },
     "errors": {
       "loadDetailRetry": "Unable to load this claim. Please retry."
@@ -166,6 +166,7 @@
         "title": "{count, plural, one {# approved expense awaits reimbursement that no expense officer covers} other {# approved expenses await reimbursement that no expense officer covers}}"
       },
       "description": "Approved expenses and what is still owed to employees. Recording a reimbursement documents a payment made outside Z8; no money is transferred.",
+      "earlierClaim": "Earlier {type} claim",
       "employeePaid": "Employee-paid {amount}",
       "empty": {
         "allReimbursed": "Nothing left to record: every approved expense is reimbursed.",
@@ -258,7 +259,6 @@
         }
       },
       "inPayrollRun": "Included in {run}",
-      "legacyClaim": "Legacy {type} claim",
       "loading": "Loading finance queue…",
       "pagination": {
         "label": "Finance queue pages",

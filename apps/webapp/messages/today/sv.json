@@ -6,19 +6,37 @@
       "decided": "Beslut sparat. Uppdatera för att läsa in den aktuella kön.",
       "description": "Förfrågningar som väntar på ett chefsbeslut.",
       "empty": "Inga godkännanden väntar.",
+      "itemTitle": "{requester}: {title}",
       "openInbox": "Öppna inkorgen",
+      "openInboxForRest": "Öppna inkorgen för att se resten",
+      "openInboxLink": "Öppna inkorgen",
       "ownRequest": "Din egen begäran: en annan godkännare beslutar.",
+      "partialFailure": "Vissa godkännanden kunde inte läsas in: {types}. Listan och totalen kan vara ofullständiga.",
+      "partialFailureNotCounted": "Vissa godkännanden kunde inte räknas: {types}. Totalen kan vara ofullständig.",
       "pendingAriaLabel": "Väntande godkännanden",
       "reject": "Avvisa",
       "rejectLabel": "Avvisa {title}",
+      "rejectPanel": {
+        "briefingUnavailable": "Dagens godkännanden kunde inte uppdateras. Stäng den här panelen och försök igen.",
+        "description": "Den som begär ser denna anledning tillsammans med avslaget.",
+        "noLongerRejectable": "Denna begäran kan inte längre avslås här.",
+        "title": "Avslå begäran"
+      },
       "retry": "Försök godkänna igen",
+      "reviewInInbox": "Granska i inkorgen",
+      "reviewInInboxNamed": "Granska i inkorgen: {title}",
       "title": "Godkännanden",
       "toast": {
         "approved": "Förfrågan godkänd",
         "approveError": "Kunde inte godkänna förfrågan",
         "rejected": "Förfrågan avvisad",
         "rejectError": "Kunde inte avvisa förfrågan"
-      }
+      },
+      "totalAtLeast": "{count}+",
+      "truncated": "{total, plural, one {Visar {shown} av # väntande godkännande.} other {Visar {shown} av # väntande godkännanden.}}",
+      "truncatedAtLeast": "{total, plural, one {Visar {shown} av minst # väntande godkännande.} other {Visar {shown} av minst # väntande godkännanden.}}",
+      "waitingInInbox": "{total, plural, one {# väntande godkännande väntar i inkorgen.} other {# väntande godkännanden väntar i inkorgen.}}",
+      "waitingInInboxAtLeast": "{total, plural, one {Minst # väntande godkännande väntar i inkorgen.} other {Minst # väntande godkännanden väntar i inkorgen.}}"
     },
     "briefing": {
       "accessUnavailable": "Denna briefing är inte tillgänglig för den aktuella medarbetaren och organisationen.",

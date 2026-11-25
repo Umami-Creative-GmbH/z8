@@ -409,6 +409,7 @@
         "clearSearch": "Aramayı temizle",
         "clockReview": "İnceleme gerekiyor: işten çıkış kaydı",
         "confirmRehire": "Yeniden işe alımı onayla",
+        "contractorRehireHint": "Bir Harici Yüklenici için istihdam şartları, çalışma politikası veya izin hakkı tanımlanmaz. Yüklenici ücretleri ayrı olarak belirlenir.",
         "correctTime": "Saati düzelt",
         "currency": "Para birimi",
         "currencyInvalid": "Üç harfli bir para birimi kodu girin.",
@@ -423,6 +424,10 @@
         "effectiveDescription": "Erişim {cutoff} ({timezone}) itibarıyla sona erdi.",
         "employmentGap": "İstihdam edilmedi {startDate} – {endDate}",
         "employmentStint": "İstihdam {startDate} – {endDate}",
+        "engagement": {
+          "employee": "Çalışan"
+        },
+        "engagementKind": "Görevlendirme",
         "errors": {
           "actorNotAuthorized": "Yalnızca kuruluş sahipleri ve yöneticiler çalışan ayrılışlarını yönetebilir.",
           "departureAlreadyEffective": "Bu ayrılış zaten yürürlüğe girdi. Erişimi geri yüklemek için çalışanı tekrar işe alın.",
@@ -668,6 +673,7 @@
           "employeeNotFound": "Çalışan bulunamadı.",
           "exceedsBalance": "Ödeme, çalışanın o günün sonundaki çalışma bakiyesinden fazladır.",
           "exceedsLaterBalance": "Bu ödeme, daha sonraki bir fazla mesai ödemesinin ardından çalışma bakiyesini sıfırın altına düşürür. Önce söz konusu ödemeyi iptal edin veya daha düşük bir tutar kaydedin.",
+          "externalContractorDay": "Bu tarihte kişi Harici Yüklenici olarak çalışmaktadır, bu nedenle bordroda bu ödeme asla yapılmaz. Tarihi istihdam edildiği bir güne ayarlayın.",
           "failed": "Çalışma bakiyesi güncellenemedi. Tekrar deneyin.",
           "futureDay": "Gün, çalışanın saat dilimine göre bugünden sonra olamaz.",
           "invalidInput": "Günü, saat ve dakikayı ve nedeni kontrol edin.",

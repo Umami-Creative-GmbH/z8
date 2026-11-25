@@ -101,11 +101,11 @@
       "created": "Utworzono",
       "decisionRecorded": "Zarejestrowano decyzję",
       "destination": "Miejsce docelowe",
+      "earlierClaim": "Wcześniejszy wniosek",
+      "earlierReceiptIdentity": "Wcześniejszy rachunek: suma kontrolna zawartości nie została zarejestrowana.",
       "history": "Historia decyzji",
       "historyDescription": "Wszystkie etapy tego wniosku, od najstarszych. Godziny podano w strefie UTC.",
       "intermediateApproval": "Zarejestrowano zatwierdzenie — oczekiwanie na dalsze zatwierdzenie",
-      "legacyClaim": "Poprzedni wniosek",
-      "legacyReceiptIdentity": "Archiwalny rachunek: suma kontrolna zawartości nie została zarejestrowana.",
       "loading": "Wczytywanie wniosku…",
       "noReceipts": "Brak zarejestrowanych rachunków",
       "notRecorded": "Nie zarejestrowano",
@@ -117,7 +117,7 @@
       "submitted": "Złożono",
       "title": "Wniosek o zwrot kosztów podróży",
       "unavailable": "Nie znaleziono wniosku lub dostęp nie jest już możliwy.",
-      "unknownDates": "Kontekst daty podróży nie został zarejestrowany (archiwalny wniosek)"
+      "unknownEarlierClaimDates": "Kontekst daty podróży nie został zarejestrowany (wcześniejszy wniosek)"
     },
     "errors": {
       "loadDetailRetry": "Nie udało się wczytać tego wniosku. Ponów próbę."
@@ -166,6 +166,7 @@
         "title": "{count, plural, one {# zatwierdzony wydatek oczekuje na zwrot i nie jest objęty zakresem żadnego koordynatora ds. wydatków} few {# zatwierdzone wydatki oczekują na zwrot i nie są objęte zakresem żadnego koordynatora ds. wydatków} many {# zatwierdzonych wydatków oczekuje na zwrot i nie jest objętych zakresem żadnego koordynatora ds. wydatków} other {# zatwierdzonego wydatku oczekuje na zwrot i nie jest objęte zakresem żadnego koordynatora ds. wydatków}}"
       },
       "description": "Zatwierdzone wydatki i kwoty nadal należne pracownikom. Zarejestrowanie zwrotu kosztów dokumentuje płatność dokonaną poza Z8; żadne środki nie są przekazywane.",
+      "earlierClaim": "Wcześniejszy wniosek ({type})",
       "employeePaid": "Opłacone przez pracownika {amount}",
       "empty": {
         "allReimbursed": "Wszystko zostało zarejestrowane: każdy zatwierdzony wydatek został zwrócony.",
@@ -258,7 +259,6 @@
         }
       },
       "inPayrollRun": "Uwzględniono w {run}",
-      "legacyClaim": "Archiwalny wniosek: {type}",
       "loading": "Wczytywanie kolejki finansowej…",
       "pagination": {
         "label": "Strony kolejki finansowej",

@@ -208,7 +208,6 @@
     "adding": "Se adaugă...",
     "all": "Toate",
     "appName": "Z8",
-    "approve": "Aprobă",
     "assign": "Atribuie",
     "back": "Înapoi",
     "backToDashboard": "Înapoi la tabloul de bord",
@@ -372,6 +371,94 @@
       "bellLabel": "{count, plural, =0 {Notificări} other {Notificări (# necitite)}}"
     },
     "offline": "Offline",
+    "onCall": {
+      "agreementDocumented": "Acord documentat",
+      "agreementStale": "Tura s-a modificat de la încheierea acordului",
+      "finding": {
+        "nearBand": "Săptămâna a solicitat {used}, apropiindu-se de limita intervalului de solicitare de {limit}",
+        "other": "Regulă privind munca la cerere în pericol",
+        "overBand": "Săptămâna a solicitat {used}, depășind intervalul de solicitare de {limit}",
+        "shortCall": "Tura de {duration} este mai scurtă decât solicitarea minimă de {minimum}",
+        "shortNotice": "{days, plural, one {Chemat cu un preaviz de # zi întreagă; sunt necesare {required}} few {Chemat cu un preaviz de # zile întregi; sunt necesare {required}} other {Chemat cu un preaviz de # de zile întregi; sunt necesare {required}}}",
+        "shortWorkCall": "A lucrat o solicitare de {duration}, mai puțin decât solicitarea minimă de {minimum}",
+        "underBand": "Săptămâna a solicitat {used}, sub intervalul de solicitare de {limit}"
+      },
+      "findingsTitle": "Verificări ale ultimelor și următoarelor patru săptămâni",
+      "hoursKind": {
+        "exact": "Ore săptămânale convenite exact",
+        "maximum": "Ore săptămânale maxime (până la −20 %)",
+        "minimum": "Ore săptămânale minime (până la +25 %)",
+        "unspecified": "Nu s-au convenit ore săptămânale (se aplică 20 h)"
+      },
+      "minimumCall": "Solicitare minimă {duration}",
+      "noFindings": "Nicio regulă privind munca la cerere nu este în pericol.",
+      "notToday": "Nu este de gardă astăzi.",
+      "payroll": {
+        "continuedPaySpan": "Continuarea plății este datorată de la {from} până la {until} (§ 3 EFZG)",
+        "description": "Timpul mediu de lucru înainte de fiecare concediu medical sau sărbătoare legală al angajaților la cerere în această perioadă, pentru pregătirea plății continuate. Nimic de aici nu modifică zilele decontate.",
+        "hide": "Ascunde detalierea",
+        "holidaysPaidAsHolidays": "Sărbătorile legale din timpul concediului medical sunt plătite pe rânduri separate, nu ca zile de boală: {dates}",
+        "paidSickDays": "{days, plural, one {Indemnizație de boală pentru # zi în această perioadă} few {Indemnizație de boală pentru # zile în această perioadă} other {Indemnizație de boală pentru # de zile în această perioadă}}",
+        "perDay": "{duration} pe zi",
+        "rangeTooLong": "Orele de referință sunt afișate pentru cel mult trei luni o dată. Alegeți o perioadă mai scurtă.",
+        "show": "Afișează detalierea",
+        "sickPayExhausted": "Fără indemnizație de boală în această perioadă: cele șase săptămâni de continuare a plății s-au încheiat la {date} (§ 3 Abs. 1 EFZG)",
+        "sickPayGuidanceLabel": "Ghid pentru salarizare",
+        "sickPayGuidanceNote": "Rândurile privind indemnizația de boală sunt orientative conform § 3 EFZG; sistemul de salarizare decide dacă și cât se plătește din continuarea plății.",
+        "sickPayNotOwed": "Nu se datorează nicio indemnizație de boală pentru această afecțiune: s-a încheiat în primele patru săptămâni de angajare (§ 3 Abs. 3 EFZG)",
+        "sickPayWaiting": "Fără indemnizație de boală în această perioadă: dreptul apare pe {date}, după patru săptămâni de angajare (§ 3 Abs. 3 EFZG)",
+        "title": "Ore de referință pentru munca la cerere (§ 12 TzBfG)"
+      },
+      "reference": {
+        "calculate": "Calculează",
+        "dateRequired": "Alegeți o dată.",
+        "denominator": "Zile luate în calcul",
+        "denominatorValue": "{counted} din {total} zile",
+        "description": "Doar cu titlu informativ: departamentul de salarizare decide ce se plătește. Nimic de aici nu modifică zilele decontate sau lunile încheiate.",
+        "eventDate": "Calculează pentru o zi",
+        "excluded": {
+          "notEmployed": "Neangajat",
+          "paidAbsence": "Concediu sau boală",
+          "publicHoliday": "Sărbătoare legală",
+          "unpaidAbsence": "Absență neplătită"
+        },
+        "excludedPeriod": "{days, plural, one {{from} – {until}: {reason} (# zi)} other {{from} – {until}: {reason} (# zile)}}",
+        "excludedTitle": "Exclus din medie",
+        "noEvents": "Niciun concediu medical sau sărbătoare legală într-o zi de permanență în ultimele trei luni.",
+        "none": "—",
+        "numerator": "Timp lucrat",
+        "perDay": "Media pe zi",
+        "periodThirteenWeeks": "Perioadă de referință (13 săptămâni): {from} – {until}",
+        "periodThreeMonths": "Perioadă de referință (3 luni): {from} – {until}",
+        "perWeek": "Media pe săptămână",
+        "perWorkedDay": "Media pe zi lucrată",
+        "publicHoliday": "Sărbătoare legală pe {date}",
+        "shortened": "Contractul de muncă a început în timpul perioadei de referință, așadar se ia în calcul perioada mai scurtă.",
+        "sickLeave": "Concediu medical din {date}",
+        "thirteenWeeks": "13 săptămâni",
+        "threeMonths": "3 luni",
+        "title": "Ore de referință pentru plata concediului medical și a sărbătorilor",
+        "workedDays": "Zile lucrate"
+      },
+      "reviews": {
+        "acknowledge": "Documentează acordul",
+        "acknowledged": "Acord documentat",
+        "changed": "Tura s-a modificat de la încărcarea acestei liste. Revizuiți-o din nou înainte de a documenta acordul.",
+        "description": "Solicitări cu preaviz scurt, solicitări sub durata minimă și săptămâni în afara intervalului stabilit în ultimele și următoarele patru săptămâni. Pontajul nu este niciodată blocat.",
+        "documented": "Acord documentat: {reason}",
+        "draft": "Nu este încă publicată. Publicați tura înainte de a documenta acordul angajatului.",
+        "empty": "Nu există constatări privind munca la cerere de revizuit.",
+        "notOpen": "Tura nu mai are o constatare privind preavizul scurt.",
+        "notPublished": "Tura nu este încă publicată. Publicați-o înainte de a documenta acordul angajatului.",
+        "reason": "Acordul voluntar al angajatului (§ 12 alin. 3 TzBfG)",
+        "reasonRequired": "Descrieți modul în care angajatul a fost de acord cu preavizul scurt.",
+        "stale": "Tura s-a modificat după ce acordul a fost documentat. Documentați-l din nou dacă este încă valabil.",
+        "title": "Muncă la cerere (§ 12 TzBfG)"
+      },
+      "statutoryMinimumCall": "Se aplică durata minimă legală de solicitare",
+      "title": "Muncă la cerere (§ 12 TzBfG)",
+      "weekly": "{duration} pe săptămână"
+    },
     "open": "Deschide",
     "openEnded": "Fără dată de final",
     "openMenu": "Deschide meniul",
@@ -425,8 +512,6 @@
     "refreshData": "Reîmprospătează datele",
     "refreshDataFailed": "Datele nu au putut fi reîmprospătate. Vă rugăm să încercați din nou.",
     "refreshing": "Se reîmprospătează...",
-    "reject": "Respinge",
-    "rejecting": "Se respinge…",
     "remove": "Elimină",
     "removing": "Se elimină...",
     "reset": "Resetează",
@@ -596,6 +681,90 @@
     },
     "yes": "Da"
   },
+  "contractorCompensation": {
+    "dayUnitRules": {
+      "anyWorkFullDay": "Orice zi lucrată contează ca o zi întreagă",
+      "halfAndFullDay": "Jumătate de zi până la {minutes} min, zi întreagă peste",
+      "proratedCapped": "Calculat proporțional raportat la o zi de {minutes} minute, cel mult o zi",
+      "proratedUncapped": "Calculat proporțional raportat la o zi de {minutes} minute, fără limită"
+    }
+  },
+  "contractorStatement": {
+    "approvedOnly": "Este afișată doar munca aprobată. Orele de muncă în așteptarea aprobării sunt adăugate odată ce sunt aprobate.",
+    "awaitingApprovalExcluded": "Perioade de muncă în așteptarea aprobării, neincluse: {count}",
+    "basis": {
+      "daily": "Tarif zilnic",
+      "hourly": "Tarif orar"
+    },
+    "byProject": "Pe proiect",
+    "columns": {
+      "amount": "Sumă",
+      "basis": "Plătit de",
+      "currency": "Monedă",
+      "date": "Dată",
+      "dayUnitRule": "Regulă unitate-zi",
+      "end": "Sfârșit",
+      "project": "Proiect",
+      "rate": "Tarif",
+      "rowType": "Tip rând",
+      "start": "Început",
+      "task": "Sarcină",
+      "time": "Oră (locală)",
+      "unit": "Unitate",
+      "units": "Unități",
+      "workedMinutes": "Minute lucrate"
+    },
+    "company": "Companie",
+    "contractor": "Contractor",
+    "contractorNumber": "Număr contractor",
+    "empty": "Nicio activitate finalizată ca și contractor extern în această perioadă.",
+    "errors": {
+      "failed": "Extrasul nu a putut fi creat",
+      "invalidPeriod": "Alegeți o perioadă de cel mult un an în care prima zi nu este după ultima zi.",
+      "notAllowed": "Puteți descărca doar propriile extrase.",
+      "notContractor": "Această persoană nu a avut niciun angajament de tip contractor extern în această perioadă.",
+      "notFound": "Această persoană nu a fost găsită în organizația dumneavoastră."
+    },
+    "export": {
+      "adminDescription": "Descărcați ce a lucrat acest contractor extern și evaluarea conform tarifelor sale, pentru a verifica factura. Un extras de verificare, nu o factură.",
+      "csv": "CSV pentru foi de calcul",
+      "download": "Descărcați extrasul",
+      "downloaded": "Extras descărcat",
+      "format": "Format",
+      "from": "De la",
+      "fromRequired": "Alegeți prima zi",
+      "pdf": "PDF",
+      "selfDescription": "Descărcați activitatea înregistrată și evaluarea conform tarifelor convenite, pentru a pregăti sau verifica factura. Un extras de verificare, nu o factură.",
+      "title": "Extras de timp și onorarii",
+      "to": "Până la",
+      "toBeforeFrom": "Ultima zi nu poate fi înaintea primei zile",
+      "toRequired": "Alegeți ultima zi"
+    },
+    "generated": "Generat (UTC)",
+    "noProject": "Niciun proiect",
+    "noRate": "Nu se aplică niciun tarif",
+    "notice": "Doar extras de verificare. Nu este o factură sau o notă de credit de autofacturare (Gutschrift): Z8 nu emite niciodată facturi. Acesta listează activitatea înregistrată în Z8 și prețul acesteia conform tarifelor convenite cu contractorul, astfel încât o factură să poată fi verificată pe baza acestuia.",
+    "organization": "Organizație",
+    "page": "Pagină",
+    "period": "Perioadă",
+    "referenceCode": "Referință PO sau centru de cost",
+    "rows": {
+      "day": "Zi",
+      "total": "Total",
+      "unpriced": "Fără preț",
+      "work": "Activitate"
+    },
+    "times": "Zilele reprezintă zilele calendaristice locale ale contractorului; orele sunt afișate la decalajul UTC înregistrat odată cu activitatea.",
+    "title": "Declarație de verificare a timpului și tarifelor contractantului",
+    "totals": "Totaluri",
+    "units": {
+      "days": "Zile",
+      "hours": "Ore"
+    },
+    "unpricedNotice": "Unele activități nu au avut un tarif stabilit în ziua respectivă. Sunt afișate fără sumă și nu sunt incluse în totaluri.",
+    "vatId": "Cod TVA",
+    "workedHours": "Ore lucrate"
+  },
   "drivingLicence": {
     "applyingInterval": "Se aplică…",
     "applyInterval": "Aplică modificarea intervalului",
@@ -604,6 +773,9 @@
       "chooseClasses": "Selectați categoriile pe care le-ați inspectat efectiv.",
       "classes": "Categorii inspectate efectiv",
       "classExpiry": "Expirarea categoriei (dacă este cazul)",
+      "declaredBadge": "Declarat",
+      "declaredHelp": "Aceste categorii și datele introduse de angajat sunt preselectate. Comparați-le cu permisul original și corectați eventualele neconcordanțe.",
+      "declaredTitle": "{name} a declarat {classes}",
       "documentDates": "Datele documentului original",
       "employeeDeclaration": "Angajatul a dat personal declarația de mai sus în timpul acestei verificări; atest această declarație.",
       "expiryDate": "Data expirării documentului",
@@ -644,6 +816,8 @@
       },
       "customOrder": "Sortat după coloana și direcția selectată.",
       "deadline": "{date} ({timezone})",
+      "declared": "A declarat {classes}",
+      "declaredDue": "Verificați categoriile declarate",
       "dueNow": "Verificare scadentă acum",
       "dueOrder": "Mai întâi verificările scadente acum, apoi următorul termen limită.",
       "empty": {
@@ -677,6 +851,31 @@
     "class": {
       "active": "Autorizat",
       "ended": "Încheiat",
+      "group": {
+        "bus": "Autobuze",
+        "car": "Autoturisme",
+        "motorcycle": "Mopede și motociclete",
+        "tractor": "Tractoare",
+        "truck": "Camioane"
+      },
+      "name": {
+        "A": "Motocicletă",
+        "A1": "Motocicletă ușoară",
+        "A2": "Motocicletă medie",
+        "AM": "Moped",
+        "B": "Autoturism",
+        "BE": "Autoturism cu remorcă",
+        "C": "Camion",
+        "C1": "Camion ușor",
+        "C1E": "Camion ușor cu remorcă",
+        "CE": "Camion cu remorcă",
+        "D": "Autobuz",
+        "D1": "Microbuz",
+        "D1E": "Microbuz cu remorcă",
+        "DE": "Autobuz cu remorcă",
+        "L": "Tractor cu viteză redusă",
+        "T": "Tractor"
+      },
       "noLongerIntended": "Încheiat deoarece angajatul nu mai este șofer desemnat. Reluarea conducerii necesită o nouă verificare.",
       "overdue": "Verificarea de rutină a depășit termenul. Aceasta este o suspendare organizațională, nu o retragere a dreptului legal de a conduce.",
       "recheck": "Sunt necesare o nouă verificare a originalului și o reactivare explicită.",
@@ -684,6 +883,36 @@
     },
     "declaration": {
       "text": "Confirm că nicio interdicție de conducere, retragere sau alt impediment cunoscut nu împiedică efectuarea conducerii intenționate și că îndeplinesc restricțiile de conducere aplicabile."
+    },
+    "declared": {
+      "add": "Adăugați categorii de permis",
+      "authorized": "Autorizat",
+      "classExpires": "Expiră la {date}",
+      "classExpiry": "{code} ({name}) expiră la",
+      "description": "Declarate de dvs., încă neverificate. Acestea nu vă conferă dreptul de a conduce până când un verificator nu vă examinează permisul original.",
+      "dialogDescription": "Selectați fiecare categorie prezentă pe permisul dvs. de conducere. Verificatorul le va confirma la examinarea permisului original.",
+      "dialogTitle": "Ce categorii aveți pe permis?",
+      "documentExpires": "Cardul permisului expiră",
+      "documentExpiry": "Cardul permisului expiră la",
+      "documentExpiryHelp": "Rubrica 4b de pe card. Lăsați necompletat dacă permisul dvs. nu are această rubrică.",
+      "edit": "Editare",
+      "emptyDescription": "Informați-vă organizația cu privire la categoriile de permis pe care le dețineți. Acest lucru ajută la planificare și pregătește verificarea; nu vă dă dreptul de a conduce.",
+      "emptyMoreDescription": "Adăugați o categorie pe care ați obținut-o de la ultima verificare. Verificatorului i se va cere să o verifice.",
+      "emptyMoreTitle": "Ați obținut o altă categorie de permis?",
+      "emptyTitle": "Ce puteți conduce?",
+      "expiryTitle": "Date de expirare (opțional)",
+      "invalid": "Verificați categoriile și datele selectate.",
+      "notIntended": "Nu mai sunteți desemnat ca șofer, astfel că organizația dvs. nu colectează categoriile permisului dvs.",
+      "privacy": "Sunt salvate doar categoriile și datele de expirare, fără număr de permis sau fotografie. Declarația dvs. nu vă autorizează să conduceți.",
+      "remove": "Elimină categoriile mele",
+      "removed": "Categoriile de permis declarate au fost eliminate",
+      "removing": "Se elimină…",
+      "save": "{count, plural, one {Salvează # categorie} few {Salvează # categorii} other {Salvează # de categorii}}",
+      "saved": "Categoriile permisului au fost salvate. Persoana responsabilă cu verificarea le va confrunta cu permisul dvs. original.",
+      "saveFailed": "Categoriile permisului dvs. nu au putut fi salvate. Selecția dvs. este păstrată; încercați din nou.",
+      "saving": "Se salvează…",
+      "title": "Categoriile de permis declarate de dvs.",
+      "updated": "Actualizat"
     },
     "delivery": {
       "uncertain": "E-mailurile opționale de memento trimise către dvs. au un rezultat de livrare incert ({count}). Acestea nu vor fi retrimise automat. Mementourile dvs. din aplicație rămân disponibile; livrarea e-mailului nu confirmă citirea."
@@ -846,6 +1075,7 @@
     },
     "operational": {
       "advisory": "Autorizație de conducere",
+      "declared": "Declarat, neverificat încă. Nu reprezintă o autorizație de a conduce.",
       "loading": "Se încarcă autorizația de conducere…",
       "loadingEmployees": "Se încarcă angajații pentru planificare…",
       "noEmployees": "Nu s-au găsit angajați corespunzători.",
@@ -1017,6 +1247,20 @@
     "team": "Echipă",
     "totalEmployees": "{count} angajați",
     "tryDifferentSearch": "Încercați să ajustați căutarea sau filtrele"
+  },
+  "engagement": {
+    "absenceRefusals": {
+      "contractorRecordsUnavailabilityOnly": "La aceste date lucrează ca Contractant extern: se poate înregistra doar indisponibilitatea.",
+      "spansEngagementChange": "Aceste date cuprind o trecere între statutul de angajat și cel de Contractant extern. Înregistrați fiecare perioadă separat.",
+      "unavailabilityIsForContractors": "La aceste date persoana este angajată: indisponibilitatea este doar pentru Contractanți externi."
+    },
+    "externalContractor": "Contractant extern",
+    "filter": {
+      "all": "Toți",
+      "contractors": "Contractanți externi",
+      "employees": "Angajați",
+      "label": "Colaborare"
+    }
   },
   "errors": {
     "failedToLoad": "Nu s-au putut încărca datele",
@@ -1487,6 +1731,10 @@
         "message": "Desemnați un verificator disponibil pentru {employeeName}. Această sarcină nu acordă drepturi de inspecție și nu prelungește niciun termen-limită.",
         "title": "Atribuie responsabilitatea de verificare a permisului de conducere"
       },
+      "drivingLicenceDeclared": {
+        "message": "{employeeName} a declarat categoriile de permis {classes}. Inspectați permisul original pentru a le autoriza; o simplă declarație nu conferă niciun drept.",
+        "title": "Categorii de permis de verificat"
+      },
       "drivingLicencePersonalTask": {
         "message": "Amintiți-i lui {employeeName} să programeze o verificare a permisului de conducere în original. Notificarea directă a angajatului nu a fost disponibilă. Finalizarea sarcinii nu reprezintă livrarea directă sau citirea.",
         "title": "Amintește-i angajatului în persoană"
@@ -1529,6 +1777,11 @@
       "formerEmployeeReportsWithoutManager": {
         "message": "{count, plural, one {# angajat este asociat în continuare doar cu un fost manager: {names}. Atribuiți un manager actual.} other {# angajați sunt asociați în continuare doar cu un fost manager: {names}. Atribuiți un manager actual.}}",
         "title": "Angajați fără un manager actual"
+      },
+      "invitationContractorTermsNeedReview": {
+        "message": "Tariful din invitația pentru {name} nu a putut fi aplicat la înscriere. Setați-l în remunerația sa de Contractant extern; până atunci, munca sa rămâne fără tarif stabilit.",
+        "termsExistMessage": "Tariful din invitația pentru {name} nu a fost aplicat la înscriere: colaborarea sa are deja termeni de remunerație, care se aplică în continuare. Verificați în secțiunea de remunerație pentru Contractant extern dacă aceștia ar trebui modificați.",
+        "title": "Tariful unui Contractant extern necesită revizuire"
       },
       "kioskCommandRefused": {
         "forwardedMessage": "{action, select, clock_in {O pontare la intrare} clock_out {O pontare la ieșire} start_break {Un început de pauză} resume_break {O revenire din pauză} other {O pontare}} efectuată de {employeeName} la {time} la chioșcul {kioskName} nu a fost înregistrată: {reason, select, wrong_pin {PIN-ul a fost incorect} pin_locked {PIN-ul chioșcului a fost blocat după prea multe încercări incorecte} no_pin {nu a existat niciun PIN de chioșc pentru verificare} pin_unchecked {PIN-ul nu a putut fi verificat} kiosk_retired {chioșcul a fost revocat sau asociat din nou înainte de a se reconecta} contact_unverifiable {Z8 nu a putut confirma ultima conexiune a chioșcului} outside_window {ora a fost în afara intervalului acceptat de Z8} clock_untrusted {ceasul chioșcului nu a putut fi considerat de încredere} not_assigned {angajatul nu este alocat la locația chioșcului} not_adopted {organizația nu acceptă pontări offline la chioșc} month_closed {luna este închisă} holiday {ziua este o sărbătoare fără pontare} conflict {se află în conflict cu o altă oră înregistrată} other {Z8 nu a putut să o accepte}}. Înregistrați timpul în locul său sau verificați-l împreună cu acesta.",
@@ -1694,6 +1947,11 @@
       "personnelFilePayslipsShared": {
         "message": "Fluturașul de salariu pentru {payPeriod} a fost partajat cu dvs.",
         "title": "Fluturaș de salariu nou în dosarul dvs. de personal"
+      },
+      "plannedEngagementEndNeedsReview": {
+        "notScheduled": "Data planificată de încheiere a colaborării pentru {name} ({plannedEndDate}) nu a putut fi programată ca dată de plecare. Programați-o pe pagina sa de angajat.",
+        "passed": "Data planificată de încheiere a colaborării pentru {name} ({plannedEndDate}) era deja trecută la data înscrierii, astfel că data de plecare este astăzi ({leavingDate}). Modificați-o dacă această colaborare continuă.",
+        "title": "O dată planificată de încheiere a colaborării necesită revizuire"
       },
       "policyForgottenClockOutReminder": {
         "message": "Ați atins numărul necesar de ore pentru {day} la {endTime} ({timezone}). Înregistrați ieșirea dacă ați terminat programul de lucru."
@@ -2497,6 +2755,13 @@
           "createdAt": "Momentul în care această sarcină sau livrare a fost înregistrată pentru prima dată, ca moment UTC.",
           "deadline_timezone": "Fusul orar calendaristic explicit utilizat pentru datele-limită ale politicii.",
           "declaration_text": "Textul exact al declarației înregistrat în timpul inspecției inițiale.",
+          "declared_at": "Momentul ultimei salvări a categoriilor declarate, ca oră UTC.",
+          "declared_class_code": "O categorie de permis pe care ați declarat că o dețineți. Aceasta nu conferă autorizație de conducere.",
+          "declaredClasses": {
+            "summary": "Categoriile de permis pe care le-ați declarat personal și care nu au fost verificate încă. O verificare le înlocuiește; acestea sunt șterse atunci când nu mai sunteți desemnat ca șofer."
+          },
+          "declared_class_expiry_date": "Data de expirare specifică a categoriei pe care ați introdus-o (categoriile C și D); necompletat dacă nu ați introdus niciuna.",
+          "declared_document_expires_on": "Data de expirare a permisului de conducere, așa cum ați introdus-o; necompletat dacă nu ați introdus niciuna.",
           "document_expires_on": "Data de expirare a documentului, separată de expirarea categoriilor individuale.",
           "document_issued_on": "Data emiterii documentului, fără oră sau fus orar.",
           "document_valid_through": "Ultima zi calendaristică acoperită de valabilitatea documentului.",
@@ -2615,6 +2880,25 @@
             "project": "Proiectul căruia i se aplică tariful; necompletat pentru întreaga dumneavoastră activitate.",
             "summary": "Tarifele pe care organizația le facturează clienților pentru munca dumneavoastră."
           },
+          "contractorCompensationTerms": {
+            "capAtOneDay": "Dacă o zi se consideră cel mult o zi, indiferent de durata activității.",
+            "compensationBasis": "Dacă sunteți plătit cu ora (orar) sau cu ziua (zilnic).",
+            "currency": "Moneda tarifului.",
+            "dayUnitRule": "Cum se calculează o zi de muncă pentru un tarif zilnic: orice activitate ca o zi întreagă (any_work_full_day), jumătate de zi sau zi întreagă în funcție de un prag (half_and_full_day) sau proporțional cu o zi standard (prorated_by_standard_day). Necompletat pentru un tarif orar.",
+            "effectiveFrom": "Prima zi în care se aplică acești termeni (AAAA-LL-ZZ).",
+            "effectiveTo": "Prima zi în care acești termeni nu se mai aplică (AAAA-LL-ZZ); necompletat cât timp se aplică.",
+            "employmentPeriodId": "Perioada căreia îi aparțin acești termeni (identificatorul său în employment_periods).",
+            "halfDayThresholdMinutes": "Până la atâtea minute de lucru pe zi se consideră jumătate de zi; mai mult se consideră o zi întreagă.",
+            "rate": "Tariful dvs. pe oră sau pe zi.",
+            "standardDayMinutes": "Minutele unei zile standard în raport cu care se măsoară o zi de muncă.",
+            "summary": "Tariful dvs. orar sau zilnic ca Contractant extern de-a lungul timpului."
+          },
+          "contractorDetails": {
+            "companyName": "Compania prin intermediul căreia contractați.",
+            "referenceCode": "Comanda de achiziție sau referința centrului de cost cu care sunt corelate facturile dvs.",
+            "summary": "Detaliile dvs. contractuale ca Contractant extern.",
+            "vatId": "Codul dvs. de TVA sau numărul de înregistrare fiscală."
+          },
           "costCenters": {
             "code": "Codul centrului de cost.",
             "costCenter": "Numele centrului de cost.",
@@ -2681,6 +2965,7 @@
             "contractType": "Tipul dvs. de contract.",
             "email": "Adresa de e-mail a contului dvs. de utilizator.",
             "endDate": "Când s-a încheiat raportul dvs. de muncă; necompletat cât timp acesta continuă.",
+            "engagementKind": "Dacă lucrați pentru organizație ca angajat (employee) sau ca Contractant extern (contractor) în prezent.",
             "firstName": "Prenumele dvs. din dosarul de angajat.",
             "gender": "Genul dvs.",
             "isActive": "Dacă dosarul dvs. de angajat este activ.",
@@ -2700,6 +2985,7 @@
           },
           "employmentPeriods": {
             "endedAt": "Data la care s-a încheiat perioada; necompletat cât timp este deschisă.",
+            "engagementKind": "Dacă ați lucrat în această perioadă ca angajat (employee) sau ca Contractant extern (contractor).",
             "startedAt": "Când a început perioada.",
             "startProvenance": "Originea începutului, de exemplu o angajare sau o reangajare.",
             "status": "Dacă perioada este deschisă sau închisă.",

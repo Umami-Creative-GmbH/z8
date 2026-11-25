@@ -1,5 +1,60 @@
 {
   "settings": {
+    "apprenticeRelease": {
+      "blockWeekTrainingNote": "Up to 2 hours of in-company training a week are allowed on these block days (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG). For an employee under 18, these hours come on top of the block week, which counts with the average weekly working time (§ 9 Abs. 2 Nr. 2 JArbSchG), and do not count towards the § 8 daily and weekly limits.",
+      "credit": {
+        "exam": "Exam from {start}: {minutes} min credited",
+        "fullDays": "{count, plural, one {# working day credited in full} other {# working days credited in full}}",
+        "minutes": "{minutes} min of school time credited",
+        "schoolTime": "School {start}–{end}: {minutes} min credited"
+      },
+      "description": "Vocational school, block-release weeks and exam days are paid release (§ 15 BBiG): they are credited as working time, never deducted from vacation and never leave a negative work balance.",
+      "empty": "No release days recorded yet.",
+      "fields": {
+        "date": "Date",
+        "endsOn": "Last day",
+        "examEndTime": "Exam ends (including breaks)",
+        "examStartTime": "Exam starts",
+        "examTimeHint": "The exam frees and credits its time only. Leave both empty to release the whole day.",
+        "includePreExamDay": "Also release the working day before the written final exam",
+        "kind": "Release",
+        "lessons": "Lessons (45 min each)",
+        "note": "Note (optional)",
+        "schoolEndTime": "School ends (including breaks)",
+        "schoolHoursPerWeek": "School hours per week (clock hours)",
+        "schoolStartTime": "School starts",
+        "schoolTimeHint": "A short school day credits its school time including breaks. Leave both empty to credit 45 minutes per lesson."
+      },
+      "kind": {
+        "blockWeek": "Block-release school week",
+        "examDay": "Exam day",
+        "preExamDay": "Working day before the exam",
+        "schoolDay": "Vocational school day"
+      },
+      "lessons": "{count} lessons",
+      "record": "Record release day",
+      "recorded": "Release day recorded",
+      "refusal": {
+        "dayAlreadyReleased": "This day is already released. Remove the release recorded on it first.",
+        "examTimeInvalid": "Enter when the exam starts and ends, or neither. It must end after it starts.",
+        "invalidRange": "Check the dates: the last day must not be before the first.",
+        "invalidValue": "Check the lessons and school hours.",
+        "lessonsRequired": "Enter the number of lessons.",
+        "noPrecedingWorkingDay": "There is no working day in the week before the exam to release.",
+        "notApprentice": "Release days can only be recorded while the employee's terms make them an apprentice.",
+        "overlap": "This release overlaps a release already recorded.",
+        "reasonRequired": "Explain why the release day is removed.",
+        "schoolMinutesRequired": "Enter the planned school hours of the block week.",
+        "schoolTimeInvalid": "Enter when school starts and ends, or neither. It must end after it starts.",
+        "singleDay": "Only a block-release week spans several days."
+      },
+      "title": "School and exam release",
+      "void": "Remove",
+      "voidConfirm": "Remove release day",
+      "voided": "Release day removed",
+      "voidReason": "Why is it removed?",
+      "workplaceReturn": "Under 18: no return to work after this full school day (§ 9 Abs. 1 Nr. 2 JArbSchG)"
+    },
     "approvalSettings": {
       "pageDescription": "Configure who approves requests, when overdue approvals escalate, and which approval issues need follow-up."
     },
@@ -653,14 +708,6 @@
         "title": "Not every period submission for this month is approved. This does not stop the close:"
       }
     },
-    "compliance": {
-      "description": "Review and manage compliance exception requests from team members",
-      "metadata": {
-        "description": "Configure ArbZG compliance settings and manage exception requests",
-        "title": "Compliance Settings | ArbZG"
-      },
-      "title": "ArbZG Compliance"
-    },
     "customDomains": {
       "title": "Domain & Branding"
     },
@@ -1017,7 +1064,7 @@
         "all": "All employees in this organization",
         "allDescription": "Responsibility follows current organization membership. Verifiers can never verify themselves.",
         "attribution": "Granted by {actor} at {time}",
-        "editor": "Verifier scope",
+        "editTitle": "Edit verifier responsibility",
         "empty": "No verifier responsibilities assigned",
         "failed": "Could not update or access driving licence verifier responsibility. Check your permissions and selections.",
         "formerEmployee": "Former employees can't be added. Choose employees on the current roster.",
@@ -2117,9 +2164,9 @@
           "unavailable": "This check could not be completed. Retry the checks to try again."
         },
         "payrollSetup": {
+          "externalContractorsSkipped": "{count, plural, one {# External Contractor is skipped for employment terms and personnel identifiers: payroll exports never include External Contractors.} other {# External Contractors are skipped for employment terms and personnel identifiers: payroll exports never include External Contractors.}}",
           "fixEmployees": "Review employees",
           "fixPayrollExport": "Open payroll export settings",
-          "externalContractorsSkipped": "{count, plural, one {# External Contractor is skipped for employment terms and personnel identifiers: payroll exports never include External Contractors.} other {# External Contractors are skipped for employment terms and personnel identifiers: payroll exports never include External Contractors.}}",
           "inviteesSkipped": "{count, plural, one {# invited person is skipped for employment terms and personnel identifiers until they join.} other {# invited people are skipped for employment terms and personnel identifiers until they join.}}",
           "missingEmploymentTerms": "{count, plural, one {No confirmed employment terms covering today: # employee} other {No confirmed employment terms covering today: # employees}}",
           "noWageTypeMappings": "{count, plural, one {No active wage-type mappings, so payroll exports can't classify hours: # member} other {No active wage-type mappings, so payroll exports can't classify hours: # members}}",
@@ -3091,12 +3138,12 @@
       "uploading": "Uploading",
       "uploadProfilePicture": "Upload profile picture",
       "workingStudent": {
-        "title": "Working student status",
-        "description": "As a working student, you may work more than 20 hours in at most 26 weeks within 12 months.",
-        "noBaseline": "No statutory limit applies to this week.",
         "balance": "{remaining} of {limit} weeks above 20 hours remaining ({used} used in the last 12 months).",
+        "description": "As a working student, you may work more than 20 hours in at most 26 weeks within 12 months.",
         "lectureFree": "Recorded lecture-free periods",
-        "lectureFreeEmpty": "No lecture-free periods recorded. Ask HR to record your semester breaks."
+        "lectureFreeEmpty": "No lecture-free periods recorded. Ask HR to record your semester breaks.",
+        "noBaseline": "No statutory limit applies to this week.",
+        "title": "Working student status"
       }
     },
     "projects": {
@@ -4310,61 +4357,6 @@
       "visibleLocationsDescription": "Leave empty to include all locations.",
       "visibleTeams": "Visible teams",
       "visibleTeamsDescription": "Leave empty to include all teams."
-    },
-    "apprenticeRelease": {
-      "title": "School and exam release",
-      "description": "Vocational school, block-release weeks and exam days are paid release (§ 15 BBiG): they are credited as working time, never deducted from vacation and never leave a negative work balance.",
-      "empty": "No release days recorded yet.",
-      "blockWeekTrainingNote": "Up to 2 hours of in-company training a week are allowed on these block days (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG). For an employee under 18, these hours come on top of the block week, which counts with the average weekly working time (§ 9 Abs. 2 Nr. 2 JArbSchG), and do not count towards the § 8 daily and weekly limits.",
-      "kind": {
-        "schoolDay": "Vocational school day",
-        "blockWeek": "Block-release school week",
-        "examDay": "Exam day",
-        "preExamDay": "Working day before the exam"
-      },
-      "credit": {
-        "fullDays": "{count, plural, one {# working day credited in full} other {# working days credited in full}}",
-        "minutes": "{minutes} min of school time credited",
-        "exam": "Exam from {start}: {minutes} min credited",
-        "schoolTime": "School {start}–{end}: {minutes} min credited"
-      },
-      "lessons": "{count} lessons",
-      "workplaceReturn": "Under 18: no return to work after this full school day (§ 9 Abs. 1 Nr. 2 JArbSchG)",
-      "void": "Remove",
-      "voidReason": "Why is it removed?",
-      "voidConfirm": "Remove release day",
-      "voided": "Release day removed",
-      "recorded": "Release day recorded",
-      "record": "Record release day",
-      "fields": {
-        "kind": "Release",
-        "date": "Date",
-        "endsOn": "Last day",
-        "schoolHoursPerWeek": "School hours per week (clock hours)",
-        "lessons": "Lessons (45 min each)",
-        "includePreExamDay": "Also release the working day before the written final exam",
-        "examStartTime": "Exam starts",
-        "examEndTime": "Exam ends (including breaks)",
-        "examTimeHint": "The exam frees and credits its time only. Leave both empty to release the whole day.",
-        "schoolStartTime": "School starts",
-        "schoolEndTime": "School ends (including breaks)",
-        "schoolTimeHint": "A short school day credits its school time including breaks. Leave both empty to credit 45 minutes per lesson.",
-        "note": "Note (optional)"
-      },
-      "refusal": {
-        "notApprentice": "Release days can only be recorded while the employee's terms make them an apprentice.",
-        "lessonsRequired": "Enter the number of lessons.",
-        "schoolMinutesRequired": "Enter the planned school hours of the block week.",
-        "noPrecedingWorkingDay": "There is no working day in the week before the exam to release.",
-        "examTimeInvalid": "Enter when the exam starts and ends, or neither. It must end after it starts.",
-        "schoolTimeInvalid": "Enter when school starts and ends, or neither. It must end after it starts.",
-        "dayAlreadyReleased": "This day is already released. Remove the release recorded on it first.",
-        "overlap": "This release overlaps a release already recorded.",
-        "invalidRange": "Check the dates: the last day must not be before the first.",
-        "invalidValue": "Check the lessons and school hours.",
-        "reasonRequired": "Explain why the release day is removed.",
-        "singleDay": "Only a block-release week spans several days."
-      }
     }
   }
 }

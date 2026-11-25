@@ -51,6 +51,7 @@
       "overtime": "Övertid: {count}",
       "publishing": "Publicerar…",
       "restTime": "Vilotid: {count}",
+      "statutory": "Lagstadgade gränser: {count}",
       "totalFindings": "{count, plural, other {# fynd totalt} }",
       "warningsDetectedBeforePublish": "Varningar upptäcktes före publicering"
     },
@@ -61,6 +62,7 @@
         "maxHours": "Max timmar: {count}",
         "overtime": "Övertid: {count}",
         "restTime": "Vilotid: {count}",
+        "statutory": "Lagstadgade gränser: {count}",
         "title": "Efterlevnadsvarningar i detta datumintervall"
       },
       "focus": {
@@ -73,7 +75,8 @@
       "open": "Öppet pass",
       "publish": {
         "failed": "Det gick inte att publicera arbetspassen",
-        "published": "Publicerade {count} arbetspass"
+        "published": "Publicerade {count} arbetspass",
+        "statutoryBlocked": "Vissa skift bryter mot gränser för ungdomsskydd (JArbSchG). Ändra skiften eller bekräfta ett lagstadgat branschundantag innan publicering."
       },
       "retry": "Försök igen",
       "shiftList": "Passlista",
@@ -82,6 +85,7 @@
         "overlapDescription": "Det här passet överlappar med {count} annat/andra pass",
         "overlapWarning": "Passet sparades med överlappningsvarning",
         "skillOverrideReasonRequired": "Medarbetaren saknar en kompetens som krävs denna dag. Öppna passet för att ange ett skäl.",
+        "statutoryBlocked": "Denna ändring av ett publicerat skift bryter mot gränser för ungdomsskydd (JArbSchG) utöver vad som redan publicerats. Ändra skiftet så att det inte bryter mot någon gräns på nytt eller ytterligare. Ett branschundantag kan endast bekräftas för ett sparat skift: för att planera detta med ett sådant lägger du till det som ett utkastskift, bekräftar undantaget och publicerar det sedan.",
         "updated": "Passet har uppdaterats"
       },
       "supportFailed": "Mallar eller efterlevnadsinformation kunde inte uppdateras. Kontrollera igen innan du publicerar.",
@@ -154,6 +158,7 @@
       "rejectFailed": "Det gick inte att neka förfrågan",
       "rejectReason": "Skäl för att neka (valfritt)",
       "shiftWhen": "{date}, {start}–{end}",
+      "statutoryBlocked": "Att godkänna denna förfrågan skulle bryta mot gränser för ungdomsskydd (JArbSchG) för den anställde som tar skiftet. Avvisa förfrågan eller be någon annan att ta skiftet.",
       "swapSummary": "{requester} vill lämna över det här passet till {target}",
       "swapWithoutTarget": "{requester} vill lämna över det här passet, men har inte angett en kollega",
       "title": "Passförfrågningar",
@@ -207,6 +212,95 @@
         "overtime": "{period, select, daily {Daglig} weekly {Veckovis} other {Månatlig}} övertid ({total} av {threshold} h)",
         "pendingAbsence": "Väntande frånvaro: {category}",
         "restTime": "Viloperioden är för kort ({rest} av {required} h)"
+      }
+    },
+    "statutory": {
+      "apprenticeship": {
+        "blockWeekTraining": "Blockundervisningsvecka: {used} min arbete under veckans skoldagar, {limit} min företagsförlagd utbildning tillåten; överskrider tillåten tid denna dag",
+        "blockWeekTrainingNote": "Den tillåtna utbildningen (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG) tillkommer utöver blockveckan, som räknas med den genomsnittliga veckoarbetstiden (§ 9 Abs. 2 Nr. 2 JArbSchG), och räknas inte mot dags- och veckogränser enligt § 8 för personer under 18 år",
+        "blockWeekTrainingWeek": "Blockundervisningsvecka: {used} min arbete under veckans skoldagar, {limit} min företagsförlagd utbildning tillåten; överskrider tillåten tid den {date}",
+        "releaseDayShift": "Ledighetsdag för lärling: skola, blockundervisning eller tentamensdag",
+        "releaseDayShiftOn": "Ledighetsdag för lärling den {date}: skola, blockundervisning eller tentamensdag",
+        "workplaceReturn": "Under 18 år: inget arbete denna dag, veckans heldag för yrkesskola",
+        "workplaceReturnOn": "Under 18 år: inget arbete den {date}, veckans heldag för yrkesskola"
+      },
+      "domain": {
+        "apprenticeship": "Ledighet för lärling (BBiG)",
+        "minijob": "Minijobb-gräns",
+        "onCall": "Arbete på anrop (§ 12 TzBfG)",
+        "shortTerm": "Gräns för korttidsanställning",
+        "workingStudent": "Gräns för arbetande student",
+        "youthProtection": "Ungdomsskydd (JArbSchG)"
+      },
+      "findings": {
+        "acknowledgeListLabel": "Lagstadgade avvikelser att bekräfta",
+        "blockedTitle": "Publicering nekades",
+        "blockingListLabel": "Avvikelser som blockerar publicering",
+        "blocksPublishing": "Blockerar publicering",
+        "close": "Stäng",
+        "hide": "Dölj lagstadgade anmärkningar ({count})",
+        "hideOfTotal": "Dölj lagstadgade anmärkningar ({count} av {total})",
+        "listLabel": "Lagstadgade anmärkningar",
+        "openReviews": "Öppna i Granskningar och konflikter",
+        "outsideScope": "{count, plural, one {# ytterligare anmärkning gäller en anställd som du inte hanterar.} other {# ytterligare anmärkningar gäller anställda som du inte hanterar.}}",
+        "outsideScopeOnly": "{count, plural, one {# anmärkning gäller en anställd som du inte hanterar.} other {# anmärkningar gäller anställda som du inte hanterar.}}",
+        "severity": {
+          "critical": "Kritisk",
+          "info": "Notis",
+          "warning": "Varning"
+        },
+        "show": "Visa lagstadgade anmärkningar ({count})",
+        "showOfTotal": "Visa lagstadgade anmärkningar ({count} av {total})",
+        "showShifts": "Visa arbetspass för {name}",
+        "unnamedEmployee": "Icke namngiven anställd",
+        "weekOf": "Veckan {date}"
+      },
+      "jarbschg": {
+        "break": "Under 18 år: {used} min rast tagen, {limit} min krävs",
+        "dailyMax": "Under 18 år: {used} min arbetstid denna dag överskrider ungdomsgränsen på {limit} min",
+        "dailyMaxOn": "Under 18 år: {used} min arbetstid den {date} överskrider ungdomsgränsen på {limit} min",
+        "daysPerWeek": "Under 18 år: {used} arbetsdagar denna vecka, högst {limit} tillåtna",
+        "holidayProhibited": "Under 18 år: {used} min otillåtet arbete: inget efter {cutoff} den 24 eller 31 december, eller den 25 december, 1 januari, påskdagen eller 1 maj; inga undantag tillåter detta",
+        "holidayWork": "Under 18 år: arbete på helgdag kräver ett lagstadgat branschundantag",
+        "nightWork": "Under 18 år: {used} min nattarbete mellan {from} och {until}",
+        "nightWorkBeyondSector": "Under 18 år: {minutes} min nattarbete utanför de tider som ett branschundantag tillåter (från 15 år: {from15} till {until15}; från 16 år till {until16}; från 17 år i bagerier från {bakeryFrom17}; inget under 15 år); inga undantag tillåter detta",
+        "restPeriod": "Under 18 år: endast {used} min vila före detta arbetspass, {limit} min krävs",
+        "saturdayWork": "Under 18 år: lördagsarbete kräver ett lagstadgat branschundantag",
+        "shiftSpan": "Under 18 år: arbetspassets sammanlagda spann är {used} min, från arbetets början till slutet av det sista; högst {limit} min tillåts (11 timmar inom hotell och restaurang, jordbruk, djurhållning och på byggarbetsplatser)",
+        "shiftSpanOn": "Under 18 år: arbetspassets sammanlagda spann den {date} är {used} min, från arbetets början till slutet av det sista; högst {limit} min tillåts (11 timmar inom hotell och restaurang, jordbruk, djurhållning och på byggarbetsplatser)",
+        "sundayWork": "Under 18 år: söndagsarbete kräver ett lagstadgat branschundantag",
+        "uninterrupted": "Under 18 år: {used} min arbetade utan rast, högst {limit} min tillåts",
+        "weeklyMax": "Under 18 år: {used} min arbetstid denna vecka överskrider ungdomsgränsen på {limit} min",
+        "weeklyMaxWeekOf": "Under 18 år: {used} min arbetstid under veckan {date} överskrider ungdomsgränsen på {limit} min"
+      },
+      "minijob": {
+        "monthlyApproaching": "Månadsgräns för minijobb närmar sig",
+        "monthlyDocumented": "Månadsgräns för minijobb har överskridits (dokumenterat som oförutsebart)",
+        "monthlyExceeded": "Månadsgräns för minijobb har överskridits",
+        "rollingApproaching": "Inkomstgräns för minijobb (12 månader) närmar sig",
+        "rollingExceeded": "Inkomstgräns för minijobb (12 månader) har överskridits"
+      },
+      "onCall": {
+        "nearBand": "Jour: vecka på {used}, närmar sig avropsintervallets gräns på {limit}",
+        "overBand": "Jour: vecka på {used}, över avropsintervallet på {limit}",
+        "shortCall": "Jour: inkallning på {duration} understiger minimigränsen på {minimum}",
+        "shortNotice": "{days, plural, one {Jour: # hel dags varsel, {required} krävs (§ 12 Abs. 3 TzBfG)} other {Jour: # hela dagars varsel, {required} krävs (§ 12 Abs. 3 TzBfG)}}",
+        "shortWorkCall": "Jour: arbetade en inkallning på {duration}, under minimiinkallningen på {minimum}",
+        "underBand": "Jour: vecka på {used}, under avropsintervallet på {limit}"
+      },
+      "shortTerm": {
+        "calendarDaysExceeded": "Gräns för korttidsanställning på 3 månader överskriden: {used} av {limit} kalenderdagar i år",
+        "calendarDaysRemaining": "Korttidsanställning (3-månadersgräns): {remaining} av {limit} kalenderdagar kvar i år",
+        "daysExceeded": "Dagsgräns för korttidsanställning överskriden: {used} av {limit} arbetsdagar i år",
+        "daysRemaining": "Korttidsanställning: {remaining} av {limit} arbetsdagar kvar i år"
+      },
+      "warning": "{area}: lagstadgad gräns i riskzonen",
+      "warningApproaching": "{area}: närmar sig den lagstadgade gränsen",
+      "warningExceeded": "{area}: lagstadgad gräns har överskridits",
+      "warningPercent": "{area}: {percent} % av den lagstadgade gränsen",
+      "workingStudent": {
+        "ceiling": "Arbetande student: {used} av {limit} veckor över 20 h under 12 månader",
+        "lectureWeek": "Arbetande student >20 h under föreläsningsvecka: {hours} h dagtidsarbete på vardagar (gräns {limit} h)"
       }
     },
     "templates": {

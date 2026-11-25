@@ -101,11 +101,11 @@
       "created": "Creat",
       "decisionRecorded": "Decizie înregistrată",
       "destination": "Destinație",
+      "earlierClaim": "Decont anterior",
+      "earlierReceiptIdentity": "Chitanță anterioară: suma de control a conținutului nu a fost înregistrată.",
       "history": "Istoric decizii",
       "historyDescription": "Fiecare pas al acestei cereri, începând cu cele mai vechi. Orele sunt afișate în UTC.",
       "intermediateApproval": "Aprobare înregistrată — se așteaptă o altă aprobare",
-      "legacyClaim": "Cerere de decontare veche",
-      "legacyReceiptIdentity": "Chitanță veche: suma de control a conținutului nu a fost înregistrată.",
       "loading": "Se încarcă decontul…",
       "noReceipts": "Nu există chitanțe înregistrate",
       "notRecorded": "Neînregistrat",
@@ -117,7 +117,7 @@
       "submitted": "Trimis",
       "title": "Decont de cheltuieli de deplasare",
       "unavailable": "Cererea de decontare nu a fost găsită sau accesul nu mai este disponibil.",
-      "unknownDates": "Contextul datei călătoriei nu a fost înregistrat (decont vechi)"
+      "unknownEarlierClaimDates": "Contextul datei călătoriei nu a fost înregistrat (decont anterior)"
     },
     "errors": {
       "loadDetailRetry": "Acest decont nu a putut fi încărcat. Vă rugăm să reîncercați."
@@ -166,6 +166,7 @@
         "title": "{count, plural, one {# cheltuială aprobată așteaptă rambursarea și nu este acoperită de niciun responsabil de cheltuieli} few {# cheltuieli aprobate așteaptă rambursarea și nu sunt acoperite de niciun responsabil de cheltuieli} other {# de cheltuieli aprobate așteaptă rambursarea și nu sunt acoperite de niciun responsabil de cheltuieli}}"
       },
       "description": "Cheltuieli aprobate și sumele datorate încă angajaților. Înregistrarea unei rambursări documentează o plată efectuată în afara Z8; nu se transferă bani.",
+      "earlierClaim": "Decont anterior de tip {type}",
       "employeePaid": "Plătit de angajat {amount}",
       "empty": {
         "allReimbursed": "Nimic de înregistrat: fiecare cheltuială aprobată este rambursată.",
@@ -258,7 +259,6 @@
         }
       },
       "inPayrollRun": "Inclus în {run}",
-      "legacyClaim": "Decont {type} de tip vechi",
       "loading": "Se încarcă coada financiară…",
       "pagination": {
         "label": "Paginile cozii financiare",

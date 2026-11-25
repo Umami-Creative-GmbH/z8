@@ -16,6 +16,7 @@
     },
     "card": {
       "decision": "Decyzja",
+      "returned": "Zwrócone",
       "submitted": "Przesłano"
     },
     "empty": {
@@ -53,7 +54,7 @@
       "title": "W trakcie weryfikacji"
     },
     "needsAttention": {
-      "description": "Odrzucone wnioski, które mogą wymagać poprawy przed ponownym przesłaniem.",
+      "fixDescription": "Zwrócone lub odrzucone wnioski wymagające poprawy przed ponownym przesłaniem.",
       "title": "Wymaga uwagi"
     },
     "reasonLabel": "Powód",
@@ -65,26 +66,58 @@
       "absence": {
         "title": "Wniosek o nieobecność"
       },
+      "complianceException": {
+        "durationHours": "{hours} godz.",
+        "durationHoursMinutes": "{hours} godz. {minutes} min",
+        "durationMinutes": "{minutes} min",
+        "overtimeDaily": "Wyjątek dotyczący nadgodzin dobowych",
+        "overtimeMonthly": "Wyjątek dotyczący nadgodzin miesięcznych",
+        "overtimeWeekly": "Wyjątek dotyczący nadgodzin tygodniowych",
+        "planned": "Zaplanowano: {duration}",
+        "restPeriod": "Wyjątek dotyczący okresu odpoczynku",
+        "title": "Wyjątek dotyczący zgodności",
+        "validity": "Ważne: {window} ({timeZone})"
+      },
+      "earlierClaim": {
+        "mileage": "Wcześniejsze rozliczenie kilometrówki",
+        "perDiem": "Wcześniejsze rozliczenie diety",
+        "receipt": "Wcześniejsze rozliczenie rachunku",
+        "title": "Wcześniejsze rozliczenie"
+      },
+      "expenseReport": {
+        "adjustmentOf": "Korekta „{title}”",
+        "adjustmentOfUntitled": "Korekta wcześniejszego raportu",
+        "kind": {
+          "standaloneMileage": "Samodzielna kilometrówka",
+          "standaloneReceipt": "Samodzielny rachunek",
+          "trip": "Raport z podróży"
+        },
+        "untitledMileage": "Kilometrówka bez tytułu",
+        "untitledReceipt": "Rachunek bez tytułu",
+        "untitledTrip": "Podróż bez tytułu"
+      },
       "timeCorrection": {
         "subtitle": "Korekta wpisu czasu pracy",
         "title": "Wniosek o korektę czasu pracy"
-      },
-      "travelExpense": {
-        "title": "Wniosek o zwrot kosztów podróży"
       }
     },
-    "scope": "Twoje wnioski o nieobecność, korektę czasu pracy i archiwalne wydatki w aktywnej organizacji",
+    "returnNoteLabel": "Notatka weryfikatora",
+    "scopeAllRequests": "Twoje wnioski o nieobecność, korektę czasu pracy, wyjątek od zasad zgodności oraz zwrot wydatków w aktywnej organizacji",
     "sourceError": {
       "absence": "Nie udało się załadować wniosków o nieobecność.",
+      "complianceException": "Nie udało się załadować wyjątków dotyczących zgodności.",
+      "earlierClaim": "Nie udało się załadować wcześniejszych roszczeń.",
+      "expenseReport": "Nie udało się załadować raportów wydatków.",
       "timeCorrection": "Nie udało się załadować wniosków o korektę czasu pracy.",
-      "title": "Nie udało się załadować niektórych wniosków.",
-      "travelExpense": "Nie udało się załadować wniosków o zwrot kosztów podróży."
+      "title": "Nie udało się załadować niektórych wniosków."
     },
     "status": {
       "approved": "Zatwierdzone",
       "cancelled": "Anulowane",
+      "expired": "Wygasły",
       "inReview": "W trakcie weryfikacji",
-      "rejected": "Odrzucone"
+      "rejected": "Odrzucone",
+      "returned": "Zwrócony"
     },
     "summary": {
       "ariaLabel": "Podsumowanie wniosków",
@@ -96,8 +129,10 @@
     "title": "Moje wnioski",
     "types": {
       "absence": "Nieobecność",
-      "timeCorrection": "Korekta czasu pracy",
-      "travelExpense": "Koszty podróży"
+      "complianceException": "Wyjątek dotyczący zgodności",
+      "earlierClaim": "Wcześniejsze roszczenie",
+      "expenseReport": "Raport wydatków",
+      "timeCorrection": "Korekta czasu pracy"
     },
     "unavailableTitle": "Wnioski niedostępne"
   }

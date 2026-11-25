@@ -208,7 +208,6 @@
     "adding": "Wird hinzugefügt...",
     "all": "Alli",
     "appName": "Z8",
-    "approve": "Bestätige",
     "assign": "Zueordne",
     "back": "Zrugg",
     "backToDashboard": "Zurück zum Dashboard",
@@ -372,6 +371,94 @@
       "bellLabel": "{count, plural, =0 {Benachrichtigungen} other {Benachrichtigungen (# ungelesen)}}"
     },
     "offline": "Offline",
+    "onCall": {
+      "agreementDocumented": "Vereinbarig dokumentiert",
+      "agreementStale": "Schicht sit de Vereinbarig gänderet",
+      "finding": {
+        "nearBand": "Wuche abgruefe für {used}, näächeret sich de Abruefband-Limite vo {limit}",
+        "other": "Abruefregle gföhrdet",
+        "overBand": "Wuche abgruefe für {used}, über em Abruefband vo {limit}",
+        "shortCall": "Schicht vo {duration} isch chürzer als de Mindestabruef vo {minimum}",
+        "shortNotice": "{days, plural, one {Mit # volle Tag Vorlaufziit ufbotte; {required} sind erforderlich} other {Mit # volle Tääg Vorlaufziit ufbotte; {required} sind erforderlich}}",
+        "shortWorkCall": "En Iisatz vo {duration} gleischtet, weniger als de Mindestabruef vo {minimum}",
+        "underBand": "Wuche abgruefe für {used}, under em Abruefband vo {limit}"
+      },
+      "findingsTitle": "Überprüefige vo de letschte und nächste vier Wuche",
+      "hoursKind": {
+        "exact": "Gnau veriibarti Wuchestunde",
+        "maximum": "Maximale Wuchestunde (bis zu −20 %)",
+        "minimum": "Mindischt-Wuchestunde (bis zu +25 %)",
+        "unspecified": "Kei Wuchestunde veriibart (20 h gelted)"
+      },
+      "minimumCall": "Mindischt-Abruef {duration}",
+      "noFindings": "Kei Abruefregle isch gföhrdet.",
+      "notToday": "Hüt nöd uf Abfruef.",
+      "payroll": {
+        "continuedPaySpan": "Lohnfortzahlig wird gschuldet vom {from} bis {until} (§ 3 EFZG)",
+        "description": "Durchschnittlichi Arbetsziit vor jedere Chrankheitsphase oder jedem Fiirtig vo Abfruef-Aagstellte i dere Periode, zum d Lohnfortzahlig vorbereite. Nüt da veränderet abgrechneti Tääg.",
+        "hide": "Ufschlüsselig usblände",
+        "holidaysPaidAsHolidays": "Fiirtig während de Chrankheit werded als eigeni Ziile zahlt, nöd als Chranketääg: {dates}",
+        "paidSickDays": "{days, plural, one {Chrankegeld für # Tag i dere Periode} other {Chrankegeld für # Tääg i dere Periode}}",
+        "perDay": "{duration} pro Tag",
+        "rangeTooLong": "Referenzstunde werded für höchschtens drüü Mönet am Stück aazeigt. Wähl en chürzere Zitruum.",
+        "show": "Ufschlüsselig aazeige",
+        "sickPayExhausted": "Kei Lohnfortzahlig i dere Periode: Die sechs Wuche Lohnfortzahlig händ am {date} gendet (§ 3 Abs. 1 EFZG)",
+        "sickPayGuidanceLabel": "Orientierig für d Lohnabrechnig",
+        "sickPayGuidanceNote": "Lohnfortzahligs-Ziile sind Richtwert nach § 3 EFZG; s Lohnabrechnigssystem entscheidet, öb und wie vil Lohnfortzahlig zahlt wird.",
+        "sickPayNotOwed": "Für die Chrankheit wird kei Lohnfortzahlig gschuldet: Si hät innerhalb vo de erschte vier Wuche vom Arbetsverhältnis gendet (§ 3 Abs. 3 EFZG)",
+        "sickPayWaiting": "Kei Lohnfortzahlig i dere Periode: De Aaspruch entstaht am {date}, nach vier Wuche Arbetsverhältnis (§ 3 Abs. 3 EFZG)",
+        "title": "Abruef-Referenzstunde (§ 12 TzBfG)"
+      },
+      "reference": {
+        "calculate": "Berächne",
+        "dateRequired": "Wähl es Datum.",
+        "denominator": "Zehlti Täg",
+        "denominatorValue": "{counted} vo {total} Täg",
+        "description": "Nur zur Information: D Lohnbuechhaltig entscheidet, was zahlt wird. Nüt da drin änderet abgrechneti Täg oder abgschlosseni Mönet.",
+        "eventDate": "Für en Tag berächne",
+        "excluded": {
+          "notEmployed": "Nöd aagstellt",
+          "paidAbsence": "Ferie oder Chranket",
+          "publicHoliday": "Fiirtig",
+          "unpaidAbsence": "Ubezahlti Absänz"
+        },
+        "excludedPeriod": "{days, plural, one {{from} – {until}: {reason} (# Tag)} other {{from} – {until}: {reason} (# Täg)}}",
+        "excludedTitle": "Usem Durchschnitt usgnoh",
+        "noEvents": "Kei Chranket oder Fiirtig amene Abbrueftag i de letschte drüü Mönet.",
+        "none": "—",
+        "numerator": "Gschaffti Ziit",
+        "perDay": "Durchschnitt pro Tag",
+        "periodThirteenWeeks": "Referänzperiode (13 Wuche): {from} – {until}",
+        "periodThreeMonths": "Referänzperiode (3 Mönet): {from} – {until}",
+        "perWeek": "Durchschnitt pro Wuche",
+        "perWorkedDay": "Durchschnitt pro gschafftem Tag",
+        "publicHoliday": "Fiirtig am {date}",
+        "shortened": "D Aastellig het während de Referänzperiode aagfange, drum zellt die chürzeri Periode.",
+        "sickLeave": "Chranket ab {date}",
+        "thirteenWeeks": "13 Wuche",
+        "threeMonths": "3 Mönet",
+        "title": "Referänzstunde für Chrankegeld und Ferie",
+        "workedDays": "Gschaffti Täg"
+      },
+      "reviews": {
+        "acknowledge": "Vereibarig dokumentiere",
+        "acknowledged": "Vereibarig dokumentiert",
+        "changed": "D Schicht het sich gänderet, siit die Liste glade worde isch. Überprüef si nomal, bevor d Vereibarig dokumentiert wird.",
+        "description": "Churzfrischtigi Iisätz, Iisätz under em Minimum und Wuche usserhalb vo de Abbruefbandbreiti i de letschte und nächste vier Wuche. S Iistempfle isch nie blockiert.",
+        "documented": "Vereibarig dokumentiert: {reason}",
+        "draft": "No nöd veröffetlicht. Veröffentlich d Schicht, bevor d Zuestimmig vom Mitarbeiter dokumentiert wird.",
+        "empty": "Kei Abbruef-Iiträg zum Überprüefe.",
+        "notOpen": "D Schicht het kei churzfrischtigi Meldig meh.",
+        "notPublished": "D Schicht isch no nöd veröffetlicht. Veröffentlich si, bevor d Zuestimmig vom Mitarbeiter dokumentiert wird.",
+        "reason": "Freiwilligi Zuestimmig vom Mitarbeiter (§ 12 Abs. 3 TzBfG)",
+        "reasonRequired": "Beschriib, wie de Mitarbeiter de Churzfrischtigkeit zuegstimmt het.",
+        "stale": "D Schicht het sich gänderet, nochdem d Vereibarig dokumentiert worde isch. Dokumentier si nomal, wenn si immer no gilt.",
+        "title": "Arbet uf Abpruef (§ 12 TzBfG)"
+      },
+      "statutoryMinimumCall": "Gsetzliche Mindestiisatz gilt",
+      "title": "Arbet uf Abpruef (§ 12 TzBfG)",
+      "weekly": "{duration} pro Wuche"
+    },
     "open": "Öffne",
     "openEnded": "Offes Ändi",
     "openMenu": "Menü öffne",
@@ -425,8 +512,6 @@
     "refreshData": "Date aktualisiere",
     "refreshDataFailed": "Date händ nöd chönne aktualisiert werde. Bitte nomal probiere.",
     "refreshing": "Wird aktualisiert...",
-    "reject": "Ablehne",
-    "rejecting": "Wird abglehnt...",
     "remove": "Entfärne",
     "removing": "Am Entfärne...",
     "reset": "Zruggsetze",
@@ -596,6 +681,90 @@
     },
     "yes": "Ja"
   },
+  "contractorCompensation": {
+    "dayUnitRules": {
+      "anyWorkFullDay": "Jede Tag mit Arbet zellt als volle Tag",
+      "halfAndFullDay": "Halbe Tag bis {minutes} Min., drüber volle Tag",
+      "proratedCapped": "Aateilig berächnet uf Basis vomene {minutes}-Minute-Tag, maximal ein Tag",
+      "proratedUncapped": "Aateilig berächnet uf Basis vomene {minutes}-Minute-Tag, ohni Obergrenze"
+    }
+  },
+  "contractorStatement": {
+    "approvedOnly": "Nur genehmigti Arbet isch ufgfüehrt. Arbet, wo no uf Genehmigung wartet, wird hinzuegfüegt, sobald si genehmigt isch.",
+    "awaitingApprovalExcluded": "Arbetsperiode, wo no uf Genehmigung warted, nöd debii: {count}",
+    "basis": {
+      "daily": "Tagessatz",
+      "hourly": "Stundesatz"
+    },
+    "byProject": "Nach Projekt",
+    "columns": {
+      "amount": "Betrag",
+      "basis": "Zahlt vo",
+      "currency": "Währig",
+      "date": "Datum",
+      "dayUnitRule": "Tag-Eiheit-Regle",
+      "end": "Ändi",
+      "project": "Projekt",
+      "rate": "Aasatz",
+      "rowType": "Ziiletyp",
+      "start": "Start",
+      "task": "Ufgab",
+      "time": "Ziit (lokal)",
+      "unit": "Eiheit",
+      "units": "Eiheite",
+      "workedMinutes": "Gschaffti Minute"
+    },
+    "company": "Firma",
+    "contractor": "Uftragnehmer",
+    "contractorNumber": "Uftragnehmer-Nummere",
+    "empty": "Kei abgschlosseni Arbet als externe Uftragnehmer i däre Periode.",
+    "errors": {
+      "failed": "D Abrechnig hät nöd chönne erstellt wärde",
+      "invalidPeriod": "Wähl e Periode vo maximal eim Jahr, wo de erschti Tag nöd nach em letschte liit.",
+      "notAllowed": "Du chasch nume dini eigne Abrechnige abelade.",
+      "notContractor": "Die Person hät i däre Periode kei Isatz als externe Uftragnehmer gha.",
+      "notFound": "Die Person isch i dinere Organisation nöd gfunde worde."
+    },
+    "export": {
+      "adminDescription": "Lad abe, was dä externi Uftragnehmer gschafft hät und wie vill das luut sine Aasätz choschtet, zum sini Rächmig z überprüefe. En Prüefbricht, kei Rächmig.",
+      "csv": "CSV für Tabälle",
+      "download": "Abrechnig abelade",
+      "downloaded": "Abrechnig abeglade",
+      "format": "Format",
+      "from": "Vo",
+      "fromRequired": "Wähl de erschti Tag us",
+      "pdf": "PDF",
+      "selfDescription": "Lad dini erfassti Arbet und de Priis gmäss de veriibarte Aasätz abe, zum dini Rächmig vorzbereite oder z überprüefe. En Prüefbricht, kei Rächmig.",
+      "title": "Ziit- und Honorarabrechnig",
+      "to": "Bis",
+      "toBeforeFrom": "De letschti Tag chan nöd vor em erschte Tag si",
+      "toRequired": "Wähl de letschti Tag us"
+    },
+    "generated": "Generiert (UTC)",
+    "noProject": "Keis Projekt",
+    "noRate": "Kein Aasatz aawändbar",
+    "notice": "Nur en Prüefbricht. Kei Rächmig oder Guetschrift (Gutschrift): Z8 stellt nie Rächnige us. Es listet di i Z8 erfassti Arbet uf und was si gmäss de veriibarte Aasätz vom Uftragnehmer choschtet, damit e Rächmig demit abgliche wärde chan.",
+    "organization": "Organisation",
+    "page": "Siite",
+    "period": "Periode",
+    "referenceCode": "PO- oder Choschtästellereferenz",
+    "rows": {
+      "day": "Tag",
+      "total": "Total",
+      "unpriced": "Ohni Priis",
+      "work": "Arbet"
+    },
+    "times": "Täg sind di lokale Kaländertäg vom Uftragnehmer; Ziite werded mit em UTC-Offset aazeigt, wo bi de Arbet erfasst worden isch.",
+    "title": "Bestätigung über Arbetsziit und Honorar vom Uftragnehmer",
+    "totals": "Total",
+    "units": {
+      "days": "Täg",
+      "hours": "Stundä"
+    },
+    "unpricedNotice": "Einigi Arbete händ am beträffende Tag kei vereinbarti Rate gha. Si wärded ohni Betrag ufgfüehrt und sind nöd im Total debii.",
+    "vatId": "MWST-Nr.",
+    "workedHours": "Gleischti Stundä"
+  },
   "drivingLicence": {
     "applyingInterval": "Wird aagwändet…",
     "applyInterval": "Intervall-Anderig aawände",
@@ -604,6 +773,9 @@
       "chooseClasses": "Wähl d'Kategorie uus, wo du tatsächlich prüeft häsch.",
       "classes": "Tatsächlich prüefti Kategorie",
       "classExpiry": "Ablauf vo de Kategori (falls zuetreffend)",
+      "declaredBadge": "Deklariert",
+      "declaredHelp": "Die Kategorie und allfälligi Date, wo d'Mitarbeitende iitrëit händ, sind vorusgwählt. Verglich si mit em Original-Uswiis und korrigier alls, wo abwiicht.",
+      "declaredTitle": "{name} hät {classes} deklariert",
       "documentDates": "Date vom Originaldokumänt",
       "employeeDeclaration": "D'Mitarbeiterperson hät die Erchlärig obedra während dere Kontrolle persönlich abgee; ich bestätige die Erchlärig.",
       "expiryDate": "Ablaufdatum vom Dokumänt",
@@ -644,6 +816,8 @@
       },
       "customOrder": "Sortiert nach der ausgewählten Spalte und Richtung.",
       "deadline": "{date} ({timezone})",
+      "declared": "Deklariert: {classes}",
+      "declaredDue": "Deklarierti Kategorie überprüefe",
       "dueNow": "Prüfung jetzt fällig",
       "dueOrder": "Jetzt fällige Prüfungen zuerst, danach die nächste Frist.",
       "empty": {
@@ -677,6 +851,31 @@
     "class": {
       "active": "Berechtigt",
       "ended": "Beändet",
+      "group": {
+        "bus": "Büs",
+        "car": "Autos",
+        "motorcycle": "Mofas und Töff",
+        "tractor": "Traktore",
+        "truck": "Lastwäge"
+      },
+      "name": {
+        "A": "Töff",
+        "A1": "Liechte Töff",
+        "A2": "Mittelschwere Töff",
+        "AM": "Mofa",
+        "B": "Auto",
+        "BE": "Auto mit Ahänger",
+        "C": "Lastwage",
+        "C1": "Liechte Lastwage",
+        "C1E": "Liechte Lastwage mit Ahänger",
+        "CE": "Lastwage mit Ahänger",
+        "D": "Bus",
+        "D1": "Minibus",
+        "D1E": "Minibus mit Ahänger",
+        "DE": "Bus mit Ahänger",
+        "L": "Langsame Traktor",
+        "T": "Traktor"
+      },
       "noLongerIntended": "Beendet, weil die Person nicht mehr als Fahrer vorgesehen ist. Um wieder zu fahren, ist eine neue Prüfung erforderlich.",
       "overdue": "Routineprüefig überfällig. Das isch e organisatorischi Suschpendierig und kei Uussag drüber, dass die gsetzlichi Fahrberechtigung entzoge worde wär.",
       "recheck": "E neui Originalprüefig und en expliziti Wideriisetzig sind erforderlich.",
@@ -684,6 +883,36 @@
     },
     "declaration": {
       "text": "Ich bestätige, dass kei bekannts Fahrverbot, Entzug oder suschtigs Hindernis em planten Fahre im Wäg staht und dass ich die geltende Fahriischränkige iihalte."
+    },
+    "declared": {
+      "add": "Uswiis-Kategorie hinzuefüege",
+      "authorized": "Berechtigt",
+      "classExpires": "Lauft ab am {date}",
+      "classExpiry": "{code} ({name}) lauft ab am",
+      "description": "Vo dir deklariert, no nöd überprüft. Si berechtiged di nonig zum Fahre, bis öpper din Original-Uswiis kontrolliert hät.",
+      "dialogDescription": "Wähl jedi Kategori uf dim Fahruswiis us. Di prüefendi Person bestätigt si, wenn de Original-Uswiis kontrolliert wird.",
+      "dialogTitle": "Welichi Kategorie stönd uf dim Uswiis?",
+      "documentExpires": "Uswiiskarte lauft ab",
+      "documentExpiry": "Uswiiskarte lauft ab am",
+      "documentExpiryHelp": "Fäld 4b uf de Karte. Läär lah, wänn din Uswiis keis hät.",
+      "edit": "Bearbeite",
+      "emptyDescription": "Gib dinere Organisation aa, welichi Uswiis-Kategorie du häsch. Das hilft bi de Planig und beritet d'Überprüefig vor; es berechtigt di aber nonig zum Fahre.",
+      "emptyMoreDescription": "Füeg e Kategori dezue, wo du siit de letschte Überprüefig bestande häsch. Di prüefendi Person wird ufgforderet, si z'kontrolliere.",
+      "emptyMoreTitle": "Häsch no e wiiteri Uswiis-Kategori?",
+      "emptyTitle": "Was dörfsch fahre?",
+      "expiryTitle": "Ablaufdate (optional)",
+      "invalid": "Überprüef die usgwählte Kategorie und Date.",
+      "notIntended": "Sie sind nicht mehr als Fahrer vorgesehen, daher erfasst Ihre Organisation Ihre Führerausweiskategorien nicht.",
+      "privacy": "Es werden nur Ihre Kategorien und Ablaufdaten gespeichert, keine Führerausweisnummer und kein Foto. Ihre Erklärung berechtigt Sie nicht zum Fahren.",
+      "remove": "Meine Kategorien entfernen",
+      "removed": "Deklarierte Führerausweiskategorien entfernt",
+      "removing": "Wird entfernt…",
+      "save": "{count, plural, one {# Kategorie speichern} other {# Kategorien speichern}}",
+      "saved": "Führerausweiskategorien gespeichert. Ihre Prüfperson wird sie mit Ihrem Original-Führerausweis abgleichen.",
+      "saveFailed": "Ihre Führerausweiskategorien konnten nicht gespeichert werden. Ihre Auswahl bleibt erhalten; versuchen Sie es erneut.",
+      "saving": "Wird gespeichert…",
+      "title": "Ihre deklarierten Führerausweiskategorien",
+      "updated": "Aktualisiert"
     },
     "delivery": {
       "uncertain": "Optionali Erinnerigs-Mails an Sie händ en unsichere Zuestelligsstatus ({count}). Si wärded nöd nomal automatisch gschickt. Ihri In-App-Erinnerige bliibed verfüegbar; d E-Mail-Zuestellig bestätigt s Läse nöd."
@@ -846,6 +1075,7 @@
     },
     "operational": {
       "advisory": "Fahrberechtigung",
+      "declared": "Deklariert, noch nicht geprüft. Keine Fahrberechtigung.",
       "loading": "Fahrberechtigung wird geladen…",
       "loadingEmployees": "Mitarbeitende für die Planung werden geladen…",
       "noEmployees": "Keine übereinstimmenden Mitarbeitenden.",
@@ -1017,6 +1247,20 @@
     "team": "Team",
     "totalEmployees": "{count} Aagstellti",
     "tryDifferentSearch": "Versueched Sie, d'Suech oder d'Filter aazpasse"
+  },
+  "engagement": {
+    "absenceRefusals": {
+      "contractorRecordsUnavailabilityOnly": "An diesen Daten sind sie als externer Auftragnehmer tätig: Es kann nur eine Nichtverfügbarkeit erfasst werden.",
+      "spansEngagementChange": "Diese Daten umfassen einen Wechsel zwischen Festanstellung und einer Tätigkeit als externer Auftragnehmer. Erfassen Sie jeden Teil separat.",
+      "unavailabilityIsForContractors": "An diesen Daten sind sie angestellt: Nichtverfügbarkeit gilt nur für externe Auftragnehmer."
+    },
+    "externalContractor": "Externer Auftragnehmer",
+    "filter": {
+      "all": "Alle",
+      "contractors": "Externe Auftragnehmer",
+      "employees": "Mitarbeitende",
+      "label": "Einsatz"
+    }
   },
   "errors": {
     "failedToLoad": "Date chönd nöd glade werde",
@@ -1487,6 +1731,10 @@
         "message": "Organisier e verfüegbari Prüefperson für {employeeName}. Die Ufgab git keini Iisichtsrächt und verlengeret kei Frischt.",
         "title": "Verantwortig für d Fahruuswiis-Prüefig zueordne"
       },
+      "drivingLicenceDeclared": {
+        "message": "{employeeName} hat die Führerausweiskategorien {classes} deklariert. Prüfen Sie den Original-Führerausweis, um sie zu autorisieren; eine Deklaration allein berechtigt zu nichts.",
+        "title": "Zu prüfende Führerausweiskategorien"
+      },
       "drivingLicencePersonalTask": {
         "message": "Erinnere {employeeName} dra, e Prüefig vom Original-Fahruuswiis z organisiere. E diräkti Benachrichtigung vo de Person isch nöd verfüegbar gsi. S Abschlüüsse vo de Ufgab gilt nöd als diräkti Zuestellig oder Läsigsbestätigung.",
         "title": "Mitarbeitendi Person persönlich erinnere"
@@ -1529,6 +1777,11 @@
       "formerEmployeeReportsWithoutManager": {
         "message": "{count, plural, one {# Mitarbeiter isch immer no nume mit eme ehemalige Vorgesetzte verchnüpft: {names}. Wiis en aktuelle Vorgesetzte zue.} other {# Mitarbeiter sind immer no nume mit eme ehemalige Vorgesetzte verchnüpft: {names}. Wiis en aktuelle Vorgesetzte zue.}}",
         "title": "Mitarbeiter ohni aktuelle Vorgesetzte"
+      },
+      "invitationContractorTermsNeedReview": {
+        "message": "Der Ansatz aus der Einladung von {name} konnte beim Beitritt nicht übernommen werden. Legen Sie ihn in der Vergütung für externe Auftragnehmer fest; bis dahin bleibt die Arbeit ohne Preisansatz.",
+        "termsExistMessage": "Der Ansatz aus der Einladung von {name} wurde beim Beitritt nicht angewendet: Für diesen Einsatz bestehen bereits Vergütungsbedingungen, die weiterhin gelten. Prüfen Sie in der Vergütung für externe Auftragnehmer, ob diese geändert werden sollten.",
+        "title": "Der Ansatz eines externen Auftragnehmers muss überprüft werden"
       },
       "kioskCommandRefused": {
         "forwardedMessage": "E {action, select, clock_in {Iistämplig} clock_out {Usstämplig} start_break {Pause-Aafang} resume_break {Ruckchehr us de Pause} other {Stämplig}} vo {employeeName} um {time} am Kiosk {kioskName} isch nöd erfasst worde: {reason, select, wrong_pin {de PIN isch falsch gsi} pin_locked {de Kiosk-PIN isch nach z vill falsche Versüech gsperrt worde} no_pin {es hät kei Kiosk-PIN zum Vergliiche geh} pin_unchecked {de PIN hät nöd chönne überprüft werde} kiosk_retired {de Kiosk isch widerruefe oder neu kopplet worde, bevor er sich wider verbunde hät} contact_unverifiable {Z8 hät die letscht Verbindig vom Kiosk nöd chönne bestätige} outside_window {d Ziit isch usserhalb vom Ziitfänschter gsi, wo Z8 akzeptiert} clock_untrusted {d Uhr vom Kiosk isch defür nöd vertrauenswürdig gsi} not_assigned {d Person isch em Standort vom Kiosk nöd zuegwise} not_adopted {d Organisation akzeptiert keini Offline-Kiosk-Stämplige} month_closed {de Monet isch abgschlosse} holiday {de Tag isch en Fiertig ohni Ziterfassig} conflict {es kollidiert mit anderi erfassti Ziite} other {Z8 hät das nöd chönne aanee}}. Trag d Ziit für si ii oder überprüef si mit ine.",
@@ -1694,6 +1947,11 @@
       "personnelFilePayslipsShared": {
         "message": "Dini Lohnabrächnig für {payPeriod} isch mit dir teilt worde.",
         "title": "Neui Lohnabrächnig i dim Personaldossier"
+      },
+      "plannedEngagementEndNeedsReview": {
+        "notScheduled": "Das geplante Einsatzende von {name} ({plannedEndDate}) konnte nicht als Austrittsdatum festgelegt werden. Legen Sie es auf der Mitarbeiterseite fest.",
+        "passed": "Das geplante Einsatzende von {name} ({plannedEndDate}) war beim Beitritt bereits vergangen, daher ist das Austrittsdatum heute ({leavingDate}). Ändern Sie es, falls der Einsatz fortgesetzt wird.",
+        "title": "Ein geplantes Einsatzende muss überprüft werden"
       },
       "policyForgottenClockOutReminder": {
         "message": "Sie haben die erforderlichen Stunden für {day} um {endTime} ({timezone}) erreicht. Stempeln Sie aus, wenn Sie mit der Arbeit fertig sind."
@@ -2497,6 +2755,13 @@
           "createdAt": "Wänn die Ufgab oder Zuistellig s erscht Mal erfasst worde isch, als UTC-Zitpunkt.",
           "deadline_timezone": "Die expliziti Kaländer-Zitzone, wo für d Frischt-Date vo de Richtlinie verwändet wird.",
           "declaration_text": "De gnaui Deklarationstext, wo während de ursprüngliche Überprüefig erfasst worde isch.",
+          "declared_at": "Wann Sie Ihre deklarierten Kategorien zuletzt gespeichert haben, als UTC-Zeitpunkt.",
+          "declared_class_code": "Eine Führerausweiskategorie, deren Besitz Sie deklariert haben. Sie erteilt keine Fahrberechtigung.",
+          "declaredClasses": {
+            "summary": "Die Führerausweiskategorien, die Sie selbst deklariert und noch nicht haben prüfen lassen. Eine Prüfung ersetzt diese; sie werden gelöscht, wenn Sie nicht mehr als Fahrer vorgesehen sind."
+          },
+          "declared_class_expiry_date": "Das von Ihnen eingegebene Ablaufdatum der Kategorie selbst (Kategorien C und D); leer, falls keines eingegeben wurde.",
+          "declared_document_expires_on": "Das Ablaufdatum Ihres Führerausweises, wie von Ihnen eingegeben; leer, falls keines eingegeben wurde.",
           "document_expires_on": "S Ablaufdatum vom Dokumänt, unabhängig vom Ablauf vo einzelne Kategorie.",
           "document_issued_on": "S Usstelligsdatum vom Dokumänt, ohni Uhrzit oder Zitzone.",
           "document_valid_through": "De letscht Kaländertag, wo d Gültigkeit vom Dokumänt abdeckt.",
@@ -2615,6 +2880,25 @@
             "project": "S'Projekt, wo de Satz defür gilt; läär für dini ganzi Arbet.",
             "summary": "D'Sätz, wo d'Organisation de Chunde für dini Arbet verrechnet."
           },
+          "contractorCompensationTerms": {
+            "capAtOneDay": "Ob ein Tag als höchstens ein Tag zählt, unabhängig von der Arbeitsdauer.",
+            "compensationBasis": "Ob Sie nach Stunde (stündlich) oder nach Tag (täglich) bezahlt werden.",
+            "currency": "Die Währung des Ansatzes.",
+            "dayUnitRule": "Wie die Arbeit eines Tages für einen Tagesansatz zählt: jede Arbeit als ganzer Tag (any_work_full_day), halbe oder ganze Tage anhand eines Schwellenwerts (half_and_full_day) oder anteilig zu einem Standardtag (prorated_by_standard_day). Leer bei einem Stundenansatz.",
+            "effectiveFrom": "Der erste Tag, an dem diese Bedingungen gelten (JJJJ-MM-TT).",
+            "effectiveTo": "Der erste Tag, an dem diese Bedingungen nicht mehr gelten (JJJJ-MM-TT); leer, solange sie gelten.",
+            "employmentPeriodId": "Der Zeitraum, zu dem diese Bedingungen gehören (dessen ID in employment_periods).",
+            "halfDayThresholdMinutes": "Bis zu so vielen Arbeitsminuten pro Tag gilt als halber Tag; mehr zählt als ganzer Tag.",
+            "rate": "Ihr Ansatz pro Stunde oder pro Tag.",
+            "standardDayMinutes": "Die Minuten eines Standardtags, an denen die Tagesarbeit gemessen wird.",
+            "summary": "Ihr Stunden- oder Tagesansatz als externer Auftragnehmer im Zeitverlauf."
+          },
+          "contractorDetails": {
+            "companyName": "Das Unternehmen, über das Sie Ihre Verträge abschliessen.",
+            "referenceCode": "Die Bestellnummer oder Kostenstellenreferenz, mit der Ihre Rechnungen abgeglichen werden.",
+            "summary": "Ihre Vertragsangaben als externer Auftragnehmer.",
+            "vatId": "Ihre MWST-Nummer oder Steuernummer."
+          },
           "costCenters": {
             "code": "De Code vo de Choschtestell.",
             "costCenter": "De Name vo de Choschtestell.",
@@ -2681,6 +2965,7 @@
             "contractType": "Din Vertragstyp.",
             "email": "D E-Mail-Adrässe vo dim Benutzerkonto.",
             "endDate": "Wänn dis Aastelligsverhältnis gändet hät; läär, solangs no wiiterlouft.",
+            "engagementKind": "Ob Sie heute als Mitarbeitender (employee) oder als externer Auftragnehmer (contractor) für die Organisation tätig sind.",
             "firstName": "Din Vorname i dim Mitarbeiterdatensatz.",
             "gender": "Dis Gschlächt.",
             "isActive": "Öb din Mitarbeiterdatensatz aktiv isch.",
@@ -2700,6 +2985,7 @@
           },
           "employmentPeriods": {
             "endedAt": "Wenn d Periode z Änd gange isch; leer, solang si offe isch.",
+            "engagementKind": "Ob Sie in diesem Zeitraum als Mitarbeitender (employee) oder als externer Auftragnehmer (contractor) tätig waren.",
             "startedAt": "Wenn d Periode aagfange hät.",
             "startProvenance": "Woher de Start chunnt, zum Biispiil en Iistellig oder e Wideriistellig.",
             "status": "Öb d Periode offe oder gschlosse isch.",

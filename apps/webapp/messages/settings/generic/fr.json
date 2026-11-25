@@ -1,5 +1,60 @@
 {
   "settings": {
+    "apprenticeRelease": {
+      "blockWeekTrainingNote": "Jusqu'à 2 heures de formation en entreprise par semaine sont autorisées pendant ces journées de cours en bloc (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG). Pour un salarié de moins de 18 ans, ces heures s'ajoutent à la semaine en bloc, qui est comptabilisée selon le temps de travail hebdomadaire moyen (§ 9 Abs. 2 Nr. 2 JArbSchG), et ne sont pas prises en compte dans les limites journalières et hebdomadaires du § 8.",
+      "credit": {
+        "exam": "Examen à partir de {start} : {minutes} min créditées",
+        "fullDays": "{count, plural, one {# jour ouvré crédité en totalité} other {# jours ouvrés crédités en totalité}}",
+        "minutes": "{minutes} min de cours créditées",
+        "schoolTime": "Cours {start}–{end} : {minutes} min créditées"
+      },
+      "description": "L'école professionnelle, les semaines de cours en bloc et les jours d'examen constituent des dispenses rémunérées (§ 15 BBiG) : ils sont crédités comme temps de travail, ne sont jamais déduits des congés et ne génèrent jamais de solde d'heures négatif.",
+      "empty": "Aucun jour de dispense enregistré pour le moment.",
+      "fields": {
+        "date": "Date",
+        "endsOn": "Dernier jour",
+        "examEndTime": "Fin de l'examen (pauses incluses)",
+        "examStartTime": "Début de l'examen",
+        "examTimeHint": "L'examen ne dispense et ne crédite que sa propre durée. Laissez les deux champs vides pour dispenser toute la journée.",
+        "includePreExamDay": "Dispenser également le jour ouvré précédant l'examen final écrit",
+        "kind": "Dispense",
+        "lessons": "Heures de cours (45 min chacune)",
+        "note": "Remarque (facultatif)",
+        "schoolEndTime": "Fin des cours (pauses incluses)",
+        "schoolHoursPerWeek": "Heures de cours par semaine (heures réelles)",
+        "schoolStartTime": "Début des cours",
+        "schoolTimeHint": "Une courte journée de cours crédite son temps d'enseignement, pauses incluses. Laissez les deux champs vides pour créditer 45 minutes par cours."
+      },
+      "kind": {
+        "blockWeek": "Semaine de cours en bloc",
+        "examDay": "Jour d'examen",
+        "preExamDay": "Jour ouvré précédant l'examen",
+        "schoolDay": "Journée d'école professionnelle"
+      },
+      "lessons": "{count} cours",
+      "record": "Enregistrer un jour de dispense",
+      "recorded": "Jour de dispense enregistré",
+      "refusal": {
+        "dayAlreadyReleased": "Ce jour fait déjà l'objet d'une dispense. Supprimez d'abord la dispense enregistrée pour ce jour.",
+        "examTimeInvalid": "Indiquez l'heure de début et de fin de l'examen, ou laissez vide. L'heure de fin doit être postérieure à l'heure de début.",
+        "invalidRange": "Vérifiez les dates : le dernier jour ne doit pas être antérieur au premier.",
+        "invalidValue": "Vérifiez les cours et les heures d'enseignement.",
+        "lessonsRequired": "Indiquez le nombre de cours.",
+        "noPrecedingWorkingDay": "Il n'y a aucun jour ouvré à dispenser dans la semaine précédant l'examen.",
+        "notApprentice": "Les jours de dispense ne peuvent être enregistrés que si le statut contractuel de l'employé est celui d'apprenti.",
+        "overlap": "Cette dispense chevauche une dispense déjà enregistrée.",
+        "reasonRequired": "Expliquez pourquoi le jour de dispense est supprimé.",
+        "schoolMinutesRequired": "Indiquez les heures de cours prévues pour la semaine en bloc.",
+        "schoolTimeInvalid": "Indiquez l'heure de début et de fin des cours, ou laissez vide. L'heure de fin doit être postérieure à l'heure de début.",
+        "singleDay": "Seule une semaine de cours en bloc peut s'étendre sur plusieurs jours."
+      },
+      "title": "Dispense pour cours et examens",
+      "void": "Supprimer",
+      "voidConfirm": "Supprimer le jour de dispense",
+      "voided": "Jour de dispense supprimé",
+      "voidReason": "Pourquoi est-il supprimé ?",
+      "workplaceReturn": "Moins de 18 ans : pas de retour au travail après cette journée complète de cours (§ 9 Abs. 1 Nr. 2 JArbSchG)"
+    },
     "approvalSettings": {
       "pageDescription": "Configurez qui approuve les demandes, quand les approbations en retard sont remontées et quels problèmes d'approbation nécessitent un suivi."
     },
@@ -230,6 +285,7 @@
         "employeeDescription": "Coût horaire interne complet de cet employé, utilisé pour la marge. Distinct du salaire.",
         "employeeTitle": "Taux de coût",
         "empty": "Aucun taux de coût pour l'instant. La marge pour le travail de cet employé s'affiche comme coût inconnu.",
+        "emptyContractor": "Aucun taux de coût pour l'instant. La marge utilise le tarif de sous-traitant externe de cette personne pour ses prestations ; les autres tâches, ainsi que les prestations sans tarif, sont indiquées avec un coût inconnu.",
         "history": "Historique",
         "historyAction": "Historique du taux de coût pour {name}",
         "hourly": "Horaire",
@@ -652,14 +708,6 @@
         "title": "Toutes les soumissions de période pour ce mois ne sont pas approuvées. Cela ne bloque pas la clôture :"
       }
     },
-    "compliance": {
-      "description": "Examinez et gérez les demandes d'exception de conformité des membres de l'équipe",
-      "metadata": {
-        "description": "Configurer les paramètres de conformité ArbZG et gérer les demandes d'exception",
-        "title": "Paramètres de conformité | ArbZG"
-      },
-      "title": "Conformité ArbZG"
-    },
     "customDomains": {
       "title": "Domaine et image de marque"
     },
@@ -1016,7 +1064,7 @@
         "all": "Tous les employés de cette organisation",
         "allDescription": "La responsabilité dépend de l'appartenance actuelle à l'organisation. Les vérificateurs ne peuvent jamais se vérifier eux-mêmes.",
         "attribution": "Accordé par {actor} à {time}",
-        "editor": "Périmètre du vérificateur",
+        "editTitle": "Modifier la responsabilité du vérificateur",
         "empty": "Aucune responsabilité de vérificateur attribuée",
         "failed": "Impossible de mettre à jour ou d'accéder à la responsabilité du vérificateur de permis de conduire. Vérifiez vos autorisations et vos sélections.",
         "formerEmployee": "Les anciens employés ne peuvent pas être ajoutés. Choisissez des employés figurant dans l'effectif actuel.",
@@ -2116,6 +2164,7 @@
           "unavailable": "Cette vérification n'a pas pu être effectuée. Réessayez les vérifications pour réessayer."
         },
         "payrollSetup": {
+          "externalContractorsSkipped": "{count, plural, one {# prestataire externe est ignoré pour les conditions d'emploi et les identifiants du personnel : les exports de paie n'incluent jamais les prestataires externes.} other {# prestataires externes sont ignorés pour les conditions d'emploi et les identifiants du personnel : les exports de paie n'incluent jamais les prestataires externes.}}",
           "fixEmployees": "Examiner les employés",
           "fixPayrollExport": "Ouvrir les paramètres d'export de paie",
           "inviteesSkipped": "{count, plural, one {# personne invitée est ignorée concernant les conditions d'emploi et les identifiants de personnel jusqu'à son arrivée.} other {# personnes invitées sont ignorées concernant les conditions d'emploi et les identifiants de personnel jusqu'à leur arrivée.}}",
@@ -2223,6 +2272,7 @@
           "mappingsMissing": "Aucun mappage de type de salaire actif",
           "mappingsPresent": "{count, plural, one {# cible d'exportation, types de salaire mappés} other {# cibles d'exportation, types de salaire mappés}}",
           "notExported": "L'organisation n'a aucune cible d'exportation de paie active, il n'y a donc aucun prérequis pour la paie.",
+          "notNeededExternalContractor": "Non requis : Prestataire externe",
           "notYetInvited": "Pas encore : l'invitation est toujours en attente",
           "personnelIdentifier": "Numéro de personnel",
           "termsConfirmed": "Confirmé pour aujourd'hui",
@@ -2258,6 +2308,7 @@
           "name": "Politique",
           "none": "Aucune politique de travail effective aujourd'hui : aucune n'est attribuée à cette personne, à son équipe ou à l'organisation.",
           "noSchedule": "Aucun horaire",
+          "notApplicable": "Aucune politique de travail ne s'applique : cette personne travaille en tant que prestataire externe.",
           "noWorkingDays": "Aucun jour travaillé",
           "title": "Politique de travail",
           "workingDays": "Jours travaillés"
@@ -3085,7 +3136,15 @@
       "updateProfile": "Mettre à jour le profil",
       "updateSuccess": "Profil mis à jour avec succès",
       "uploading": "Téléchargement",
-      "uploadProfilePicture": "Télécharger une photo de profil"
+      "uploadProfilePicture": "Télécharger une photo de profil",
+      "workingStudent": {
+        "balance": "{remaining} sur {limit} semaines de plus de 20 heures restantes ({used} utilisées au cours des 12 derniers mois).",
+        "description": "En tant qu'étudiant salarié, vous pouvez travailler plus de 20 heures pendant au maximum 26 semaines sur une période de 12 mois.",
+        "lectureFree": "Périodes sans cours enregistrées",
+        "lectureFreeEmpty": "Aucune période sans cours enregistrée. Demandez aux RH d'enregistrer vos vacances semestrielles.",
+        "noBaseline": "Aucune limite légale ne s'applique à cette semaine.",
+        "title": "Statut d'étudiant salarié"
+      }
     },
     "projects": {
       "budgetUsed": "Budget utilisé",

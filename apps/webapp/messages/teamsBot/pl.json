@@ -80,6 +80,7 @@
     "pendingApprovals": "Oczekujące zatwierdzenia",
     "pendingExceptionRequests": "{count, plural, one {# oczekujący wniosek o wyjątek oczekuje na sprawdzenie} few {# oczekujące wnioski o wyjątek oczekują na sprawdzenie} other {# oczekujących wniosków o wyjątek oczekuje na sprawdzenie}}",
     "returns": "Powrót {date}",
+    "reviewComplianceExceptions": "Przejrzyj wnioski o wyjątek",
     "since": "Od {time}",
     "textClockedInEmployee": "• {name} - od {clockedInAt} ({duration})",
     "textCompliance": "**⚠️ Zgodność:**",

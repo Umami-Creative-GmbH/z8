@@ -231,6 +231,7 @@
       "openDashboard": "Открыть панель управления Z8",
       "openShifts": "Открытые смены:",
       "pendingApprovals": "Ожидают согласования:",
+      "reviewComplianceExceptions": "Рассмотреть запросы об исключениях",
       "title": "Ежедневная сводка — {date}",
       "viewDashboardAt": "Полная панель управления доступна по адресу {url}",
       "whosOut": "Отсутствуют:"

@@ -101,11 +101,11 @@
       "created": "Erstellt",
       "decisionRecorded": "Entscheidung erfasst",
       "destination": "Reiseziel",
+      "earlierClaim": "Frühere Abrechnung",
+      "earlierReceiptIdentity": "Früherer Beleg: Inhaltsprüfsumme wurde nicht erfasst.",
       "history": "Entscheidungsverlauf",
       "historyDescription": "Jede Schritt vo dere Abrechnig, die älteschte zerscht. Ziite wärded in UTC aazeigt.",
       "intermediateApproval": "Genehmigung erfasst – wartet auf weitere Genehmigung",
-      "legacyClaim": "Alte Aaspruch",
-      "legacyReceiptIdentity": "Altsystem-Beleg: Inhaltsprüfsumme wurde nicht erfasst.",
       "loading": "Abrechnung wird geladen …",
       "noReceipts": "Keine Belege erfasst",
       "notRecorded": "Nicht erfasst",
@@ -117,7 +117,7 @@
       "submitted": "Eingereicht",
       "title": "Spesenabrechnung",
       "unavailable": "Aaspruch nid gfunde oder Zuegriff isch nüme verfüegbar.",
-      "unknownDates": "Reisedatumskontext nicht erfasst (Altabrechnung)"
+      "unknownEarlierClaimDates": "Reisedatumskontext nicht erfasst (frühere Abrechnung)"
     },
     "errors": {
       "loadDetailRetry": "Diese Abrechnung konnte nicht geladen werden. Bitte erneut versuchen."
@@ -166,6 +166,7 @@
         "title": "{count, plural, one {# genehmigte Spese wartet auf Rückerstattung, die kein Spesenverantwortlicher abdeckt} other {# genehmigte Spesen warten auf Rückerstattung, die kein Spesenverantwortlicher abdeckt}}"
       },
       "description": "Bewilligti Spese und was de Mitarbeitende no gschuldet wird. D Erfassig vonere Rückerstattig dokumentiert e Zahlig, wo usserhalb vo Z8 gmacht worde isch; es wird keis Gäld überträit.",
+      "earlierClaim": "Frühere {type}-Abrechnung",
       "employeePaid": "Vo Mitarbeitende zahlt {amount}",
       "empty": {
         "allReimbursed": "Nichts mehr zu erfassen: Jede genehmigte Spese ist zurückerstattet.",
@@ -258,7 +259,6 @@
         }
       },
       "inPayrollRun": "In {run} enthalten",
-      "legacyClaim": "Veralteti {type}-Aaforderig",
       "loading": "Finanz-Warteschlange wird glade…",
       "pagination": {
         "label": "Siite vo de Finanze-Warteschlang",

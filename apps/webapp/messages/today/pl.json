@@ -6,19 +6,37 @@
       "decided": "Decyzja została zapisana. Odśwież, aby załadować bieżącą kolejkę.",
       "description": "Wnioski oczekujące na decyzję menedżera.",
       "empty": "Brak oczekujących zatwierdzeń.",
+      "itemTitle": "{requester}: {title}",
       "openInbox": "Otwórz skrzynkę odbiorczą",
+      "openInboxForRest": "Otwórz skrzynkę odbiorczą, aby zobaczyć resztę",
+      "openInboxLink": "Otwórz skrzynkę odbiorczą",
       "ownRequest": "Twój własny wniosek: decyduje o nim inna osoba zatwierdzająca.",
+      "partialFailure": "Nie udało się załadować niektórych zatwierdzeń: {types}. Lista i łączna liczba mogą być niekompletne.",
+      "partialFailureNotCounted": "Nie udało się policzyć niektórych zatwierdzeń: {types}. Łączna liczba może być niekompletna.",
       "pendingAriaLabel": "Oczekujące zatwierdzenia",
       "reject": "Odrzuć",
       "rejectLabel": "Odrzuć {title}",
+      "rejectPanel": {
+        "briefingUnavailable": "Nie udało się odświeżyć dzisiejszych zatwierdzeń. Zamknij ten panel i spróbuj ponownie.",
+        "description": "Osoba wnioskująca zobaczy ten powód wraz z odrzuceniem.",
+        "noLongerRejectable": "Tego wniosku nie można już tutaj odrzucić.",
+        "title": "Odrzuć wniosek"
+      },
       "retry": "Ponów próby zatwierdzenia",
+      "reviewInInbox": "Przejrzyj w skrzynce odbiorczej",
+      "reviewInInboxNamed": "Przejrzyj w skrzynce odbiorczej: {title}",
       "title": "Zatwierdzenia",
       "toast": {
         "approved": "Wniosek zatwierdzony",
         "approveError": "Nie można zatwierdzić wniosku",
         "rejected": "Wniosek odrzucony",
         "rejectError": "Nie można odrzucić wniosku"
-      }
+      },
+      "totalAtLeast": "{count}+",
+      "truncated": "{total, plural, one {Wyświetlanie {shown} z # oczekującego zatwierdzenia.} other {Wyświetlanie {shown} z # oczekujących zatwierdzeń.} }",
+      "truncatedAtLeast": "{total, plural, one {Wyświetlanie {shown} z co najmniej # oczekującego zatwierdzenia.} other {Wyświetlanie {shown} z co najmniej # oczekujących zatwierdzeń.} }",
+      "waitingInInbox": "{total, plural, one {W skrzynce odbiorczej czeka # oczekujące zatwierdzenie.} few {W skrzynce odbiorczej czekają # oczekujące zatwierdzenia.} other {W skrzynce odbiorczej czeka # oczekujących zatwierdzeń.} }",
+      "waitingInInboxAtLeast": "{total, plural, one {W skrzynce odbiorczej czeka co najmniej # oczekujące zatwierdzenie.} few {W skrzynce odbiorczej czekają co najmniej # oczekujące zatwierdzenia.} other {W skrzynce odbiorczej czeka co najmniej # oczekujących zatwierdzeń.} }"
     },
     "briefing": {
       "accessUnavailable": "Ten briefing jest niedostępny dla bieżącego pracownika i organizacji.",

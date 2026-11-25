@@ -231,6 +231,7 @@
       "openDashboard": "Z8-Dashboard öffnen",
       "openShifts": "Offene Schichten:",
       "pendingApprovals": "Ausstehende Genehmigungen:",
+      "reviewComplianceExceptions": "Ausnahmeanträge prüfen",
       "title": "Tägliche Zusammenfassung – {date}",
       "viewDashboardAt": "Vollständiges Dashboard unter {url} ansehen",
       "whosOut": "Wer abwesend ist:"

@@ -5,7 +5,7 @@
         "accessControls": "Access controls only summarize sensitive audit-log events that are already captured today.",
         "auditEvidence": "Audit evidence uses live audit-export configuration, audit-pack requests, and recent verification results.",
         "title": "Coverage",
-        "workforceCompliance": "Workforce compliance uses the last 7 days of work-policy violations and pending exception requests, plus the open findings and acknowledgements of the German statutory monitors (Minijob, short-term employment, working students, on-call work, youth protection and apprentices)."
+        "workforceCompliance": "Workforce compliance uses the last 7 days of work-policy violations and pending exception requests."
       },
       "events": {
         "auditEvidenceFailures": {
@@ -19,6 +19,10 @@
         "auditVerificationFailure": {
           "description": "Recent invalid verifications: {invalidVerifications}",
           "title": "Audit verification failed"
+        },
+        "pendingExceptions": {
+          "description": "{count, plural, one {# compliance exception awaits a decision} other {# compliance exceptions await a decision}}",
+          "title": "Compliance exceptions pending"
         },
         "sensitiveAction": {
           "description": "{action} on {entityType}",
@@ -54,8 +58,8 @@
           "overtimeViolations": "Overtime violations: {count}",
           "pendingExceptions": "Pending exceptions: {count}",
           "restPeriodViolations": "Rest-period violations: {count}",
-          "statutoryFindings": "Statutory findings: {critical} critical, {warning, plural, one {# warning} other {# warnings}}",
           "statutoryAcknowledgements": "Statutory acknowledgements: {pending} pending, {stale} invalidated by newer work or shifts",
+          "statutoryFindings": "{warning, plural, one {Statutory findings: {critical} critical, # warning} other {Statutory findings: {critical} critical, # warnings}}",
           "statutoryUnavailable": "Some statutory monitors could not be loaded."
         }
       },
@@ -64,17 +68,17 @@
         "refreshMeaning": "Refresh reloads recorded signals; it does not reevaluate findings under a new policy."
       },
       "links": {
-        "inspectCompliance": "Inspect compliance",
         "inspectInAuditLog": "Inspect in Audit Log",
         "openAuditExport": "Open Audit Export",
         "openAuditLog": "Open Audit Log",
-        "openComplianceSettings": "Open Compliance Settings",
         "reviewAuditExport": "Review audit export",
+        "reviewComplianceExceptions": "Review compliance exceptions",
+        "reviewPolicyViolations": "Review policy violations",
         "statutoryDomain": {
           "minijob": "Minijob: {count} open",
+          "on_call": "On-call: {count} open",
           "short_term": "Short-term: {count} open",
           "working_student": "Working students: {count} open",
-          "on_call": "On-call: {count} open",
           "youth_apprentice": "Youth & apprentices: {count} open"
         }
       },
@@ -110,12 +114,12 @@
         },
         "workforceCompliance": {
           "headline": {
-            "critical": "Workforce policy violations or statutory findings need review",
-            "healthy": "No recent workforce policy issues or open statutory findings were detected",
+            "critical": "Workforce policy violations need review",
+            "healthy": "No recent workforce policy issues were detected",
             "warning": "Workforce compliance is drifting"
           },
-          "title": "Workforce compliance",
-          "statutoryReviews": "Statutory reviews"
+          "statutoryReviews": "Statutory reviews",
+          "title": "Workforce compliance"
         }
       },
       "status": {
@@ -132,11 +136,6 @@
       }
     },
     "exception": {
-      "approved": "Exception Approved",
-      "approvedDescription": "The compliance exception has been approved.",
-      "approveFailed": "Failed to Approve",
-      "approveFor": "Approve {type} exception for {name}",
-      "loadError": "Pending exception requests could not be loaded.",
       "plannedDuration": "Planned",
       "plannedDurationHelp": "Estimate how much additional time you expect to need beyond the limit.",
       "plannedHours": "Planned hours",
@@ -146,35 +145,16 @@
       "reason": "Reason for Exception",
       "reasonPlaceholder": "Explain why you need this exception (e.g., urgent project deadline, critical client meeting)...",
       "reasonRequiredDescription": "Please provide a reason for your exception request.",
-      "rejectDescription": "Provide a reason for rejecting this exception request (optional)",
-      "rejected": "Exception Rejected",
-      "rejectedDescription": "The compliance exception has been rejected.",
-      "rejectFailed": "Failed to Reject",
-      "rejectFor": "Reject {type} exception for {name}",
-      "rejectionPlaceholder": "Enter reason for rejecting this exception...",
-      "rejectionReason": "Reason for rejection",
-      "rejectionReasonTooLong": "Reason must be 500 characters or fewer.",
-      "rejectTitle": "Reject Exception Request",
       "requestDescription": "Request pre-approval from your manager to proceed despite compliance restrictions. Approved exceptions are valid for 24 hours.",
-      "requestedAt": "Requested",
       "requestFailed": "Request Failed",
       "requestSubmitted": "Exception Request Submitted",
       "requestSubmittedDescription": "Your manager will be notified and can approve or reject your request.",
       "requestTitle": "Request Compliance Exception",
       "submit": "Submit Request",
-      "type": "Exception Type",
-      "types": {
-        "overtimeDaily": "Daily Overtime",
-        "overtimeMonthly": "Monthly Overtime",
-        "overtimeWeekly": "Weekly Overtime",
-        "restPeriod": "Rest Period"
-      }
+      "type": "Exception Type"
     },
     "hasApprovedException": "You have an approved exception. You may proceed.",
     "moreAlerts": "more",
-    "noExceptions": "No pending exception requests",
-    "pendingExceptions": "Pending Exception Requests",
-    "pendingExceptionsDescription": "Review exception requests that require your approval",
     "requestException": "Request Exception",
     "restPeriodMessage": "You need {time} more rest before you can clock in. Next allowed clock-in: {nextTime}",
     "restPeriodRequired": "Rest Period Required"

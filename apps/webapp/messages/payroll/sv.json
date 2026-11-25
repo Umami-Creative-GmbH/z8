@@ -589,12 +589,14 @@
       "reason": {
         "apiConnector": "Detta format är en API-koppling, som aldrig överför utläggsbelopp.",
         "currencyNotEur": "Inte i euro: lönekörningar hanterar endast belopp i euro.",
+        "earlierClaim": "Tidigare anspråk betalas aldrig ut via löneutbetalningen.",
+        "externalContractorDays": "Dess dagar infaller under ett uppdrag som extern uppdragstagare: lönehanteringen hanterar det aldrig.",
         "includedInOtherRun": "Ingår i den obekräftade lönekörningen {period} ({format}).",
-        "legacyClaim": "Äldre anspråk betalas aldrig via lönen.",
         "negativeDifference": "En justering sänkte beloppet som tidigare lönekörningar överförde för: {kinds}.",
         "noStatutoryBaseline": "Ingen lagstadgad baslinje för: {items}.",
         "nothingOwed": "Dess lönerader lämnar inget kvar för lönen att överföra.",
         "reimbursedOutsidePayroll": "Redan delvis betald via banköverföring eller återkrävd: lönen kan inte ta resten.",
+        "spansEngagementChange": "Dess dagar sträcker sig över en ändring mellan anställd och extern uppdragstagare: lönehanteringen hanterar ingen del av det.",
         "unmappedWageType": "Ingen löneart är mappad för detta format för: {kinds}."
       },
       "title": "Utläggsrapporter som denna lönekörning inte överför",

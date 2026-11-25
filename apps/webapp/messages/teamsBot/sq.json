@@ -80,6 +80,7 @@
     "pendingApprovals": "Miratimet në pritje",
     "pendingExceptionRequests": "{count, plural, one {# kërkesë përjashtimi në pritje të shqyrtimit} other {# kërkesa përjashtimi në pritje të shqyrtimit}}",
     "returns": "Kthehet më {date}",
+    "reviewComplianceExceptions": "Shqyrto kërkesat për përjashtim",
     "since": "Që nga {time}",
     "textClockedInEmployee": "• {name} - që nga {clockedInAt} ({duration})",
     "textCompliance": "**⚠️ Përputhshmëria:**",

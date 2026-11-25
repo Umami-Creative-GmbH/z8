@@ -101,11 +101,11 @@
       "created": "Creata",
       "decisionRecorded": "Decisione registrata",
       "destination": "Destinazione",
+      "earlierClaim": "Richiesta precedente",
+      "earlierReceiptIdentity": "Ricevuta precedente: il checksum del contenuto non è stato registrato.",
       "history": "Cronologia decisioni",
       "historyDescription": "Ogni passaggio di questa richiesta, a partire dal meno recente. Gli orari sono indicati in UTC.",
       "intermediateApproval": "Approvazione registrata — in attesa di ulteriore approvazione",
-      "legacyClaim": "Richiesta di rimborso legacy",
-      "legacyReceiptIdentity": "Ricevuta legacy: il checksum del contenuto non è stato registrato.",
       "loading": "Caricamento richiesta…",
       "noReceipts": "Nessuna ricevuta registrata",
       "notRecorded": "Non registrato",
@@ -117,7 +117,7 @@
       "submitted": "Inviata",
       "title": "Richiesta di rimborso spese di viaggio",
       "unavailable": "Richiesta di rimborso non trovata o accesso non più disponibile.",
-      "unknownDates": "Contesto data viaggio non registrato (richiesta legacy)"
+      "unknownEarlierClaimDates": "Contesto della data del viaggio non registrato (richiesta precedente)"
     },
     "errors": {
       "loadDetailRetry": "Impossibile caricare questa richiesta. Riprova."
@@ -166,6 +166,7 @@
         "title": "{count, plural, one {# spesa approvata è in attesa di rimborso e non è coperta da alcun responsabile delle note spese} other {# spese approvate sono in attesa di rimborso e non sono coperte da alcun responsabile delle note spese}}"
       },
       "description": "Spese approvate e importi ancora dovuti ai dipendenti. La registrazione di un rimborso documenta un pagamento effettuato all'esterno di Z8; non viene trasferito denaro.",
+      "earlierClaim": "Richiesta {type} precedente",
       "employeePaid": "Pagato dal dipendente {amount}",
       "empty": {
         "allReimbursed": "Nulla da registrare: tutte le spese approvate sono state rimborsate.",
@@ -258,7 +259,6 @@
         }
       },
       "inPayrollRun": "Inclusa in {run}",
-      "legacyClaim": "Richiesta {type} legacy",
       "loading": "Caricamento coda finanziaria…",
       "pagination": {
         "label": "Pagine della coda finanziaria",
