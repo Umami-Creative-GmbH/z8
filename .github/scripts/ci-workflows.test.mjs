@@ -20,18 +20,9 @@ test("actual PostgreSQL condition requires successful combined shards except exp
     assert.equal(Boolean(evaluate(needs, { event_name: event, event: { pull_request: { draft } } }, { diagnose_integration: override }, () => cancelled, { POSTGRES_INTEGRATION_TESTS_ENABLED: enabled })), expected, JSON.stringify({ enabled, webapp, unit, changes, event, override, cancelled, draft }));
   }
 });
-test("expensive PR jobs wait on shared Linux debounce once, with independent cancellation", () => {
-  const debounce = workflow("ci-debounce");
-  assert.match(debounce, /runs-on: ubuntu-latest/);
-  assert.match(debounce, /if: github.event_name == 'pull_request'\s+run: sleep 90/);
-  assert.doesNotMatch(debounce, /concurrency:/);
-  for (const source of [tests, desktop]) {
-    assert.match(source, /uses: \.\/\.github\/workflows\/ci-debounce.yml/);
-    assert.match(source, /cancel-in-progress: true/);
-  }
-  assert.match(tests, /needs: \[changes, debounce\]/);
-  assert.match(desktop.split("  windows:\n")[1].split("    runs-on:")[0], /needs: debounce/);
-  assert.match(tests, /needs: \[changes, debounce, unit-tests, integration-tests\]/);
+test("the required summary receives scope selection and both test results", () => {
+  const summary = tests.split("  tests:\n")[1].split("    runs-on:")[0];
+  assert.match(summary, /needs: \[changes, unit-tests, integration-tests\]/);
 });
 test("privileged cleanup executes trusted default-branch code with no producer checkout", () => {
   assert.match(maintenance, /pull_request_target:\s+types: \[closed\]/);
@@ -47,7 +38,7 @@ test("installer uploads carry identity and 14-day expiry; signed release remains
   assert.match(desktop, /name: desktop-windows-unsigned-review-only\s+retention-days: 14/);
   assert.match(desktop, /review-build.json/);
   assert.match(desktop, /REVIEW_HEAD_SHA: \$\{\{ github.event.pull_request.head.sha \|\| github.sha \}\}/);
-  assert.doesNotMatch(workflow("desktop-release"), /desktop-windows-unsigned-review-only|ci-debounce|ci-maintenance/);
+  assert.doesNotMatch(workflow("desktop-release"), /desktop-windows-unsigned-review-only|ci-maintenance/);
 });
 test("base dependency warming cannot execute arbitrary PR refs or repeat an exact-hit install", () => {
   assert.match(warm, /branches: \[dev\]/);
@@ -61,15 +52,13 @@ test("base dependency warming cannot execute arbitrary PR refs or repeat an exac
     assert.match(source, /node-version: 26\s+cache: pnpm/);
   }
 });
-test("draft PRs skip every validation job, including setup, summary and reusable debounce", () => {
-  const guardJobs = ["tests", "desktop-windows", "check-package-lock-sync", "react-doctor", "ci-debounce", "work-records-integration", "next-runtime"];
+test("draft PRs skip every validation job, including setup and summary", () => {
+  const guardJobs = ["tests", "desktop-windows", "check-package-lock-sync", "react-doctor", "work-records-integration", "next-runtime"];
   for (const name of guardJobs) {
     const source = workflow(name);
-    if (name !== "ci-debounce") {
-      assert.match(source, /types: \[opened, synchronize, reopened, ready_for_review, converted_to_draft\]/);
-      assert.match(source, /group: .*github.event.pull_request.number/);
-      assert.match(source, /cancel-in-progress: true/);
-    }
+    assert.match(source, /types: \[opened, synchronize, reopened, ready_for_review, converted_to_draft\]/);
+    assert.match(source, /group: .*github.event.pull_request.number/);
+    assert.match(source, /cancel-in-progress: true/);
     const blocks = source.split("\njobs:\n")[1].split(/(?=^  [\w-]+:\s*$)/m).filter(block => /^  [\w-]+:/.test(block));
     assert.ok(blocks.length > 0, name);
     for (const block of blocks) {
