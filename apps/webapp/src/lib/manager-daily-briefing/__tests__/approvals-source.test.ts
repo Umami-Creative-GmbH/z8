@@ -7,6 +7,8 @@ import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { UnifiedApprovalItem } from "@/lib/approvals/domain/types";
 import type { ApprovalInboxListParams } from "@/lib/approvals/inbox/read-service";
+// Initialize the partially mocked reader before the first timed test runs.
+import "@/lib/approvals/inbox/read-service";
 import type {
 	ApprovalInboxTriageEvidenceResult,
 	ApprovalInboxTriageTarget,
