@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TimeCorrectionRevision } from "./time-correction-revision";
 
@@ -136,12 +137,11 @@ describe("revising an overlapping correction", () => {
 		);
 	});
 	it("does not reject the original while the proposed range still overlaps", async () => {
+		const user = userEvent.setup();
 		setup();
 		await open();
-		fireEvent.change(screen.getByLabelText("Reason for revision"), {
-			target: { value: "Fix" },
-		});
-		fireEvent.click(
+		await user.type(screen.getByLabelText("Reason for revision"), "Fix");
+		await user.click(
 			screen.getByRole("button", { name: "Reject and submit revision" }),
 		);
 		expect(await screen.findByRole("alert")).toHaveProperty(

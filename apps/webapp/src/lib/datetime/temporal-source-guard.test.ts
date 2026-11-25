@@ -155,7 +155,6 @@ const PURE_LUXON_LEGACY_ALLOWLIST = [
 	"lib/wellness/actions/queries.ts",
 	"lib/wellness/actions/shared.ts",
 	"lib/wellness/streak-calculator.ts",
-	"lib/work-balance/period-aggregation.ts",
 	"lib/work-balance/periods.ts",
 	"lib/work-balance/service.ts",
 ] as const;

@@ -1,12 +1,17 @@
 import { and, eq, gte, isNotNull, lte, sql } from "drizzle-orm";
-import { DateTime } from "luxon";
 import { db } from "@/db";
 import { employeeWorkBalance, employeeWorkBalancePeriod, workPeriod } from "@/db/schema";
 import { collectTrustBasedBalanceDates } from "@/lib/calendar/trust-based-dates";
 import type { DailyWorkRequirements } from "@/lib/calendar/types";
 import { getDailyWorkRequirementsForEmployee } from "@/lib/calendar/work-policy-requirements";
 import { loadEffectiveContractsBatch } from "@/lib/contracts/resolve-contract";
-import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { localDayRange } from "@/lib/datetime/temporal-boundaries";
+import {
+	dateFromInstant,
+	instantFromDate,
+	parsePlainDate,
+	plainDateAt,
+} from "@/lib/datetime/temporal-core";
 import type { EngagementStints } from "@/lib/engagement/employee-time";
 import { loadEmployeeTime } from "@/lib/engagement/engagement-stints";
 import { loadEmployeeTrackingContext } from "@/lib/time-tracking/tracking-start";
@@ -75,17 +80,13 @@ export async function computeEmployeePeriodBalance(input: {
 		tracking && (!input.calculationStartDate || tracking.startDate > input.calculationStartDate)
 			? tracking.startDate
 			: input.calculationStartDate;
-	const periodStart = DateTime.fromISO(input.periodStart, {
-		zone: timezone,
-	}).startOf("day");
-	const periodEnd = DateTime.fromISO(input.periodEnd, { zone: timezone }).endOf("day");
-	const calculationStart = calculationStartDate
-		? DateTime.fromISO(calculationStartDate, { zone: timezone }).startOf("day")
-		: null;
+	// These are ISO calendar date keys in the employee's timezone.
 	const effectiveStart =
-		calculationStart && calculationStart > periodStart ? calculationStart : periodStart;
+		calculationStartDate && calculationStartDate > input.periodStart
+			? calculationStartDate
+			: input.periodStart;
 
-	if (effectiveStart > periodEnd) {
+	if (effectiveStart > input.periodEnd) {
 		return buildPeriodBalanceValues({
 			employeeId: input.employeeId,
 			organizationId: input.organizationId,
@@ -99,8 +100,10 @@ export async function computeEmployeePeriodBalance(input: {
 		});
 	}
 
-	const startDate = effectiveStart.toJSDate();
-	const endDate = periodEnd.toJSDate();
+	const startDate = dateFromInstant(localDayRange(effectiveStart, timezone).start);
+	const endDate = dateFromInstant(
+		localDayRange(input.periodEnd, timezone).endExclusive.subtract({ milliseconds: 1 }),
+	);
 
 	// One after another: `dbClient` may be one connection, and pg@9 refuses a query while another is executing.
 	const requirements = await getDailyWorkRequirementsForEmployee(
@@ -125,7 +128,7 @@ export async function computeEmployeePeriodBalance(input: {
 		const days = await readBalanceDays(dbClient, balanceInput, requirements);
 		const windowInput = {
 			...input,
-			startDate: effectiveStart.toISODate()!,
+			startDate: effectiveStart,
 			throughDate: input.periodEnd,
 			timezone,
 		};
@@ -214,10 +217,8 @@ export async function computeUntrackedBalanceMinutes(
 				),
 			);
 		const actualMinutes = rows.reduce((total, row) => {
-			const dayKey = DateTime.fromJSDate(row.startTime, { zone: "utc" })
-				.setZone(input.timezone)
-				.toISODate();
-			if (dayKey && excludedDates.has(dayKey)) return total;
+			const dayKey = plainDateAt(instantFromDate(row.startTime), input.timezone).toString();
+			if (excludedDates.has(dayKey)) return total;
 			return total + Number(row.durationMinutes ?? 0);
 		}, 0);
 		return { actualMinutes, requiredMinutes };
