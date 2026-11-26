@@ -9,7 +9,7 @@ const routeCases = [
 	["Slack OAuth start", "api/slack/oauth/authorize/route.ts", "db.insert(slackOAuthState)"],
 	["Slack OAuth callback", "api/slack/oauth/callback/route.ts", "exchangeOAuthCode("],
 	["Telegram setup", "api/telegram/setup/route.ts", "storeOrgSecret("],
-	["Telegram disconnect", "api/telegram/setup/route.ts", "deleteOrgSecret("],
+	["Telegram disconnect", "api/telegram/setup/route.ts", "disconnectLegacyTelegramInstallation("],
 	["Teams setup", "api/teams/setup/route.ts", "db.insert(teamsTenantConfig)"],
 ] as const;
 
