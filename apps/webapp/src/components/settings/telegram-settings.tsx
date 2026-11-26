@@ -16,7 +16,7 @@ import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useId, useState } from "react";
 import { toast } from "sonner";
 import { Temporal } from "temporal-polyfill";
 import {
@@ -131,6 +131,7 @@ function BotConnectionCard({
 }) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
+	const botTokenInputId = useId();
 	const [botToken, setBotToken] = useState("");
 
 	const isConnected = config?.setupStatus === "active";
@@ -262,9 +263,11 @@ function BotConnectionCard({
 				) : (
 					<div className="space-y-4">
 						<div className="space-y-2">
-							<Label htmlFor="botToken">{t("settings.telegram.botToken", "Bot Token")}</Label>
+							<Label htmlFor={botTokenInputId}>
+								{t("settings.telegram.botToken", "Bot Token")}
+							</Label>
 							<Input
-								id="botToken"
+								id={botTokenInputId}
 								type="password"
 								value={botToken}
 								onChange={(e) => setBotToken(e.target.value)}
@@ -325,7 +328,9 @@ function useTelegramFeatureForm({
 		onSubmit: async ({ value }) => {
 			const result = await updateTelegramSettings(value).catch(() => null);
 			if (!result) {
-				toast.error(t("settings.telegram.saveError", "Telegram settings could not be saved. Try again."));
+				toast.error(
+					t("settings.telegram.saveError", "Telegram settings could not be saved. Try again."),
+				);
 				return;
 			}
 			if (result.success) {
@@ -345,6 +350,23 @@ function useTelegramFeatureForm({
 
 function FeatureSettingsCard(props: Parameters<typeof useTelegramFeatureForm>[0]) {
 	const { t, form, isDirty, loading } = useTelegramFeatureForm(props);
+	const fieldPrefix = useId();
+	const approvalsLabelId = `${fieldPrefix}-approvals-label`;
+	const approvalsDescId = `${fieldPrefix}-approvals-desc`;
+	const approvalsId = `${fieldPrefix}-enable-approvals`;
+	const commandsLabelId = `${fieldPrefix}-commands-label`;
+	const commandsDescId = `${fieldPrefix}-commands-desc`;
+	const commandsId = `${fieldPrefix}-enable-commands`;
+	const digestLabelId = `${fieldPrefix}-digest-label`;
+	const digestDescId = `${fieldPrefix}-digest-desc`;
+	const digestId = `${fieldPrefix}-enable-digest`;
+	const digestTimeId = `${fieldPrefix}-digestTime`;
+	const digestTimezoneId = `${fieldPrefix}-digestTimezone`;
+	const escalationsLabelId = `${fieldPrefix}-escalations-label`;
+	const escalationsDescId = `${fieldPrefix}-escalations-desc`;
+	const escalationsId = `${fieldPrefix}-enable-escalations`;
+	const escalationTimeoutId = `${fieldPrefix}-escalationTimeout`;
+	const escalationTimeoutErrorId = `${fieldPrefix}-escalationTimeout-error`;
 
 	return (
 		<Card>
@@ -368,14 +390,10 @@ function FeatureSettingsCard(props: Parameters<typeof useTelegramFeatureForm>[0]
 					{/* Approvals */}
 					<div className="flex min-w-0 items-center justify-between gap-4">
 						<div className="min-w-0 space-y-1">
-							<Label
-								id="approvals-label"
-								htmlFor="telegram-enable-approvals"
-								className="text-sm font-medium"
-							>
+							<Label id={approvalsLabelId} htmlFor={approvalsId} className="text-sm font-medium">
 								{t("settings.telegram.features.approvals", "Approval Notifications")}
 							</Label>
-							<p id="approvals-desc" className="text-sm text-muted-foreground">
+							<p id={approvalsDescId} className="text-sm text-muted-foreground">
 								{t(
 									"settings.telegram.features.approvalsDesc",
 									"Send approval requests and allow approve/reject via Telegram",
@@ -385,12 +403,12 @@ function FeatureSettingsCard(props: Parameters<typeof useTelegramFeatureForm>[0]
 						<form.Field name="enableApprovals">
 							{(field) => (
 								<Switch
-									id="telegram-enable-approvals"
+									id={approvalsId}
 									checked={field.state.value}
 									onCheckedChange={field.handleChange}
 									disabled={loading}
-									aria-labelledby="approvals-label"
-									aria-describedby="approvals-desc"
+									aria-labelledby={approvalsLabelId}
+									aria-describedby={approvalsDescId}
 									className="shrink-0"
 								/>
 							)}
@@ -402,14 +420,10 @@ function FeatureSettingsCard(props: Parameters<typeof useTelegramFeatureForm>[0]
 					{/* Commands */}
 					<div className="flex min-w-0 items-center justify-between gap-4">
 						<div className="min-w-0 space-y-1">
-							<Label
-								id="commands-label"
-								htmlFor="telegram-enable-commands"
-								className="text-sm font-medium"
-							>
+							<Label id={commandsLabelId} htmlFor={commandsId} className="text-sm font-medium">
 								{t("settings.telegram.features.commands", "Bot Commands")}
 							</Label>
-							<p id="commands-desc" className="text-sm text-muted-foreground">
+							<p id={commandsDescId} className="text-sm text-muted-foreground">
 								{t(
 									"settings.telegram.features.commandsDesc",
 									"Enable /clockedin, /whosout, /pending and other commands",
@@ -419,12 +433,12 @@ function FeatureSettingsCard(props: Parameters<typeof useTelegramFeatureForm>[0]
 						<form.Field name="enableCommands">
 							{(field) => (
 								<Switch
-									id="telegram-enable-commands"
+									id={commandsId}
 									checked={field.state.value}
 									onCheckedChange={field.handleChange}
 									disabled={loading}
-									aria-labelledby="commands-label"
-									aria-describedby="commands-desc"
+									aria-labelledby={commandsLabelId}
+									aria-describedby={commandsDescId}
 									className="shrink-0"
 								/>
 							)}
@@ -437,14 +451,10 @@ function FeatureSettingsCard(props: Parameters<typeof useTelegramFeatureForm>[0]
 					<div className="space-y-3">
 						<div className="flex min-w-0 items-center justify-between gap-4">
 							<div className="min-w-0 space-y-1">
-								<Label
-									id="digest-label"
-									htmlFor="telegram-enable-digest"
-									className="text-sm font-medium"
-								>
+								<Label id={digestLabelId} htmlFor={digestId} className="text-sm font-medium">
 									{t("settings.telegram.features.digest", "Daily Digest")}
 								</Label>
-								<p id="digest-desc" className="text-sm text-muted-foreground">
+								<p id={digestDescId} className="text-sm text-muted-foreground">
 									{t(
 										"settings.telegram.features.digestDesc",
 										"Send a daily summary of absences and schedules",
@@ -454,12 +464,12 @@ function FeatureSettingsCard(props: Parameters<typeof useTelegramFeatureForm>[0]
 							<form.Field name="enableDailyDigest">
 								{(field) => (
 									<Switch
-										id="telegram-enable-digest"
+										id={digestId}
 										checked={field.state.value}
 										onCheckedChange={field.handleChange}
 										disabled={loading}
-										aria-labelledby="digest-label"
-										aria-describedby="digest-desc"
+										aria-labelledby={digestLabelId}
+										aria-describedby={digestDescId}
 										className="shrink-0"
 									/>
 								)}
@@ -473,11 +483,11 @@ function FeatureSettingsCard(props: Parameters<typeof useTelegramFeatureForm>[0]
 										<form.Field name="digestTime">
 											{(field) => (
 												<div className="space-y-1">
-													<Label htmlFor="digestTime" className="text-xs">
+													<Label htmlFor={digestTimeId} className="text-xs">
 														{t("settings.telegram.features.digestTime", "Time")}
 													</Label>
 													<TimeInput
-														id="digestTime"
+														id={digestTimeId}
 														value={field.state.value}
 														onChange={(e) => field.handleChange(e.target.value)}
 														disabled={loading}
@@ -489,11 +499,11 @@ function FeatureSettingsCard(props: Parameters<typeof useTelegramFeatureForm>[0]
 										<form.Field name="digestTimezone">
 											{(field) => (
 												<div className="space-y-1">
-													<Label htmlFor="digestTimezone" className="text-xs">
+													<Label htmlFor={digestTimezoneId} className="text-xs">
 														{t("settings.telegram.features.digestTimezone", "Timezone")}
 													</Label>
 													<TimezonePicker
-														id="digestTimezone"
+														id={digestTimezoneId}
 														value={field.state.value}
 														onChange={field.handleChange}
 														disabled={loading}
@@ -514,13 +524,13 @@ function FeatureSettingsCard(props: Parameters<typeof useTelegramFeatureForm>[0]
 						<div className="flex min-w-0 items-center justify-between gap-4">
 							<div className="min-w-0 space-y-1">
 								<Label
-									id="escalations-label"
-									htmlFor="telegram-enable-escalations"
+									id={escalationsLabelId}
+									htmlFor={escalationsId}
 									className="text-sm font-medium"
 								>
 									{t("settings.telegram.features.escalations", "Escalations")}
 								</Label>
-								<p id="escalations-desc" className="text-sm text-muted-foreground">
+								<p id={escalationsDescId} className="text-sm text-muted-foreground">
 									{t(
 										"settings.telegram.features.escalationsDesc",
 										"Escalate unanswered approvals to the next manager",
@@ -530,12 +540,12 @@ function FeatureSettingsCard(props: Parameters<typeof useTelegramFeatureForm>[0]
 							<form.Field name="enableEscalations">
 								{(field) => (
 									<Switch
-										id="telegram-enable-escalations"
+										id={escalationsId}
 										checked={field.state.value}
 										onCheckedChange={field.handleChange}
 										disabled={loading}
-										aria-labelledby="escalations-label"
-										aria-describedby="escalations-desc"
+										aria-labelledby={escalationsLabelId}
+										aria-describedby={escalationsDescId}
 										className="shrink-0"
 									/>
 								)}
@@ -563,11 +573,11 @@ function FeatureSettingsCard(props: Parameters<typeof useTelegramFeatureForm>[0]
 												return (
 													<div className="space-y-2">
 														<div className="flex items-center gap-3">
-															<Label htmlFor="escalationTimeout" className="shrink-0 text-xs">
+															<Label htmlFor={escalationTimeoutId} className="shrink-0 text-xs">
 																{t("settings.telegram.features.escalationTimeout", "Timeout")}
 															</Label>
 															<Input
-																id="escalationTimeout"
+																id={escalationTimeoutId}
 																type="number"
 																inputMode="numeric"
 																min={1}
@@ -578,9 +588,7 @@ function FeatureSettingsCard(props: Parameters<typeof useTelegramFeatureForm>[0]
 																onBlur={field.handleBlur}
 																disabled={loading}
 																aria-invalid={hasError}
-																aria-describedby={
-																	hasError ? "escalationTimeout-error" : undefined
-																}
+																aria-describedby={hasError ? escalationTimeoutErrorId : undefined}
 																className="h-8 w-20 tabular-nums"
 															/>
 															<span className="text-xs text-muted-foreground">
@@ -589,7 +597,7 @@ function FeatureSettingsCard(props: Parameters<typeof useTelegramFeatureForm>[0]
 														</div>
 														{hasError ? (
 															<p
-																id="escalationTimeout-error"
+																id={escalationTimeoutErrorId}
 																className="text-sm text-destructive"
 																role="alert"
 															>
@@ -644,10 +652,7 @@ export function TelegramLinkCodeExpiry({
 
 	useEffect(() => {
 		if (expired) return;
-		const timer = setInterval(
-			() => setNow(Temporal.Now.instant()),
-			LINK_CODE_EXPIRY_TICK_MS,
-		);
+		const timer = setInterval(() => setNow(Temporal.Now.instant()), LINK_CODE_EXPIRY_TICK_MS);
 		return () => clearInterval(timer);
 	}, [expired]);
 
@@ -655,10 +660,7 @@ export function TelegramLinkCodeExpiry({
 		return (
 			<div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-warning/40 bg-warning/10 p-4">
 				<p className="text-sm" role="status">
-					{t(
-						"settings.telegram.linking.codeExpired",
-						"Expired — generate a new code",
-					)}
+					{t("settings.telegram.linking.codeExpired", "Expired — generate a new code")}
 				</p>
 				<Button
 					type="button"
@@ -668,10 +670,7 @@ export function TelegramLinkCodeExpiry({
 					disabled={isRegenerating}
 				>
 					{isRegenerating ? (
-						<IconLoader2
-							className="mr-2 size-4 motion-safe:animate-spin"
-							aria-hidden="true"
-						/>
+						<IconLoader2 className="mr-2 size-4 motion-safe:animate-spin" aria-hidden="true" />
 					) : (
 						<IconRefresh className="mr-2 size-4" aria-hidden="true" />
 					)}
@@ -700,7 +699,10 @@ export function TelegramLinkCodeExpiry({
 // ACCOUNT LINKING CARD
 // ============================================
 
-function useTelegramAccountLink({ organizationId, userId }: {
+function useTelegramAccountLink({
+	organizationId,
+	userId,
+}: {
 	userLink: TelegramUserLink | null;
 	config: TelegramConfig | null;
 	organizationId: string;
@@ -785,15 +787,8 @@ function useTelegramAccountLink({ organizationId, userId }: {
 
 function AccountLinkingCard(props: Parameters<typeof useTelegramAccountLink>[0]) {
 	const { userLink, config } = props;
-	const {
-		t,
-		linkCode,
-		copied,
-		generateCodeMutation,
-		unlinkMutation,
-		unlinking,
-		handleCopy,
-	} = useTelegramAccountLink(props);
+	const { t, linkCode, copied, generateCodeMutation, unlinkMutation, unlinking, handleCopy } =
+		useTelegramAccountLink(props);
 
 	return (
 		<Card>

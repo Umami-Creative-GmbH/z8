@@ -7,6 +7,13 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { discordBotConfig, slackWorkspaceConfig, teamsTenantConfig } from "@/db/schema";
 import { env } from "@/env";
+import {
+	CHAT_INSTALLATION_PROVIDERS,
+	type ChatProviderInventory,
+	getOrganizationChatInstallationsInventory,
+	getProviderChatInstallationInventory as loadProviderChatInstallationInventory,
+	type OrganizationChatInstallationsInventory,
+} from "@/lib/chat-installations";
 import { ExternalServiceError, ValidationError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
@@ -446,5 +453,41 @@ export const updateTeamsNotificationChannelSettings = organizationAction(
 			);
 			revalidatePath("/settings/notification-channels");
 			return undefined;
+		}),
+);
+
+export const getChatInstallationsInventory = organizationAction(
+	{ name: "notificationChannels.getInventory", requires: "orgAdmin", schema: noInput },
+	({ organizationId }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			return yield* dbService.query(
+				"notificationChannels.getInventory",
+				(): Promise<OrganizationChatInstallationsInventory> =>
+					getOrganizationChatInstallationsInventory(organizationId, { db: dbService.db }),
+			);
+		}),
+);
+
+const providerInventorySchema = z.strictObject({
+	provider: z.enum(CHAT_INSTALLATION_PROVIDERS),
+});
+
+export const getProviderChatInstallationInventory = organizationAction(
+	{
+		name: "notificationChannels.getProviderInventory",
+		requires: "orgAdmin",
+		schema: providerInventorySchema,
+	},
+	({ organizationId, input }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			return yield* dbService.query(
+				"notificationChannels.getProviderInventory",
+				(): Promise<ChatProviderInventory> =>
+					loadProviderChatInstallationInventory(organizationId, input.provider, {
+						db: dbService.db,
+					}),
+			);
 		}),
 );

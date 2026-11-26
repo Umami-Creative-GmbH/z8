@@ -36,6 +36,8 @@ export * from "./billing-seat-delivery";
 // Calendar sync
 export * from "./calendar-sync";
 export * from "./change-policy";
+// Organization-owned chat installations foundation (#2037 / #2040)
+export * from "./chat-installations";
 // Clocking reminders (#760)
 export * from "./clocking-reminder";
 // Clockodo import (user mapping)

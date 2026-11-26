@@ -17,6 +17,8 @@ const mocks = vi.hoisted(() => ({
 	getOrgSecret: vi.fn(),
 	storeOrgSecret: vi.fn(),
 	deleteOrgSecret: vi.fn(),
+	getOrganizationChatInstallationsInventory: vi.fn(),
+	getProviderChatInstallationInventory: vi.fn(),
 }));
 
 vi.mock("next/cache", () => ({
@@ -48,6 +50,15 @@ vi.mock("@/lib/vault", () => ({
 	storeOrgSecret: mocks.storeOrgSecret,
 	deleteOrgSecret: mocks.deleteOrgSecret,
 }));
+
+vi.mock("@/lib/chat-installations", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@/lib/chat-installations")>();
+	return {
+		...actual,
+		getOrganizationChatInstallationsInventory: mocks.getOrganizationChatInstallationsInventory,
+		getProviderChatInstallationInventory: mocks.getProviderChatInstallationInventory,
+	};
+});
 
 vi.mock("@/lib/effect/runtime", async () => {
 	const { Effect } = await import("effect");
@@ -83,7 +94,9 @@ import { discordBotConfig, slackWorkspaceConfig, teamsTenantConfig } from "@/db/
 import {
 	connectDiscordBot,
 	disconnectDiscordBot,
+	getChatInstallationsInventory,
 	getDiscordNotificationChannelConfig,
+	getProviderChatInstallationInventory,
 	getSlackNotificationChannelConfig,
 	getTeamsNotificationChannelConfig,
 	updateDiscordNotificationChannelSettings,
@@ -139,6 +152,8 @@ describe("notification channel settings actions", () => {
 		mocks.getOrgSecret.mockReset();
 		mocks.storeOrgSecret.mockReset();
 		mocks.deleteOrgSecret.mockReset();
+		mocks.getOrganizationChatInstallationsInventory.mockReset();
+		mocks.getProviderChatInstallationInventory.mockReset();
 
 		mocks.where.mockResolvedValue(undefined);
 		mocks.set.mockReturnValue({ where: mocks.where });
@@ -182,6 +197,8 @@ describe("notification channel settings actions", () => {
 		["getSlack", () => getSlackNotificationChannelConfig()],
 		["getDiscord", () => getDiscordNotificationChannelConfig()],
 		["getTeams", () => getTeamsNotificationChannelConfig()],
+		["getInventory", () => getChatInstallationsInventory()],
+		["getProviderInventory", () => getProviderChatInstallationInventory({ provider: "slack" })],
 	] as const)("refuses a scoped manager (%s) without a redirect", async (_name, call) => {
 		mocks.caller = scopedManager;
 
@@ -329,6 +346,8 @@ describe("Discord bot connect and disconnect actions", () => {
 		mocks.getOrgSecret.mockReset();
 		mocks.storeOrgSecret.mockReset();
 		mocks.deleteOrgSecret.mockReset();
+		mocks.getOrganizationChatInstallationsInventory.mockReset();
+		mocks.getProviderChatInstallationInventory.mockReset();
 
 		mocks.where.mockResolvedValue(undefined);
 		mocks.set.mockReturnValue({ where: mocks.where });
@@ -744,5 +763,81 @@ describe("Discord bot connect and disconnect actions", () => {
 		expect(mocks.deleteOrgSecret).not.toHaveBeenCalled();
 		expect(mocks.update).not.toHaveBeenCalled();
 		expect(mocks.revalidatePath).toHaveBeenCalledWith("/settings/notification-channels");
+	});
+});
+
+describe("chat installations inventory actions", () => {
+	beforeEach(() => {
+		mocks.caller = orgAdmin;
+		mocks.getOrganizationChatInstallationsInventory.mockReset();
+		mocks.getProviderChatInstallationInventory.mockReset();
+	});
+
+	it.each([
+		["signed-out caller", null, "AuthenticationError"],
+		["pending membership", { ...orgAdmin, membershipRole: null }, "AuthorizationError"],
+		[
+			"former employee",
+			{ ...orgAdmin, employee: { id: "emp-1", role: "admin" as const, former: true } },
+			"AuthorizationError",
+		],
+		[
+			"org member",
+			{
+				...orgAdmin,
+				membershipRole: "member",
+				employee: { id: "emp-1", role: "employee" as const, former: false },
+			},
+			"AuthorizationError",
+		],
+		["scoped manager", scopedManager, "AuthorizationError"],
+	] as const)(
+		"refuses reading chat installations inventory for %s before touching the store",
+		async (_label, caller, expectedCode) => {
+			mocks.caller = caller;
+
+			const allResult = await getChatInstallationsInventory();
+			const singleResult = await getProviderChatInstallationInventory({ provider: "teams" });
+
+			expect(allResult).toMatchObject({ success: false, code: expectedCode });
+			expect(singleResult).toMatchObject({ success: false, code: expectedCode });
+			expect(mocks.getOrganizationChatInstallationsInventory).not.toHaveBeenCalled();
+			expect(mocks.getProviderChatInstallationInventory).not.toHaveBeenCalled();
+		},
+	);
+
+	it("returns the active organization's inventory for an org admin", async () => {
+		const fakeInventory = {
+			organizationId: "org-1",
+			generatedAt: "2026-11-26T10:00:00.000Z",
+			providers: {},
+		};
+		mocks.getOrganizationChatInstallationsInventory.mockResolvedValueOnce(fakeInventory);
+
+		const result = await getChatInstallationsInventory();
+
+		expect(result).toEqual({ success: true, data: fakeInventory });
+		expect(mocks.getOrganizationChatInstallationsInventory).toHaveBeenCalledWith(
+			"org-1",
+			expect.objectContaining({ db: expect.anything() }),
+		);
+	});
+
+	it("returns a single provider inventory and rejects unknown provider names", async () => {
+		const fakeProvider = { provider: "teams", connectionState: "connected" };
+		mocks.getProviderChatInstallationInventory.mockResolvedValueOnce(fakeProvider);
+
+		const ok = await getProviderChatInstallationInventory({ provider: "teams" });
+		expect(ok).toEqual({ success: true, data: fakeProvider });
+		expect(mocks.getProviderChatInstallationInventory).toHaveBeenCalledWith(
+			"org-1",
+			"teams",
+			expect.objectContaining({ db: expect.anything() }),
+		);
+
+		const invalid = await getProviderChatInstallationInventory({
+			provider: "irc" as never,
+		});
+		expect(invalid).toMatchObject({ success: false, code: "ValidationError" });
 	});
 });

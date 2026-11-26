@@ -51,6 +51,107 @@
       "title": "Calendar Sync",
       "titleTemplatePlaceholder": "Out of Office - {categoryName}"
     },
+    "chatInstallations": {
+      "blockers": {
+        "duplicateIdentity": {
+          "nextAction": "Disconnect or replace the duplicate external bot so only one organization claims this app before switching.",
+          "title": "Duplicate external app or bot identity"
+        },
+        "heading": "Migration blockers",
+        "nextActionLabel": "Next action:",
+        "secretStoreUnavailable": {
+          "nextAction": "Retry once the organization secret store is reachable. Existing configuration has not been altered.",
+          "title": "Secret store temporarily unavailable"
+        },
+        "teamsDisagreement": {
+          "nextAction": "Review the differing tenant settings below and confirm the target settings for your organization-owned Teams app.",
+          "title": "Settings disagree across legacy Teams tenants"
+        },
+        "trafficPreserved": "Replacement and endpoint changes are blocked until resolved. Current traffic continues on its existing route.",
+        "unexpectedLegacyStatus": {
+          "nextAction": "Review this historical connection and confirm whether it should be retired or reconnected before switching.",
+          "title": "Unexpected historical status: {status}"
+        },
+        "unknownBotIdentity": {
+          "nextAction": "Verify the external bot credentials and metadata before attempting a replacement or endpoint change.",
+          "title": "Unknown bot identity"
+        },
+        "unknownBotIdentityField": {
+          "title": "Unknown bot identity ({field} missing)"
+        }
+      },
+      "credentialSource": {
+        "deploymentManaged": "Deployment-managed",
+        "organizationOwned": "Organization-owned"
+      },
+      "description": "Inspect external app identity, credential ownership, verification evidence, and migration readiness before changing live delivery.",
+      "disconnectedDescription": "No active {channelName} installation is connected for this organization.",
+      "evidence": {
+        "configuredAt": "Configured: {timestamp}",
+        "interactionEndpointPending": "Interaction endpoint not confirmed",
+        "interactionEndpointReady": "Interaction endpoint configured",
+        "lastVerified": "Last verified: {timestamp}",
+        "noneRecorded": "No verification timestamp recorded yet.",
+        "secretMissing": "Stored credential missing from secret store",
+        "secretStoreUnavailable": "Secret store unavailable during check",
+        "serviceUrlMissing": "No service URL recorded yet",
+        "serviceUrlRecorded": "Service URL recorded",
+        "webhookNotRegistered": "Webhook not registered",
+        "webhookRegistered": "Webhook registered"
+      },
+      "identity": {
+        "appId": "App ID: {id}",
+        "botId": "Bot ID: {id}",
+        "spaceId": "Workspace / Tenant: {id}",
+        "unidentified": "Unidentified installation"
+      },
+      "loadErrorActionHint": "Retry loading to inspect credential ownership, verification evidence, and migration blockers.",
+      "loadErrorDescription": "The current installation status could not be loaded. Existing delivery is unchanged.",
+      "loadErrorTitle": "Could not load {channelName} installation",
+      "reloaded": "{channelName} installation status updated.",
+      "retry": "Retry",
+      "retrying": "Reloading {channelName} installation status…",
+      "state": {
+        "connected": "Connected",
+        "disconnected": "Disconnected",
+        "loadFailed": "Load failed",
+        "remediationRequired": "Remediation required",
+        "unknownReadiness": "Readiness unknown"
+      },
+      "teams": {
+        "disagreementsHeading": "Tenant settings disagreements",
+        "disagreementsHelp": "Review these differences so you can confirm one set of replacement settings before switching.",
+        "disagreementsTitle": "Settings disagree across legacy Teams tenants",
+        "discoveredTenants": "Discovered legacy Teams tenants ({count})",
+        "discoveredTenantsDescription": "Every legacy Microsoft 365 tenant linked to this organization retains its effective settings until an organization-wide switch.",
+        "fields": {
+          "digestTime": "Digest time",
+          "digestTimezone": "Digest timezone",
+          "enableApprovals": "Approval notifications",
+          "enableCommands": "Commands",
+          "enableDailyDigest": "Daily digest",
+          "enableEscalations": "Escalations",
+          "escalationTimeoutHours": "Escalation timeout"
+        },
+        "unexpectedStatus": "Unexpected status: {status}"
+      },
+      "title": "Current {channelName} installation",
+      "unknownReadinessDescription": "Check the organization secret store or deployment credentials and retry before replacing this installation.",
+      "unknownReadinessTitle": "Verification and credential readiness could not be confirmed",
+      "values": {
+        "disabled": "Disabled",
+        "enabled": "Enabled",
+        "hours": "{hours} h"
+      },
+      "verification": {
+        "expired": "Verification expired",
+        "failed": "Verification failed",
+        "pending": "Verification pending",
+        "unverified": "Unverified",
+        "unverifiedLegacy": "Unverified (legacy)",
+        "verified": "Verified"
+      }
+    },
     "clockinImport": {
       "credentials": {
         "connect": "Connect & Preview",
