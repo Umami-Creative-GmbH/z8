@@ -19,7 +19,9 @@ import {
 	updateTeamsNotificationChannelSettings,
 } from "./actions";
 import { ChatInstallationInventoryPanel } from "./chat-installation-inventory-panel";
+import { getSlackRecoveryState } from "./recovery-actions";
 import { SlackPrepareTestSection } from "./slack-prepare-test-section";
+import { SlackRecoverySection } from "./slack-recovery-section";
 import { getSlackCandidateSetup } from "./slack-setup-actions";
 import {
 	getProviderCapabilityDisclosure,
@@ -43,6 +45,7 @@ async function ChatSettingsContent() {
 			slackCandidate,
 			teamsCandidate,
 			slackSwitchPreview,
+			slackRecovery,
 			slackCapabilities,
 			teamsCapabilities,
 			telegramCapabilities,
@@ -60,6 +63,7 @@ async function ChatSettingsContent() {
 				getSlackCandidateSetup(),
 				getTeamsCandidateSetup(),
 				getSlackSwitchImpactPreview(),
+				getSlackRecoveryState(),
 				getProviderCapabilityDisclosure({ provider: "slack" }),
 				getProviderCapabilityDisclosure({ provider: "teams" }),
 				getProviderCapabilityDisclosure({ provider: "telegram" }),
@@ -72,6 +76,7 @@ async function ChatSettingsContent() {
 	const slackCandidateData = slackCandidate.success ? slackCandidate.data : null;
 	const teamsCandidateData = teamsCandidate.success ? teamsCandidate.data : null;
 	const slackSwitchPreviewData = slackSwitchPreview.success ? slackSwitchPreview.data : null;
+	const slackRecoveryData = slackRecovery.success ? slackRecovery.data : null;
 
 	return (
 		<SettingsTabbedPage
@@ -101,6 +106,7 @@ async function ChatSettingsContent() {
 							/>
 							<SlackPrepareTestSection initialSetup={slackCandidateData} />
 							<SlackSwitchReviewSection initialPreview={slackSwitchPreviewData} />
+							<SlackRecoverySection initialState={slackRecoveryData} />
 							<NotificationChannelSettings
 								channelName="Slack"
 								config={slack.success ? slack.data : null}

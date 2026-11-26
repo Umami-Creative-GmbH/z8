@@ -2402,6 +2402,13 @@
       "when": 1814371200000,
       "tag": "0343_durable_chat_notification_dispatch",
       "breakpoints": true
+    },
+    {
+      "idx": 344,
+      "version": "7",
+      "when": 1814457600000,
+      "tag": "0344_chat_installation_recovery_cleanup",
+      "breakpoints": true
     }
   ]
 }

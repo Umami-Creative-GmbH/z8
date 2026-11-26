@@ -389,7 +389,8 @@ export async function cleanupUnreferencedCredentialRevision(
 		} catch (error) {
 			logger.warn(
 				{
-					error,
+					errorName: error instanceof Error ? error.name : "UnknownError",
+					errorCode: isSecretStoreUnavailableError(error) ? error.code : "delete_failed",
 					organizationId: input.organizationId,
 					installationId: input.installationId,
 					revisionId: revision.id,
