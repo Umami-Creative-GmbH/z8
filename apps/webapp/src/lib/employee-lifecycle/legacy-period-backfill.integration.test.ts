@@ -2,7 +2,12 @@
  * PostgreSQL contract: pnpm --filter webapp test:approval-workflow-repository:integration
  * Covers the migration-owned legacy employment period backfill.
  */
+import { readFile } from "node:fs/promises";
+import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { previewCsvLeavingDateImport } from "@/lib/contracts/csv-import";
+import { parseInstant } from "@/lib/datetime/temporal-core";
+import { previewPastDeparture } from "./queries";
 import {
 	createLifecycleDatabaseFixture,
 	type LifecycleDatabaseFixture,
@@ -69,6 +74,108 @@ describe("legacy employment period backfill", () => {
 		);
 		return result.rows[0]?.id;
 	}
+
+	it("repairs missing current periods once and restores departure previews (#2015)", async () => {
+		const employee = await seedLegacyEmployee({ startDate: JAN });
+		const contractor = await seedLegacyEmployee({ engagementKind: "contractor", startDate: null });
+		const inactive = await seedLegacyEmployee({ isActive: false });
+		const closed = await fixture.seedEmployee();
+		await fixture.pool.query(
+			`update employee_employment_period set status = 'closed', ended_at = started_at
+			 where organization_id = $1 and id = $2`,
+			[fixture.organizationId, closed.employmentPeriodId],
+		);
+		const repair = await readFile(
+			new URL("../../../drizzle/0338_backfill_current_employment_periods.sql", import.meta.url),
+			"utf8",
+		);
+		const scope = { organizationId: fixture.organizationId, actorUserId: fixture.ownerUserId };
+		const now = parseInstant("2026-10-10T12:00:00Z");
+		const lastWorkingDay = "2026-10-01";
+		const employeeIds = [
+			employee.employeeId,
+			contractor.employeeId,
+			inactive.employeeId,
+			closed.employeeId,
+			fixture.employeeId,
+		];
+
+		// Roll back the migration so concurrently running suites keep their fixtures.
+		const rollback = new Error("Roll back test migration");
+		await fixture.db
+			.transaction(async (tx) => {
+				await tx.execute(sql.raw(repair));
+				const periods = () =>
+					tx.execute<{
+						id: string;
+						employee_id: string;
+						status: string;
+						engagement_kind: string;
+						start_day: string | null;
+					}>(sql`
+				select id, employee_id, status, engagement_kind,
+					to_char(started_at at time zone 'UTC', 'YYYY-MM-DD') as start_day
+				from employee_employment_period
+				where organization_id = ${scope.organizationId}
+					and employee_id in (${sql.join(
+						employeeIds.map((id) => sql`${id}`),
+						sql`, `,
+					)})
+				order by employee_id, id
+			`);
+				const beforeRetry = (await periods()).rows;
+				expect(beforeRetry).toHaveLength(4);
+				expect(beforeRetry).toEqual(
+					expect.arrayContaining([
+						expect.objectContaining({
+							employee_id: employee.employeeId,
+							status: "open",
+							engagement_kind: "employee",
+							start_day: "2025-01-06",
+						}),
+						expect.objectContaining({
+							employee_id: contractor.employeeId,
+							status: "open",
+							engagement_kind: "contractor",
+							start_day: null,
+						}),
+						expect.objectContaining({ id: fixture.employmentPeriodId, status: "open" }),
+						expect.objectContaining({ id: closed.employmentPeriodId, status: "closed" }),
+					]),
+				);
+				await tx.execute(sql.raw(repair));
+				expect((await periods()).rows).toEqual(beforeRetry);
+
+				for (const { employeeId } of [employee, contractor]) {
+					expect(
+						await previewPastDeparture(tx, {
+							...scope,
+							employeeId,
+							lastWorkingDay,
+							now,
+							replacementEmployeeId: null,
+						}),
+					).toMatchObject({ kind: "ok" });
+				}
+				const csv = await previewCsvLeavingDateImport(tx, {
+					...scope,
+					now,
+					csvText: [
+						"employee_id,last_working_day",
+						`${employee.employeeId},${lastWorkingDay}`,
+						`${contractor.employeeId},${lastWorkingDay}`,
+					].join("\n"),
+				});
+				expect(csv.rows.map((row) => row.action)).toEqual([
+					"record_past_departure",
+					"record_past_departure",
+				]);
+				throw rollback;
+			})
+			.catch((error) => {
+				if (error !== rollback) throw error;
+			});
+	});
 
 	it("opens a legacy period for an active employee from the recorded start date", async () => {
 		const target = await seedLegacyEmployee({ startDate: JAN });

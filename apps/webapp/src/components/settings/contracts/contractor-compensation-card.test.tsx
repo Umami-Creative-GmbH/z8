@@ -247,9 +247,12 @@ describe("contractor compensation card", () => {
 		expect(screen.queryByText("Contracting details")).toBeNull();
 	});
 
-	it("sets prorated daily terms with the standard day and cap", async () => {
+	it("lets a contractor with no rate history set a first rate with the standard day and cap", async () => {
 		const user = userEvent.setup();
-		actions.read.mockResolvedValue({ success: true, data: record() });
+		actions.read.mockResolvedValue({
+			success: true,
+			data: record({ earliestTermsDate: null, history: [], termsInEffectId: null }),
+		});
 		actions.set.mockResolvedValue({
 			success: true,
 			data: { changed: true, history: record().history, termsInEffectId: "t2" },
