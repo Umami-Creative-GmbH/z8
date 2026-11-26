@@ -231,6 +231,7 @@
       "openDashboard": "Hap panelin e Z8",
       "openShifts": "Turnet e hapura:",
       "pendingApprovals": "Miratimet në pritje:",
+      "reviewComplianceExceptions": "Shqyrtoni kërkesat për përjashtim",
       "title": "Përmbledhja ditore - {date}",
       "viewDashboardAt": "Shikoni panelin e plotë në {url}",
       "whosOut": "Kush mungon:"

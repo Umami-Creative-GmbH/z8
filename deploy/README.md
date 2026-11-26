@@ -65,11 +65,17 @@ Workflow details:
 - Publishes manifests for `z8-webapp`, `z8-worker`, and `z8-migration` from those target-specific digests
 - Passes the `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` repository secret to the webapp build as the `next_server_actions_encryption_key` build secret. Next.js salts server action IDs with it at build time. Keep the value stable across releases: if it changes or is missing, action IDs change every deploy, and tabs opened before the deploy fail their next server action call. Generate it with `openssl rand -base64 32`.
 
+After each successful core publish, including manual rebuilds, GitHub queues a
+separate storage sweep. Its summary links to the triggering publish attempt.
+See [CI storage maintenance runs](https://github.com/Umami-Creative-GmbH/z8/actions/workflows/ci-maintenance.yml)
+and the [recovery instructions](../docs/refs/ci-resource-policy.md#1-remove-closed-pr-caches).
+
 ### Build cache experiment
 
 Docker layer caching is always retained. Persisting BuildKit's pnpm/Next cache
-mounts is a separate opt-in: set the manual `persist_build_cache` input, or the
-`NEXT_BUILD_CACHE_ENABLED` repository variable to `true`. The workflow restores
+mounts is opt-in. For a push to `main`, set the `NEXT_BUILD_CACHE_ENABLED`
+repository variable to `true`. For a manual run on any ref, select
+`persist_build_cache`. Automatic tag builds skip mount persistence. The workflow restores
 architecture/dependency-specific GHA cache entries, imports them into the same
 Buildx builder, and exports them after a successful webapp image build. Exports
 larger than 512 MiB are not saved. This bounds uploaded archive inputs, not temporary

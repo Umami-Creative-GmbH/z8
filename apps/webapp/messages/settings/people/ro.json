@@ -409,6 +409,7 @@
         "clearSearch": "Șterge căutarea",
         "clockReview": "Necesită verificare: pontaj de ieșire la plecare",
         "confirmRehire": "Confirmați reangajarea",
+        "contractorRehireHint": "Un Contractor extern nu primește condiții de angajare, politică de lucru sau alocare de concediu. Tarifele contractorilor sunt stabilite separat.",
         "correctTime": "Corectați timpul",
         "currency": "Monedă",
         "currencyInvalid": "Introduceți un cod valutar din trei litere.",
@@ -423,6 +424,10 @@
         "effectiveDescription": "Accesul s-a încheiat la {cutoff} ({timezone}).",
         "employmentGap": "Neangajat {startDate} – {endDate}",
         "employmentStint": "Angajare {startDate} – {endDate}",
+        "engagement": {
+          "employee": "Angajat"
+        },
+        "engagementKind": "Colaborare",
         "errors": {
           "actorNotAuthorized": "Doar proprietarii și administratorii organizației pot gestiona plecările angajaților.",
           "departureAlreadyEffective": "Această plecare a intrat deja în vigoare. Reangajați angajatul pentru a-i restabili accesul.",
@@ -668,6 +673,7 @@
           "employeeNotFound": "Angajatul nu a fost găsit.",
           "exceedsBalance": "Plata este mai mare decât soldul de lucru al angajatului la sfârșitul acelei zile.",
           "exceedsLaterBalance": "Plata ar lăsa soldul de lucru sub zero după o plată ulterioară pentru ore suplimentare. Anulați mai întâi acea plată sau înregistrați o sumă mai mică.",
+          "externalContractorDay": "În această zi persoana lucrează ca Contractor extern, așadar calculul salarial nu va efectua niciodată această plată. Setează data într-o zi în care a fost angajată.",
           "failed": "Soldul de lucru nu a putut fi actualizat. Încercați din nou.",
           "futureDay": "Ziua nu poate fi ulterioară zilei de astăzi în fusul orar al angajatului.",
           "invalidInput": "Verificați ziua, orele și minutele, precum și motivul.",

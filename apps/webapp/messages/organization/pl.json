@@ -217,9 +217,33 @@
     },
     "invite": {
       "allowCreateOrganizations": "Zezwól temu użytkownikowi na tworzenie organizacji",
+      "contractor": {
+        "companyName": "Firma kontrahenta",
+        "compensation": {
+          "description": "Obowiązuje od początku współpracy po dołączeniu. Widoczne tylko dla administratorów organizacji; możesz to ustawić również później.",
+          "label": "Ustaw stawkę teraz"
+        },
+        "legend": "Dane kontrahenta (opcjonalnie)",
+        "noProjects": "Brak aktywnych projektów. Możesz przypisać projekty później.",
+        "plannedEndDate": "Planowany koniec współpracy",
+        "plannedEndDateDescription": "Ostatni dzień roboczy. Po dołączeniu staje się zaplanowaną datą odejścia, która kończy dostęp i zwalnia licencję.",
+        "plannedEndDateNotFuture": "Planowany koniec współpracy musi przypadać po dzisiejszym dniu.",
+        "projects": "Projekty",
+        "referenceCode": "Numer zamówienia (PO) lub centrum kosztów",
+        "vatId": "Numer VAT"
+      },
       "description": "Wyślij zaproszenie do dołączenia do {organizationName}",
       "emailLabel": "Adres e-mail",
+      "engagement": {
+        "contractorDescription": "Rejestruje czas przy projektach; brak warunków zatrudnienia, zasad pracy czy urlopu",
+        "employee": "Pracownik",
+        "employeeDescription": "Mają zastosowanie warunki zatrudnienia, zasady pracy i wymiar urlopu",
+        "label": "Zaproś jako"
+      },
       "error": "Nie udało się wysłać zaproszenia",
+      "errors": {
+        "projectNotFound": "Wybrany projekt nie należy już do tej organizacji. Wybierz projekty ponownie."
+      },
       "kioskOnly": {
         "description": "Dla pracowników bez służbowego adresu e-mail. Nie mogą się logować i rejestrują czas pracy tylko w kioskach za pomocą kodu PIN. Adres e-mail możesz dodać później.",
         "firstName": "Imię",

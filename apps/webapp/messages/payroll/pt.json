@@ -589,12 +589,14 @@
       "reason": {
         "apiConnector": "Este formato é um conector de API, que nunca inclui valores de despesas.",
         "currencyNotEur": "Não está em euros: os processamentos de folha de pagamento incluem apenas valores em euros.",
+        "earlierClaim": "Solicitações anteriores nunca são pagas via folha de pagamento.",
+        "externalContractorDays": "Seus dias recaem em uma contratação de Prestador de Serviços Externo: a folha de pagamento nunca a inclui.",
         "includedInOtherRun": "Incluído no processamento de folha de pagamento não confirmado {period} ({format}).",
-        "legacyClaim": "Solicitações legadas nunca são pagas pela folha de pagamento.",
         "negativeDifference": "Um ajuste reduziu o valor que os processamentos de folha de pagamento anteriores incluíam para: {kinds}.",
         "noStatutoryBaseline": "Nenhuma base estatutária para: {items}.",
         "nothingOwed": "Suas linhas de folha de pagamento não deixam saldo a ser incluído na folha de pagamento.",
         "reimbursedOutsidePayroll": "Já pago parcialmente por transferência bancária ou recuperado: a folha de pagamento não pode processar o restante.",
+        "spansEngagementChange": "Seus dias abrangem uma transição entre funcionário e Prestador de Serviços Externo: a folha de pagamento não inclui nenhuma parte dela.",
         "unmappedWageType": "Nenhum tipo de salário está mapeado para este formato para: {kinds}."
       },
       "title": "Relatórios de despesas que este processamento de folha de pagamento não incluirá",

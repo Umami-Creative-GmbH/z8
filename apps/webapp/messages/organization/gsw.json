@@ -217,9 +217,33 @@
     },
     "invite": {
       "allowCreateOrganizations": "Erlaube däm Benutzer, Organisatione z'erstelle",
+      "contractor": {
+        "companyName": "Vertragsunternehmen",
+        "compensation": {
+          "description": "Gilt ab Beginn des Einsatzes nach dem Beitritt. Nur Organisations-Admins können dies sehen; Sie können es auch später festlegen.",
+          "label": "Ansatz jetzt festlegen"
+        },
+        "legend": "Details zum Auftragnehmer (optional)",
+        "noProjects": "Noch keine aktiven Projekte. Sie können Projekte später zuweisen.",
+        "plannedEndDate": "Geplantes Einsatzende",
+        "plannedEndDateDescription": "Der letzte Arbeitstag. Nach dem Beitritt wird dies zum geplanten Austrittsdatum, wodurch der Zugriff und die Lizenz beendet werden.",
+        "plannedEndDateNotFuture": "Das geplante Einsatzende muss nach dem heutigen Tag liegen.",
+        "projects": "Projekte",
+        "referenceCode": "Bestellnummer oder Kostenstelle",
+        "vatId": "MWST-Nummer"
+      },
       "description": "E Iiladig zum Bitritt zu {organizationName} versende",
       "emailLabel": "E-Mail-Adress",
+      "engagement": {
+        "contractorDescription": "Erfasst Projektzeiten; keine Anstellungsbedingungen, Arbeitsrichtlinien oder Ferien",
+        "employee": "Mitarbeiter",
+        "employeeDescription": "Es gelten Anstellungsbedingungen, Arbeitsrichtlinien und Ferienanspruch",
+        "label": "Einladen als"
+      },
       "error": "Fehler bim Versende vo de Iiladig",
+      "errors": {
+        "projectNotFound": "Ein ausgewähltes Projekt gehört nicht mehr zu dieser Organisation. Wählen Sie die Projekte erneut aus."
+      },
       "kioskOnly": {
         "description": "Für Mitarbeiter ohni Gschäfts-E-Mail. Sie chönd sich nöd aamälde und stämpled nur a Kiosks mit ihrem PIN. Du chasch spöter es E-Mail hinzuefüege.",
         "firstName": "Vorname",

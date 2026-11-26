@@ -51,6 +51,7 @@
       "overtime": "Straordinari: {count}",
       "publishing": "Pubblicazione…",
       "restTime": "Tempo di riposo: {count}",
+      "statutory": "Limiti di legge: {count}",
       "totalFindings": "{count, plural, one {# risultato totale} other {# risultati totali}}",
       "warningsDetectedBeforePublish": "Avvisi rilevati prima della pubblicazione"
     },
@@ -61,6 +62,7 @@
         "maxHours": "Ore massime: {count}",
         "overtime": "Straordinari: {count}",
         "restTime": "Tempo di riposo: {count}",
+        "statutory": "Limiti di legge: {count}",
         "title": "Avvisi di conformità in questo intervallo di date"
       },
       "focus": {
@@ -73,7 +75,8 @@
       "open": "Turno aperto",
       "publish": {
         "failed": "Pubblicazione turni non riuscita",
-        "published": "Pubblicato/i {count} turno/i"
+        "published": "Pubblicato/i {count} turno/i",
+        "statutoryBlocked": "Alcuni turni violano i limiti per la tutela del lavoro minorile (JArbSchG). Modifica i turni o conferma una deroga di legge di settore prima di pubblicare."
       },
       "retry": "Riprova",
       "shiftList": "Elenco turni",
@@ -82,6 +85,7 @@
         "overlapDescription": "Questo turno si sovrappone ad altri {count} turno/i",
         "overlapWarning": "Turno salvato con avviso di sovrapposizione",
         "skillOverrideReasonRequired": "Il dipendente non possiede una competenza richiesta per questo giorno. Apri il turno per specificare un motivo.",
+        "statutoryBlocked": "Questa modifica a un turno pubblicato viola i limiti per la tutela del lavoro minorile (JArbSchG) oltre quanto già pubblicato. Modifica il turno in modo da non violare alcun limite nuovo o ulteriore. È possibile confermare una deroga di settore solo per un turno salvato: per pianificarlo con una deroga, aggiungilo come turno in bozza, conferma la deroga e quindi pubblicalo.",
         "updated": "Turno aggiornato"
       },
       "supportFailed": "Impossibile aggiornare i modelli o le informazioni di conformità. Verifica di nuovo prima di pubblicare.",
@@ -154,6 +158,7 @@
       "rejectFailed": "Impossibile rifiutare la richiesta",
       "rejectReason": "Motivo del rifiuto (facoltativo)",
       "shiftWhen": "{date}, {start}–{end}",
+      "statutoryBlocked": "L'approvazione di questa richiesta violerebbe i limiti per la tutela del lavoro minorile (JArbSchG) per il dipendente che assume il turno. Rifiuta la richiesta o chiedi a qualcun altro di prendere il turno.",
       "swapSummary": "{requester} desidera cedere questo turno a {target}",
       "swapWithoutTarget": "{requester} desidera cedere questo turno, ma non ha indicato un collega",
       "title": "Richieste di turno",
@@ -207,6 +212,95 @@
         "overtime": "{period, select, daily {Straordinario giornaliero} weekly {Straordinario settimanale} other {Straordinario mensile}} ({total} di {threshold} h)",
         "pendingAbsence": "Assenza in attesa: {category}",
         "restTime": "Periodo di riposo troppo breve ({rest} su {required} h)"
+      }
+    },
+    "statutory": {
+      "apprenticeship": {
+        "blockWeekTraining": "Settimana di formazione a blocchi: {used} min di lavoro nei giorni di scuola di questa settimana, {limit} min di formazione aziendale consentiti; limite consentito superato in questo giorno",
+        "blockWeekTrainingNote": "La formazione consentita (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG) si aggiunge alla settimana a blocchi, che viene conteggiata con l'orario medio di lavoro settimanale (§ 9 Abs. 2 Nr. 2 JArbSchG), e non concorre al raggiungimento dei limiti giornalieri e settimanali del § 8 per i minori di 18 anni",
+        "blockWeekTrainingWeek": "Settimana di formazione a blocchi: {used} min di lavoro nei giorni di scuola di questa settimana, {limit} min di formazione aziendale consentiti; limite consentito superato il {date}",
+        "releaseDayShift": "Giorno di esonero dell'apprendista: giorno di scuola, formazione a blocchi o esame",
+        "releaseDayShiftOn": "Giorno di esonero dell'apprendista il {date}: giorno di scuola, formazione a blocchi o esame",
+        "workplaceReturn": "Minore di 18 anni: nessun lavoro in questo giorno, giornata intera di scuola professionale della settimana",
+        "workplaceReturnOn": "Minore di 18 anni: nessun lavoro il {date}, giornata intera di scuola professionale della settimana"
+      },
+      "domain": {
+        "apprenticeship": "Esonero dell'apprendista (BBiG)",
+        "minijob": "Limite per minijob",
+        "onCall": "Lavoro su chiamata (§ 12 TzBfG)",
+        "shortTerm": "Limite per impiego a breve termine",
+        "workingStudent": "Limite per studenti lavoratori",
+        "youthProtection": "Tutela del lavoro minorile (JArbSchG)"
+      },
+      "findings": {
+        "acknowledgeListLabel": "Rilievi normativi da confermare",
+        "blockedTitle": "Pubblicazione rifiutata",
+        "blockingListLabel": "Rilievi che bloccano la pubblicazione",
+        "blocksPublishing": "Blocca la pubblicazione",
+        "close": "Chiudi",
+        "hide": "Nascondi rilievi normativi ({count})",
+        "hideOfTotal": "Nascondi rilievi normativi ({count} di {total})",
+        "listLabel": "Rilievi normativi",
+        "openReviews": "Apri in Revisioni e conflitti",
+        "outsideScope": "{count, plural, one {Un altro rilievo riguarda un dipendente che non gestisci.} other {# altri rilievi riguardano dipendenti che non gestisci.}}",
+        "outsideScopeOnly": "{count, plural, one {# rilievo riguarda un dipendente che non gestisci.} other {# rilievi riguardano dipendenti che non gestisci.}}",
+        "severity": {
+          "critical": "Critico",
+          "info": "Nota",
+          "warning": "Avviso"
+        },
+        "show": "Mostra rilievi normativi ({count})",
+        "showOfTotal": "Mostra rilievi normativi ({count} di {total})",
+        "showShifts": "Mostra turni di {name}",
+        "unnamedEmployee": "Dipendente senza nome",
+        "weekOf": "Settimana del {date}"
+      },
+      "jarbschg": {
+        "break": "Minori di 18 anni: {used} min di pause effettuate, {limit} min richieste",
+        "dailyMax": "Minori di 18 anni: {used} min di lavoro in questo giorno superano il limite giovanile di {limit} min",
+        "dailyMaxOn": "Minori di 18 anni: {used} min di lavoro il {date} superano il limite giovanile di {limit} min",
+        "daysPerWeek": "Minori di 18 anni: {used} giorni lavorativi questa settimana, consentiti al massimo {limit}",
+        "holidayProhibited": "Minori di 18 anni: {used} min di lavoro vietato: nessuno dopo le {cutoff} il 24 o 31 dicembre, né il 25 dicembre, 1° gennaio, domenica di Pasqua o 1° maggio; nessuna deroga lo consente",
+        "holidayWork": "Minori di 18 anni: il lavoro nei giorni festivi richiede una deroga legale di settore",
+        "nightWork": "Minori di 18 anni: {used} min di lavoro notturno tra le {from} e le {until}",
+        "nightWorkBeyondSector": "Minori di 18 anni: {minutes} min di lavoro notturno al di fuori degli orari previsti da deroghe settoriali (dai 15: {from15} - {until15}; dai 16 fino alle {until16}; dai 17 nei panifici dalle {bakeryFrom17}; nessuno sotto i 15); nessuna deroga lo consente",
+        "restPeriod": "Minori di 18 anni: solo {used} min di riposo prima di questo turno, {limit} min richiesti",
+        "saturdayWork": "Minori di 18 anni: il lavoro di sabato richiede una deroga legale di settore",
+        "shiftSpan": "Minori di 18 anni: l'ampiezza del turno è di {used} min, dall'inizio del primo lavoro alla fine dell'ultimo; consentiti al massimo {limit} min (11 ore nel settore alberghiero, agricoltura, allevamento e nei cantieri edili)",
+        "shiftSpanOn": "Minori di 18 anni: l'ampiezza del turno il {date} è di {used} min, dall'inizio del primo lavoro alla fine dell'ultimo; consentiti al massimo {limit} min (11 ore nel settore alberghiero, agricoltura, allevamento e nei cantieri edili)",
+        "sundayWork": "Minori di 18 anni: il lavoro domenicale richiede una deroga legale di settore",
+        "uninterrupted": "Minori di 18 anni: {used} min lavorati senza pause, consentiti al massimo {limit} min",
+        "weeklyMax": "Minori di 18 anni: {used} min di lavoro questa settimana superano il limite giovanile di {limit} min",
+        "weeklyMaxWeekOf": "Minori di 18 anni: {used} min di lavoro nella settimana del {date} superano il limite giovanile di {limit} min"
+      },
+      "minijob": {
+        "monthlyApproaching": "Limite mensile per Minijob in avvicinamento",
+        "monthlyDocumented": "Limite mensile per Minijob superato (documentato come imprevedibile)",
+        "monthlyExceeded": "Limite mensile per Minijob superato",
+        "rollingApproaching": "Limite retributivo di 12 mesi per Minijob in avvicinamento",
+        "rollingExceeded": "Limite retributivo di 12 mesi per Minijob superato"
+      },
+      "onCall": {
+        "nearBand": "Su chiamata: settimana a quota {used}, in avvicinamento al limite concordato di {limit}",
+        "overBand": "Su chiamata: settimana a quota {used}, superiore al limite concordato di {limit}",
+        "shortCall": "Su chiamata: la chiamata di {duration} è inferiore al minimo di {minimum}",
+        "shortNotice": "{days, plural, one {Su chiamata: preavviso di # giorno intero, richiesti {required} (§ 12 cpv. 3 TzBfG)} other {Su chiamata: preavviso di # giorni interi, richiesti {required} (§ 12 cpv. 3 TzBfG)}}",
+        "shortWorkCall": "Su chiamata: effettuata una chiamata di {duration}, inferiore alla durata minima di {minimum}",
+        "underBand": "Su chiamata: settimana a quota {used}, inferiore al limite concordato di {limit}"
+      },
+      "shortTerm": {
+        "calendarDaysExceeded": "Limite di 3 mesi per lavoro a breve termine superato: {used} di {limit} giorni di calendario quest'anno",
+        "calendarDaysRemaining": "Lavoro a breve termine (limite di 3 mesi): {remaining} di {limit} giorni di calendario rimasti quest'anno",
+        "daysExceeded": "Limite di giorni per lavoro a breve termine superato: {used} di {limit} giorni lavorativi quest'anno",
+        "daysRemaining": "Lavoro a breve termine: {remaining} di {limit} giorni lavorativi rimasti quest'anno"
+      },
+      "warning": "{area}: limite di legge a rischio",
+      "warningApproaching": "{area}: in avvicinamento al limite di legge",
+      "warningExceeded": "{area}: limite di legge superato",
+      "warningPercent": "{area}: {percent} % del limite legale",
+      "workingStudent": {
+        "ceiling": "Studente lavoratore: {used} di {limit} settimane oltre 20 h in 12 mesi",
+        "lectureWeek": "Studente lavoratore >20 h nella settimana di lezioni: {hours} h di lavoro diurno nei giorni feriali (limite {limit} h)"
       }
     },
     "templates": {

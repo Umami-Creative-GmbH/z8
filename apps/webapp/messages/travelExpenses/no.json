@@ -101,11 +101,11 @@
       "created": "Opprettet",
       "decisionRecorded": "Beslutning registrert",
       "destination": "Destinasjon",
+      "earlierClaim": "Tidligere krav",
+      "earlierReceiptIdentity": "Tidligere kvittering: kontrollsum for innhold ble ikke registrert.",
       "history": "Beslutningshistorikk",
       "historyDescription": "Hvert trinn i dette kravet, eldste først. Tidspunkter vises i UTC.",
       "intermediateApproval": "Godkjenning registrert — venter på ytterligere godkjenning",
-      "legacyClaim": "Eldre krav",
-      "legacyReceiptIdentity": "Eldre kvittering: sjekksum for innhold ble ikke registrert.",
       "loading": "Laster inn krav…",
       "noReceipts": "Ingen kvitteringer registrert",
       "notRecorded": "Ikke registrert",
@@ -117,7 +117,7 @@
       "submitted": "Sendt inn",
       "title": "Reiseregning",
       "unavailable": "Kravet ble ikke funnet, eller tilgangen er ikke lenger tilgjengelig.",
-      "unknownDates": "Kontekst for reisedato ble ikke registrert (eldre krav)"
+      "unknownEarlierClaimDates": "Kontekst for reisedato ikke registrert (tidligere krav)"
     },
     "errors": {
       "loadDetailRetry": "Kunne ikke laste inn dette kravet. Prøv på nytt."
@@ -166,6 +166,7 @@
         "title": "{count, plural, one {# godkjent utgift venter på refusjon som ingen utgiftsansvarlig dekker} other {# godkjente utgifter venter på refusjon som ingen utgiftsansvarlig dekker}}"
       },
       "description": "Godkjente utgifter og hva som fortsatt skyldes ansatte. Registrering av en refusjon dokumenterer en betaling foretatt utenfor Z8; ingen penger overføres.",
+      "earlierClaim": "Tidligere {type}-krav",
       "employeePaid": "Betalt av ansatt {amount}",
       "empty": {
         "allReimbursed": "Ingenting igjen å registrere: alle godkjente utgifter er refundert.",
@@ -258,7 +259,6 @@
         }
       },
       "inPayrollRun": "Inkludert i {run}",
-      "legacyClaim": "Eldre {type}-krav",
       "loading": "Laster inn økonomikø…",
       "pagination": {
         "label": "Sider i økonomikøen",

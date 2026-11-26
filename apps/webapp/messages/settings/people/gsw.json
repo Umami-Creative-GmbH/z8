@@ -409,6 +409,7 @@
         "clearSearch": "Suechi zruggsetze",
         "clockReview": "Überprüefig nötig: Offboarding-Usstempfle",
         "confirmRehire": "Widereistellig bestätige",
+        "contractorRehireHint": "Ein externer Auftragnehmer erhält keine Anstellungsbedingungen, Arbeitsrichtlinien oder Ferienansprüche. Die Ansätze für Auftragnehmer werden separat festgelegt.",
         "correctTime": "Ziit korrigiere",
         "currency": "Währig",
         "currencyInvalid": "Gib en dreistellige Währigscode ii.",
@@ -423,6 +424,10 @@
         "effectiveDescription": "De Zuegriff hät am {cutoff} ({timezone}) gendet.",
         "employmentGap": "Nöd aagstellt {startDate} – {endDate}",
         "employmentStint": "Anstellung {startDate} – {endDate}",
+        "engagement": {
+          "employee": "Angestellter"
+        },
+        "engagementKind": "Einsatz",
         "errors": {
           "actorNotAuthorized": "Nur Eigentümer und Admins der Organisation können Austritte von Mitarbeitenden verwalten.",
           "departureAlreadyEffective": "Dieser Austritt ist bereits wirksam. Stellen Sie die mitarbeitende Person wieder ein, um den Zugriff wiederherzustellen.",
@@ -668,6 +673,7 @@
           "employeeNotFound": "Mitarbeitender nicht gefunden.",
           "exceedsBalance": "Die Auszahlung übersteigt den Arbeitssaldo des Mitarbeitenden am Ende dieses Tages.",
           "exceedsLaterBalance": "Die Auszahlung würde den Arbeitssaldo nach einer späteren Überstundenauszahlung unter null sinken lassen. Stornieren Sie zuerst diese Auszahlung oder erfassen Sie einen geringeren Betrag.",
+          "externalContractorDay": "An diesem Tag arbeitet die Person als externer Auftragnehmer, weshalb die Lohnabrechnung diese Auszahlung niemals auszahlen würde. Datieren Sie sie auf einen Tag, an dem die Person angestellt war.",
           "failed": "Der Arbeitssaldo konnte nicht aktualisiert werden. Versuchen Sie es erneut.",
           "futureDay": "Der Tag darf in der Zeitzone des Mitarbeitenden nicht nach heute liegen.",
           "invalidInput": "Überprüfen Sie den Tag, die Stunden und Minuten sowie den Grund.",

@@ -6,19 +6,37 @@
       "decided": "Decisione salvata. Aggiorna per caricare la coda attuale.",
       "description": "Richieste in attesa di una decisione del manager.",
       "empty": "Nessuna approvazione in attesa.",
+      "itemTitle": "{requester}: {title}",
       "openInbox": "Apri posta in arrivo",
+      "openInboxForRest": "Apri la posta in arrivo per vedere il resto",
+      "openInboxLink": "Apri la posta in arrivo",
       "ownRequest": "La tua richiesta: la decisione spetta a un altro approvatore.",
+      "partialFailure": "Impossibile caricare alcune approvazioni: {types}. L'elenco e il totale potrebbero essere incompleti.",
+      "partialFailureNotCounted": "Impossibile conteggiare alcune approvazioni: {types}. Il totale potrebbe essere incompleto.",
       "pendingAriaLabel": "Approvazioni in sospeso",
       "reject": "Rifiuta",
       "rejectLabel": "Rifiuta {title}",
+      "rejectPanel": {
+        "briefingUnavailable": "Impossibile aggiornare le approvazioni odierne. Chiudi questo pannello e riprova.",
+        "description": "Il richiedente vedrà questo motivo con il rifiuto.",
+        "noLongerRejectable": "Questa richiesta non può più essere rifiutata qui.",
+        "title": "Rifiuta richiesta"
+      },
       "retry": "Riprova approvazioni",
+      "reviewInInbox": "Esamina nella posta in arrivo",
+      "reviewInInboxNamed": "Esamina nella posta in arrivo: {title}",
       "title": "Approvazioni",
       "toast": {
         "approved": "Richiesta approvata",
         "approveError": "Impossibile approvare la richiesta",
         "rejected": "Richiesta rifiutata",
         "rejectError": "Impossibile rifiutare la richiesta"
-      }
+      },
+      "totalAtLeast": "{count}+",
+      "truncated": "{total, plural, one {Visualizzazione di {shown} su # approvazione in sospeso.} other {Visualizzazione di {shown} su # approvazioni in sospeso.}}",
+      "truncatedAtLeast": "{total, plural, one {Visualizzazione di {shown} su almeno # approvazione in sospeso.} other {Visualizzazione di {shown} su almeno # approvazioni in sospeso.}}",
+      "waitingInInbox": "{total, plural, one {# approvazione in sospeso è in attesa nella posta in arrivo.} other {# approvazioni in sospeso sono in attesa nella posta in arrivo.}}",
+      "waitingInInboxAtLeast": "{total, plural, one {Almeno # approvazione in sospeso è in attesa nella posta in arrivo.} other {Almeno # approvazioni in sospeso sono in attesa nella posta in arrivo.}}"
     },
     "briefing": {
       "accessUnavailable": "Questo riepilogo non è disponibile per il dipendente e l'organizzazione attuali.",

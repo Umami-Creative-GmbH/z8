@@ -217,9 +217,33 @@
     },
     "invite": {
       "allowCreateOrganizations": "Lejoje këtë përdorues të krijojë organizata",
+      "contractor": {
+        "companyName": "Kompania kontraktuese",
+        "compensation": {
+          "description": "Zbatohet që nga fillimi i angazhimit të tyre pasi të bashkohen. E shohin vetëm administratorët e organizatës; mund ta caktoni edhe më vonë.",
+          "label": "Caktoni tarifën tani"
+        },
+        "legend": "Detajet e kontraktorit (opsionale)",
+        "noProjects": "Nuk ka ende projekte aktive. Mund të caktoni projekte më vonë.",
+        "plannedEndDate": "Përfundimi i planifikuar i angazhimit",
+        "plannedEndDateDescription": "Dita e fundit e punës. Pasi të bashkohen, ajo bëhet një datë e planifikuar e largimit që përfundon qasjen dhe vendin e tyre.",
+        "plannedEndDateNotFuture": "Përfundimi i planifikuar i angazhimit duhet të jetë pas ditës së sotme.",
+        "projects": "Projektet",
+        "referenceCode": "PO ose qendra e kostos",
+        "vatId": "Numri i TVSH-së"
+      },
       "description": "Dërgoni një ftesë për t'u bashkuar me {organizationName}",
       "emailLabel": "Adresa e email-it",
+      "engagement": {
+        "contractorDescription": "Ndjek kohën në projekte; pa kushte punësimi, rregullore pune ose pushime",
+        "employee": "Punonjës",
+        "employeeDescription": "Zbatohen kushtet e punësimit, rregullorja e punës dhe leja e pushimeve",
+        "label": "Fto si"
+      },
       "error": "Dërgimi i ftesës dështoi",
+      "errors": {
+        "projectNotFound": "Një projekt i zgjedhur nuk i përket më kësaj organizate. Zgjidhni projektet përsëri."
+      },
       "kioskOnly": {
         "description": "Për stafin pa një email kompanie. Ata nuk mund të identifikohen dhe regjistrojnë orët vetëm në kioska me PIN-in e tyre. Mund të shtoni një email më vonë.",
         "firstName": "Emri",

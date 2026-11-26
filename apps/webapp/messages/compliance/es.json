@@ -20,6 +20,10 @@
           "description": "Verificaciones no válidas recientes: {invalidVerifications}",
           "title": "Error en la verificación de auditoría"
         },
+        "pendingExceptions": {
+          "description": "{count, plural, one {# excepción de cumplimiento espera una decisión} other {# excepciones de cumplimiento esperan una decisión}}",
+          "title": "Excepciones de cumplimiento pendientes"
+        },
         "sensitiveAction": {
           "description": "{action} en {entityType}",
           "title": "Acción confidencial: {action}"
@@ -53,7 +57,10 @@
           "generalPolicyViolations": "Otras infracciones de política: {count}",
           "overtimeViolations": "Infracciones de horas extra: {count}",
           "pendingExceptions": "Excepciones pendientes: {count}",
-          "restPeriodViolations": "Infracciones de periodo de descanso: {count}"
+          "restPeriodViolations": "Infracciones de periodo de descanso: {count}",
+          "statutoryAcknowledgements": "Reconocimientos reglamentarios: {pending} pendientes, {stale} invalidados por trabajos o turnos más recientes",
+          "statutoryFindings": "{warning, plural, one {Hallazgos reglamentarios: {critical} críticos, # advertencia} other {Hallazgos reglamentarios: {critical} críticos, # advertencias}}",
+          "statutoryUnavailable": "No se pudieron cargar algunos monitores reglamentarios."
         }
       },
       "footer": {
@@ -61,12 +68,19 @@
         "refreshMeaning": "Actualizar vuelve a cargar las señales registradas; no reevalúa los hallazgos bajo una nueva política."
       },
       "links": {
-        "inspectCompliance": "Inspeccionar cumplimiento",
         "inspectInAuditLog": "Inspeccionar en el registro de auditoría",
         "openAuditExport": "Abrir exportación de auditoría",
         "openAuditLog": "Abrir registro de auditoría",
-        "openComplianceSettings": "Abrir configuración de cumplimiento",
-        "reviewAuditExport": "Revisar exportación de auditoría"
+        "reviewAuditExport": "Revisar exportación de auditoría",
+        "reviewComplianceExceptions": "Revisar excepciones de cumplimiento",
+        "reviewPolicyViolations": "Revisar infracciones de políticas",
+        "statutoryDomain": {
+          "minijob": "Minijob: {count} abiertos",
+          "on_call": "De guardia: {count} abiertos",
+          "short_term": "A corto plazo: {count} abiertos",
+          "working_student": "Estudiantes en prácticas: {count} abiertos",
+          "youth_apprentice": "Jóvenes y aprendices: {count} abiertos"
+        }
       },
       "loading": "Cargando señales de cumplimiento",
       "overview": "Resumen de cumplimiento",
@@ -104,6 +118,7 @@
             "healthy": "No se detectaron problemas recientes en la política de personal",
             "warning": "El cumplimiento de la fuerza laboral se está desviando"
           },
+          "statutoryReviews": "Revisiones reglamentarias",
           "title": "Cumplimiento laboral"
         }
       },
@@ -121,11 +136,6 @@
       }
     },
     "exception": {
-      "approved": "Excepción aprobada",
-      "approvedDescription": "La excepción de cumplimiento ha sido aprobada.",
-      "approveFailed": "Error al aprobar",
-      "approveFor": "Aprobar excepción de {type} para {name}",
-      "loadError": "No se pudieron cargar las solicitudes de excepción pendientes.",
       "plannedDuration": "Planificado",
       "plannedDurationHelp": "Estime cuánto tiempo adicional espera necesitar más allá del límite.",
       "plannedHours": "Horas planificadas",
@@ -135,35 +145,16 @@
       "reason": "Motivo de la excepción",
       "reasonPlaceholder": "Explique por qué necesita esta excepción (p. ej., fecha límite de proyecto urgente, reunión crítica con cliente)...",
       "reasonRequiredDescription": "Por favor, proporcione un motivo para su solicitud de excepción.",
-      "rejectDescription": "Proporcione un motivo para rechazar esta solicitud de excepción (opcional)",
-      "rejected": "Excepción rechazada",
-      "rejectedDescription": "La excepción de cumplimiento ha sido rechazada.",
-      "rejectFailed": "Error al rechazar",
-      "rejectFor": "Rechazar excepción de {type} para {name}",
-      "rejectionPlaceholder": "Ingrese el motivo para rechazar esta excepción...",
-      "rejectionReason": "Motivo del rechazo",
-      "rejectionReasonTooLong": "El motivo debe tener 500 caracteres o menos.",
-      "rejectTitle": "Rechazar solicitud de excepción",
       "requestDescription": "Solicite la aprobación previa de su gerente para proceder a pesar de las restricciones de cumplimiento. Las excepciones aprobadas son válidas por 24 horas.",
-      "requestedAt": "Solicitado",
       "requestFailed": "Error en la solicitud",
       "requestSubmitted": "Solicitud de excepción enviada",
       "requestSubmittedDescription": "Su gerente será notificado y podrá aprobar o rechazar su solicitud.",
       "requestTitle": "Solicitar excepción de cumplimiento",
       "submit": "Enviar solicitud",
-      "type": "Tipo de excepción",
-      "types": {
-        "overtimeDaily": "Horas extra diarias",
-        "overtimeMonthly": "Horas extra mensuales",
-        "overtimeWeekly": "Horas extra semanales",
-        "restPeriod": "Período de descanso"
-      }
+      "type": "Tipo de excepción"
     },
     "hasApprovedException": "Tiene una excepción aprobada. Puede continuar.",
     "moreAlerts": "más",
-    "noExceptions": "No hay solicitudes de excepción pendientes",
-    "pendingExceptions": "Solicitudes de excepción pendientes",
-    "pendingExceptionsDescription": "Revise las solicitudes de excepción que requieren su aprobación",
     "requestException": "Solicitar excepción",
     "restPeriodMessage": "Necesita {time} más de descanso antes de poder registrar su entrada. Próximo registro permitido: {nextTime}",
     "restPeriodRequired": "Periodo de descanso requerido"

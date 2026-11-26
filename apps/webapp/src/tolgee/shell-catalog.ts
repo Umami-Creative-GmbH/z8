@@ -41,6 +41,7 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"billing.recovery",
 		// Minimal driving status is also shown in the header clock on every route.
 		"drivingLicence.operational.advisory",
+		"drivingLicence.operational.declared",
 		"drivingLicence.operational.loading",
 		"drivingLicence.operational.refresh",
 		"drivingLicence.operational.unavailable",
@@ -48,6 +49,8 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"drivingLicence.status",
 		"drivingLicence.notChecked",
 		"drivingLicence.class.active",
+		"drivingLicence.class.name",
+		"drivingLicence.class.group",
 		"drivingLicence.class.suspended",
 		"drivingLicence.class.ended",
 		"drivingLicence.class.noLongerIntended",

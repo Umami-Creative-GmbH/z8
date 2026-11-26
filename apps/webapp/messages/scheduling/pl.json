@@ -51,6 +51,7 @@
       "overtime": "Nadgodziny: {count}",
       "publishing": "Publikowanie…",
       "restTime": "Czas odpoczynku: {count}",
+      "statutory": "Limity ustawowe: {count}",
       "totalFindings": "{count, plural, one {Łącznie # ustalenie} few {Łącznie # ustalenia} other {Łącznie # ustaleń} }",
       "warningsDetectedBeforePublish": "Ostrzeżenia wykryte przed publikacją"
     },
@@ -61,6 +62,7 @@
         "maxHours": "Maks. liczba godzin: {count}",
         "overtime": "Nadgodziny: {count}",
         "restTime": "Czas odpoczynku: {count}",
+        "statutory": "Limity ustawowe: {count}",
         "title": "Ostrzeżenia o zgodności w tym zakresie dat"
       },
       "focus": {
@@ -73,7 +75,8 @@
       "open": "Otwarta zmiana",
       "publish": {
         "failed": "Nie udało się opublikować zmian",
-        "published": "Opublikowano {count} zmian(y)"
+        "published": "Opublikowano {count} zmian(y)",
+        "statutoryBlocked": "Niektóre zmiany naruszają limity ochrony młodocianych (JArbSchG). Przed publikacją zmień te zmiany lub potwierdź ustawowy wyjątek branżowy."
       },
       "retry": "Ponów",
       "shiftList": "Lista zmian",
@@ -82,6 +85,7 @@
         "overlapDescription": "Ta zmiana nakłada się na {count} inną zmianę(-y)",
         "overlapWarning": "Zmiana zapisana z ostrzeżeniem o nakładaniu się",
         "skillOverrideReasonRequired": "Pracownikowi brakuje wymaganej umiejętności w tym dniu. Otwórz zmianę, aby podać powód.",
+        "statutoryBlocked": "Ta modyfikacja opublikowanej zmiany narusza limity ochrony młodocianych (JArbSchG) bardziej niż to, co zostało już opublikowane. Zmień tę zmianę, aby nie naruszała żadnych limitów na nowo ani w większym stopniu. Wyjątek branżowy można potwierdzić tylko dla zapisanej zmiany: aby zaplanować ją z wyjątkiem, dodaj ją jako wersję roboczą, potwierdź wyjątek, a następnie opublikuj.",
         "updated": "Zmiana zaktualizowana"
       },
       "supportFailed": "Nie udało się odświeżyć szablonów ani informacji o zgodności. Sprawdź ponownie przed publikacją.",
@@ -154,6 +158,7 @@
       "rejectFailed": "Nie udało się odrzucić wniosku",
       "rejectReason": "Powód odrzucenia (opcjonalnie)",
       "shiftWhen": "{date}, {start}–{end}",
+      "statutoryBlocked": "Zatwierdzenie tego wniosku spowodowałoby naruszenie limitów ochrony młodocianych (JArbSchG) dla pracownika przejmującego zmianę. Odrzuć wniosek lub poproś kogoś innego o przejęcie zmiany.",
       "swapSummary": "{requester} chce przekazać tę zmianę użytkownikowi {target}",
       "swapWithoutTarget": "{requester} chce przekazać tę zmianę, ale nie wskazano współpracownika",
       "title": "Wnioski dotyczące zmian",
@@ -207,6 +212,95 @@
         "overtime": "{period, select, daily {Dzienne} weekly {Tygodniowe} other {Miesięczne}} nadgodziny ({total} z {threshold} h)",
         "pendingAbsence": "Oczekująca nieobecność: {category}",
         "restTime": "Zbyt krótki okres odpoczynku ({rest} z {required} h)"
+      }
+    },
+    "statutory": {
+      "apprenticeship": {
+        "blockWeekTraining": "Tydzień nauki blokowej: {used} min pracy w dniach nauki w tym tygodniu, dozwolone {limit} min szkolenia wewnątrzzakładowego; przekroczono limit w tym dniu",
+        "blockWeekTrainingNote": "Dozwolone szkolenie (§ 9 ust. 1 pkt 3 JArbSchG, § 15 ust. 1 zd. 3 BBiG) jest doliczane do tygodnia blokowego, który liczy się ze średnim tygodniowym czasem pracy (§ 9 ust. 2 pkt 2 JArbSchG), i nie wlicza się do limitów dziennych i tygodniowych z § 8 dla osób poniżej 18. roku życia",
+        "blockWeekTrainingWeek": "Tydzień nauki blokowej: {used} min pracy w dniach nauki w tym tygodniu, dozwolone {limit} min szkolenia wewnątrzzakładowego; przekroczono limit w dniu {date}",
+        "releaseDayShift": "Dzień zwolnienia praktykanta: dzień szkoły, nauki blokowej lub egzaminu",
+        "releaseDayShiftOn": "Dzień zwolnienia praktykanta w dniu {date}: dzień szkoły, nauki blokowej lub egzaminu",
+        "workplaceReturn": "Poniżej 18 lat: brak pracy w tym dniu, pełny dzień szkoły zawodowej w tym tygodniu",
+        "workplaceReturnOn": "Poniżej 18 lat: brak pracy w dniu {date}, pełny dzień szkoły zawodowej w tym tygodniu"
+      },
+      "domain": {
+        "apprenticeship": "Zwolnienie praktykanta (BBiG)",
+        "minijob": "Limit Minijob",
+        "onCall": "Praca na wezwanie (§ 12 TzBfG)",
+        "shortTerm": "Limit zatrudnienia krótkoterminowego",
+        "workingStudent": "Limit dla pracujących studentów",
+        "youthProtection": "Ochrona młodocianych (JArbSchG)"
+      },
+      "findings": {
+        "acknowledgeListLabel": "Ustawowe zastrzeżenia do potwierdzenia",
+        "blockedTitle": "Odmowa publikacji",
+        "blockingListLabel": "Zastrzeżenia blokujące publikację",
+        "blocksPublishing": "Blokuje publikację",
+        "close": "Zamknij",
+        "hide": "Ukryj ustalenia ustawowe ({count})",
+        "hideOfTotal": "Ukryj ustalenia ustawowe ({count} z {total})",
+        "listLabel": "Ustalenia ustawowe",
+        "openReviews": "Otwórz w: Weryfikacja i konflikty",
+        "outsideScope": "{count, plural, one {Jeszcze # ustalenie dotyczy pracownika, którym nie zarządzasz.} few {Jeszcze # ustalenia dotyczą pracowników, którymi nie zarządzasz.} many {Jeszcze # ustaleń dotyczy pracowników, którymi nie zarządzasz.} other {Jeszcze # ustalenia dotyczy pracowników, którymi nie zarządzasz.}}",
+        "outsideScopeOnly": "{count, plural, one {# ustalenie dotyczy pracownika, którym nie zarządzasz.} few {# ustalenia dotyczą pracowników, którymi nie zarządzasz.} many {# ustaleń dotyczy pracowników, którymi nie zarządzasz.} other {# ustalenia dotyczy pracowników, którymi nie zarządzasz.}}",
+        "severity": {
+          "critical": "Krytyczne",
+          "info": "Uwaga",
+          "warning": "Ostrzeżenie"
+        },
+        "show": "Pokaż ustalenia ustawowe ({count})",
+        "showOfTotal": "Pokaż ustalenia ustawowe ({count} z {total})",
+        "showShifts": "Pokaż zmiany: {name}",
+        "unnamedEmployee": "Nienazwany pracownik",
+        "weekOf": "Tydzień od {date}"
+      },
+      "jarbschg": {
+        "break": "Poniżej 18 lat: wykorzystano {used} min przerw, wymagane: {limit} min",
+        "dailyMax": "Poniżej 18 lat: {used} min pracy w tym dniu przekracza limit {limit} min dla młodocianych",
+        "dailyMaxOn": "Poniżej 18 lat: {used} min pracy w dniu {date} przekracza limit {limit} min dla młodocianych",
+        "daysPerWeek": "Poniżej 18 lat: {used} dni roboczych w tym tygodniu, dozwolone maksymalnie {limit}",
+        "holidayProhibited": "Poniżej 18 lat: {used} min niedozwolonej pracy: zakaz pracy po {cutoff} w dniach 24 i 31 grudnia oraz w dniach 25 grudnia, 1 stycznia, w Niedzielę Wielkanocną i 1 maja; brak dopuszczalnych wyjątków",
+        "holidayWork": "Poniżej 18 lat: praca w święto wymaga ustawowego wyjątku branżowego",
+        "nightWork": "Poniżej 18 lat: {used} min pracy w nocy między {from} a {until}",
+        "nightWorkBeyondSector": "Poniżej 18 lat: {minutes} min pracy w nocy poza godzinami dopuszczonymi przez wyjątek branżowy (od 15 lat: {from15} do {until15}; od 16 lat do {until16}; od 17 lat w piekarniach od {bakeryFrom17}; poniżej 15 lat niedozwolone); brak dopuszczalnych wyjątków",
+        "restPeriod": "Poniżej 18 lat: tylko {used} min odpoczynku przed tą zmianą, wymagane {limit} min",
+        "saturdayWork": "Poniżej 18 lat: praca w soboty wymaga ustawowego wyjątku branżowego",
+        "shiftSpan": "Poniżej 18 lat: rozpiętość zmiany wynosi {used} min (od rozpoczęcia pierwszej pracy do zakończenia ostatniej); dozwolone maksymalnie {limit} min (11 godz. w hotelarstwie i gastronomii, rolnictwie, hodowli zwierząt i na budowach)",
+        "shiftSpanOn": "Poniżej 18 lat: rozpiętość zmiany w dniu {date} wynosi {used} min (od rozpoczęcia pierwszej pracy do zakończenia ostatniej); dozwolone maksymalnie {limit} min (11 godz. w hotelarstwie i gastronomii, rolnictwie, hodowli zwierząt i na budowach)",
+        "sundayWork": "Poniżej 18 lat: praca w niedziele wymaga ustawowego wyjątku branżowego",
+        "uninterrupted": "Poniżej 18 lat: przepracowano {used} min bez przerwy, dozwolone maksymalnie {limit} min",
+        "weeklyMax": "Poniżej 18 lat: {used} min pracy w tym tygodniu przekracza limit {limit} min dla młodocianych",
+        "weeklyMaxWeekOf": "Poniżej 18 lat: {used} min pracy w tygodniu od {date} przekracza limit {limit} min dla młodocianych"
+      },
+      "minijob": {
+        "monthlyApproaching": "Zbliża się miesięczny limit Minijob",
+        "monthlyDocumented": "Przekroczono miesięczny limit Minijob (udokumentowane jako nieprzewidziane)",
+        "monthlyExceeded": "Przekroczono miesięczny limit Minijob",
+        "rollingApproaching": "Zbliża się 12-miesięczny limit zarobków Minijob",
+        "rollingExceeded": "Przekroczono 12-miesięczny limit zarobków Minijob"
+      },
+      "onCall": {
+        "nearBand": "Praca na wezwanie: tydzień na poziomie {used}, zbliża się do granicy przedziału wezwań ({limit})",
+        "overBand": "Praca na wezwanie: tydzień na poziomie {used}, powyżej przedziału wezwań ({limit})",
+        "shortCall": "Praca na wezwanie: wezwanie na {duration} poniżej minimum wynoszącego {minimum}",
+        "shortNotice": "{days, plural, one {Praca na wezwanie: # pełny dzień wyprzedzenia, wymagane {required} (§ 12 ust. 3 TzBfG)} few {Praca na wezwanie: # pełne dni wyprzedzenia, wymagane {required} (§ 12 ust. 3 TzBfG)} many {Praca na wezwanie: # pełnych dni wyprzedzenia, wymagane {required} (§ 12 ust. 3 TzBfG)} other {Praca na wezwanie: # pełnego dnia wyprzedzenia, wymagane {required} (§ 12 ust. 3 TzBfG)}}",
+        "shortWorkCall": "Praca na wezwanie: przepracowano wezwanie trwające {duration}, poniżej minimalnego wezwania ({minimum})",
+        "underBand": "Praca na wezwanie: tydzień na poziomie {used}, poniżej przedziału wezwań ({limit})"
+      },
+      "shortTerm": {
+        "calendarDaysExceeded": "Przekroczono 3-miesięczny limit zatrudnienia krótkoterminowego: {used} z {limit} dni kalendarzowych w tym roku",
+        "calendarDaysRemaining": "Zatrudnienie krótkoterminowe (limit 3 miesięcy): pozostało {remaining} z {limit} dni kalendarzowych w tym roku",
+        "daysExceeded": "Przekroczono limit dni zatrudnienia krótkoterminowego: {used} z {limit} dni roboczych w tym roku",
+        "daysRemaining": "Zatrudnienie krótkoterminowe: pozostało {remaining} z {limit} dni roboczych w tym roku"
+      },
+      "warning": "{area}: ryzyko przekroczenia limitu ustawowego",
+      "warningApproaching": "{area}: zbliża się limit ustawowy",
+      "warningExceeded": "{area}: przekroczono limit ustawowy",
+      "warningPercent": "{area}: {percent} % ustawowego limitu",
+      "workingStudent": {
+        "ceiling": "Pracujący student: {used} z {limit} tygodni powyżej 20 godz. w ciągu 12 miesięcy",
+        "lectureWeek": "Pracujący student >20 godz. w tygodniu zajęć: {hours} godz. pracy w dni powszednie w ciągu dnia (limit {limit} godz.)"
       }
     },
     "templates": {

@@ -589,12 +589,14 @@
       "reason": {
         "apiConnector": "Ce format est un connecteur API, qui ne transmet jamais les montants des dépenses.",
         "currencyNotEur": "Pas en euros : les cycles de paie ne prennent en compte que les montants en euros.",
+        "earlierClaim": "Les demandes antérieures ne sont jamais payées via la paie.",
+        "externalContractorDays": "Ses jours correspondent à une mission de prestataire externe : la paie ne la prend jamais en charge.",
         "includedInOtherRun": "Inclus dans le cycle de paie non confirmé {period} ({format}).",
-        "legacyClaim": "Les anciennes demandes ne sont jamais réglées par la paie.",
         "negativeDifference": "Un ajustement a réduit ce que les cycles de paie précédents avaient pris en compte pour : {kinds}.",
         "noStatutoryBaseline": "Aucune base légale de référence pour : {items}.",
         "nothingOwed": "Ses lignes de paie ne laissent plus rien à prendre en compte pour la paie.",
         "reimbursedOutsidePayroll": "Déjà payé en partie par virement bancaire ou récupéré : la paie ne peut pas prendre en charge le reste.",
+        "spansEngagementChange": "Ses jours s'étendent sur une période de transition entre salarié et prestataire externe : la paie n'en prend aucune partie en charge.",
         "unmappedWageType": "Aucune rubrique de paie n'est associée pour ce format pour : {kinds}."
       },
       "title": "Notes de frais qui ne seront pas prises en compte par ce cycle de paie",

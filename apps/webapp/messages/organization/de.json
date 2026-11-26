@@ -218,29 +218,32 @@
     "invite": {
       "allowCreateOrganizations": "Diesem Benutzer erlauben, Organisationen zu erstellen",
       "contractor": {
-        "companyName": "Beauftragtes Unternehmen",
-        "legend": "Angaben zum Dienstleister (optional)",
-        "noProjects": "Noch keine aktiven Projekte. Sie können Projekte später zuweisen.",
-        "plannedEndDate": "Geplantes Auftragsende",
-        "plannedEndDateDescription": "Der letzte Arbeitstag. Nach dem Beitritt wird daraus ein geplantes Austrittsdatum, das Zugang und Lizenzplatz beendet.",
-        "plannedEndDateNotFuture": "Das geplante Auftragsende muss nach dem heutigen Tag liegen.",
+        "companyName": "Vertragsunternehmen",
+        "compensation": {
+          "description": "Gilt ab Beginn der Beauftragung, sobald die Person beitritt. Nur Organisations-Admins können dies sehen; Sie können es auch später festlegen.",
+          "label": "Satz jetzt festlegen"
+        },
+        "legend": "Details zum Auftragnehmer (optional)",
+        "noProjects": "Noch keine aktiven Projekte vorhanden. Sie können Projekte später zuweisen.",
+        "plannedEndDate": "Geplantes Ende der Beauftragung",
+        "plannedEndDateDescription": "Der letzte Arbeitstag. Nach dem Beitritt wird dies zum geplanten Austrittsdatum, das den Zugriff und die Lizenz beendet.",
+        "plannedEndDateNotFuture": "Das geplante Ende der Beauftragung muss nach dem heutigen Tag liegen.",
         "projects": "Projekte",
         "referenceCode": "Bestellnummer oder Kostenstelle",
-        "vatId": "USt-IdNr.",
-        "compensation": {
-          "label": "Satz jetzt festlegen",
-          "description": "Gilt nach dem Beitritt ab Beginn des Auftrags. Nur Organisationsadministratoren sehen ihn; Sie können ihn auch später festlegen."
-        }
+        "vatId": "USt-IdNr."
       },
       "description": "Einladung zum Beitritt zu {organizationName} senden",
       "emailLabel": "E-Mail-Adresse",
       "engagement": {
-        "contractorDescription": "Erfasst Zeit auf Projekten; ohne Arbeitsvertrag, Arbeitszeitrichtlinie oder Urlaub",
+        "contractorDescription": "Erfasst Projektzeiten; keine Beschäftigungsbedingungen, Arbeitsrichtlinien oder Urlaubsansprüche",
         "employee": "Mitarbeiter",
-        "employeeDescription": "Arbeitsvertrag, Arbeitszeitrichtlinie und Urlaubsanspruch gelten",
+        "employeeDescription": "Es gelten Beschäftigungsbedingungen, Arbeitsrichtlinien und Urlaubsanspruch",
         "label": "Einladen als"
       },
       "error": "Fehler beim Senden der Einladung",
+      "errors": {
+        "projectNotFound": "Ein ausgewähltes Projekt gehört nicht mehr zu dieser Organisation. Bitte wählen Sie die Projekte erneut aus."
+      },
       "kioskOnly": {
         "description": "Für Mitarbeiter ohne geschäftliche E-Mail. Sie können sich nicht anmelden und stempeln nur an Kiosken mit ihrer PIN. Sie können später eine E-Mail-Adresse hinzufügen.",
         "firstName": "Vorname",
@@ -261,10 +264,7 @@
       "submit": "Einladung senden",
       "success": "Einladung erfolgreich gesendet",
       "targetTeam": "Ziel-Team",
-      "title": "Mitglied einladen",
-      "errors": {
-        "projectNotFound": "Ein gewähltes Projekt gehört nicht mehr zu dieser Organisation. Wählen Sie die Projekte erneut."
-      }
+      "title": "Mitglied einladen"
     },
     "joinOrCreate": "Beitreten oder erstellen",
     "language": {

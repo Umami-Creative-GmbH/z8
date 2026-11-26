@@ -101,11 +101,11 @@
       "created": "Creado",
       "decisionRecorded": "Decisión registrada",
       "destination": "Destino",
+      "earlierClaim": "Reclamación anterior",
+      "earlierReceiptIdentity": "Recibo anterior: no se registró la suma de comprobación del contenido.",
       "history": "Historial de decisiones",
       "historyDescription": "Cada paso de esta solicitud, los más antiguos primero. Las horas se muestran en UTC.",
       "intermediateApproval": "Aprobación registrada — en espera de aprobación adicional",
-      "legacyClaim": "Reclamación heredada",
-      "legacyReceiptIdentity": "Recibo heredado: no se registró la suma de comprobación del contenido.",
       "loading": "Cargando solicitud…",
       "noReceipts": "No hay recibos registrados",
       "notRecorded": "No registrado",
@@ -117,7 +117,7 @@
       "submitted": "Enviado",
       "title": "Solicitud de gastos de viaje",
       "unavailable": "No se encontró la reclamación o el acceso ya no está disponible.",
-      "unknownDates": "Contexto de fechas del viaje no registrado (solicitud heredada)"
+      "unknownEarlierClaimDates": "No se registró el contexto de las fechas del viaje (reclamación anterior)"
     },
     "errors": {
       "loadDetailRetry": "No se puede cargar esta solicitud. Inténtalo de nuevo."
@@ -166,6 +166,7 @@
         "title": "{count, plural, one {# gasto aprobado pendiente de reembolso que ningún responsable de gastos cubre} other {# gastos aprobados pendientes de reembolso que ningún responsable de gastos cubre}}"
       },
       "description": "Gastos aprobados y saldo pendiente con los empleados. Registrar un reembolso documenta un pago realizado fuera de Z8; no se transfiere dinero.",
+      "earlierClaim": "Reclamación anterior de {type}",
       "employeePaid": "Pagado por el empleado {amount}",
       "empty": {
         "allReimbursed": "No queda nada por registrar: todos los gastos aprobados están reembolsados.",
@@ -258,7 +259,6 @@
         }
       },
       "inPayrollRun": "Incluido en {run}",
-      "legacyClaim": "Solicitud de {type} heredada",
       "loading": "Cargando cola de finanzas…",
       "pagination": {
         "label": "Páginas de la cola de finanzas",

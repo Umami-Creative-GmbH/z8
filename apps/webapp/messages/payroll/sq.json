@@ -589,12 +589,14 @@
       "reason": {
         "apiConnector": "Ky format është një lidhës API, i cili nuk mbart kurrë shuma shpenzimesh.",
         "currencyNotEur": "Jo në euro: proceset e listëpagesave mbartin vetëm shuma në euro.",
+        "earlierClaim": "Kërkesat e mëparshme nuk paguhen kurrë përmes listëpagesës.",
+        "externalContractorDays": "Ditët e saj bien në një angazhim si Kontraktor i Jashtëm: listëpagesa nuk e mbulon kurrë.",
         "includedInOtherRun": "Përfshirë në procesin e pakonfirmuar të listëpagesës {period} ({format}).",
-        "legacyClaim": "Kërkesat e vjetra nuk paguhen kurrë përmes listëpagesës.",
         "negativeDifference": "Një rregullim uli atë që proceset e mëparshme të listëpagesës mbartnin për: {kinds}.",
         "noStatutoryBaseline": "Nuk ka bazë ligjore për: {items}.",
         "nothingOwed": "Rreshtat e tij të listëpagesës nuk lënë asgjë për t'u mbartur nga listëpagesa.",
         "reimbursedOutsidePayroll": "Tashmë pjesërisht i paguar me transfertë bankare ose i rikuperuar: listëpagesa nuk mund të marrë pjesën e mbetur.",
+        "spansEngagementChange": "Ditët e saj përfshijnë një ndryshim midis punonjësit dhe Kontraktorit të Jashtëm: listëpagesa nuk mbulon asnjë pjesë të saj.",
         "unmappedWageType": "Asnjë lloj page nuk është caktuar për këtë format për: {kinds}."
       },
       "title": "Raportet e shpenzimeve që ky proces listëpagese nuk do t'i mbartë",

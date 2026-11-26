@@ -101,11 +101,11 @@
       "created": "Krijuar",
       "decisionRecorded": "Vendimi u regjistrua",
       "destination": "Destinacioni",
+      "earlierClaim": "Kërkesë e mëparshme",
+      "earlierReceiptIdentity": "Faturë e mëparshme: shuma e kontrollit të përmbajtjes nuk u regjistrua.",
       "history": "Historiku i vendimeve",
       "historyDescription": "Çdo hap i kësaj kërkese, më të vjetrat në fillim. Orët shfaqen në UTC.",
       "intermediateApproval": "Miratimi u regjistrua — në pritje të miratimit të mëtejshëm",
-      "legacyClaim": "Kërkesë e trashëguar",
-      "legacyReceiptIdentity": "Faturë e trashëguar: shuma e kontrollit të përmbajtjes nuk u regjistrua.",
       "loading": "Po ngarkohet kërkesa…",
       "noReceipts": "Nuk ka fatura të regjistruara",
       "notRecorded": "Nuk është regjistruar",
@@ -117,7 +117,7 @@
       "submitted": "Dorëzuar",
       "title": "Kërkesë për shpenzimet e udhëtimit",
       "unavailable": "Kërkesa nuk u gjet ose qasja nuk është më e disponueshme.",
-      "unknownDates": "Konteksti i datës së udhëtimit nuk është regjistruar (kërkesë e trashëguar)"
+      "unknownEarlierClaimDates": "Konteksti i datës së udhëtimit nuk u regjistrua (kërkesë e mëparshme)"
     },
     "errors": {
       "loadDetailRetry": "Kjo kërkesë nuk mund të ngarkohej. Ju lutemi provoni përsëri."
@@ -166,6 +166,7 @@
         "title": "{count, plural, one {# shpenzim i miratuar pret rimbursim që nuk mbulohet nga asnjë zyrtar shpenzimes} other {# shpenzime të miratuara presin rimbursim që nuk mbulohen nga asnjë zyrtar shpenzimes}}"
       },
       "description": "Shpenzimet e miratuara dhe shumat që ende u detyrohen punonjësve. Regjistrimi i një rimbursimi dokumenton një pagesë të kryer jashtë Z8; nuk transferohen para.",
+      "earlierClaim": "Kërkesë e mëparshme për {type}",
       "employeePaid": "Paguar nga punonjësi {amount}",
       "empty": {
         "allReimbursed": "Nuk mbeti asgjë për t'u regjistruar: çdo shpenzim i miratuar është rimbursuar.",
@@ -258,7 +259,6 @@
         }
       },
       "inPayrollRun": "Përfshirë në {run}",
-      "legacyClaim": "Kërkesë e trashëguar për {type}",
       "loading": "Po ngarkohet radha e financave…",
       "pagination": {
         "label": "Faqet e radhës së financave",

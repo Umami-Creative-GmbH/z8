@@ -16,6 +16,10 @@
       "createCategoryButton": "Crea categoria",
       "deactivate": "Disattiva",
       "defaults": {
+        "contractorUnavailability": {
+          "description": "Nota nel calendario che indica la non disponibilità di un collaboratore esterno; non costituisce ferie o permesso",
+          "name": "Non disponibile (Collaboratore esterno)"
+        },
         "timeOffInLieu": {
           "description": "Permesso scalato dal saldo ore",
           "name": "Riposo compensativo"
@@ -32,6 +36,7 @@
         "activeHelp": "Le categorie attive sono disponibili per le nuove richieste di assenza.",
         "color": "Colore",
         "colorHelp": "Indicatore calendario",
+        "contractorUnavailabilityRules": "La non disponibilità del collaboratore esterno è solo un indicatore nel calendario: non incide mai su ferie, orario di lavoro o saldo ore.",
         "countsAgainstVacation": "Incide sul saldo ferie",
         "countsAgainstVacationHelp": "Dedurre i giorni approvati dal monte ferie del dipendente.",
         "deputyRequired": "Sostituto obbligatorio",
@@ -59,6 +64,7 @@
         "translations": "Traduzioni",
         "translationsHelp": "Etichette localizzate opzionali per i dipendenti che utilizzano un'altra lingua dell'app.",
         "type": "Tipo",
+        "typeContractorUnavailability": "Non disponibilità del collaboratore esterno",
         "typeHelp": "Raggruppa i report e i flussi di lavoro delle assenze a valle.",
         "typePlaceholder": "Seleziona il tipo di categoria",
         "typeTimeOffInLieu": "Riposo Compensativo"

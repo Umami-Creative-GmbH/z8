@@ -20,6 +20,10 @@
           "description": "Son geçersiz doğrulamalar: {invalidVerifications}",
           "title": "Denetim doğrulaması başarısız oldu"
         },
+        "pendingExceptions": {
+          "description": "{count, plural, other {# uyumluluk istisnası karar bekliyor} }",
+          "title": "Bekleyen uyumluluk istisnaları"
+        },
         "sensitiveAction": {
           "description": "{entityType} üzerinde {action}",
           "title": "Hassas eylem: {action}"
@@ -53,7 +57,10 @@
           "generalPolicyViolations": "Diğer politika ihlalleri: {count}",
           "overtimeViolations": "Fazla mesai ihlalleri: {count}",
           "pendingExceptions": "Bekleyen istisnalar: {count}",
-          "restPeriodViolations": "Dinlenme süresi ihlalleri: {count}"
+          "restPeriodViolations": "Dinlenme süresi ihlalleri: {count}",
+          "statutoryAcknowledgements": "Yasal bildirimler: {pending} beklemede, {stale} daha yeni çalışma veya vardiyalar nedeniyle geçersiz",
+          "statutoryFindings": "{warning, plural, other {Yasal bulgular: {critical} kritik, # uyarı} }",
+          "statutoryUnavailable": "Bazı yasal izleyiciler yüklenemedi."
         }
       },
       "footer": {
@@ -61,12 +68,19 @@
         "refreshMeaning": "Yenileme, kaydedilen sinyalleri yeniden yükler; bulguları yeni bir politika kapsamında yeniden değerlendirmez."
       },
       "links": {
-        "inspectCompliance": "Uyumluluğu incele",
         "inspectInAuditLog": "Denetim Günlüğünde incele",
         "openAuditExport": "Denetim Dışa Aktarımını Aç",
         "openAuditLog": "Denetim Günlüğünü Aç",
-        "openComplianceSettings": "Uyumluluk Ayarlarını Aç",
-        "reviewAuditExport": "Denetim dışa aktarımını incele"
+        "reviewAuditExport": "Denetim dışa aktarımını incele",
+        "reviewComplianceExceptions": "Uyumluluk istisnalarını inceleyin",
+        "reviewPolicyViolations": "Politika ihlallerini inceleyin",
+        "statutoryDomain": {
+          "minijob": "Minijob: {count} açık",
+          "on_call": "Çağrı üzerine: {count} açık",
+          "short_term": "Kısa süreli: {count} açık",
+          "working_student": "Çalışan öğrenciler: {count} açık",
+          "youth_apprentice": "Gençler ve çıraklar: {count} açık"
+        }
       },
       "loading": "Uyumluluk sinyalleri yükleniyor",
       "overview": "Uyumluluk genel bakışı",
@@ -104,6 +118,7 @@
             "healthy": "Yakın zamanda hiçbir iş gücü politikası sorunu algılanmadı",
             "warning": "İş gücü uyumluluğu sapma gösteriyor"
           },
+          "statutoryReviews": "Yasal incelemeler",
           "title": "İş gücü uyumluluğu"
         }
       },
@@ -121,11 +136,6 @@
       }
     },
     "exception": {
-      "approved": "İstisna Onaylandı",
-      "approvedDescription": "Uyumluluk istisnası onaylandı.",
-      "approveFailed": "Onaylanamadı",
-      "approveFor": "{name} için {type} istisnasını onayla",
-      "loadError": "Bekleyen istisna talepleri yüklenemedi.",
       "plannedDuration": "Planlanmış",
       "plannedDurationHelp": "Sınırın ötesinde ihtiyaç duyacağınız ek süreyi tahmin edin.",
       "plannedHours": "Planlanan saatler",
@@ -135,35 +145,16 @@
       "reason": "İstisna Nedeni",
       "reasonPlaceholder": "Bu istisnaya neden ihtiyaç duyduğunuzu açıklayın (örneğin; acil proje teslim tarihi, kritik müşteri toplantısı)...",
       "reasonRequiredDescription": "Lütfen istisna talebiniz için bir neden belirtin.",
-      "rejectDescription": "Bu istisna talebini reddetmek için bir neden belirtin (isteğe bağlı)",
-      "rejected": "İstisna Reddedildi",
-      "rejectedDescription": "Uyumluluk istisnası reddedildi.",
-      "rejectFailed": "Reddedilemedi",
-      "rejectFor": "{name} için {type} istisnasını reddet",
-      "rejectionPlaceholder": "Bu istisnayı reddetme nedenini girin...",
-      "rejectionReason": "Reddetme nedeni",
-      "rejectionReasonTooLong": "Gerekçe en fazla 500 karakter olmalıdır.",
-      "rejectTitle": "İstisna Talebini Reddet",
       "requestDescription": "Uyumluluk kısıtlamalarına rağmen devam etmek için yöneticinizden ön onay isteyin. Onaylanan istisnalar 24 saat boyunca geçerlidir.",
-      "requestedAt": "Talep Edildi",
       "requestFailed": "Talep Başarısız Oldu",
       "requestSubmitted": "İstisna Talebi Gönderildi",
       "requestSubmittedDescription": "Yöneticiniz bilgilendirilecek ve talebinizi onaylayabilecek veya reddedebilecektir.",
       "requestTitle": "Uyumluluk İstisnası Talep Et",
       "submit": "Talebi Gönder",
-      "type": "İstisna Türü",
-      "types": {
-        "overtimeDaily": "Günlük Fazla Mesai",
-        "overtimeMonthly": "Aylık Fazla Mesai",
-        "overtimeWeekly": "Haftalık Fazla Mesai",
-        "restPeriod": "Dinlenme Süresi"
-      }
+      "type": "İstisna Türü"
     },
     "hasApprovedException": "Onaylanmış bir istisnanız var. Devam edebilirsiniz.",
     "moreAlerts": "daha fazla",
-    "noExceptions": "Bekleyen istisna talebi yok",
-    "pendingExceptions": "Bekleyen İstisna Talepleri",
-    "pendingExceptionsDescription": "Onayınızı gerektiren istisna taleplerini inceleyin",
     "requestException": "İstisna Talep Et",
     "restPeriodMessage": "Giriş yapabilmeniz için {time} daha dinlenmeniz gerekiyor. Bir sonraki izin verilen giriş zamanı: {nextTime}",
     "restPeriodRequired": "Dinlenme Süresi Gerekli"

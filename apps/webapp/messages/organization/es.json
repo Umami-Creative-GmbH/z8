@@ -217,9 +217,33 @@
     },
     "invite": {
       "allowCreateOrganizations": "Permitir a este usuario crear organizaciones",
+      "contractor": {
+        "companyName": "Empresa contratista",
+        "compensation": {
+          "description": "Se aplica desde el inicio de su contratación una vez que se incorpore. Solo pueden verlo los administradores de la organización; también puedes configurarlo más tarde.",
+          "label": "Establecer la tarifa ahora"
+        },
+        "legend": "Detalles del contratista (opcional)",
+        "noProjects": "Todavía no hay proyectos activos. Puedes asignar proyectos más adelante.",
+        "plannedEndDate": "Fin previsto de la contratación",
+        "plannedEndDateDescription": "El último día laborable. Una vez que se incorpore, se convertirá en una fecha de salida programada que pondrá fin a su acceso y plaza.",
+        "plannedEndDateNotFuture": "El fin previsto de la contratación debe ser posterior a hoy.",
+        "projects": "Proyectos",
+        "referenceCode": "PO o centro de costes",
+        "vatId": "Número de IVA"
+      },
       "description": "Enviar una invitación para unirse a {organizationName}",
       "emailLabel": "Dirección de correo electrónico",
+      "engagement": {
+        "contractorDescription": "Registra el tiempo en proyectos; sin condiciones laborales, política de trabajo ni vacaciones",
+        "employee": "Empleado",
+        "employeeDescription": "Se aplican las condiciones laborales, la política de trabajo y los días de vacaciones",
+        "label": "Invitar como"
+      },
       "error": "Error al enviar la invitación",
+      "errors": {
+        "projectNotFound": "Un proyecto seleccionado ya no pertenece a esta organización. Selecciona los proyectos de nuevo."
+      },
       "kioskOnly": {
         "description": "Para el personal sin correo electrónico de la empresa. No pueden iniciar sesión y solo fichan en quioscos con su PIN. Puedes añadir un correo electrónico más tarde.",
         "firstName": "Nombre",

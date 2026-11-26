@@ -409,6 +409,7 @@
         "clearSearch": "Rensa sökning",
         "clockReview": "Kräver granskning: utstämpling vid avslut",
         "confirmRehire": "Bekräfta återanställning",
+        "contractorRehireHint": "En extern uppdragstagare får inga anställningsvillkor, arbetspolicyer eller semesterkvoter. Arvoden för uppdragstagare anges separat.",
         "correctTime": "Korrigera tid",
         "currency": "Valuta",
         "currencyInvalid": "Ange en valutakod med tre bokstäver.",
@@ -423,6 +424,10 @@
         "effectiveDescription": "Åtkomsten upphörde kl. {cutoff} ({timezone}).",
         "employmentGap": "Ej anställd {startDate} – {endDate}",
         "employmentStint": "Anställning {startDate} – {endDate}",
+        "engagement": {
+          "employee": "Anställd"
+        },
+        "engagementKind": "Uppdrag",
         "errors": {
           "actorNotAuthorized": "Endast organisationsägare och administratörer kan hantera anställdas avgångar.",
           "departureAlreadyEffective": "Denna avgång har redan trätt i kraft. Återanställ medarbetaren för att återställa åtkomsten.",
@@ -668,6 +673,7 @@
           "employeeNotFound": "Medarbetaren hittades inte.",
           "exceedsBalance": "Utbetalningen är större än medarbetarens arbetssaldo vid slutet av den dagen.",
           "exceedsLaterBalance": "Utbetalningen skulle göra att arbetssaldot hamnar under noll efter en senare övertidsutbetalning. Makulera den utbetalningen först eller registrera mindre.",
+          "externalContractorDay": "Denna dag arbetar personen som extern uppdragstagare, så lönehanteringen skulle aldrig betala ut detta. Datera det på en dag då personen var anställd.",
           "failed": "Arbetssaldot kunde inte uppdateras. Försök igen.",
           "futureDay": "Dagen kan inte vara senare än idag i medarbetarens tidszon.",
           "invalidInput": "Kontrollera dagen, timmarna och minuterna samt anledningen.",

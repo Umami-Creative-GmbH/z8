@@ -589,12 +589,14 @@
       "reason": {
         "apiConnector": "Ovaj format je API poveznik koji nikada ne prenosi iznose troškova.",
         "currencyNotEur": "Nije u eurima: obračuni plaća prenose samo iznose u eurima.",
+        "earlierClaim": "Ranija potraživanja nikada se ne isplaćuju putem obračuna plaća.",
+        "externalContractorDays": "Dani spadaju u angažman vanjskog suradnika: obračun plaća to nikada ne prenosi.",
         "includedInOtherRun": "Uključeno u nepotvrđeni obračun plaća {period} ({format}).",
-        "legacyClaim": "Naslijeđena potraživanja nikada se ne isplaćuju putem obračuna plaće.",
         "negativeDifference": "Prilagodba je smanjila iznos koji su raniji obračuni plaća prenijeli za: {kinds}.",
         "noStatutoryBaseline": "Nema zakonske osnovice za: {items}.",
         "nothingOwed": "Njezine stavke za obračun plaće ne ostavljaju ništa za prijenos u obračun.",
         "reimbursedOutsidePayroll": "Već djelomično isplaćeno bankovnim prijenosom ili vraćeno: obračun plaća ne može preuzeti ostatak.",
+        "spansEngagementChange": "Dani obuhvaćaju prijelaz između zaposlenika i vanjskog suradnika: obračun plaća ne preuzima nijedan njegov dio.",
         "unmappedWageType": "Za ovaj format nije mapirana vrsta primanja za: {kinds}."
       },
       "title": "Izvješća o troškovima koja ovaj obračun plaća neće prenijeti",

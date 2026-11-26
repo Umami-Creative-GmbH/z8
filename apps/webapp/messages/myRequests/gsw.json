@@ -16,6 +16,7 @@
     },
     "card": {
       "decision": "Entscheidung",
+      "returned": "Zurückgewiesen",
       "submitted": "Eingereicht"
     },
     "empty": {
@@ -53,7 +54,7 @@
       "title": "In Überprüfig"
     },
     "needsAttention": {
-      "description": "Abglehnti Aaträg, wo vor em erneute Ireiche eventuell korrigiert werde müend.",
+      "fixDescription": "Zurückgewiesene oder abgelehnte Anträge, die vor dem erneuten Einreichen korrigiert werden müssen.",
       "title": "Brucht Ufmerksamkeit"
     },
     "reasonLabel": "Grund",
@@ -65,26 +66,58 @@
       "absence": {
         "title": "Abweseheitsaatrag"
       },
+      "complianceException": {
+        "durationHours": "{hours} h",
+        "durationHoursMinutes": "{hours} h {minutes} min",
+        "durationMinutes": "{minutes} min",
+        "overtimeDaily": "Ausnahme bei der täglichen Überzeit",
+        "overtimeMonthly": "Ausnahme bei der monatlichen Überzeit",
+        "overtimeWeekly": "Ausnahme bei der wöchentlichen Überzeit",
+        "planned": "Geplant: {duration}",
+        "restPeriod": "Ausnahme bei der Ruhezeit",
+        "title": "Compliance-Ausnahme",
+        "validity": "Gültig: {window} ({timeZone})"
+      },
+      "earlierClaim": {
+        "mileage": "Frühere Kilometerabrechnung",
+        "perDiem": "Frühere Taggeldabrechnung",
+        "receipt": "Frühere Belegabrechnung",
+        "title": "Frühere Spesenabrechnung"
+      },
+      "expenseReport": {
+        "adjustmentOf": "Anpassung von «{title}»",
+        "adjustmentOfUntitled": "Anpassung einer früheren Abrechnung",
+        "kind": {
+          "standaloneMileage": "Einzelne Kilometerabrechnung",
+          "standaloneReceipt": "Einzelner Beleg",
+          "trip": "Reisebericht"
+        },
+        "untitledMileage": "Unbenannte Kilometer",
+        "untitledReceipt": "Unbenannter Beleg",
+        "untitledTrip": "Unbenannte Reise"
+      },
       "timeCorrection": {
         "subtitle": "Korrektur für en Ziit-Iitrag",
         "title": "Ziitkorrektur-Aatrag"
-      },
-      "travelExpense": {
-        "title": "Speseaatrag"
       }
     },
-    "scope": "Ihre Abwesenheits-, Zeitkorrektur- und früheren Spesenanträge in der aktiven Organisation",
+    "returnNoteLabel": "Hinweis des Prüfers",
+    "scopeAllRequests": "Ihre Abwesenheits-, Zeitkorrektur-, Compliance-Ausnahme- und Spesenanträge in der aktiven Organisation",
     "sourceError": {
       "absence": "Abweseheitsaaträg händ nöd chöne glade werde.",
+      "complianceException": "Compliance-Ausnahmen konnten nicht geladen werden.",
+      "earlierClaim": "Frühere Ansprüche konnten nicht geladen werden.",
+      "expenseReport": "Spesenabrechnungen konnten nicht geladen werden.",
       "timeCorrection": "Ziitkorrektur-Aaträg händ nöd chöne glade werde.",
-      "title": "Einigi Aaträg händ nöd chöne glade werde.",
-      "travelExpense": "Speseaaträg händ nöd chöne glade werde."
+      "title": "Einigi Aaträg händ nöd chöne glade werde."
     },
     "status": {
       "approved": "Gnehmigt",
       "cancelled": "Storniert",
+      "expired": "Abgelaufen",
       "inReview": "In Überprüfig",
-      "rejected": "Abglehnt"
+      "rejected": "Abglehnt",
+      "returned": "Zurückgegeben"
     },
     "summary": {
       "ariaLabel": "Aatragsübersicht",
@@ -96,8 +129,10 @@
     "title": "Mini Aaträg",
     "types": {
       "absence": "Abwesenheit",
-      "timeCorrection": "Zeitkorrektur",
-      "travelExpense": "Reisespesen"
+      "complianceException": "Compliance-Ausnahme",
+      "earlierClaim": "Früherer Anspruch",
+      "expenseReport": "Spesenabrechnung",
+      "timeCorrection": "Zeitkorrektur"
     },
     "unavailableTitle": "Aaträg nöd verfügbar"
   }

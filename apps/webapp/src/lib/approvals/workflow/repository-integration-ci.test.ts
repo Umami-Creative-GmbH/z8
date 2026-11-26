@@ -38,7 +38,6 @@ describe("approval workflow repository integration CI contract", () => {
       - "turbo.json"
       - ".github/scripts/**"
       - ".github/workflows/tests.yml"
-      - ".github/workflows/ci-debounce.yml"
   workflow_dispatch:`);
 		expect(workflow).toMatch(
 			/services:\n {6}postgres:\n(?: {8}#[^\n]*\n)* {8}image: postgres:16\n/,

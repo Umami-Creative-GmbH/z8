@@ -231,6 +231,7 @@
       "openDashboard": "Άνοιγμα του πίνακα εργαλείων Z8",
       "openShifts": "Ανοιχτές βάρδιες:",
       "pendingApprovals": "Εκκρεμείς εγκρίσεις:",
+      "reviewComplianceExceptions": "Έλεγχος αιτημάτων εξαίρεσης",
       "title": "Ημερήσια σύνοψη - {date}",
       "viewDashboardAt": "Δείτε τον πλήρη πίνακα ελέγχου στο {url}",
       "whosOut": "Ποιοι απουσιάζουν:"

@@ -51,6 +51,7 @@
       "overtime": "Prekovremeni rad: {count}",
       "publishing": "Objavljivanje…",
       "restTime": "Vrijeme odmora: {count}",
+      "statutory": "Zakonska ograničenja: {count}",
       "totalFindings": "{count, plural, one {# ukupni nalaz} few {# ukupna nalaza} other {# ukupnih nalaza}}",
       "warningsDetectedBeforePublish": "Upozorenja otkrivena prije objave"
     },
@@ -61,6 +62,7 @@
         "maxHours": "Maks. sati: {count}",
         "overtime": "Prekovremeni sati: {count}",
         "restTime": "Vrijeme odmora: {count}",
+        "statutory": "Zakonska ograničenja: {count}",
         "title": "Upozorenja o usklađenosti u ovom rasponu datuma"
       },
       "focus": {
@@ -73,7 +75,8 @@
       "open": "Otvorena smjena",
       "publish": {
         "failed": "Objavljivanje smjena nije uspjelo",
-        "published": "Objavljeno smjena: {count}"
+        "published": "Objavljeno smjena: {count}",
+        "statutoryBlocked": "Neke smjene krše zakonska ograničenja o zaštiti mladih (JArbSchG). Promijenite smjene ili potvrdite zakonsku sektorsku iznimku prije objavljivanja."
       },
       "retry": "Pokušaj ponovno",
       "shiftList": "Popis smjena",
@@ -82,6 +85,7 @@
         "overlapDescription": "Ova se smjena preklapa s još {count} smjena",
         "overlapWarning": "Smjena je spremljena uz upozorenje o preklapanju",
         "skillOverrideReasonRequired": "Zaposleniku na ovaj dan nedostaje potrebna vještina. Otvorite smjenu kako biste naveli razlog.",
+        "statutoryBlocked": "Ova promjena objavljene smjene krši zakonska ograničenja o zaštiti mladih (JArbSchG) iznad onoga što je već objavljeno. Promijenite smjenu tako da ne krši nova ograničenja niti postojeća u većoj mjeri. Sektorska iznimka može se potvrditi samo za spremljenu smjenu: kako biste planirali s iznimkom, dodajte je kao skicu smjene, potvrdite iznimku, a zatim je objavite.",
         "updated": "Smjena je ažurirana"
       },
       "supportFailed": "Predloške ili podatke o usklađenosti nije moguće osvježiti. Provjerite ponovno prije objave.",
@@ -154,6 +158,7 @@
       "rejectFailed": "Odbijanje zahtjeva nije uspjelo",
       "rejectReason": "Razlog odbijanja (neobavezno)",
       "shiftWhen": "{date}, {start}–{end}",
+      "statutoryBlocked": "Odobravanje ovog zahtjeva prekršilo bi ograničenja o zaštiti mladih (JArbSchG) za zaposlenika koji preuzima smjenu. Odbijte zahtjev ili zatražite od nekog drugog da preuzme smjenu.",
       "swapSummary": "{requester} želi prepustiti ovu smjenu korisniku {target}",
       "swapWithoutTarget": "{requester} želi prepustiti ovu smjenu, ali nije naveo kolegu",
       "title": "Zahtjevi za smjenu",
@@ -207,6 +212,95 @@
         "overtime": "{period, select, daily {Dnevni} weekly {Tjedni} other {Mjesečni}} prekovremeni rad ({total} od {threshold} h)",
         "pendingAbsence": "Odsutnost na čekanju: {category}",
         "restTime": "Razdoblje odmora je prekratko ({rest} od {required} h)"
+      }
+    },
+    "statutory": {
+      "apprenticeship": {
+        "blockWeekTraining": "Tjedan blok-nastave: {used} min rada na školske dane ovog tjedna, dopušteno {limit} min osposobljavanja u tvrtki; prekoračeno dopuštenje na ovaj dan",
+        "blockWeekTrainingNote": "Dopušteno osposobljavanje (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG) dodaje se tjednu blok-nastave, koji se računa prema prosječnom tjednom radnom vremenu (§ 9 Abs. 2 Nr. 2 JArbSchG), te se ne uračunava u dnevna i tjedna ograničenja iz § 8 za mlađe od 18 godina",
+        "blockWeekTrainingWeek": "Tjedan blok-nastave: {used} min rada na školske dane ovog tjedna, dopušteno {limit} min osposobljavanja u tvrtki; prekoračeno dopuštenje na dan {date}",
+        "releaseDayShift": "Dan oslobođenja od rada za pripravnike: dan škole, blok-nastave ili ispita",
+        "releaseDayShiftOn": "Dan oslobođenja od rada za pripravnike na {date}: dan škole, blok-nastave ili ispita",
+        "workplaceReturn": "Mlađi od 18: nema rada na ovaj dan, cjelodnevna nastava u strukovnoj školi ovog tjedna",
+        "workplaceReturnOn": "Mlađi od 18: nema rada na {date}, cjelodnevna nastava u strukovnoj školi ovog tjedna"
+      },
+      "domain": {
+        "apprenticeship": "Oslobođenje od rada za pripravnike (BBiG)",
+        "minijob": "Ograničenje za minijob",
+        "onCall": "Rad na poziv (§ 12 TzBfG)",
+        "shortTerm": "Ograničenje za kratkotrajno zaposlenje",
+        "workingStudent": "Ograničenje za zaposlene studente",
+        "youthProtection": "Zaštita mladih (JArbSchG)"
+      },
+      "findings": {
+        "acknowledgeListLabel": "Zakonska utvrđenja koja treba potvrditi",
+        "blockedTitle": "Objava odbijena",
+        "blockingListLabel": "Utvrđenja koja blokiraju objavu",
+        "blocksPublishing": "Blokira objavljivanje",
+        "close": "Zatvori",
+        "hide": "Sakrij zakonske nalaze ({count})",
+        "hideOfTotal": "Sakrij zakonske nalaze ({count} od {total})",
+        "listLabel": "Zakonski nalazi",
+        "openReviews": "Otvori u Pregledi i sukobi",
+        "outsideScope": "{count, plural, one {Još # nalaz odnosi se na zaposlenika kojim ne upravljate.} few {Još # nalaza odnose se na zaposlenike kojima ne upravljate.} other {Još # nalaza odnosi se na zaposlenike kojima ne upravljate.}}",
+        "outsideScopeOnly": "{count, plural, one {# nalaz odnosi se na zaposlenika kojim ne upravljate.} few {# nalaza odnose se na zaposlenike kojima ne upravljate.} other {# nalaza odnosi se na zaposlenike kojima ne upravljate.}}",
+        "severity": {
+          "critical": "Kritično",
+          "info": "Napomena",
+          "warning": "Upozorenje"
+        },
+        "show": "Prikaži zakonske nalaze ({count})",
+        "showOfTotal": "Prikaži zakonske nalaze ({count} od {total})",
+        "showShifts": "Prikaži smjene zaposlenika {name}",
+        "unnamedEmployee": "Neimenovani zaposlenik",
+        "weekOf": "Tjedan od {date}"
+      },
+      "jarbschg": {
+        "break": "Mlađi od 18: iskorišteno {used} min pauze, obavezno {limit} min",
+        "dailyMax": "Mlađi od 18: {used} min rada ovog dana premašuje ograničenje za maloljetnike od {limit} min",
+        "dailyMaxOn": "Mlađi od 18: {used} min rada dana {date} premašuje ograničenje za maloljetnike od {limit} min",
+        "daysPerWeek": "Mlađi od 18: {used} radna dana ovog tjedna, dopušteno najviše {limit}",
+        "holidayProhibited": "Mlađi od 18: {used} min zabranjenog rada: rad nije dopušten nakon {cutoff} na dane 24. ili 31. prosinca, niti na 25. prosinca, 1. siječnja, Uskrs ili 1. svibnja; iznimke nisu dopuštene",
+        "holidayWork": "Mlađi od 18: rad na državni praznik zahtijeva zakonsku sektorsku iznimku",
+        "nightWork": "Mlađi od 18: {used} min noćnog rada između {from} i {until}",
+        "nightWorkBeyondSector": "Mlađi od 18: {minutes} min noćnog rada izvan sati koje dopušta sektorska iznimka (od 15 god: od {from15} do {until15}; od 16 god do {until16}; od 17 god u pekarnicama od {bakeryFrom17}; mlađi od 15 uopće ne); iznimka to ne dopušta",
+        "restPeriod": "Mlađi od 18: samo {used} min odmora prije ove smjene, obavezno {limit} min",
+        "saturdayWork": "Mlađi od 18: rad subotom zahtijeva zakonsku sektorsku iznimku",
+        "shiftSpan": "Mlađi od 18: raspon smjene iznosi {used} min, od početka prvog rada do završetka posljednjeg; dopušteno najviše {limit} min (11 h u ugostiteljstvu, poljoprivredi, stočarstvu i na gradilištima)",
+        "shiftSpanOn": "Mlađi od 18: raspon smjene dana {date} iznosi {used} min, od početka prvog rada do završetka posljednjeg; dopušteno najviše {limit} min (11 h u ugostiteljstvu, poljoprivredi, stočarstvu i na gradilištima)",
+        "sundayWork": "Mlađi od 18: rad nedjeljom zahtijeva zakonsku sektorsku iznimku",
+        "uninterrupted": "Mlađi od 18: odrađeno {used} min bez pauze, dopušteno najviše {limit} min",
+        "weeklyMax": "Mlađi od 18: {used} min rada ovog tjedna premašuje ograničenje za maloljetnike od {limit} min",
+        "weeklyMaxWeekOf": "Mlađi od 18: {used} min rada u tjednu od {date} premašuje ograničenje za maloljetnike od {limit} min"
+      },
+      "minijob": {
+        "monthlyApproaching": "Približavanje mjesečnom limitu za minijob",
+        "monthlyDocumented": "Premašen mjesečni limit za minijob (evidentirano kao nepredvidivo)",
+        "monthlyExceeded": "Premašen mjesečni limit za minijob",
+        "rollingApproaching": "Približavanje 12-mjesečnom limitu zarade za minijob",
+        "rollingExceeded": "Premašen 12-mjesečni limit zarade za minijob"
+      },
+      "onCall": {
+        "nearBand": "Rad na poziv: tjedan na {used}, približava se gornjoj granici raspona pozivanja od {limit}",
+        "overBand": "Rad na poziv: tjedan na {used}, iznad raspona pozivanja od {limit}",
+        "shortCall": "Rad na poziv: poziv od {duration} kraći je od minimuma od {minimum}",
+        "shortNotice": "{days, plural, one {Rad na poziv: # puni dan najave unaprijed, potrebno {required} (§ 12 st. 3 TzBfG)} few {Rad na poziv: # puna dana najave unaprijed, potrebno {required} (§ 12 st. 3 TzBfG)} other {Rad na poziv: # punih dana najave unaprijed, potrebno {required} (§ 12 st. 3 TzBfG)}}",
+        "shortWorkCall": "Rad na poziv: odrađen je poziv od {duration}, što je ispod minimalnog poziva od {minimum}",
+        "underBand": "Rad na poziv: tjedan na {used}, ispod raspona pozivanja od {limit}"
+      },
+      "shortTerm": {
+        "calendarDaysExceeded": "Tromjesečni limit za kratkotrajno zaposlenje premašen: {used} od {limit} kalendarskih dana ove godine",
+        "calendarDaysRemaining": "Kratkotrajno zaposlenje (ograničenje od 3 mjeseca): preostalo {remaining} od {limit} kalendarskih dana ove godine",
+        "daysExceeded": "Dnevni limit za kratkotrajno zaposlenje premašen: {used} od {limit} radnih dana ove godine",
+        "daysRemaining": "Kratkotrajno zaposlenje: preostalo {remaining} od {limit} radnih dana ove godine"
+      },
+      "warning": "{area}: zakonski limit ugrožen",
+      "warningApproaching": "{area}: približavanje zakonskom limitu",
+      "warningExceeded": "{area}: zakonski limit premašen",
+      "warningPercent": "{area}: {percent} % od zakonskog ograničenja",
+      "workingStudent": {
+        "ceiling": "Zaposleni student: {used} od {limit} tjedana iznad 20 h u 12 mjeseci",
+        "lectureWeek": "Zaposleni student >20 h u tjednu predavanja: {hours} h rada radnim danom danju (ograničenje {limit} h)"
       }
     },
     "templates": {

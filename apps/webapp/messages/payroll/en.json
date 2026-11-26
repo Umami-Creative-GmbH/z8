@@ -589,9 +589,9 @@
       "reason": {
         "apiConnector": "This format is an API connector, which never carries expense amounts.",
         "currencyNotEur": "Not in euros: payroll runs carry only euro amounts.",
+        "earlierClaim": "Earlier claims are never paid through payroll.",
         "externalContractorDays": "Its days fall in an External Contractor engagement: payroll never carries it.",
         "includedInOtherRun": "Included in the unconfirmed payroll run {period} ({format}).",
-        "legacyClaim": "Legacy claims are never paid through payroll.",
         "negativeDifference": "An adjustment lowered what earlier payroll runs carried for: {kinds}.",
         "noStatutoryBaseline": "No statutory baseline for: {items}.",
         "nothingOwed": "Its payroll lines leave nothing left for payroll to carry.",

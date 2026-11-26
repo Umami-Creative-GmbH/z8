@@ -6,19 +6,37 @@
       "decided": "Decision saved. Refresh to load the current queue.",
       "description": "Requests waiting for a manager decision.",
       "empty": "No approvals are waiting.",
+      "itemTitle": "{requester}: {title}",
       "openInbox": "Open inbox",
+      "openInboxForRest": "Open the inbox to see the rest",
+      "openInboxLink": "Open the inbox",
       "ownRequest": "Your own request: another approver decides it.",
+      "partialFailure": "Some approvals could not be loaded: {types}. The list and total may be incomplete.",
+      "partialFailureNotCounted": "Some approvals could not be counted: {types}. The total may be incomplete.",
       "pendingAriaLabel": "Pending approvals",
       "reject": "Reject",
       "rejectLabel": "Reject {title}",
+      "rejectPanel": {
+        "briefingUnavailable": "Today's approvals could not be refreshed. Close this panel and retry.",
+        "description": "The requester sees this reason with the rejection.",
+        "noLongerRejectable": "This request can no longer be rejected here.",
+        "title": "Reject request"
+      },
       "retry": "Retry approvals",
+      "reviewInInbox": "Review in inbox",
+      "reviewInInboxNamed": "Review in inbox: {title}",
       "title": "Approvals",
       "toast": {
         "approved": "Request approved",
         "approveError": "Unable to approve request",
         "rejected": "Request rejected",
         "rejectError": "Unable to reject request"
-      }
+      },
+      "totalAtLeast": "{count}+",
+      "truncated": "{total, plural, one {Showing {shown} of # pending approval.} other {Showing {shown} of # pending approvals.}}",
+      "truncatedAtLeast": "{total, plural, one {Showing {shown} of at least # pending approval.} other {Showing {shown} of at least # pending approvals.}}",
+      "waitingInInbox": "{total, plural, one {# pending approval is waiting in the inbox.} other {# pending approvals are waiting in the inbox.}}",
+      "waitingInInboxAtLeast": "{total, plural, one {At least # pending approval is waiting in the inbox.} other {At least # pending approvals are waiting in the inbox.}}"
     },
     "briefing": {
       "accessUnavailable": "This briefing is unavailable for the current employee and organization.",

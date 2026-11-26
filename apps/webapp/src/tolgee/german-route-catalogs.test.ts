@@ -81,20 +81,20 @@ describe("German route catalogs", () => {
 		[
 			"/settings/employees",
 			"settings.employees.offboarding.contractorRehireHint",
-			"Ein Externer Dienstleister erhält keinen Arbeitsvertrag, keine Arbeitszeitrichtlinie und keinen Urlaubsanspruch. Dienstleistersätze werden gesondert festgelegt.",
+			"Ein externer Auftragnehmer erhält keine Anstellungsbedingungen, Arbeitszeitrichtlinie oder Urlaubsansprüche. Sätze für Auftragnehmer werden separat festgelegt.",
 		],
 		["/settings/employees", "organization.invite.engagement.label", "Einladen als"],
 		// Contractor compensation (#1998): the Employee Detail card and the Contracts tab.
 		[
 			"/settings/employees",
 			"settings.contracts.contractors.title",
-			"Vergütung Externer Dienstleister",
+			"Vergütung für externe Auftragnehmer",
 		],
-		["/settings/contracts", "settings.contracts.tabs.contractors", "Externe Dienstleister"],
+		["/settings/contracts", "settings.contracts.tabs.contractors", "Externe Auftragnehmer"],
 		[
 			"/settings/contracts",
 			"settings.contracts.contractors.rules.halfAndFullDay",
-			"Halbe und ganze Tage",
+			"Halbe und volle Tage",
 		],
 		["/settings/employees", "settings.contracts.employee.effectiveTitle", "Gültiger Vertrag"],
 		["/settings/notification-channels", "settings.discord.connect", "Discord-Bot verbinden"],
@@ -160,7 +160,7 @@ describe("German route catalogs", () => {
 				expect(tolgee.t("common:user.font-size", "Font size")).toBe("Schriftgröße");
 				// The External Contractor badge of the shared pickers (#1995).
 				expect(tolgee.t("common:engagement.externalContractor", "External Contractor")).toBe(
-					"Externer Dienstleister",
+					"Externer Auftragnehmer",
 				);
 			} finally {
 				tolgee.stop();

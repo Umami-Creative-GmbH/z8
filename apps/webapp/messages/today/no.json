@@ -6,19 +6,37 @@
       "decided": "Beslutning lagret. Oppdater for å laste inn gjeldende kø.",
       "description": "Forespørsler som venter på lederbeslutning.",
       "empty": "Ingen godkjenninger venter.",
+      "itemTitle": "{requester}: {title}",
       "openInbox": "Åpne innboks",
+      "openInboxForRest": "Åpne innboksen for å se resten",
+      "openInboxLink": "Åpne innboksen",
       "ownRequest": "Din egen forespørsel: en annen godkjenner avgjør den.",
+      "partialFailure": "Noen godkjenninger kunne ikke lastes inn: {types}. Listen og totalen kan være ufullstendig.",
+      "partialFailureNotCounted": "Noen godkjenninger kunne ikke telles: {types}. Totalen kan være ufullstendig.",
       "pendingAriaLabel": "Ventende godkjenninger",
       "reject": "Avvis",
       "rejectLabel": "Avvis {title}",
+      "rejectPanel": {
+        "briefingUnavailable": "Dagens godkjenninger kunne ikke oppdateres. Lukk dette panelet og prøv på nytt.",
+        "description": "Forespørreren ser denne begrunnelsen sammen med avslaget.",
+        "noLongerRejectable": "Denne forespørselen kan ikke lenger avvises her.",
+        "title": "Avvis forespørsel"
+      },
       "retry": "Prøv godkjenninger på nytt",
+      "reviewInInbox": "Gjennomgå i innboks",
+      "reviewInInboxNamed": "Gjennomgå i innboks: {title}",
       "title": "Godkjenninger",
       "toast": {
         "approved": "Forespørsel godkjent",
         "approveError": "Kunne ikke godkjenne forespørsel",
         "rejected": "Forespørsel avvist",
         "rejectError": "Kunne ikke avvise forespørsel"
-      }
+      },
+      "totalAtLeast": "{count}+",
+      "truncated": "{total, plural, one {Viser {shown} av # ventende godkjenning.} other {Viser {shown} av # ventende godkjenninger.}}",
+      "truncatedAtLeast": "{total, plural, one {Viser {shown} av minst # ventende godkjenning.} other {Viser {shown} av minst # ventende godkjenninger.}}",
+      "waitingInInbox": "{total, plural, one {# ventende godkjenning venter i innboksen.} other {# ventende godkjenninger venter i innboksen.}}",
+      "waitingInInboxAtLeast": "{total, plural, one {Minst # ventende godkjenning venter i innboksen.} other {Minst # ventende godkjenninger venter i innboksen.}}"
     },
     "briefing": {
       "accessUnavailable": "Denne briefingen er ikke tilgjengelig for gjeldende ansatt og organisasjon.",

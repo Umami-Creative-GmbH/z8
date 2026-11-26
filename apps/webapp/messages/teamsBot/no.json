@@ -80,6 +80,7 @@
     "pendingApprovals": "Ventende godkjenninger",
     "pendingExceptionRequests": "{count, plural, one {# ventende unntaksforespørsel avventer gjennomgang} other {# ventende unntaksforespørsler avventer gjennomgang}}",
     "returns": "Tilbake {date}",
+    "reviewComplianceExceptions": "Gjennomgå unntaksforespørsler",
     "since": "Siden {time}",
     "textClockedInEmployee": "• {name} - siden {clockedInAt} ({duration})",
     "textCompliance": "**⚠️ Samsvar:**",

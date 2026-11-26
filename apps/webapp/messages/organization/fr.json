@@ -217,9 +217,33 @@
     },
     "invite": {
       "allowCreateOrganizations": "Autoriser cet utilisateur à créer des organisations",
+      "contractor": {
+        "companyName": "Société contractante",
+        "compensation": {
+          "description": "S'applique dès le début de leur mission une fois qu'ils ont rejoint l'organisation. Seuls les administrateurs de l'organisation peuvent la voir ; vous pouvez également la définir ultérieurement.",
+          "label": "Définir le tarif maintenant"
+        },
+        "legend": "Détails du prestataire (facultatif)",
+        "noProjects": "Aucun projet actif pour l'instant. Vous pourrez attribuer des projets plus tard.",
+        "plannedEndDate": "Fin de mission prévue",
+        "plannedEndDateDescription": "Le dernier jour travaillé. Dès qu'ils rejoignent l'organisation, cela devient une date de départ programmée mettant fin à leur accès et à leur licence.",
+        "plannedEndDateNotFuture": "La fin de mission prévue doit être postérieure à aujourd'hui.",
+        "projects": "Projets",
+        "referenceCode": "Bon de commande ou centre de coûts",
+        "vatId": "Numéro de TVA"
+      },
       "description": "Envoyer une invitation pour rejoindre {organizationName}",
       "emailLabel": "Adresse e-mail",
+      "engagement": {
+        "contractorDescription": "Suit le temps passé sur les projets ; pas de conditions d'emploi, de politique de travail ni de congés",
+        "employee": "Salarié",
+        "employeeDescription": "Les conditions d'emploi, la politique de travail et les droits aux congés s'appliquent",
+        "label": "Inviter en tant que"
+      },
       "error": "Échec de l'envoi de l'invitation",
+      "errors": {
+        "projectNotFound": "L'un des projets sélectionnés n'appartient plus à cette organisation. Veuillez sélectionner à nouveau les projets."
+      },
       "kioskOnly": {
         "description": "Pour les employés sans adresse e-mail d'entreprise. Ils ne peuvent pas se connecter et pointent uniquement sur les bornes avec leur code PIN. Vous pourrez ajouter une adresse e-mail plus tard.",
         "firstName": "Prénom",

@@ -101,11 +101,11 @@
       "created": "Erstellt",
       "decisionRecorded": "Entscheidung erfasst",
       "destination": "Reiseziel",
+      "earlierClaim": "Frühere Abrechnung",
+      "earlierReceiptIdentity": "Früherer Beleg: Inhaltsprüfsumme wurde nicht erfasst.",
       "history": "Entscheidungsverlauf",
       "historyDescription": "Jeder Schritt dieser Abrechnung, älteste zuerst. Zeiten werden in UTC angezeigt.",
       "intermediateApproval": "Genehmigung erfasst — weitere Genehmigung ausstehend",
-      "legacyClaim": "Altantrag",
-      "legacyReceiptIdentity": "Altsystem-Beleg: Inhaltsprüfsumme wurde nicht erfasst.",
       "loading": "Antrag wird geladen…",
       "noReceipts": "Keine Belege erfasst",
       "notRecorded": "Nicht erfasst",
@@ -117,7 +117,7 @@
       "submitted": "Eingereicht",
       "title": "Reisekostenabrechnung",
       "unavailable": "Antrag nicht gefunden oder Zugriff nicht mehr verfügbar.",
-      "unknownDates": "Reisedatumskontext nicht erfasst (Altantrag)"
+      "unknownEarlierClaimDates": "Reisedatumskontext nicht erfasst (frühere Abrechnung)"
     },
     "errors": {
       "loadDetailRetry": "Dieser Antrag konnte nicht geladen werden. Bitte versuchen Sie es erneut."
@@ -166,6 +166,7 @@
         "title": "{count, plural, one {# genehmigte Ausgabe wartet auf Erstattung, die von keinem Spesenbeauftragten abgedeckt wird} other {# genehmigte Ausgaben warten auf Erstattung, die von keinem Spesenbeauftragten abgedeckt werden}}"
       },
       "description": "Genehmigte Ausgaben und noch ausstehende Beträge an Mitarbeiter. Das Erfassen einer Erstattung dokumentiert eine Zahlung außerhalb von Z8; es wird kein Geld überwiesen.",
+      "earlierClaim": "Frühere {type}-Abrechnung",
       "employeePaid": "Vom Mitarbeiter bezahlt {amount}",
       "empty": {
         "allReimbursed": "Nichts mehr zu erfassen: Jede genehmigte Ausgabe ist erstattet.",
@@ -258,7 +259,6 @@
         }
       },
       "inPayrollRun": "In {run} enthalten",
-      "legacyClaim": "Alter {type}-Antrag",
       "loading": "Finanz-Warteschlange wird geladen…",
       "pagination": {
         "label": "Seiten der Finanz-Warteschlange",

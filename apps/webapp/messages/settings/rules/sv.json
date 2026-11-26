@@ -16,6 +16,10 @@
       "createCategoryButton": "Skapa kategori",
       "deactivate": "Inaktivera",
       "defaults": {
+        "contractorUnavailability": {
+          "description": "Kalenderanteckning om att en extern uppdragstagare är otillgänglig; inte semester eller ledighet",
+          "name": "Otillgänglig (extern uppdragstagare)"
+        },
         "timeOffInLieu": {
           "description": "Ledighet som tas från arbetssaldot",
           "name": "Kompledighet"
@@ -32,6 +36,7 @@
         "activeHelp": "Aktiva kategorier är tillgängliga för nya frånvaroansökningar.",
         "color": "Färg",
         "colorHelp": "Kalendermarkör",
+        "contractorUnavailabilityRules": "Otillgänglighet för extern uppdragstagare är endast en kalendermarkering: den använder aldrig semester, arbetstid eller tidssaldo.",
         "countsAgainstVacation": "Räknas av mot semestersaldo",
         "countsAgainstVacationHelp": "Dra av godkända dagar från medarbetarens semestersaldo.",
         "deputyRequired": "Ersättare krävs",
@@ -59,6 +64,7 @@
         "translations": "Översättningar",
         "translationsHelp": "Valfria lokaliserade etiketter för anställda som använder ett annat appspråk.",
         "type": "Typ",
+        "typeContractorUnavailability": "Otillgänglighet för extern uppdragstagare",
         "typeHelp": "Grupperar rapporter och efterföljande frånvaroflöden.",
         "typePlaceholder": "Välj kategorityp",
         "typeTimeOffInLieu": "Kompledighet"

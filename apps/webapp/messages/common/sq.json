@@ -208,7 +208,6 @@
     "adding": "Po shtohet...",
     "all": "Të gjitha",
     "appName": "Z8",
-    "approve": "Mirato",
     "assign": "Cakto",
     "back": "Kthehu",
     "backToDashboard": "Kthehu te paneli",
@@ -372,6 +371,94 @@
       "bellLabel": "{count, plural, =0 {Njoftime} other {Njoftime (# të palexuara)}}"
     },
     "offline": "Jashtë linje",
+    "onCall": {
+      "agreementDocumented": "Marrëveshja u dokumentua",
+      "agreementStale": "Ndërrimi ka ndryshuar që nga marrëveshja",
+      "finding": {
+        "nearBand": "Java kërkoi {used}, duke iu afruar kufirit të fashës së thirrjes prej {limit}",
+        "other": "Rregulli i punës me thirrje në rrezik",
+        "overBand": "Java kërkoi {used}, mbi fashën e thirrjes prej {limit}",
+        "shortCall": "Ndërrimi prej {duration} është më i shkurtër se thirrja minimale prej {minimum}",
+        "shortNotice": "{days, plural, one {Thirrur me njoftim prej # dite të plotë; kërkohen {required}} other {Thirrur me njoftim prej # ditësh të plota; kërkohen {required}}}",
+        "shortWorkCall": "Punoi një thirrje prej {duration}, më pak se thirrja minimale prej {minimum}",
+        "underBand": "Java kërkoi {used}, nën fashën e thirrjes prej {limit}"
+      },
+      "findingsTitle": "Kontrollet e katër javëve të fundit dhe të ardhshme",
+      "hoursKind": {
+        "exact": "Orët javore saktësisht të rëna dakord",
+        "maximum": "Orët maksimale javore (deri në −20 %)",
+        "minimum": "Orët minimale javore (deri në +25 %)",
+        "unspecified": "Nuk ka orë javore të rëna dakord (zbatohen 20 h)"
+      },
+      "minimumCall": "Thirrja minimale {duration}",
+      "noFindings": "Asnjë rregull i punës me thirrje nuk është në rrezik.",
+      "notToday": "Jo në gatishmëri sot.",
+      "payroll": {
+        "continuedPaySpan": "Pagesa e vazhduar detyrohet nga {from} deri më {until} (§ 3 EFZG)",
+        "description": "Koha mesatare e punës para çdo pushimi mjekësor ose feste zyrtare të punonjësve me thirrje në këtë periudhë, për të përgatitur pagesën e vazhduar. Asgjë këtu nuk ndryshon ditët e vendosura.",
+        "hide": "Fshih detajet",
+        "holidaysPaidAsHolidays": "Festat zyrtare gjatë sëmundjes paguhen si rreshta më vete, jo si ditë pushimi mjekësor: {dates}",
+        "paidSickDays": "{days, plural, other {Pagesë sëmundjeje për # ditë në këtë periudhë} }",
+        "perDay": "{duration} në ditë",
+        "rangeTooLong": "Orët e referencës listohen për maksimumi tre muaj njëherësh. Zgjidhni një periudhë më të shkurtër.",
+        "show": "Shfaq detajet",
+        "sickPayExhausted": "Nuk ka pagesë sëmundjeje në këtë periudhë: gjashtë javët e pagesës së vazhduar përfunduan më {date} (§ 3 Abs. 1 EFZG)",
+        "sickPayGuidanceLabel": "Udhëzime për listëpagesën",
+        "sickPayGuidanceNote": "Rreshtat e pagesës së sëmundjes janë udhëzuese sipas § 3 EFZG; sistemi i listëpagesave vendos nëse dhe sa pagesë e vazhduar do të paguhet.",
+        "sickPayNotOwed": "Nuk detyrohet pagesë sëmundjeje për këtë sëmundje: ajo përfundoi brenda katër javëve të para të punësimit (§ 3 Abs. 3 EFZG)",
+        "sickPayWaiting": "Nuk ka pagesë sëmundjeje në këtë periudhë: e drejta lind më {date}, pas katër javësh punësimi (§ 3 Abs. 3 EFZG)",
+        "title": "Orët e referencës së punës me thirrje (§ 12 TzBfG)"
+      },
+      "reference": {
+        "calculate": "Llogarit",
+        "dateRequired": "Zgjidhni një datë.",
+        "denominator": "Ditët e llogaritura",
+        "denominatorValue": "{counted} nga {total} ditë",
+        "description": "Vetëm për informacion: lista e pagave përcakton atë që paguhet. Asgjë këtu nuk ndryshon ditët e shlyera apo muajt e mbyllur.",
+        "eventDate": "Llogarit për një ditë",
+        "excluded": {
+          "notEmployed": "Jo i punësuar",
+          "paidAbsence": "Leje ose sëmundje",
+          "publicHoliday": "Festë zyrtare",
+          "unpaidAbsence": "Mungesë pa pagesë"
+        },
+        "excludedPeriod": "{days, plural, other {{from} – {until}: {reason} (# ditë)} }",
+        "excludedTitle": "Përjashtuar nga mesatarja",
+        "noEvents": "Nuk ka leje mjekësore apo festë zyrtare në një ditë gatishmërie gjatë tre muajve të fundit.",
+        "none": "—",
+        "numerator": "Koha e punuar",
+        "perDay": "Mesatarja për ditë",
+        "periodThirteenWeeks": "Periudha e referencës (13 javë): {from} – {until}",
+        "periodThreeMonths": "Periudha e referencës (3 muaj): {from} – {until}",
+        "perWeek": "Mesatarja për javë",
+        "perWorkedDay": "Mesatarja për ditë të punuar",
+        "publicHoliday": "Festë zyrtare më {date}",
+        "shortened": "Punësimi filloi gjatë periudhës së referencës, prandaj llogaritet periudha më e shkurtër.",
+        "sickLeave": "Leje mjekësore nga {date}",
+        "thirteenWeeks": "13 javë",
+        "threeMonths": "3 muaj",
+        "title": "Orët e referencës për pagesën e sëmundjes dhe pushimeve",
+        "workedDays": "Ditët e punuara"
+      },
+      "reviews": {
+        "acknowledge": "Dokumento marrëveshjen",
+        "acknowledged": "Marrëveshja u dokumentua",
+        "changed": "Turni ka ndryshuar që nga ngarkimi i kësaj liste. Shqyrtojeni përsëri përpara se të dokumentoni marrëveshjen.",
+        "description": "Thirrjet me njoftim të shkurtër, thirrjet nën minimumin dhe javët jashtë brezit të thirrjes në katër javët e fundit dhe të ardhshme. Regjistrimi i orarit nuk bllokohet kurrë.",
+        "documented": "Marrëveshja u dokumentua: {reason}",
+        "draft": "Ende e papublikuar. Publikoni turnin përpara se të dokumentoni marrëveshjen e punonjësit.",
+        "empty": "Nuk ka gjetje të gatishmërisë për t'u shqyrtuar.",
+        "notOpen": "Turni nuk ka më një gjetje për njoftim të shkurtër.",
+        "notPublished": "Turni nuk është publikuar ende. Publikojeni atë përpara se të dokumentoni marrëveshjen e punonjësit.",
+        "reason": "Marrëveshja vullnetare e punonjësit (§ 12 Abs. 3 TzBfG)",
+        "reasonRequired": "Përshkruani se si punonjësi ra dakord me njoftimin e shkurtër.",
+        "stale": "Turni ndryshoi pasi u dokumentua marrëveshja. Dokumentojeni përsëri nëse ajo mbetet ende e vlefshme.",
+        "title": "Puna në gatishmëri (§ 12 TzBfG)"
+      },
+      "statutoryMinimumCall": "Zbatohet thirrja minimale ligjore",
+      "title": "Puna në gatishmëri (§ 12 TzBfG)",
+      "weekly": "{duration} në javë"
+    },
     "open": "Hap",
     "openEnded": "Pa afat",
     "openMenu": "Hap menynë",
@@ -425,8 +512,6 @@
     "refreshData": "Rifresko të dhënat",
     "refreshDataFailed": "Nuk mund të rifreskoheshin të dhënat. Ju lutemi provoni përsëri.",
     "refreshing": "Po rifreskohet...",
-    "reject": "Refuzo",
-    "rejecting": "Po refuzohet…",
     "remove": "Hiq",
     "removing": "Duke hequr...",
     "reset": "Rivendos",
@@ -596,6 +681,90 @@
     },
     "yes": "Po"
   },
+  "contractorCompensation": {
+    "dayUnitRules": {
+      "anyWorkFullDay": "Çdo ditë me punë llogaritet si ditë e plotë",
+      "halfAndFullDay": "Gjysmë dite deri në {minutes} min, ditë e plotë mbi këtë",
+      "proratedCapped": "Në përpjesëtim me një ditë prej {minutes} minutash, më së shumti një ditë",
+      "proratedUncapped": "Në përpjesëtim me një ditë prej {minutes} minutash, pa kufi maksimal"
+    }
+  },
+  "contractorStatement": {
+    "approvedOnly": "Listohet vetëm puna e miratuar. Puna në pritje të miratimit shtohet sapo të miratohet.",
+    "awaitingApprovalExcluded": "Periudha pune në pritje të miratimit, të papërfshira: {count}",
+    "basis": {
+      "daily": "Tarifa ditore",
+      "hourly": "Tarifa për orë"
+    },
+    "byProject": "Sipas projektit",
+    "columns": {
+      "amount": "Shuma",
+      "basis": "Paguar nga",
+      "currency": "Monedha",
+      "date": "Data",
+      "dayUnitRule": "Rregulli i njësisë ditore",
+      "end": "Përfundimi",
+      "project": "Projekti",
+      "rate": "Tarifa",
+      "rowType": "Lloji i rreshtit",
+      "start": "Fillimi",
+      "task": "Detyra",
+      "time": "Koha (lokale)",
+      "unit": "Njësia",
+      "units": "Njësitë",
+      "workedMinutes": "Minuta të punuara"
+    },
+    "company": "Kompania",
+    "contractor": "Kontraktori",
+    "contractorNumber": "Numri i kontraktorit",
+    "empty": "Nuk ka punë të përfunduar si Kontraktor i Jashtëm gjatë kësaj periudhe.",
+    "errors": {
+      "failed": "Pasqyra nuk mund të krijohej",
+      "invalidPeriod": "Zgjidhni një periudhë prej më së shumti një viti, dita e parë e së cilës nuk është pas ditës së fundit.",
+      "notAllowed": "Mund të shkarkoni vetëm pasqyrat tuaja.",
+      "notContractor": "Ky person nuk ka pasur angazhim si Kontraktor i Jashtëm gjatë kësaj periudhe.",
+      "notFound": "Ky person nuk u gjet në organizatën tuaj."
+    },
+    "export": {
+      "adminDescription": "Shkarkoni punën e kryer nga ky Kontraktor i Jashtëm dhe vlerësimin sipas tarifave të tij, për të kontrolluar faturën. Një pasqyrë verifikimi, jo një faturë.",
+      "csv": "CSV për fletëllogaritëse",
+      "download": "Shkarko pasqyrën",
+      "downloaded": "Pasqyra u shkarkua",
+      "format": "Formati",
+      "from": "Nga",
+      "fromRequired": "Zgjidhni ditën e parë",
+      "pdf": "PDF",
+      "selfDescription": "Shkarkoni punën tuaj të regjistruar dhe vlerësimin sipas tarifave të rëna dakord, për të përgatitur ose kontrolluar faturën tuaj. Një pasqyrë verifikimi, jo një faturë.",
+      "title": "Pasqyra e kohës dhe tarifave",
+      "to": "Deri",
+      "toBeforeFrom": "Dita e fundit nuk mund të jetë para ditës së parë",
+      "toRequired": "Zgjidhni ditën e fundit"
+    },
+    "generated": "Gjeneruar (UTC)",
+    "noProject": "Pa projekt",
+    "noRate": "Nuk zbatohet asnjë tarifë",
+    "notice": "Vetëm pasqyrë verifikimi. Nuk është faturë apo notë krediti vetëfaturimi (Gutschrift): Z8 nuk lëshon kurrë fatura. Ajo liston punën e regjistruar në Z8 dhe vlerësimin e saj sipas tarifave të rëna dakord të kontraktorit, në mënyrë që fatura të mund të kontrollohet me të.",
+    "organization": "Organizata",
+    "page": "Faqja",
+    "period": "Periudha",
+    "referenceCode": "Referenca e PO-së ose qendrës së kostos",
+    "rows": {
+      "day": "Dita",
+      "total": "Totali",
+      "unpriced": "Pa çmim",
+      "work": "Puna"
+    },
+    "times": "Ditët janë ditët e kalendarit lokal të kontraktorit; orët shfaqen sipas diferencës UTC të regjistruar me punën.",
+    "title": "Deklarata e verifikimit të kohës dhe tarifave të kontraktorit",
+    "totals": "Totalet",
+    "units": {
+      "days": "Ditë",
+      "hours": "Orë"
+    },
+    "unpricedNotice": "Për disa punë nuk ka pasur një tarifë të rënë dakord në atë ditë. Ajo renditet pa vlerë dhe nuk përfshihet në totale.",
+    "vatId": "Numri i TVSH-së",
+    "workedHours": "Orët e punuara"
+  },
   "drivingLicence": {
     "applyingInterval": "Duke zbatuar…",
     "applyInterval": "Zbato ndryshimin e intervalit",
@@ -604,6 +773,9 @@
       "chooseClasses": "Zgjidhni kategoritë që keni inspektuar realisht.",
       "classes": "Kategoritë e inspektuara realisht",
       "classExpiry": "Skadimi i kategorisë (nëse zbatohet)",
+      "declaredBadge": "Deklaruar",
+      "declaredHelp": "Këto kategori dhe çdo datë e vendosur nga punonjësi janë të parazgjedhura. Krahasojini ato me patentën origjinale dhe korrigjoni çdo gjë që ndryshon.",
+      "declaredTitle": "{name} deklaroi {classes}",
       "documentDates": "Datat e dokumentit origjinal",
       "employeeDeclaration": "Punonjësi bëri personalisht deklaratën e paraqitur më sipër gjatë këtij kontrolli; unë e vërtetoj atë deklaratë.",
       "expiryDate": "Data e skadimit të dokumentit",
@@ -644,6 +816,8 @@
       },
       "customOrder": "Renditur sipas kolonës dhe drejtimit të zgjedhur.",
       "deadline": "{date} ({timezone})",
+      "declared": "Deklaruar {classes}",
+      "declaredDue": "Kontrolloni kategoritë e deklaruara",
       "dueNow": "Kontrolli duhet bërë tani",
       "dueOrder": "Së pari verifikimet me afat tani, pastaj afati i ardhshëm.",
       "empty": {
@@ -677,6 +851,31 @@
     "class": {
       "active": "I autorizuar",
       "ended": "Përfunduar",
+      "group": {
+        "bus": "Autobusë",
+        "car": "Makina",
+        "motorcycle": "Mopeda dhe motoçikleta",
+        "tractor": "Traktorë",
+        "truck": "Kamionë"
+      },
+      "name": {
+        "A": "Motoçikletë",
+        "A1": "Motoçikletë e lehtë",
+        "A2": "Motoçikletë e mesme",
+        "AM": "Moped",
+        "B": "Makinë",
+        "BE": "Makinë me rimorkio",
+        "C": "Kamion",
+        "C1": "Kamion i lehtë",
+        "C1E": "Kamion i lehtë me rimorkio",
+        "CE": "Kamion me rimorkio",
+        "D": "Autobus",
+        "D1": "Minibus",
+        "D1E": "Minibus me rimorkio",
+        "DE": "Autobus me rimorkio",
+        "L": "Traktor i ngadaltë",
+        "T": "Traktor"
+      },
       "noLongerIntended": "Përfundoi sepse punonjësi nuk është më shofer i synuar. Drejtimi përsëri kërkon një kontroll të ri.",
       "overdue": "Kontrolli rutinë ka kaluar afatin. Ky është një pezullim organizativ, jo një deklaratë se e drejta ligjore e drejtimit është hequr.",
       "recheck": "Kërkohet një kontroll i ri origjinal dhe një rikthim i qartë.",
@@ -684,6 +883,36 @@
     },
     "declaration": {
       "text": "Konfirmoj se asnjë ndalim drejtimi i njohur, heqje apo pengesë tjetër nuk pengon drejtimin e synuar dhe se plotësoj kufizimet e zbatueshme të drejtimit."
+    },
+    "declared": {
+      "add": "Shto kategori patente",
+      "authorized": "Autorizuar",
+      "classExpires": "Skadon më {date}",
+      "classExpiry": "{code} ({name}) skadon më",
+      "description": "Deklaruar nga ju, ende pa u kontrolluar. Ato nuk ju autorizojnë të drejtoni mjetin derisa një verifikues të kontrollojë patentën tuaj origjinale.",
+      "dialogDescription": "Zgjidhni çdo kategori në patentën tuaj të shoferit. Verifikuesi juaj do t'i konfirmojë ato gjatë kontrollit të patentës origjinale.",
+      "dialogTitle": "Cilat kategori janë në patentën tuaj?",
+      "documentExpires": "Karta e patentës skadon",
+      "documentExpiry": "Karta e patentës skadon më",
+      "documentExpiryHelp": "Fusha 4b në kartë. Lëreni bosh nëse patenta juaj nuk e ka.",
+      "edit": "Ndrysho",
+      "emptyDescription": "Tregoni organizatës suaj se çfarë kategorish patente keni. Kjo ndihmon në planifikim dhe përgatitjen e kontrollit tuaj; nuk ju autorizon të drejtoni mjetin.",
+      "emptyMoreDescription": "Shtoni një kategori që e keni marrë pas kontrollit tuaj të fundit. Verifikuesit do t'i kërkohet ta kontrollojë atë.",
+      "emptyMoreTitle": "Keni marrë një kategori tjetër patente?",
+      "emptyTitle": "Çfarë mund të drejtoni?",
+      "expiryTitle": "Datat e skadimit (opsionale)",
+      "invalid": "Kontrolloni kategoritë dhe datat e zgjedhura.",
+      "notIntended": "Ju nuk jeni më shofer i parashikuar, prandaj organizata juaj nuk mbledh kategoritë e lejes suaj të drejtimit.",
+      "privacy": "Ruhen vetëm kategoritë tuaja dhe datat e skadimit, pa numrin e lejes së drejtimit ose foton. Deklarata juaj nuk ju autorizon të drejtoni mjetin.",
+      "remove": "Hiq kategoritë e mia",
+      "removed": "Kategoritë e deklaruara të lejes së drejtimit u hoqën",
+      "removing": "Duke hequr…",
+      "save": "{count, plural, other {Ruaj # kategori} }",
+      "saved": "Kategoritë e lejes së drejtimit u ruajtën. Verifikuesi juaj do t'i kontrollojë ato me lejen tuaj origjinale të drejtimit.",
+      "saveFailed": "Kategoritë e lejes suaj të drejtimit nuk mund të ruheshin. Zgjedhja juaj është ruajtur; provoni përsëri.",
+      "saving": "Duke ruajtur…",
+      "title": "Kategoritë e deklaruara të lejes suaj të drejtimit",
+      "updated": "U përditësua"
     },
     "delivery": {
       "uncertain": "Email-et opsionale të kujtesës për ju kanë një rezultat të pasigurt dërgimi ({count}). Ato nuk do të dërgohen më automatikisht. Kujtesat tuaja në aplikacion mbeten të disponueshme; dërgimi i email-it nuk konfirmon leximin."
@@ -846,6 +1075,7 @@
     },
     "operational": {
       "advisory": "Autorizimi i drejtimit",
+      "declared": "E deklaruar, ende e pakontrolluar. Nuk përbën autorizim për të drejtuar mjetin.",
       "loading": "Po ngarkohet autorizimi i drejtimit…",
       "loadingEmployees": "Po ngarkohen punonjësit për planifikim…",
       "noEmployees": "Nuk ka punonjës që përputhen.",
@@ -1017,6 +1247,20 @@
     "team": "Ekipi",
     "totalEmployees": "{count} punonjës",
     "tryDifferentSearch": "Provoni të përshtatni kërkimin ose filtrat"
+  },
+  "engagement": {
+    "absenceRefusals": {
+      "contractorRecordsUnavailabilityOnly": "Në këto data ata punojnë si Kontraktues i Jashtëm: mund të regjistrohet vetëm padisponueshmëria.",
+      "spansEngagementChange": "Këto data përfshijnë një ndryshim midis punësimit dhe punës si Kontraktues i Jashtëm. Regjistrojeni secilën pjesë veçmas.",
+      "unavailabilityIsForContractors": "Në këto data ata janë të punësuar: padisponueshmëria është vetëm për Kontraktuesit e Jashtëm."
+    },
+    "externalContractor": "Kontraktues i Jashtëm",
+    "filter": {
+      "all": "Të gjithë",
+      "contractors": "Kontraktues të Jashtëm",
+      "employees": "Punonjësit",
+      "label": "Angazhimi"
+    }
   },
   "errors": {
     "failedToLoad": "Ngarkimi i të dhënave dështoi",
@@ -1487,6 +1731,10 @@
         "message": "Caktoni një verifikues të disponueshëm për {employeeName}. Kjo detyrë nuk jep të drejta inspektimi dhe nuk zgjat asnjë afat.",
         "title": "Cakto përgjegjësinë e verifikuesit të patentë shoferit"
       },
+      "drivingLicenceDeclared": {
+        "message": "{employeeName} ka deklaruar kategoritë e lejes së drejtimit {classes}. Kontrolloni lejen origjinale për t'i autorizuar; vetëm deklarimi nuk jep asnjë të drejtë.",
+        "title": "Kategoritë e lejes së drejtimit për t'u kontrolluar"
+      },
       "drivingLicencePersonalTask": {
         "message": "Kujtojini {employeeName} të organizojë kontrollin e patentë shoferit origjinal. Njoftimi i drejtpërdrejtë i punonjësit nuk ishte i disponueshëm. Përfundimi i detyrës nuk përbën dorëzim të drejtpërdrejtë ose lexim.",
         "title": "Kujtojani punonjësit personalisht"
@@ -1529,6 +1777,11 @@
       "formerEmployeeReportsWithoutManager": {
         "message": "{count, plural, one {# punonjës është ende i lidhur vetëm me një ish-menaxher: {names}. Caktoni një menaxher aktual.} other {# punonjës janë ende të lidhur vetëm me një ish-menaxher: {names}. Caktoni një menaxher aktual.}}",
         "title": "Punonjës pa një menaxher aktual"
+      },
+      "invitationContractorTermsNeedReview": {
+        "message": "Tarifa nga ftesa e {name} nuk mund të zbatohej kur u bashkua. Caktojeni atë te kompensimi i Kontraktuesit të Jashtëm; puna e tyre mbetet pa çmim deri atëherë.",
+        "termsExistMessage": "Tarifa nga ftesa e {name} nuk u zbatua kur u bashkua: angazhimi i tyre tashmë ka kushte kompensimi, të cilat ende zbatohen. Rishikoni te kompensimi i Kontraktuesit të Jashtëm nëse duhen ndryshuar.",
+        "title": "Tarifa e një Kontraktuesi të Jashtëm kërkon rishikim"
       },
       "kioskCommandRefused": {
         "forwardedMessage": "Një {action, select, clock_in {hyrje} clock_out {dalje} start_break {fillim pushimi} resume_break {kthim nga pushimi} other {regjistrim orari}} nga {employeeName} në orën {time} në kioskën {kioskName} nuk u regjistrua: {reason, select, wrong_pin {PIN-i ishte i pasaktë} pin_locked {PIN-i i kioskës u bllokua pas shumë tentativave të pasakta} no_pin {nuk kishte PIN kioske me të cilin të krahasohej} pin_unchecked {PIN-i nuk mund të kontrollohej} kiosk_retired {kioska u shfuqizua ose u çiftua përsëri para se të rilidhej} contact_unverifiable {Z8 nuk mundi të konfirmonte lidhjen e fundit të kioskës} outside_window {ora e saj ishte jashtë dritares kohore që pranon Z8} clock_untrusted {ora e kioskës nuk mund të konsiderohej e besueshme për këtë} not_assigned {punonjësi nuk është caktuar në vendndodhjen e kioskës} not_adopted {organizata nuk pranon regjistrime orari jashtë linje nga kioska} month_closed {muaji është i mbyllur} holiday {dita është festë pa regjistrim orari} conflict {bie në konflikt me orë të tjera të regjistruara} other {Z8 nuk mundi ta pranonte}}. Regjistroni orarin për ta ose kontrollojeni me ta.",
@@ -1694,6 +1947,11 @@
       "personnelFilePayslipsShared": {
         "message": "Fletëpagesa juaj për {payPeriod} u nda me ju.",
         "title": "Fletëpagesë e re në dosjen tuaj të personelit"
+      },
+      "plannedEngagementEndNeedsReview": {
+        "notScheduled": "Përfundimi i planifikuar i angazhimit të {name} ({plannedEndDate}) nuk mund të caktohej si data e largimit të tyre. Caktojeni atë në faqen e punonjësit të tyre.",
+        "passed": "Përfundimi i planifikuar i angazhimit të {name} ({plannedEndDate}) kishte kaluar kur u bashkua, prandaj data e tyre e largimit është sot ({leavingDate}). Ndryshojeni nëse angazhimi vazhdon.",
+        "title": "Një përfundim i planifikuar i angazhimit kërkon rishikim"
       },
       "policyForgottenClockOutReminder": {
         "message": "Arritët orët e kërkuara për {day} në {endTime} ({timezone}). Regjistroni daljen nëse keni përfunduar punën."
@@ -2497,6 +2755,13 @@
           "createdAt": "Koha kur kjo detyrë ose dërgim u regjistrua për herë të parë, si një çast UTC.",
           "deadline_timezone": "Zona e qartë kohore e kalendarit e përdorur për datat e afateve të politikës.",
           "declaration_text": "Teksti i saktë i deklaratës i regjistruar gjatë inspektimit origjinal.",
+          "declared_at": "Momenti kur keni ruajtur për herë të fundit kategoritë e deklaruara, si çast kohor në UTC.",
+          "declared_class_code": "Një kategori e lejes së drejtimit që keni deklaruar se zotëroni. Nuk jep autorizim për drejtimin e mjetit.",
+          "declaredClasses": {
+            "summary": "Kategoritë e lejes së drejtimit që keni deklaruar vetë dhe ende nuk janë kontrolluar. Një kontroll i zëvendëson ato; ato fshihen kur nuk jeni më një shofer i parashikuar."
+          },
+          "declared_class_expiry_date": "Data e skadimit e vetë kategorisë që keni futur (kategoritë C dhe D); bosh nëse nuk keni futur asnjë.",
+          "declared_document_expires_on": "Data e skadimit e kartës së lejes suaj të drejtimit siç e keni futur; bosh nëse nuk keni futur asnjë.",
           "document_expires_on": "Data e skadimit të dokumentit, e ndarë nga skadimi i kategorive individuale.",
           "document_issued_on": "Data e lëshimit të dokumentit, pa orë ose zonë kohore.",
           "document_valid_through": "Dita e fundit kalendarike e mbuluar nga vlefshmëria e dokumentit.",
@@ -2615,6 +2880,25 @@
             "project": "Projekti për të cilin zbatohet tarifa; bosh për të gjithë punën tuaj.",
             "summary": "Tarifat që organizata u faturon klientëve për punën tuaj."
           },
+          "contractorCompensationTerms": {
+            "capAtOneDay": "Nëse një ditë llogaritet si më së shumti një ditë, pavarësisht sa zgjat puna.",
+            "compensationBasis": "Nëse paguheni me orë (hourly) apo me ditë (daily).",
+            "currency": "Monedha e tarifës.",
+            "dayUnitRule": "Si llogaritet puna e një dite për një tarifë ditore: çdo punë si ditë e plotë (any_work_full_day), gjysmë ose ditë e plotë sipas një pragu (half_and_full_day), ose në përpjesëtim me një ditë standarde (prorated_by_standard_day). Bosh për një tarifë me orë.",
+            "effectiveFrom": "Dita e parë kur zbatohen këto kushte (YYYY-MM-DD).",
+            "effectiveTo": "Dita e parë kur këto kushte nuk zbatohen më (YYYY-MM-DD); bosh gjatë kohës që zbatohen.",
+            "employmentPeriodId": "Periudha së cilës i përkasin këto kushte (ID-ja e saj në employment_periods).",
+            "halfDayThresholdMinutes": "Deri në kaq minuta pune në ditë llogariten si gjysmë dite; më shumë llogaritet si ditë e plotë.",
+            "rate": "Tarifa juaj për orë ose për ditë.",
+            "standardDayMinutes": "Minutat e një dite standarde me të cilat matet puna e një dite.",
+            "summary": "Tarifa juaj me orë ose ditore si Kontraktues i Jashtëm përgjatë kohës."
+          },
+          "contractorDetails": {
+            "companyName": "Kompania përmes së cilës kontraktoheni.",
+            "referenceCode": "Urdhërblerja ose referenca e qendrës së kostos me të cilën përputhen faturat tuaja.",
+            "summary": "Të dhënat tuaja të kontraktimit si Kontraktues i Jashtëm.",
+            "vatId": "Numri juaj i TVSH-së ose referenca tatimore."
+          },
           "costCenters": {
             "code": "Kodi i qendrës së kostos.",
             "costCenter": "Emri i qendrës së kostos.",
@@ -2681,6 +2965,7 @@
             "contractType": "Lloji i kontratës suaj.",
             "email": "Adresa e emailit të llogarisë suaj të përdoruesit.",
             "endDate": "Kur përfundoi punësimi juaj; bosh për sa kohë vazhdon.",
+            "engagementKind": "Nëse sot punoni për organizatën si punonjës (employee) apo si Kontraktues i Jashtëm (contractor).",
             "firstName": "Emri juaj në skedarin tuaj të punonjësit.",
             "gender": "Gjinia juaj.",
             "isActive": "Nëse skedari juaj i punonjësit është aktiv.",
@@ -2700,6 +2985,7 @@
           },
           "employmentPeriods": {
             "endedAt": "Kur përfundoi periudha; bosh përderisa është e hapur.",
+            "engagementKind": "Nëse keni punuar në këtë periudhë si punonjës (employee) apo si Kontraktues i Jashtëm (contractor).",
             "startedAt": "Kur filloi periudha.",
             "startProvenance": "Nga rrjedh fillimi, për shembull një punësim ose një ripunësim.",
             "status": "Nëse periudha është e hapur apo e mbyllur.",

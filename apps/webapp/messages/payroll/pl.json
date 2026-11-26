@@ -589,12 +589,14 @@
       "reason": {
         "apiConnector": "Ten format to łącznik API, który nigdy nie przesyła kwot wydatków.",
         "currencyNotEur": "Waluta inna niż euro: listy płac obejmują wyłącznie kwoty w euro.",
+        "earlierClaim": "Wcześniejsze roszczenia nigdy nie są wypłacane za pośrednictwem listy płac.",
+        "externalContractorDays": "Jego dni przypadają na okres współpracy z zewnętrznym kontrahentem: lista płac nigdy go nie obejmuje.",
         "includedInOtherRun": "Uwzględniono w niepotwierdzonej liście płac {period} ({format}).",
-        "legacyClaim": "Archiwalne wnioski nigdy nie są wypłacane za pośrednictwem listy płac.",
         "negativeDifference": "Korekta obniżyła kwoty uwzględnione we wcześniejszych listach płac dla: {kinds}.",
         "noStatutoryBaseline": "Brak podstawy ustawowej dla: {items}.",
         "nothingOwed": "W jej pozycjach płacowych nie ma już nic do uwzględnienia na liście płac.",
         "reimbursedOutsidePayroll": "Już częściowo opłacono przelewem bankowym lub odzyskano: lista płac nie może objąć reszty.",
+        "spansEngagementChange": "Jego dni obejmują zmianę statusu między pracownikiem a zewnętrznym kontrahentem: lista płac nie obejmuje żadnej jego części.",
         "unmappedWageType": "Dla tego formatu nie zmapowano żadnego składnika wynagrodzenia dla: {kinds}."
       },
       "title": "Raporty wydatków, których nie obejmie ta lista płac",

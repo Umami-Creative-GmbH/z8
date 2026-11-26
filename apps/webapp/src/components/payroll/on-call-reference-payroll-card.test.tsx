@@ -118,7 +118,7 @@ describe("OnCallReferencePayrollCard", () => {
 		expect(
 			(deCatalog as { common: { onCall: { payroll: Record<string, string> } } }).common.onCall
 				.payroll.sickPayGuidanceLabel,
-		).toBe("Hinweis für die Entgeltabrechnung");
+		).toBe("Hinweise für die Lohnabrechnung");
 	});
 
 	it("shows nothing when the selection matches nobody", async () => {

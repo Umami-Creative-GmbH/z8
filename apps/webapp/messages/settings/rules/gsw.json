@@ -16,6 +16,10 @@
       "createCategoryButton": "Kategorie erstellen",
       "deactivate": "Deaktivieren",
       "defaults": {
+        "contractorUnavailability": {
+          "description": "Kalenderhinweis, dass ein externer Auftragnehmer nicht verfügbar ist; keine Ferien oder Abwesenheit",
+          "name": "Nicht verfügbar (Externer Auftragnehmer)"
+        },
         "timeOffInLieu": {
           "description": "Freiziit bezoge über de Arbeitsziitsaldo",
           "name": "Freiziitusgliich"
@@ -32,6 +36,7 @@
         "activeHelp": "Aktive Kategorien stehen für neue Abwesenheitsanträge zur Verfügung.",
         "color": "Farbe",
         "colorHelp": "Kalendermarkierung",
+        "contractorUnavailabilityRules": "Die Nichtverfügbarkeit eines externen Auftragnehmers ist nur eine Kalendermarkierung: Sie beansprucht nie Ferien, Arbeitszeit oder den Zeitsaldo.",
         "countsAgainstVacation": "Wird vom Feriensaldo abgezogen",
         "countsAgainstVacationHelp": "Zieht genehmigte Tage vom Ferienguthaben des Mitarbeiters ab.",
         "deputyRequired": "Stellvertretig erforderlich",
@@ -59,6 +64,7 @@
         "translations": "Übersetzungen",
         "translationsHelp": "Optionale lokalisierte Bezeichnungen für Mitarbeitende, die eine andere App-Sprache verwenden.",
         "type": "Typ",
+        "typeContractorUnavailability": "Nichtverfügbarkeit des externen Auftragnehmers",
         "typeHelp": "Gruppiert Berichte und nachgelagerte Abwesenheits-Workflows.",
         "typePlaceholder": "Kategorietyp auswählen",
         "typeTimeOffInLieu": "Freiziitusgliich"

@@ -409,6 +409,7 @@
         "clearSearch": "Wyczyść wyszukiwanie",
         "clockReview": "Wymaga weryfikacji: rejestracja wyjścia podczas offboardingu",
         "confirmRehire": "Potwierdź ponowne zatrudnienie",
+        "contractorRehireHint": "Wykonawca zewnętrzny nie otrzymuje warunków zatrudnienia, regulaminu pracy ani wymiaru urlopu. Stawki wykonawcy są ustalane osobno.",
         "correctTime": "Skoryguj czas",
         "currency": "Waluta",
         "currencyInvalid": "Wprowadź trzyliterowy kod waluty.",
@@ -423,6 +424,10 @@
         "effectiveDescription": "Dostęp zakończył się o {cutoff} ({timezone}).",
         "employmentGap": "Brak zatrudnienia {startDate} – {endDate}",
         "employmentStint": "Zatrudnienie {startDate} – {endDate}",
+        "engagement": {
+          "employee": "Pracownik"
+        },
+        "engagementKind": "Współpraca",
         "errors": {
           "actorNotAuthorized": "Tylko właściciele i administratorzy organizacji mogą zarządzać odejściami pracowników.",
           "departureAlreadyEffective": "To odejście weszło już w życie. Zatrudnij pracownika ponownie, aby przywrócić dostęp.",
@@ -668,6 +673,7 @@
           "employeeNotFound": "Nie znaleziono pracownika.",
           "exceedsBalance": "Wypłata jest większa niż saldo czasu pracy pracownika na koniec tego dnia.",
           "exceedsLaterBalance": "Wypłata spowodowałaby spadek salda czasu pracy poniżej zera po późniejszej wypłacie za nadgodziny. Najpierw anuluj tamtą wypłatę lub zarejestruj mniejszą wartość.",
+          "externalContractorDay": "W tym dniu dana osoba pracuje jako wykonawca zewnętrzny, więc płace nie zrealizowałyby tej wypłaty. Ustaw datę na dzień, w którym była zatrudniona.",
           "failed": "Nie udało się zaktualizować salda czasu pracy. Spróbuj ponownie.",
           "futureDay": "Dzień nie może przypadać po dzisiejszej dacie w strefie czasowej pracownika.",
           "invalidInput": "Sprawdź dzień, godziny i minuty oraz powód.",

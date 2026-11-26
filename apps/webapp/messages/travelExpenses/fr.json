@@ -101,11 +101,11 @@
       "created": "Créé",
       "decisionRecorded": "Décision enregistrée",
       "destination": "Destination",
+      "earlierClaim": "Demande antérieure",
+      "earlierReceiptIdentity": "Reçu antérieur : la somme de contrôle du contenu n'a pas été enregistrée.",
       "history": "Historique des décisions",
       "historyDescription": "Toutes les étapes de cette demande, de la plus ancienne à la plus récente. Les heures sont affichées en UTC.",
       "intermediateApproval": "Approbation enregistrée — en attente d'une autre approbation",
-      "legacyClaim": "Ancienne demande",
-      "legacyReceiptIdentity": "Reçu hérité : la somme de contrôle du contenu n'a pas été enregistrée.",
       "loading": "Chargement de la demande…",
       "noReceipts": "Aucun reçu enregistré",
       "notRecorded": "Non enregistré",
@@ -117,7 +117,7 @@
       "submitted": "Soumis",
       "title": "Demande de frais de déplacement",
       "unavailable": "Demande introuvable ou accès désormais indisponible.",
-      "unknownDates": "Contexte de la date du voyage non enregistré (ancienne demande)"
+      "unknownEarlierClaimDates": "Contexte des dates du déplacement non enregistré (demande antérieure)"
     },
     "errors": {
       "loadDetailRetry": "Impossible de charger cette demande. Veuillez réessayer."
@@ -166,6 +166,7 @@
         "title": "{count, plural, one {# dépense approuvée en attente de remboursement n'est couverte par aucun gestionnaire de dépenses} other {# dépenses approuvées en attente de remboursement ne sont couvertes par aucun gestionnaire de dépenses}}"
       },
       "description": "Dépenses approuvées et montants restant dus aux employés. L'enregistrement d'un remboursement consigne un paiement effectué en dehors de Z8 ; aucun transfert d'argent n'est effectué.",
+      "earlierClaim": "Demande {type} antérieure",
       "employeePaid": "Payé par l'employé {amount}",
       "empty": {
         "allReimbursed": "Plus rien à enregistrer : chaque dépense approuvée est remboursée.",
@@ -258,7 +259,6 @@
         }
       },
       "inPayrollRun": "Inclus dans {run}",
-      "legacyClaim": "Ancienne demande de {type}",
       "loading": "Chargement de la file d'attente financière…",
       "pagination": {
         "label": "Pages de la file d'attente Finances",

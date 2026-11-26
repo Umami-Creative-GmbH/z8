@@ -6,19 +6,37 @@
       "decided": "Entscheidig gspeicheret. Aktualisiere, zum die aktuell Warteschlange z lade.",
       "description": "Aaträg, wo uf en Entscheid vom Vorgesetzte warte.",
       "empty": "Es sind keini Genehmigige offe.",
+      "itemTitle": "{requester}: {title}",
       "openInbox": "Postig öffne",
+      "openInboxForRest": "Posteingang öffnen, um den Rest zu sehen",
+      "openInboxLink": "Posteingang öffnen",
       "ownRequest": "Eigene Anfrage: Ein anderer Genehmiger entscheidet darüber.",
+      "partialFailure": "Einige Genehmigungen konnten nicht geladen werden: {types}. Die Liste und das Total sind möglicherweise unvollständig.",
+      "partialFailureNotCounted": "Einige Genehmigungen konnten nicht gezählt werden: {types}. Das Total ist möglicherweise unvollständig.",
       "pendingAriaLabel": "Offeni Genehmigige",
       "reject": "Ablehne",
       "rejectLabel": "{title} ablehne",
+      "rejectPanel": {
+        "briefingUnavailable": "Die heutigen Genehmigungen konnten nicht aktualisiert werden. Schliessen Sie dieses Panel und versuchen Sie es erneut.",
+        "description": "Die anfragende Person sieht diesen Grund zusammen mit der Ablehnung.",
+        "noLongerRejectable": "Dieser Antrag kann hier nicht mehr abgelehnt werden.",
+        "title": "Antrag ablehnen"
+      },
       "retry": "Gnämigunge nomal probiere",
+      "reviewInInbox": "Im Posteingang überprüfen",
+      "reviewInInboxNamed": "Im Posteingang überprüfen: {title}",
       "title": "Genehmigige",
       "toast": {
         "approved": "Aatrag genehmigt",
         "approveError": "Aatrag cha nöd genehmigt werde",
         "rejected": "Aatrag abglehnt",
         "rejectError": "Aatrag cha nöd abglehnt werde"
-      }
+      },
+      "totalAtLeast": "{count}+",
+      "truncated": "{total, plural, one {Zeigt {shown} von # ausstehenden Genehmigung an.} other {Zeigt {shown} von # ausstehenden Genehmigungen an.}}",
+      "truncatedAtLeast": "{total, plural, one {Zeigt {shown} von mindestens # ausstehenden Genehmigung an.} other {Zeigt {shown} von mindestens # ausstehenden Genehmigungen an.}}",
+      "waitingInInbox": "{total, plural, one {# ausstehende Genehmigung wartet im Posteingang.} other {# ausstehende Genehmigungen warten im Posteingang.}}",
+      "waitingInInboxAtLeast": "{total, plural, one {Mindestens # ausstehende Genehmigung wartet im Posteingang.} other {Mindestens # ausstehende Genehmigungen warten im Posteingang.}}"
     },
     "briefing": {
       "accessUnavailable": "Das Briefing isch für die aktuell aagstellt Person und Organisation nid verfüegbar.",

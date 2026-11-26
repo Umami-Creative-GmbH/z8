@@ -16,6 +16,10 @@
       "createCategoryButton": "Opprett kategori",
       "deactivate": "Deaktiver",
       "defaults": {
+        "contractorUnavailability": {
+          "description": "Kalendernotat om at en ekstern oppdragstaker er utilgjengelig; ikke ferie eller permisjon",
+          "name": "Utilgjengelig (ekstern oppdragstaker)"
+        },
         "timeOffInLieu": {
           "description": "Fravær som trekkes fra arbeidssaldoen",
           "name": "Avspasering"
@@ -32,6 +36,7 @@
         "activeHelp": "Aktive kategorier er tilgjengelige for nye fraværsforespørsler.",
         "color": "Farge",
         "colorHelp": "Kalendermarkør",
+        "contractorUnavailabilityRules": "Utilgjengelighet for eksterne oppdragstakere er kun en kalendermarkering: den bruker aldri ferie, arbeidstid eller arbeidssaldo.",
         "countsAgainstVacation": "Trekkes fra feriesaldo",
         "countsAgainstVacationHelp": "Trekk godkjente dager fra den ansattes feriekvote.",
         "deputyRequired": "Stedfortreder påkrevd",
@@ -59,6 +64,7 @@
         "translations": "Oversettelser",
         "translationsHelp": "Valgfrie lokaliserte etiketter for ansatte som bruker et annet appspråk.",
         "type": "Type",
+        "typeContractorUnavailability": "Utilgjengelighet for ekstern oppdragstaker",
         "typeHelp": "Grupperer rapporter og etterfølgende arbeidsflyter for fravær.",
         "typePlaceholder": "Velg kategoritype",
         "typeTimeOffInLieu": "Avspasering"

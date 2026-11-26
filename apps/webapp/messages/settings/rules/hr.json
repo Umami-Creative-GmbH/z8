@@ -16,6 +16,10 @@
       "createCategoryButton": "Stvori kategoriju",
       "deactivate": "Deaktiviraj",
       "defaults": {
+        "contractorUnavailability": {
+          "description": "Kalendarska bilješka da je vanjski suradnik nedostupan; nije godišnji odmor ili dopust",
+          "name": "Nedostupno (vanjski suradnik)"
+        },
         "timeOffInLieu": {
           "description": "Slobodno vrijeme na teret radnog salda",
           "name": "Slobodno vrijeme u zamjenu"
@@ -32,6 +36,7 @@
         "activeHelp": "Aktivne kategorije dostupne su za nove zahtjeve za odsutnost.",
         "color": "Boja",
         "colorHelp": "Oznaka u kalendaru",
+        "contractorUnavailabilityRules": "Nedostupnost vanjskog suradnika samo je oznaka u kalendaru: nikada ne troši godišnji odmor, radno vrijeme ni saldo radnih sati.",
         "countsAgainstVacation": "Uračunava se u stanje godišnjeg odmora",
         "countsAgainstVacationHelp": "Odbijte odobrene dane od ukupnog godišnjeg odmora zaposlenika.",
         "deputyRequired": "Obavezan zamjenik",
@@ -59,6 +64,7 @@
         "translations": "Prijevodi",
         "translationsHelp": "Neobavezne lokalizirane oznake za zaposlenike koji koriste drugi jezik aplikacije.",
         "type": "Vrsta",
+        "typeContractorUnavailability": "Nedostupnost vanjskog suradnika",
         "typeHelp": "Grupira izvještaje i daljnje radne tijekove odsutnosti.",
         "typePlaceholder": "Odaberite vrstu kategorije",
         "typeTimeOffInLieu": "Slobodno vrijeme u zamjenu"

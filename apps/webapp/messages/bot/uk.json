@@ -231,6 +231,7 @@
       "openDashboard": "Відкрити панель керування Z8",
       "openShifts": "Відкриті зміни:",
       "pendingApprovals": "Очікують на затвердження:",
+      "reviewComplianceExceptions": "Переглянути запити на винятки",
       "title": "Щоденний дайджест — {date}",
       "viewDashboardAt": "Перегляньте повну панель керування за адресою {url}",
       "whosOut": "Хто відсутній:"

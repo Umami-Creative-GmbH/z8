@@ -6,19 +6,37 @@
       "decided": "Decizie salvată. Reîmprospătați pentru a încărca lista de așteptare actuală.",
       "description": "Cereri care așteaptă o decizie a managerului.",
       "empty": "Nu există aprobări în așteptare.",
+      "itemTitle": "{requester}: {title}",
       "openInbox": "Deschide inboxul",
+      "openInboxForRest": "Deschideți caseta de primire pentru a vedea restul",
+      "openInboxLink": "Deschideți caseta de primire",
       "ownRequest": "Propria solicitare: un alt aprobator decide.",
+      "partialFailure": "Unele aprobări nu au putut fi încărcate: {types}. Lista și totalul pot fi incomplete.",
+      "partialFailureNotCounted": "Unele aprobări nu au putut fi contorizate: {types}. Totalul poate fi incomplet.",
       "pendingAriaLabel": "Aprobări în așteptare",
       "reject": "Respinge",
       "rejectLabel": "Respinge {title}",
+      "rejectPanel": {
+        "briefingUnavailable": "Aprobările de astăzi nu au putut fi actualizate. Închideți acest panou și reîncercați.",
+        "description": "Solicitantul vede acest motiv odată cu respingerea.",
+        "noLongerRejectable": "Această solicitare nu mai poate fi respinsă aici.",
+        "title": "Respingeți solicitarea"
+      },
       "retry": "Reîncercați aprobările",
+      "reviewInInbox": "Examinați în caseta de primire",
+      "reviewInInboxNamed": "Examinați în caseta de primire: {title}",
       "title": "Aprobări",
       "toast": {
         "approved": "Cerere aprobată",
         "approveError": "Nu s-a putut aproba cererea",
         "rejected": "Cerere respinsă",
         "rejectError": "Nu s-a putut respinge cererea"
-      }
+      },
+      "totalAtLeast": "{count}+",
+      "truncated": "{total, plural, one {Se afișează {shown} din # aprobare în așteptare.} other {Se afișează {shown} din # aprobări în așteptare.}}",
+      "truncatedAtLeast": "{total, plural, one {Se afișează {shown} din cel puțin # aprobare în așteptare.} other {Se afișează {shown} din cel puțin # aprobări în așteptare.}}",
+      "waitingInInbox": "{total, plural, one {# aprobare în așteptare se află în caseta de primire.} other {# aprobări în așteptare se află în caseta de primire.}}",
+      "waitingInInboxAtLeast": "{total, plural, one {Cel puțin # aprobare în așteptare se află în caseta de primire.} other {Cel puțin # aprobări în așteptare se află în caseta de primire.}}"
     },
     "briefing": {
       "accessUnavailable": "Acest rezumat este indisponibil pentru angajatul și organizația curente.",

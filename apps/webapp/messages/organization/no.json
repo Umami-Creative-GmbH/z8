@@ -217,9 +217,33 @@
     },
     "invite": {
       "allowCreateOrganizations": "Tillat denne brukeren å opprette organisasjoner",
+      "contractor": {
+        "companyName": "Oppdragsselskap",
+        "compensation": {
+          "description": "Gjelder fra starten av oppdraget når de blir med. Bare organisasjonsadministratorer ser det; du kan også angi det senere.",
+          "label": "Angi satsen nå"
+        },
+        "legend": "Oppdragstakerdetaljer (valgfritt)",
+        "noProjects": "Ingen aktive prosjekter ennå. Du kan tilordne prosjekter senere.",
+        "plannedEndDate": "Planlagt oppdragsslutt",
+        "plannedEndDateDescription": "Den siste arbeidsdagen. Når de blir med, blir den til en planlagt sluttdato som avslutter tilgangen og brukerplassen deres.",
+        "plannedEndDateNotFuture": "Planlagt oppdragsslutt må være etter i dag.",
+        "projects": "Prosjekter",
+        "referenceCode": "PO eller kostnadssted",
+        "vatId": "MVA-nummer"
+      },
       "description": "Send en invitasjon til å bli med i {organizationName}",
       "emailLabel": "E-postadresse",
+      "engagement": {
+        "contractorDescription": "Fører tid på prosjekter; ingen ansettelsesvilkår, arbeidsregler eller ferie",
+        "employee": "Ansatt",
+        "employeeDescription": "Ansettelsesvilkår, arbeidsregler og feriekvote gjelder",
+        "label": "Inviter som"
+      },
       "error": "Kunne ikke sende invitasjon",
+      "errors": {
+        "projectNotFound": "Et valgt prosjekt tilhører ikke lenger denne organisasjonen. Velg prosjektene på nytt."
+      },
       "kioskOnly": {
         "description": "For ansatte uten bedrifts-e-post. De kan ikke logge inn, og stempler kun på kiosker med PIN-koden sin. Du kan legge til en e-postadresse senere.",
         "firstName": "Fornavn",

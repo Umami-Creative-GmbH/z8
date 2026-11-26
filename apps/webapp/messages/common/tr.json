@@ -208,7 +208,6 @@
     "adding": "Ekleniyor...",
     "all": "Tümü",
     "appName": "Z8",
-    "approve": "Onayla",
     "assign": "Ata",
     "back": "Geri",
     "backToDashboard": "Kontrol paneline dön",
@@ -372,6 +371,94 @@
       "bellLabel": "{count, plural, =0 {Bildirimler} other {Bildirimler (# okunmamış)}}"
     },
     "offline": "Çevrimdışı",
+    "onCall": {
+      "agreementDocumented": "Sözleşme belgelendi",
+      "agreementStale": "Vardiya sözleşmeden bu yana değişti",
+      "finding": {
+        "nearBand": "Haftalık çağrılan süre: {used}; çağrı bandının {limit} olan sınırına yaklaşıyor",
+        "other": "Çağrı üzerine çalışma kuralı risk altında",
+        "overBand": "Haftalık çağrılan süre: {used}; çağrı bandının {limit} olan sınırının üzerinde",
+        "shortCall": "{duration} süreli vardiya, asgari {minimum} çağrı süresinden daha kısa",
+        "shortNotice": "{days, plural, other {# tam gün önceden bildirimle çağrıldı; {required} gereklidir} }",
+        "shortWorkCall": "{duration} süreli çağrıda çalışıldı, asgari {minimum} çağrı süresinden daha az",
+        "underBand": "Haftalık çağrılan süre: {used}; çağrı bandının {limit} olan sınırının altında"
+      },
+      "findingsTitle": "Son ve sonraki dört haftanın kontrolleri",
+      "hoursKind": {
+        "exact": "Tam olarak kararlaştırılan haftalık çalışma saati",
+        "maximum": "Maksimum haftalık çalışma saati (%−20'ye kadar)",
+        "minimum": "Minimum haftalık çalışma saati (%+25'e kadar)",
+        "unspecified": "Haftalık çalışma saati kararlaştırılmadı (20 sa. geçerlidir)"
+      },
+      "minimumCall": "Minimum çağrı: {duration}",
+      "noFindings": "Hiçbir çağrı üzerine çalışma kuralı risk altında değil.",
+      "notToday": "Bugün çağrı üzerine görevde değil.",
+      "payroll": {
+        "continuedPaySpan": "{from} ile {until} tarihleri arasında ücret ödemesinin devamı gereklidir (§ 3 EFZG)",
+        "description": "Ücret ödemesinin devamını hazırlamak amacıyla, bu dönemdeki çağrı üzerine çalışan personelin her bir hastalık izni veya resmi tatilden önceki ortalama çalışma süresi. Buradaki hiçbir şey kesinleşmiş günleri değiştirmez.",
+        "hide": "Ayrıntıları gizle",
+        "holidaysPaidAsHolidays": "Hastalık sırasındaki resmi tatiller hastalık günü olarak değil, kendi satırları olarak ödenir: {dates}",
+        "paidSickDays": "{days, plural, other {Bu dönemde # günlük hastalık ödeneği} }",
+        "perDay": "Günde {duration}",
+        "rangeTooLong": "Referans saatler tek seferde en fazla üç ay için listelenir. Daha kısa bir dönem seçin.",
+        "show": "Ayrıntıları göster",
+        "sickPayExhausted": "Bu dönemde hastalık ödeneği yok: Altı haftalık ücret ödemesinin devamı {date} tarihinde sona erdi (§ 3 Abs. 1 EFZG)",
+        "sickPayGuidanceLabel": "Bordro rehberi",
+        "sickPayGuidanceNote": "Hastalık ödeneği satırları § 3 EFZG uyarınca yol gösterici niteliktedir; ücret ödemesinin devam edip etmeyeceğine ve ne kadar ödeneceğine bordro sistemi karar verir.",
+        "sickPayNotOwed": "Bu hastalık için hastalık ödeneği ödenmez: İşe başlandıktan sonraki ilk dört hafta içinde sona erdi (§ 3 Abs. 3 EFZG)",
+        "sickPayWaiting": "Bu dönemde hastalık ödeneği yok: Hak, işe başlandıktan dört hafta sonra, {date} tarihinde doğar (§ 3 Abs. 3 EFZG)",
+        "title": "Çağrı üzerine çalışma referans saatleri (§ 12 TzBfG)"
+      },
+      "reference": {
+        "calculate": "Hesapla",
+        "dateRequired": "Bir tarih seçin.",
+        "denominator": "Hesaba katılan günler",
+        "denominatorValue": "{total} günün {counted} günü",
+        "description": "Yalnızca bilgi amaçlıdır: Neyin ödeneceğini bordro belirler. Buradaki hiçbir şey kesinleşmiş günleri veya kapatılmış ayları değiştirmez.",
+        "eventDate": "Bir gün için hesapla",
+        "excluded": {
+          "notEmployed": "İstihdam edilmiyor",
+          "paidAbsence": "İzin veya hastalık",
+          "publicHoliday": "Resmî tatil",
+          "unpaidAbsence": "Ücretsiz devamsızlık"
+        },
+        "excludedPeriod": "{days, plural, other {{from} – {until}: {reason} (# gün)} }",
+        "excludedTitle": "Ortalamaya dahil edilmedi",
+        "noEvents": "Son üç ay içinde çağrı üzerine çalışma gününe denk gelen bir hastalık izni veya resmî tatil yok.",
+        "none": "—",
+        "numerator": "Çalışılan süre",
+        "perDay": "Günlük ortalama",
+        "periodThirteenWeeks": "Referans dönemi (13 hafta): {from} – {until}",
+        "periodThreeMonths": "Referans dönemi (3 ay): {from} – {until}",
+        "perWeek": "Haftalık ortalama",
+        "perWorkedDay": "Çalışılan gün başına ortalama",
+        "publicHoliday": "{date} tarihindeki resmî tatil",
+        "shortened": "İşe başlama referans dönemi içinde gerçekleştiğinden daha kısa olan dönem dikkate alınır.",
+        "sickLeave": "{date} tarihinden itibaren hastalık izni",
+        "thirteenWeeks": "13 hafta",
+        "threeMonths": "3 ay",
+        "title": "Hastalık ödeneği ve tatiller için referans saatler",
+        "workedDays": "Çalışılan günler"
+      },
+      "reviews": {
+        "acknowledge": "Anlaşmayı belgele",
+        "acknowledged": "Anlaşma belgelendi",
+        "changed": "Vardiya bu liste yüklendikten sonra değişti. Anlaşmayı belgelemeden önce tekrar inceleyin.",
+        "description": "Son dört ve gelecek dört haftadaki kısa bildirimli çağrılar, asgari sürenin altındaki çağrılar ve çağrı aralığı dışındaki haftalar. Giriş-çıkış kaydı hiçbir zaman engellenmez.",
+        "documented": "Anlaşma belgelendi: {reason}",
+        "draft": "Henüz yayınlanmadı. Çalışanın anlaşmasını belgelemeden önce vardiyayı yayınlayın.",
+        "empty": "İncelenecek çağrı üzerine çalışma bulgusu yok.",
+        "notOpen": "Vardiyada artık kısa bildirim bulgusu yok.",
+        "notPublished": "Vardiya henüz yayınlanmadı. Çalışanın anlaşmasını belgelemeden önce vardiyayı yayınlayın.",
+        "reason": "Çalışanın gönüllü anlaşması (§ 12 Abs. 3 TzBfG)",
+        "reasonRequired": "Çalışanın kısa bildirimi nasıl kabul ettiğini açıklayın.",
+        "stale": "Vardiya, anlaşma belgelendikten sonra değişti. Hâlâ geçerliyse tekrar belgeleyin.",
+        "title": "Çağrı üzerine çalışma (§ 12 TzBfG)"
+      },
+      "statutoryMinimumCall": "Yasal asgari çağrı süresi geçerlidir",
+      "title": "Çağrı üzerine çalışma (§ 12 TzBfG)",
+      "weekly": "Haftada {duration}"
+    },
     "open": "Aç",
     "openEnded": "Ucu açık",
     "openMenu": "Menüyü aç",
@@ -425,8 +512,6 @@
     "refreshData": "Verileri yenile",
     "refreshDataFailed": "Veriler yenilenemedi. Lütfen tekrar deneyin.",
     "refreshing": "Yenileniyor...",
-    "reject": "Reddet",
-    "rejecting": "Reddediliyor…",
     "remove": "Kaldır",
     "removing": "Kaldırılıyor...",
     "reset": "Sıfırla",
@@ -596,6 +681,90 @@
     },
     "yes": "Evet"
   },
+  "contractorCompensation": {
+    "dayUnitRules": {
+      "anyWorkFullDay": "Çalışma yapılan her gün tam gün sayılır",
+      "halfAndFullDay": "{minutes} dakikaya kadar yarım gün, üzerindeyse tam gün",
+      "proratedCapped": "{minutes} dakikalık bir güne göre orantılı, en fazla bir gün",
+      "proratedUncapped": "{minutes} dakikalık bir güne göre orantılı, üst sınırsız"
+    }
+  },
+  "contractorStatement": {
+    "approvedOnly": "Yalnızca onaylanan çalışmalar listelenir. Onay bekleyen çalışmalar onaylandıktan sonra eklenir.",
+    "awaitingApprovalExcluded": "Onay bekleyen ve dahil edilmeyen çalışma dönemleri: {count}",
+    "basis": {
+      "daily": "Günlük ücret",
+      "hourly": "Saatlik ücret"
+    },
+    "byProject": "Projeye göre",
+    "columns": {
+      "amount": "Tutar",
+      "basis": "Ödeyen",
+      "currency": "Para Birimi",
+      "date": "Tarih",
+      "dayUnitRule": "Gün birimi kuralı",
+      "end": "Bitiş",
+      "project": "Proje",
+      "rate": "Birim Ücret",
+      "rowType": "Satır türü",
+      "start": "Başlangıç",
+      "task": "Görev",
+      "time": "Saat (yerel)",
+      "unit": "Birim",
+      "units": "Birimler",
+      "workedMinutes": "Çalışılan dakika"
+    },
+    "company": "Şirket",
+    "contractor": "Yüklenici",
+    "contractorNumber": "Yüklenici numarası",
+    "empty": "Bu dönemde Harici Yüklenici olarak tamamlanmış çalışma yok.",
+    "errors": {
+      "failed": "Ekstre oluşturulamadı",
+      "invalidPeriod": "İlk günü son gününden sonra olmayan, en fazla bir yıllık bir dönem seçin.",
+      "notAllowed": "Yalnızca kendi ekstrelerinizi indirebilirsiniz.",
+      "notContractor": "Bu kişinin bu dönemde Harici Yüklenici sözleşmesi bulunmuyor.",
+      "notFound": "Bu kişi kuruluşunuzda bulunamadı."
+    },
+    "export": {
+      "adminDescription": "Faturalarını kontrol etmek için bu Harici Yüklenicinin yaptığı çalışmaları ve birim ücretlerine göre hesaplanan tutarları indirin. Bu bir fatura değil, doğrulama ekstresidir.",
+      "csv": "E-tablolar için CSV",
+      "download": "Ekstreyi indir",
+      "downloaded": "Ekstre indirildi",
+      "format": "Biçim",
+      "from": "Başlangıç",
+      "fromRequired": "İlk günü seçin",
+      "pdf": "PDF",
+      "selfDescription": "Faturanızı hazırlamak veya kontrol etmek için kaydedilen çalışmalarınızı ve anlaşmalı ücretlerinize göre karşılığını indirin. Bu bir fatura değil, doğrulama ekstresidir.",
+      "title": "Süre ve ücret ekstresi",
+      "to": "Bitiş",
+      "toBeforeFrom": "Son gün ilk günden önce olamaz",
+      "toRequired": "Son günü seçin"
+    },
+    "generated": "Oluşturulma zamanı (UTC)",
+    "noProject": "Proje yok",
+    "noRate": "Geçerli bir ücret yok",
+    "notice": "Yalnızca doğrulama ekstresidir. Fatura veya kendi kendine faturalandırma alacak dekontu (Gutschrift) değildir: Z8 asla fatura düzenlemez. Faturanın kontrol edilebilmesi için Z8'de kaydedilen çalışmaları ve yüklenicinin anlaşmalı ücretlerine göre karşılığını listeler.",
+    "organization": "Kuruluş",
+    "page": "Sayfa",
+    "period": "Dönem",
+    "referenceCode": "PO veya masraf merkezi referansı",
+    "rows": {
+      "day": "Gün",
+      "total": "Toplam",
+      "unpriced": "Fiyatlandırılmamış",
+      "work": "Çalışma"
+    },
+    "times": "Günler yüklenicinin yerel takvim günleridir; saatler, çalışmayla birlikte kaydedilen UTC farkına göre gösterilir.",
+    "title": "Yüklenici Süre ve Ücret Doğrulama Beyanı",
+    "totals": "Toplamlar",
+    "units": {
+      "days": "Günler",
+      "hours": "Saatler"
+    },
+    "unpricedNotice": "Bazı çalışmaların gerçekleştiği gün için üzerinde anlaşılmış bir ücreti yoktu. Bu çalışmalar tutar olmadan listelenmiştir ve toplamlara dahil edilmemiştir.",
+    "vatId": "KDV Numarası",
+    "workedHours": "Çalışılan saatler"
+  },
   "drivingLicence": {
     "applyingInterval": "Uygulanıyor…",
     "applyInterval": "Aralık değişikliğini uygula",
@@ -604,6 +773,9 @@
       "chooseClasses": "Fiilen incelediğiniz sınıfları seçin.",
       "classes": "Fiilen incelenen sınıflar",
       "classExpiry": "Sınıf geçerlilik bitişi (varsa)",
+      "declaredBadge": "Beyan edilen",
+      "declaredHelp": "Bu sınıflar ve çalışanın girdiği tüm tarihler önceden seçilmiştir. Bunları orijinal ehliyetle karşılaştırın ve farklı olan her şeyi düzeltin.",
+      "declaredTitle": "{name}, {classes} beyan etti",
       "documentDates": "Orijinal belge tarihleri",
       "employeeDeclaration": "Çalışan yukarıda gösterilen beyanı bu kontrol sırasında bizzat yapmıştır; bu beyanı onaylıyorum.",
       "expiryDate": "Belge son geçerlilik tarihi",
@@ -644,6 +816,8 @@
       },
       "customOrder": "Seçilen sütuna ve yöne göre sıralandı.",
       "deadline": "{date} ({timezone})",
+      "declared": "Beyan edilen: {classes}",
+      "declaredDue": "Beyan edilen sınıfları kontrol et",
       "dueNow": "Kontrol zamanı geldi",
       "dueOrder": "Önce vadesi gelen kontroller, ardından bir sonraki son tarih.",
       "empty": {
@@ -677,6 +851,31 @@
     "class": {
       "active": "Yetkilendirildi",
       "ended": "Sona erdi",
+      "group": {
+        "bus": "Otobüsler",
+        "car": "Otomobiller",
+        "motorcycle": "Mopedler ve motosikletler",
+        "tractor": "Traktörler",
+        "truck": "Kamyonlar"
+      },
+      "name": {
+        "A": "Motosiklet",
+        "A1": "Hafif motosiklet",
+        "A2": "Orta sınıf motosiklet",
+        "AM": "Moped",
+        "B": "Otomobil",
+        "BE": "Römorklu otomobil",
+        "C": "Kamyon",
+        "C1": "Hafif kamyon",
+        "C1E": "Römorklu hafif kamyon",
+        "CE": "Römorklu kamyon",
+        "D": "Otobüs",
+        "D1": "Minibüs",
+        "D1E": "Römorklu minibüs",
+        "DE": "Römorklu otobüs",
+        "L": "Yavaş traktör",
+        "T": "Traktör"
+      },
       "noLongerIntended": "Çalışan artık öngörülen sürücü olmadığı için sona erdi. Tekrar araç kullanmak yeni bir kontrol gerektirir.",
       "overdue": "Rutin kontrolün süresi geçti. Bu kurumsal bir askıya alma işlemidir; yasal araç kullanma hakkının geri alındığı anlamına gelmez.",
       "recheck": "Yeni bir orijinal kontrol ve açık bir yeniden etkinleştirme gereklidir.",
@@ -684,6 +883,36 @@
     },
     "declaration": {
       "text": "Amaçlanan sürüşü engelleyen bilinen herhangi bir sürüş yasağı, hak mahrumiyeti veya başka bir engel bulunmadığını ve geçerli sürüş kısıtlamalarını karşıladığımı onaylıyorum."
+    },
+    "declared": {
+      "add": "Ehliyet sınıfları ekle",
+      "authorized": "Yetkili",
+      "classExpires": "{date} tarihinde sona eriyor",
+      "classExpiry": "{code} ({name}) için son geçerlilik tarihi:",
+      "description": "Sizin tarafınızdan beyan edildi, henüz kontrol edilmedi. Bir doğrulayıcı orijinal ehliyetinizi kontrol edene kadar bu sınıflar araç kullanma yetkisi vermez.",
+      "dialogDescription": "Sürücü belgenizdeki her sınıfı seçin. Doğrulayıcınız, orijinal ehliyetinizi kontrol ederken bunları onaylar.",
+      "dialogTitle": "Ehliyetinizde hangi sınıflar var?",
+      "documentExpires": "Ehliyet kartı geçerlilik bitişi",
+      "documentExpiry": "Ehliyet kartının geçerlilik bitiş tarihi",
+      "documentExpiryHelp": "Kart üzerindeki 4b alanı. Ehliyetinizde yoksa boş bırakın.",
+      "edit": "Düzenle",
+      "emptyDescription": "Hangi ehliyet sınıflarına sahip olduğunuzu kuruluşunuza bildirin. Bu, planlamaya yardımcı olur ve kontrolünüzü hazırlar; ancak araç kullanma yetkisi vermez.",
+      "emptyMoreDescription": "Son kontrolünüzden bu yana aldığınız bir sınıfı ekleyin. Doğrulayıcınızdan bunu kontrol etmesi istenecektir.",
+      "emptyMoreTitle": "Başka bir ehliyet sınıfınız var mı?",
+      "emptyTitle": "Hangi araçları kullanabilirsiniz?",
+      "expiryTitle": "Son geçerlilik tarihleri (isteğe bağlı)",
+      "invalid": "Seçilen sınıfları ve tarihleri kontrol edin.",
+      "notIntended": "Artık öngörülen bir sürücü değilsiniz, bu nedenle kuruluşunuz ehliyet sınıflarınızı toplamıyor.",
+      "privacy": "Yalnızca sınıflarınız ve son geçerlilik tarihleriniz kaydedilir; ehliyet numarası veya fotoğraf kaydedilmez. Beyanınız size araç kullanma yetkisi vermez.",
+      "remove": "Sınıflarımı kaldır",
+      "removed": "Beyan edilen ehliyet sınıfları kaldırıldı",
+      "removing": "Kaldırılıyor…",
+      "save": "{count, plural, other {# sınıfı kaydet} }",
+      "saved": "Ehliyet sınıfları kaydedildi. Doğrulayıcınız bunları orijinal ehliyetinizle kontrol edecektir.",
+      "saveFailed": "Ehliyet sınıflarınız kaydedilemedi. Seçiminiz korundu; lütfen tekrar deneyin.",
+      "saving": "Kaydediliyor…",
+      "title": "Beyan ettiğiniz ehliyet sınıfları",
+      "updated": "Güncellendi"
     },
     "delivery": {
       "uncertain": "Size gönderilen isteğe bağlı hatırlatma e-postalarının teslimat durumu belirsiz ({count}). Bunlar otomatik olarak tekrar gönderilmeyecektir. Uygulama içi hatırlatıcılarınız kullanılabilir durumda kalır; e-postanın teslim edilmesi okunduğu anlamına gelmez."
@@ -846,6 +1075,7 @@
     },
     "operational": {
       "advisory": "Sürüş yetkisi",
+      "declared": "Beyan edildi, henüz kontrol edilmedi. Araç kullanma yetkisi vermez.",
       "loading": "Sürüş yetkisi yükleniyor…",
       "loadingEmployees": "Planlama için çalışanlar yükleniyor…",
       "noEmployees": "Eşleşen çalışan yok.",
@@ -1017,6 +1247,20 @@
     "team": "Ekip",
     "totalEmployees": "{count} çalışan",
     "tryDifferentSearch": "Aramanızı veya filtrelerinizi değiştirmeyi deneyin"
+  },
+  "engagement": {
+    "absenceRefusals": {
+      "contractorRecordsUnavailabilityOnly": "Bu tarihlerde Dış Yüklenici olarak çalışıyorlar: Yalnızca müsait olmama durumu kaydedilebilir.",
+      "spansEngagementChange": "Bu tarihler, bordrolu çalışma ile Dış Yüklenici çalışması arasındaki bir geçişi kapsıyor. Her bölümü ayrı ayrı kaydedin.",
+      "unavailabilityIsForContractors": "Bu tarihlerde bordrolu çalışan durumundalar: Müsait olmama durumu yalnızca Dış Yükleniciler içindir."
+    },
+    "externalContractor": "Dış Yüklenici",
+    "filter": {
+      "all": "Tümü",
+      "contractors": "Dış Yükleniciler",
+      "employees": "Çalışanlar",
+      "label": "Görevlendirme"
+    }
   },
   "errors": {
     "failedToLoad": "Veri yüklenemedi",
@@ -1487,6 +1731,10 @@
         "message": "{employeeName} için uygun bir doğrulayıcı ayarlayın. Bu görev herhangi bir denetim hakkı tanımaz ve süre sınırını uzatmaz.",
         "title": "Sürücü belgesi doğrulayıcı sorumluluğu ata"
       },
+      "drivingLicenceDeclared": {
+        "message": "{employeeName} {classes} ehliyet sınıflarını beyan etti. Yetkilendirmek için orijinal ehliyeti inceleyin; tek başına beyan hiçbir yetki sağlamaz.",
+        "title": "Kontrol edilecek ehliyet sınıfları"
+      },
       "drivingLicencePersonalTask": {
         "message": "{employeeName} adlı çalışana orijinal sürücü belgesi kontrolü ayarlamasını hatırlatın. Doğrudan çalışan bildirimi kullanılamıyordu. Görevin tamamlanması doğrudan teslim veya okundu anlamına gelmez.",
         "title": "Çalışana bizzat hatırlatın"
@@ -1529,6 +1777,11 @@
       "formerEmployeeReportsWithoutManager": {
         "message": "{count, plural, other {# çalışan hâlâ yalnızca eski bir yöneticiye bağlı: {names}. Mevcut bir yönetici atayın.} }",
         "title": "Mevcut yöneticisi olmayan çalışanlar"
+      },
+      "invitationContractorTermsNeedReview": {
+        "message": "{name} davetindeki ücret, katıldıklarında uygulanamadı. Bu ücreti Dış Yüklenici ücretlendirmesinde belirleyin; o zamana kadar çalışmaları fiyatlandırılmamış olarak kalır.",
+        "termsExistMessage": "{name} davetindeki ücret, katıldıklarında uygulanmadı: Görevlendirmelerinin zaten geçerliliğini koruyan ücretlendirme koşulları var. Değişmesi gerekip gerekmediğini Dış Yüklenici ücretlendirmesinde inceleyin.",
+        "title": "Bir Dış Yüklenicinin ücretinin incelenmesi gerekiyor"
       },
       "kioskCommandRefused": {
         "forwardedMessage": "{employeeName} tarafından {time} saatinde {kioskName} kioskunda yapılan bir {action, select, clock_in {giriş kaydı} clock_out {çıkış kaydı} start_break {mola başlangıcı kaydı} resume_break {moladan dönüş kaydı} other {zaman kaydı}} kaydedilmedi: {reason, select, wrong_pin {PIN yanlıştı} pin_locked {kiosk PIN'i çok fazla hatalı deneme nedeniyle kilitlendi} no_pin {karşılaştırma yapılacak bir kiosk PIN'i yoktu} pin_unchecked {PIN kontrol edilemedi} kiosk_retired {kiosk yeniden bağlanmadan önce iptal edildi veya yeniden eşleştirildi} contact_unverifiable {Z8 kiosk'un son bağlantısını doğrulayamadı} outside_window {saati Z8'in kabul ettiği aralığın dışındaydı} clock_untrusted {bunun için kiosk saatine güvenilemedi} not_assigned {çalışan kiosk'un konumuna atanmamış} not_adopted {kuruluş çevrimdışı kiosk kayıtlarını kabul etmiyor} month_closed {ay kapatıldı} holiday {gün zaman kaydı yapılmayan bir tatil} conflict {kaydedilmiş başka bir zamanla çakışıyor} other {Z8 bunu kabul edemedi}}. Zamanı onlar için kaydedin veya kendileriyle kontrol edin.",
@@ -1694,6 +1947,11 @@
       "personnelFilePayslipsShared": {
         "message": "{payPeriod} dönemi için maaş bordronuz sizinle paylaşıldı.",
         "title": "Özlük dosyanızda yeni maaş bordrosu"
+      },
+      "plannedEngagementEndNeedsReview": {
+        "notScheduled": "{name} adlı kişinin planlanan görevlendirme bitişi ({plannedEndDate}), ayrılma tarihi olarak planlanamadı. Çalışan sayfasından planlayın.",
+        "passed": "{name} katıldığında planlanan görevlendirme bitiş tarihi ({plannedEndDate}) geçmişti, bu nedenle ayrılma tarihi bugün ({leavingDate}) olarak belirlendi. Görevlendirme devam ediyorsa değiştirin.",
+        "title": "Planlanan bir görevlendirme bitişinin incelenmesi gerekiyor"
       },
       "policyForgottenClockOutReminder": {
         "message": "{day} günü için gereken çalışma süresine {endTime} ({timezone}) saatinde ulaştınız. Çalışmayı bitirdiyseniz çıkış yapın."
@@ -2497,6 +2755,13 @@
           "createdAt": "Bu görevin veya teslimatın ilk kaydedildiği zaman (UTC anı olarak).",
           "deadline_timezone": "Politikanın son tarihleri için kullanılan açık takvim saat dilimi.",
           "declaration_text": "Orijinal denetim sırasında kaydedilen tam beyan metni.",
+          "declared_at": "Beyan ettiğiniz sınıfları en son kaydettiğiniz zaman (UTC anı olarak).",
+          "declared_class_code": "Sahip olduğunuzu beyan ettiğiniz bir ehliyet sınıfı. Araç kullanma yetkisi sağlamaz.",
+          "declaredClasses": {
+            "summary": "Kendi beyan ettiğiniz ve henüz kontrol ettirmediğiniz ehliyet sınıfları. Kontrol yapıldığında bunların yerini alır; artık öngörülen bir sürücü olmadığınızda silinirler."
+          },
+          "declared_class_expiry_date": "Girdiğiniz sınıfa ait son geçerlilik tarihi (C ve D sınıfları); girmediyseniz boştur.",
+          "declared_document_expires_on": "Girdiğiniz şekliyle ehliyet kartınızın son geçerlilik tarihi; girmediyseniz boştur.",
           "document_expires_on": "Belgenin, münferit sınıfların geçerlilik süresinden ayrı olan son geçerlilik tarihi.",
           "document_issued_on": "Saat veya saat dilimi olmaksızın belgenin veriliş tarihi.",
           "document_valid_through": "Belgenin geçerliliği kapsamındaki son takvim günü.",
@@ -2615,6 +2880,25 @@
             "project": "Ücretin geçerli olduğu proje; tüm çalışmalarınız için geçerliyse boştur.",
             "summary": "Kuruluşun çalışmalarınız için müşterilere fatura ettiği ücretler."
           },
+          "contractorCompensationTerms": {
+            "capAtOneDay": "Çalışma ne kadar sürerse sürsün, bir günün en fazla bir gün sayılıp sayılmayacağı.",
+            "compensationBasis": "Ödemenizin saatlik (hourly) mi yoksa günlük (daily) mü yapıldığı.",
+            "currency": "Ücretin para birimi.",
+            "dayUnitRule": "Bir günlük çalışmanın günlük ücrete göre nasıl sayılacağı: herhangi bir çalışma tam gün (any_work_full_day), bir eşiğe göre yarım veya tam gün (half_and_full_day) ya da standart bir güne oranla (prorated_by_standard_day). Saatlik ücret için boştur.",
+            "effectiveFrom": "Bu koşulların geçerli olduğu ilk gün (YYYY-AA-GG).",
+            "effectiveTo": "Bu koşulların artık geçerli olmadığı ilk gün (YYYY-AA-GG); geçerli olduğu sürece boştur.",
+            "employmentPeriodId": "Bu koşulların ait olduğu dönem (employment_periods içindeki kimliği).",
+            "halfDayThresholdMinutes": "Günde bu dakika kadar çalışma yarım gün sayılır; fazlası tam gün sayılır.",
+            "rate": "Saatlik veya günlük ücretiniz.",
+            "standardDayMinutes": "Bir günlük çalışmanın kıyaslandığı standart bir günün dakika cinsinden süresi.",
+            "summary": "Zaman içinde bir Dış Yüklenici olarak saatlik veya günlük ücretiniz."
+          },
+          "contractorDetails": {
+            "companyName": "Sözleşme yaptığınız şirket.",
+            "referenceCode": "Faturalarınızın eşleştirildiği satın alma siparişi veya masraf merkezi referansı.",
+            "summary": "Bir Dış Yüklenici olarak sözleşme ayrıntılarınız.",
+            "vatId": "KDV numaranız veya vergi kimlik numaranız."
+          },
           "costCenters": {
             "code": "Masraf merkezinin kodu.",
             "costCenter": "Masraf merkezinin adı.",
@@ -2681,6 +2965,7 @@
             "contractType": "Sözleşme türünüz.",
             "email": "Kullanıcı hesabınızın e-posta adresi.",
             "endDate": "İstihdamınızın ne zaman sona erdiği; devam ettiği sürece boştur.",
+            "engagementKind": "Bugün kuruluş için çalışan (employee) olarak mı yoksa Dış Yüklenici (contractor) olarak mı çalıştığınız.",
             "firstName": "Çalışan kaydınızdaki adınız.",
             "gender": "Cinsiyetiniz.",
             "isActive": "Çalışan kaydınızın etkin olup olmadığı.",
@@ -2700,6 +2985,7 @@
           },
           "employmentPeriods": {
             "endedAt": "Dönemin bittiği tarih; açık olduğu sürece boştur.",
+            "engagementKind": "Bu dönemde çalışan (employee) olarak mı yoksa Dış Yüklenici (contractor) olarak mı çalıştığınız.",
             "startedAt": "Dönemin başladığı tarih.",
             "startProvenance": "Başlangıcın kaynağı; örneğin işe alım veya yeniden işe alım.",
             "status": "Dönemin açık mı yoksa kapalı mı olduğu.",

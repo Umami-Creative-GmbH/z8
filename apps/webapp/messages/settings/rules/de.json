@@ -17,8 +17,8 @@
       "deactivate": "Deaktivieren",
       "defaults": {
         "contractorUnavailability": {
-          "description": "Kalenderhinweis, dass ein Externer Dienstleister nicht verfügbar ist; kein Urlaub und keine Abwesenheit",
-          "name": "Nicht verfügbar (Externer Dienstleister)"
+          "description": "Kalendernotiz, dass ein externer Auftragnehmer nicht verfügbar ist; kein Urlaub oder Freizeitausgleich",
+          "name": "Nicht verfügbar (Externer Auftragnehmer)"
         },
         "timeOffInLieu": {
           "description": "Vom Arbeitszeitsaldo abgezogene Abwesenheit",
@@ -36,7 +36,7 @@
         "activeHelp": "Aktive Kategorien stehen für neue Abwesenheitsanträge zur Verfügung.",
         "color": "Farbe",
         "colorHelp": "Kalendermarkierung",
-        "contractorUnavailabilityRules": "Die Nichtverfügbarkeit Externer Dienstleister ist nur eine Kalendermarkierung: Sie verbraucht nie Urlaub, Arbeitszeit oder Arbeitszeitsaldo.",
+        "contractorUnavailabilityRules": "Die Nichtverfügbarkeit eines externen Auftragnehmers ist lediglich eine Kalendermarkierung: Sie beansprucht weder Urlaub noch Arbeitszeit oder das Arbeitszeitkonto.",
         "countsAgainstVacation": "Wird vom Urlaubsguthaben abgezogen",
         "countsAgainstVacationHelp": "Genehmigte Tage vom Urlaubsanspruch des Mitarbeiters abziehen.",
         "deputyRequired": "Vertretung erforderlich",
@@ -64,7 +64,7 @@
         "translations": "Übersetzungen",
         "translationsHelp": "Optionale lokalisierte Bezeichnungen für Mitarbeiter, die eine andere App-Sprache verwenden.",
         "type": "Typ",
-        "typeContractorUnavailability": "Nichtverfügbarkeit Externer Dienstleister",
+        "typeContractorUnavailability": "Nichtverfügbarkeit externer Auftragnehmer",
         "typeHelp": "Gruppiert Berichte und nachgelagerte Abwesenheits-Workflows.",
         "typePlaceholder": "Kategorietyp auswählen",
         "typeTimeOffInLieu": "Freizeitausgleich"

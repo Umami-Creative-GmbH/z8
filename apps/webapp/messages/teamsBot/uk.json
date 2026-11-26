@@ -80,6 +80,7 @@
     "pendingApprovals": "Очікують на затвердження",
     "pendingExceptionRequests": "{count, plural, one {# запит на виняток очікує на розгляд} few {# запити на виняток очікують на розгляд} other {# запитів на виняток очікують на розгляд} }",
     "returns": "Повертається {date}",
+    "reviewComplianceExceptions": "Переглянути запити на винятки",
     "since": "З {time}",
     "textClockedInEmployee": "• {name} - з {clockedInAt} ({duration})",
     "textCompliance": "**⚠️ Відповідність вимогам:**",

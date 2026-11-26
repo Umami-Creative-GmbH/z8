@@ -208,7 +208,6 @@
     "adding": "Lägger till...",
     "all": "Alla",
     "appName": "Z8",
-    "approve": "Godkänn",
     "assign": "Tilldela",
     "back": "Tillbaka",
     "backToDashboard": "Tillbaka till översikten",
@@ -372,6 +371,94 @@
       "bellLabel": "{count, plural, =0 {Aviseringar} other {Aviseringar (# olästa)}}"
     },
     "offline": "Offline",
+    "onCall": {
+      "agreementDocumented": "Överenskommelse dokumenterad",
+      "agreementStale": "Skiftet har ändrats sedan överenskommelsen",
+      "finding": {
+        "nearBand": "Veckan avropade {used}, närmar sig avropsintervallets gräns på {limit}",
+        "other": "Avropsregel i riskzonen",
+        "overBand": "Veckan avropade {used}, över avropsintervallet på {limit}",
+        "shortCall": "Skift på {duration} är kortare än minimiavropet på {minimum}",
+        "shortNotice": "{days, plural, one {Kallades in med # hel dags varsel; {required} krävs} other {Kallades in med # hela dagars varsel; {required} krävs}}",
+        "shortWorkCall": "Arbetade ett avrop på {duration}, mindre än minimiavropet på {minimum}",
+        "underBand": "Veckan avropade {used}, under avropsintervallet på {limit}"
+      },
+      "findingsTitle": "Kontroller av de senaste och kommande fyra veckorna",
+      "hoursKind": {
+        "exact": "Exakt avtalad veckoarbetstid",
+        "maximum": "Maximal veckoarbetstid (ner till −20 %)",
+        "minimum": "Minimal veckoarbetstid (upp till +25 %)",
+        "unspecified": "Ingen veckoarbetstid avtalad (20 tim gäller)"
+      },
+      "minimumCall": "Minimiavrop {duration}",
+      "noFindings": "Ingen avropsregel är i riskzonen.",
+      "notToday": "Inte på avrop i dag.",
+      "payroll": {
+        "continuedPaySpan": "Fortsatt lön ska betalas från {from} till {until} (§ 3 EFZG)",
+        "description": "Genomsnittlig arbetstid före varje sjukfrånvaro eller helgdag för avropsanställda under denna period, för att förbereda fortsatt lön. Inget här ändrar fastställda dagar.",
+        "hide": "Dölj uppdelning",
+        "holidaysPaidAsHolidays": "Helgdagar under sjukdomsperioden betalas som egna rader, inte som sjukdagar: {dates}",
+        "paidSickDays": "{days, plural, one {Sjuklön för # dag under denna period} other {Sjuklön för # dagar under denna period}}",
+        "perDay": "{duration} per dag",
+        "rangeTooLong": "Referenstimmar visas för högst tre månader åt gången. Välj en kortare period.",
+        "show": "Visa uppdelning",
+        "sickPayExhausted": "Ingen sjuklön under denna period: de sex veckorna med fortsatt lön upphörde den {date} (§ 3 st. 1 EFZG)",
+        "sickPayGuidanceLabel": "Vägledning för lönehantering",
+        "sickPayGuidanceNote": "Sjuklönerader är vägledande enligt § 3 EFZG; lönesystemet avgör om och hur mycket fortsatt lön som betalas ut.",
+        "sickPayNotOwed": "Ingen sjuklön ska betalas för denna sjukdom: den avslutades inom de första fyra veckorna av anställningen (§ 3 st. 3 EFZG)",
+        "sickPayWaiting": "Ingen sjuklön under denna period: rätten inträder den {date}, efter fyra veckors anställning (§ 3 st. 3 EFZG)",
+        "title": "Referenstimmar för arbete på avrop (§ 12 TzBfG)"
+      },
+      "reference": {
+        "calculate": "Beräkna",
+        "dateRequired": "Välj ett datum.",
+        "denominator": "Inräknade dagar",
+        "denominatorValue": "{counted} av {total} dagar",
+        "description": "Endast för information: löneavdelningen beslutar vad som betalas ut. Inget här ändrar fastställda dagar eller stängda månader.",
+        "eventDate": "Beräkna för en dag",
+        "excluded": {
+          "notEmployed": "Ej anställd",
+          "paidAbsence": "Ledighet eller sjukdom",
+          "publicHoliday": "Helgdag",
+          "unpaidAbsence": "Obetald frånvaro"
+        },
+        "excludedPeriod": "{days, plural, one {{from} – {until}: {reason} (# dag)} other {{from} – {until}: {reason} (# dagar)}}",
+        "excludedTitle": "Exkluderad från genomsnittet",
+        "noEvents": "Ingen sjukfrånvaro eller helgdag på en tillkallningsdag under de senaste tre månaderna.",
+        "none": "—",
+        "numerator": "Arbetad tid",
+        "perDay": "Genomsnitt per dag",
+        "periodThirteenWeeks": "Referensperiod (13 veckor): {from} – {until}",
+        "periodThreeMonths": "Referensperiod (3 månader): {from} – {until}",
+        "perWeek": "Genomsnitt per vecka",
+        "perWorkedDay": "Genomsnitt per arbetad dag",
+        "publicHoliday": "Helgdag den {date}",
+        "shortened": "Anställningen påbörjades under referensperioden, så den kortare perioden räknas.",
+        "sickLeave": "Sjukfrånvaro från {date}",
+        "thirteenWeeks": "13 veckor",
+        "threeMonths": "3 månader",
+        "title": "Referenstimmar för sjuklön och helgdagar",
+        "workedDays": "Arbetade dagar"
+      },
+      "reviews": {
+        "acknowledge": "Dokumentera överenskommelse",
+        "acknowledged": "Överenskommelse dokumenterad",
+        "changed": "Skiftet har ändrats sedan listan lästes in. Granska det igen innan du dokumenterar överenskommelsen.",
+        "description": "Tillkallningar med kort varsel, tillkallningar under miniminivån och veckor utanför tillkallningsintervallet under de senaste och kommande fyra veckorna. Stämpling blockeras aldrig.",
+        "documented": "Överenskommelse dokumenterad: {reason}",
+        "draft": "Inte publicerat ännu. Publicera skiftet innan du dokumenterar medarbetarens överenskommelse.",
+        "empty": "Inga avvikelser för tillkallning att granska.",
+        "notOpen": "Skiftet har inte längre någon avvikelse om kort varsel.",
+        "notPublished": "Skiftet är inte publicerat ännu. Publicera det innan du dokumenterar medarbetarens överenskommelse.",
+        "reason": "Medarbetarens frivilliga överenskommelse (§ 12 Abs. 3 TzBfG)",
+        "reasonRequired": "Beskriv hur medarbetaren godkände det korta varslet.",
+        "stale": "Skiftet ändrades efter att överenskommelsen dokumenterades. Dokumentera den igen om den fortfarande gäller.",
+        "title": "Arbete på tillkallning (§ 12 TzBfG)"
+      },
+      "statutoryMinimumCall": "Lagstadgad minimitid vid tillkallning tillämpas",
+      "title": "Arbete på tillkallning (§ 12 TzBfG)",
+      "weekly": "{duration} per vecka"
+    },
     "open": "Öppna",
     "openEnded": "Utan slutdatum",
     "openMenu": "Öppna menyn",
@@ -425,8 +512,6 @@
     "refreshData": "Uppdatera data",
     "refreshDataFailed": "Det gick inte att uppdatera data. Försök igen.",
     "refreshing": "Uppdaterar...",
-    "reject": "Avvisa",
-    "rejecting": "Avvisar…",
     "remove": "Ta bort",
     "removing": "Tar bort...",
     "reset": "Återställ",
@@ -596,6 +681,90 @@
     },
     "yes": "Ja"
   },
+  "contractorCompensation": {
+    "dayUnitRules": {
+      "anyWorkFullDay": "Varje dag med arbete räknas som en hel dag",
+      "halfAndFullDay": "Halvdag upp till {minutes} min, heldag därutöver",
+      "proratedCapped": "Proportionellt beräknat utifrån en dag på {minutes} minuter, högst en dag",
+      "proratedUncapped": "Proportionellt beräknat utifrån en dag på {minutes} minuter, utan maxtak"
+    }
+  },
+  "contractorStatement": {
+    "approvedOnly": "Endast godkänt arbete visas. Arbete som väntar på godkännande läggs till när det har godkänts.",
+    "awaitingApprovalExcluded": "Arbetsperioder som väntar på godkännande, ingår ej: {count}",
+    "basis": {
+      "daily": "Dagstaxa",
+      "hourly": "Timtaxa"
+    },
+    "byProject": "Per projekt",
+    "columns": {
+      "amount": "Belopp",
+      "basis": "Betald av",
+      "currency": "Valuta",
+      "date": "Datum",
+      "dayUnitRule": "Dagsenhetsregel",
+      "end": "Slut",
+      "project": "Projekt",
+      "rate": "Taxa",
+      "rowType": "Radtyp",
+      "start": "Start",
+      "task": "Uppgift",
+      "time": "Tid (lokal)",
+      "unit": "Enhet",
+      "units": "Enheter",
+      "workedMinutes": "Arbetade minuter"
+    },
+    "company": "Företag",
+    "contractor": "Uppdragstagare",
+    "contractorNumber": "Uppdragstagarnummer",
+    "empty": "Inget slutfört arbete som extern uppdragstagare under denna period.",
+    "errors": {
+      "failed": "Underlaget kunde inte skapas",
+      "invalidPeriod": "Välj en period på högst ett år där den första dagen inte infaller efter den sista.",
+      "notAllowed": "Du kan endast ladda ner dina egna underlag.",
+      "notContractor": "Den här personen hade inga uppdrag som extern uppdragstagare under denna period.",
+      "notFound": "Den här personen hittades inte i din organisation."
+    },
+    "export": {
+      "adminDescription": "Ladda ner vad den här externa uppdragstagaren har arbetat och vad det prissätts till enligt dennes taxor för att kontrollera fakturan. Ett verifieringsunderlag, inte en faktura.",
+      "csv": "CSV för kalkylblad",
+      "download": "Ladda ner underlag",
+      "downloaded": "Underlag har laddats ner",
+      "format": "Format",
+      "from": "Från",
+      "fromRequired": "Välj första dagen",
+      "pdf": "PDF",
+      "selfDescription": "Ladda ner ditt registrerade arbete och vad det prissätts till enligt dina avtalade taxor för att förbereda eller kontrollera din faktura. Ett verifieringsunderlag, inte en faktura.",
+      "title": "Tids- och arvodesunderlag",
+      "to": "Till",
+      "toBeforeFrom": "Den sista dagen kan inte vara före den första dagen",
+      "toRequired": "Välj sista dagen"
+    },
+    "generated": "Genererad (UTC)",
+    "noProject": "Inget projekt",
+    "noRate": "Ingen taxa tillämpas",
+    "notice": "Endast verifieringsunderlag. Inte en faktura eller självfakturerande kreditnota (Gutschrift): Z8 utfärdar aldrig fakturor. Det visar det arbete som har registrerats i Z8 och vad det prissätts till enligt uppdragstagarens avtalade taxor, så att en faktura kan kontrolleras mot det.",
+    "organization": "Organisation",
+    "page": "Sida",
+    "period": "Period",
+    "referenceCode": "Inköpsorder- eller kostnadsställereferens",
+    "rows": {
+      "day": "Dag",
+      "total": "Totalt",
+      "unpriced": "Ej prissatt",
+      "work": "Arbete"
+    },
+    "times": "Dagar avser uppdragstagarens lokala kalenderdagar; tider visas med den UTC-förskjutning som registrerades med arbetet.",
+    "title": "Verifikationsunderlag för uppdragstagares tid och arvode",
+    "totals": "Summor",
+    "units": {
+      "days": "Dagar",
+      "hours": "Timmar"
+    },
+    "unpricedNotice": "Viss arbetstid saknade avtalat arvode för den dagen. Den visas utan belopp och ingår inte i summorna.",
+    "vatId": "Momsregistreringsnummer",
+    "workedHours": "Arbetade timmar"
+  },
   "drivingLicence": {
     "applyingInterval": "Tillämpar…",
     "applyInterval": "Tillämpa intervalländring",
@@ -604,6 +773,9 @@
       "chooseClasses": "Välj de behörigheter du faktiskt kontrollerade.",
       "classes": "Faktiskt kontrollerade behörigheter",
       "classExpiry": "Behörighetens giltighetstid (om tillämpligt)",
+      "declaredBadge": "Uppgivet",
+      "declaredHelp": "Dessa behörigheter och eventuella datum som medarbetaren angav är förvalda. Jämför dem med originalkörkortet och korrigera allt som skiljer sig.",
+      "declaredTitle": "{name} uppgav {classes}",
       "documentDates": "Datum för originaldokument",
       "employeeDeclaration": "Den anställde lämnade personligen försäkran som visas ovan under denna kontroll; jag intygar denna försäkran.",
       "expiryDate": "Dokumentets utgångsdatum",
@@ -644,6 +816,8 @@
       },
       "customOrder": "Sorterat efter vald kolumn och riktning.",
       "deadline": "{date} ({timezone})",
+      "declared": "Uppgav {classes}",
+      "declaredDue": "Kontrollera uppgivna behörigheter",
       "dueNow": "Kontroll ska göras nu",
       "dueOrder": "Kontroller som förfaller nu först, därefter nästa tidsfrist.",
       "empty": {
@@ -677,6 +851,31 @@
     "class": {
       "active": "Behörig",
       "ended": "Avslutad",
+      "group": {
+        "bus": "Bussar",
+        "car": "Bilar",
+        "motorcycle": "Mopeder och motorcyklar",
+        "tractor": "Traktorer",
+        "truck": "Lastbilar"
+      },
+      "name": {
+        "A": "Motorcykel",
+        "A1": "Lätt motorcykel",
+        "A2": "Mellanstor motorcykel",
+        "AM": "Moped",
+        "B": "Personbil",
+        "BE": "Personbil med släp",
+        "C": "Lastbil",
+        "C1": "Lätt lastbil",
+        "C1E": "Lätt lastbil med släp",
+        "CE": "Lastbil med släp",
+        "D": "Buss",
+        "D1": "Minibuss",
+        "D1E": "Minibuss med släp",
+        "DE": "Buss med släp",
+        "L": "Långsamtgående traktor",
+        "T": "Traktor"
+      },
       "noLongerIntended": "Avslutades eftersom den anställde inte längre är en avsedd förare. Att köra igen kräver en ny kontroll.",
       "overdue": "Rutinkontroll har förfallit. Detta är en organisatorisk avstängning, inte ett påstående om att den juridiska körrätten har återkallats.",
       "recheck": "Det krävs en ny originalkontroll och ett uttryckligt återupprättande.",
@@ -684,6 +883,36 @@
     },
     "declaration": {
       "text": "Jag bekräftar att inget känt körförbud, återkallande eller annat hinder förhindrar den avsedda körningen och att jag uppfyller tillämpliga körbegränsningar."
+    },
+    "declared": {
+      "add": "Lägg till behörigheter",
+      "authorized": "Behörig",
+      "classExpires": "Går ut {date}",
+      "classExpiry": "{code} ({name}) går ut den",
+      "description": "Uppgivet av dig, ännu inte kontrollerat. De ger dig inte behörighet att köra förrän en kontrollant har granskat ditt originalkörkort.",
+      "dialogDescription": "Välj alla behörigheter som finns på ditt körkort. Din kontrollant bekräftar dem när ditt originalkörkort kontrolleras.",
+      "dialogTitle": "Vilka behörigheter finns på ditt körkort?",
+      "documentExpires": "Körkortet går ut",
+      "documentExpiry": "Körkortet går ut den",
+      "documentExpiryHelp": "Fält 4b på kortet. Lämna tomt om ditt körkort saknar detta.",
+      "edit": "Redigera",
+      "emptyDescription": "Meddela din organisation vilka körkortsbehörigheter du har. Det underlättar planeringen och förbereder din kontroll, men ger dig inte behörighet att köra.",
+      "emptyMoreDescription": "Lägg till en behörighet du har tagit sedan den senaste kontrollen. Din kontrollant blir ombedd att kontrollera den.",
+      "emptyMoreTitle": "Har du ytterligare en behörighet?",
+      "emptyTitle": "Vad får du köra?",
+      "expiryTitle": "Utgångsdatum (valfritt)",
+      "invalid": "Kontrollera valda behörigheter och datum.",
+      "notIntended": "Du är inte längre en avsedd förare, så din organisation samlar inte in dina körkortsbehörigheter.",
+      "privacy": "Endast dina behörigheter och giltighetsdatum sparas, inget körkortsnummer eller foto. Din deklaration ger dig inte tillstånd att köra.",
+      "remove": "Ta bort mina behörigheter",
+      "removed": "Deklarerade körkortsbehörigheter har tagits bort",
+      "removing": "Tar bort…",
+      "save": "{count, plural, one {Spara # behörighet} other {Spara # behörigheter}}",
+      "saved": "Körkortsbehörigheter har sparats. Din granskare kommer att kontrollera dem mot ditt originalkörkort.",
+      "saveFailed": "Dina körkortsbehörigheter kunde inte sparas. Dina val har behållits; försök igen.",
+      "saving": "Sparar…",
+      "title": "Dina deklarerade körkortsbehörigheter",
+      "updated": "Uppdaterad"
     },
     "delivery": {
       "uncertain": "Valfria påminnelsemeddelanden via e-post till dig har ett osäkert leveransresultat ({count}). De skickas inte igen automatiskt. Dina påminnelser i appen finns kvar; e-postleverans bekräftar inte att de har lästs."
@@ -846,6 +1075,7 @@
     },
     "operational": {
       "advisory": "Körtillstånd",
+      "declared": "Deklarerat, ännu inte kontrollerat. Ger inte tillstånd att köra.",
       "loading": "Läser in körtillstånd…",
       "loadingEmployees": "Läser in anställda för planering…",
       "noEmployees": "Inga matchande medarbetare.",
@@ -1017,6 +1247,20 @@
     "team": "Team",
     "totalEmployees": "{count} anställda",
     "tryDifferentSearch": "Prova att justera din sökning eller dina filter"
+  },
+  "engagement": {
+    "absenceRefusals": {
+      "contractorRecordsUnavailabilityOnly": "Under dessa datum arbetar de som extern uppdragstagare: endast otillgänglighet kan registreras.",
+      "spansEngagementChange": "Dessa datum spänner över en övergång mellan anställning och arbete som extern uppdragstagare. Registrera varje del separat.",
+      "unavailabilityIsForContractors": "Under dessa datum är de anställda: otillgänglighet gäller endast för externa uppdragstagare."
+    },
+    "externalContractor": "Extern uppdragstagare",
+    "filter": {
+      "all": "Alla",
+      "contractors": "Externa uppdragstagare",
+      "employees": "Anställda",
+      "label": "Uppdrag"
+    }
   },
   "errors": {
     "failedToLoad": "Det gick inte att läsa in data",
@@ -1487,6 +1731,10 @@
         "message": "Ordna en tillgänglig kontrollant för {employeeName}. Denna uppgift ger inga granskningsrättigheter och förlänger ingen tidsfrist.",
         "title": "Tilldela kontrollantansvar för körkort"
       },
+      "drivingLicenceDeclared": {
+        "message": "{employeeName} deklarerade körkortsbehörigheter {classes}. Granska originalkörkortet för att godkänna dem; enbart en deklaration ger inget tillstånd.",
+        "title": "Körkortsbehörigheter att kontrollera"
+      },
       "drivingLicencePersonalTask": {
         "message": "Påminn {employeeName} om att ordna en kontroll av originalkörkort. Direkt avisering till medarbetaren var inte tillgänglig. Slutförande av uppgiften innebär inte direkt leverans eller läsning.",
         "title": "Påminn medarbetaren personligen"
@@ -1529,6 +1777,11 @@
       "formerEmployeeReportsWithoutManager": {
         "message": "{count, plural, one {# anställd är fortfarande endast kopplad till en tidigare chef: {names}. Tilldela en nuvarande chef.} other {# anställda är fortfarande endast kopplade till en tidigare chef: {names}. Tilldela en nuvarande chef.}}",
         "title": "Anställda utan en nuvarande chef"
+      },
+      "invitationContractorTermsNeedReview": {
+        "message": "Arvodet från inbjudan för {name} kunde inte tillämpas när de anslöt sig. Ange det under ersättning för extern uppdragstagare; deras arbete förblir oprissatt tills dess.",
+        "termsExistMessage": "Arvodet från inbjudan för {name} tillämpades inte när de anslöt sig: deras uppdrag har redan ersättningsvillkor, vilka fortfarande gäller. Granska under ersättning för extern uppdragstagare om de bör ändras.",
+        "title": "En extern uppdragstagares arvode behöver granskas"
       },
       "kioskCommandRefused": {
         "forwardedMessage": "En {action, select, clock_in {instämpling} clock_out {utstämpling} start_break {raststart} resume_break {återgång från rast} other {stämpling}} av {employeeName} kl. {time} på kiosken {kioskName} registrerades inte: {reason, select, wrong_pin {PIN-koden var felaktig} pin_locked {kioskens PIN-kod låstes efter för många felaktiga försök} no_pin {det fanns ingen kiosk-PIN att jämföra mot} pin_unchecked {PIN-koden kunde inte kontrolleras} kiosk_retired {kiosken återkallades eller kopplades på nytt innan den återanslöt} contact_unverifiable {Z8 kunde inte bekräfta kioskens senaste anslutning} outside_window {dess tid låg utanför intervallet som Z8 godkänner} clock_untrusted {det gick inte att lita på kioskens klocka för detta} not_assigned {medarbetaren är inte tilldelad kioskens plats} not_adopted {organisationen accepterar inte offline-stämplingar från kiosk} month_closed {månaden är stängd} holiday {dagen är en helgdag utan tidsregistrering} conflict {den står i konflikt med annan registrerad tid} other {Z8 kunde inte acceptera den}}. Registrera tiden åt personen eller stäm av med denne.",
@@ -1694,6 +1947,11 @@
       "personnelFilePayslipsShared": {
         "message": "Din lönespecifikation för {payPeriod} har delats med dig.",
         "title": "Ny lönespecifikation i din personalakt"
+      },
+      "plannedEngagementEndNeedsReview": {
+        "notScheduled": "Det planerade slutdatumet för uppdraget för {name} ({plannedEndDate}) kunde inte schemaläggas som deras slutdatum. Schemalägg det på deras medarbetarsida.",
+        "passed": "Det planerade slutdatumet för uppdraget för {name} ({plannedEndDate}) hade passerat när de anslöt sig, så deras slutdatum är idag ({leavingDate}). Ändra det om uppdraget fortsätter.",
+        "title": "Ett planerat slutdatum för uppdrag behöver granskas"
       },
       "policyForgottenClockOutReminder": {
         "message": "Du uppnådde de obligatoriska timmarna för {day} kl. {endTime} ({timezone}). Stämpla ut om du har arbetat klart."
@@ -2497,6 +2755,13 @@
           "createdAt": "När denna uppgift eller leverans registrerades första gången, som en UTC-tidpunkt.",
           "deadline_timezone": "Den uttryckliga kalendertidszonen som används för policyns tidsgränsdatum.",
           "declaration_text": "Den exakta deklarationstexten som registrerades under den ursprungliga granskningen.",
+          "declared_at": "När du senast sparade dina deklarerade behörigheter, som en UTC-tidpunkt.",
+          "declared_class_code": "En körkortsbehörighet som du uppgett att du har. Den ger inget körtillstånd.",
+          "declaredClasses": {
+            "summary": "Körkortsbehörigheterna som du själv har deklarerat och som ännu inte har kontrollerats. En kontroll ersätter dem; de tas bort när du inte längre är en avsedd förare."
+          },
+          "declared_class_expiry_date": "Det sista giltighetsdatumet för behörigheten som du angav (behörigheterna C och D); tomt om du inte angav något.",
+          "declared_document_expires_on": "Ditt körkorts giltighetsdatum så som du angav det; tomt om du inte angav något.",
           "document_expires_on": "Dokumentets utgångsdatum, separat från utgången av enskilda klasser.",
           "document_issued_on": "Dokumentets utfärdandedatum, utan klockslag eller tidszon.",
           "document_valid_through": "Den sista kalenderdagen som omfattas av dokumentets giltighetstid.",
@@ -2615,6 +2880,25 @@
             "project": "Projektet som taxan gäller för; tomt för allt ditt arbete.",
             "summary": "Taxorna som organisationen fakturerar kunder för ditt arbete."
           },
+          "contractorCompensationTerms": {
+            "capAtOneDay": "Huruvida en dag räknas som högst en dag, oavsett arbetets längd.",
+            "compensationBasis": "Huruvida du får betalt per timme (hourly) eller per dag (daily).",
+            "currency": "Valutan för arvodet.",
+            "dayUnitRule": "Hur en dags arbete räknas för ett dagsarvode: allt arbete som en heldag (any_work_full_day), halv- eller heldag baserat på en tröskel (half_and_full_day), eller proportionellt mot en standarddag (prorated_by_standard_day). Tomt för ett timarvode.",
+            "effectiveFrom": "Första dagen dessa villkor gäller (YYYY-MM-DD).",
+            "effectiveTo": "Första dagen dessa villkor inte längre gäller (YYYY-MM-DD); tomt så länge de gäller.",
+            "employmentPeriodId": "Perioden som dessa villkor tillhör (dess id i employment_periods).",
+            "halfDayThresholdMinutes": "Upp till så här många minuters arbete per dag räknas som en halvdag; mer räknas som en heldag.",
+            "rate": "Ditt arvode per timme eller per dag.",
+            "standardDayMinutes": "Antalet minuter för en standarddag som en dags arbete mäts mot.",
+            "summary": "Ditt tim- eller dagsarvode som extern uppdragstagare över tid."
+          },
+          "contractorDetails": {
+            "companyName": "Företaget du är anlitad genom.",
+            "referenceCode": "Inköpsordern eller kostnadsstället som dina fakturor matchas mot.",
+            "summary": "Dina uppdragsuppgifter som extern uppdragstagare.",
+            "vatId": "Ditt momsregistreringsnummer eller din skattereferens."
+          },
           "costCenters": {
             "code": "Kostnadsställets kod.",
             "costCenter": "Kostnadsställets namn.",
@@ -2681,6 +2965,7 @@
             "contractType": "Din avtalstyp.",
             "email": "E-postadressen för ditt användarkonto.",
             "endDate": "När din anställning upphörde; tomt så länge den pågår.",
+            "engagementKind": "Huruvida du arbetar för organisationen som anställd (employee) eller som extern uppdragstagare (contractor) idag.",
             "firstName": "Ditt förnamn i din medarbetarpost.",
             "gender": "Ditt kön.",
             "isActive": "Huruvida din medarbetarpost är aktiv.",
@@ -2700,6 +2985,7 @@
           },
           "employmentPeriods": {
             "endedAt": "När perioden avslutades; tomt så länge den är öppen.",
+            "engagementKind": "Huruvida du arbetade under denna period som anställd (employee) eller som extern uppdragstagare (contractor).",
             "startedAt": "När perioden började.",
             "startProvenance": "Var starten kommer ifrån, till exempel en nyanställning eller återanställning.",
             "status": "Om perioden är öppen eller stängd.",

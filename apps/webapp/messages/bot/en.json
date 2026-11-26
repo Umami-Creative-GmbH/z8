@@ -231,6 +231,7 @@
       "openDashboard": "Open Z8 Dashboard",
       "openShifts": "Open Shifts:",
       "pendingApprovals": "Pending Approvals:",
+      "reviewComplianceExceptions": "Review exception requests",
       "title": "Daily Digest - {date}",
       "viewDashboardAt": "View full dashboard at {url}",
       "whosOut": "Who's Out:"

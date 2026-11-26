@@ -231,6 +231,7 @@
       "openDashboard": "Apri dashboard Z8",
       "openShifts": "Turni aperti:",
       "pendingApprovals": "Approvazioni in sospeso:",
+      "reviewComplianceExceptions": "Esamina le richieste di eccezione",
       "title": "Riepilogo giornaliero - {date}",
       "viewDashboardAt": "Visualizza la dashboard completa all'indirizzo {url}",
       "whosOut": "Chi è assente:"

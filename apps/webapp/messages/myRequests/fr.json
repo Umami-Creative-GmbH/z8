@@ -16,6 +16,7 @@
     },
     "card": {
       "decision": "Décision",
+      "returned": "Renvoyé",
       "submitted": "Soumis"
     },
     "empty": {
@@ -53,7 +54,7 @@
       "title": "En cours d'examen"
     },
     "needsAttention": {
-      "description": "Demandes rejetées pouvant nécessiter une correction avant d'être soumises à nouveau.",
+      "fixDescription": "Demandes renvoyées ou rejetées nécessitant une correction avant d'être soumises à nouveau.",
       "title": "Nécessite une attention"
     },
     "reasonLabel": "Motif",
@@ -65,26 +66,58 @@
       "absence": {
         "title": "Demande d'absence"
       },
+      "complianceException": {
+        "durationHours": "{hours} h",
+        "durationHoursMinutes": "{hours} h {minutes} min",
+        "durationMinutes": "{minutes} min",
+        "overtimeDaily": "Exception d'heures supplémentaires quotidiennes",
+        "overtimeMonthly": "Exception d'heures supplémentaires mensuelles",
+        "overtimeWeekly": "Exception d'heures supplémentaires hebdomadaires",
+        "planned": "Planifié : {duration}",
+        "restPeriod": "Exception de temps de repos",
+        "title": "Exception de conformité",
+        "validity": "Valide : {window} ({timeZone})"
+      },
+      "earlierClaim": {
+        "mileage": "Demande d'indemnités kilométriques antérieure",
+        "perDiem": "Demande d'indemnités journalières antérieure",
+        "receipt": "Demande de justificatif antérieure",
+        "title": "Demande antérieure"
+      },
+      "expenseReport": {
+        "adjustmentOf": "Ajustement de « {title} »",
+        "adjustmentOfUntitled": "Ajustement d'un rapport antérieur",
+        "kind": {
+          "standaloneMileage": "Indemnités kilométriques autonomes",
+          "standaloneReceipt": "Justificatif autonome",
+          "trip": "Rapport de déplacement"
+        },
+        "untitledMileage": "Indemnités kilométriques sans titre",
+        "untitledReceipt": "Justificatif sans titre",
+        "untitledTrip": "Déplacement sans titre"
+      },
       "timeCorrection": {
         "subtitle": "Correction d'une saisie de temps",
         "title": "Demande de correction de temps"
-      },
-      "travelExpense": {
-        "title": "Note de frais de déplacement"
       }
     },
-    "scope": "Vos demandes d'absence, de correction de temps et d'anciennes notes de frais dans l'organisation active",
+    "returnNoteLabel": "Note de l'examinateur",
+    "scopeAllRequests": "Vos demandes d'absence, de correction du temps, d'exception de conformité et de frais dans l'organisation active",
     "sourceError": {
       "absence": "Les demandes d'absence n'ont pas pu être chargées.",
+      "complianceException": "Impossible de charger les exceptions de conformité.",
+      "earlierClaim": "Impossible de charger les demandes antérieures.",
+      "expenseReport": "Impossible de charger les notes de frais.",
       "timeCorrection": "Les demandes de correction de temps n'ont pas pu être chargées.",
-      "title": "Certaines demandes n'ont pas pu être chargées.",
-      "travelExpense": "Les demandes de frais de déplacement n'ont pas pu être chargées."
+      "title": "Certaines demandes n'ont pas pu être chargées."
     },
     "status": {
       "approved": "Approuvé",
       "cancelled": "Annulé",
+      "expired": "Expiré",
       "inReview": "En cours d'examen",
-      "rejected": "Rejeté"
+      "rejected": "Rejeté",
+      "returned": "Renvoyé"
     },
     "summary": {
       "ariaLabel": "Résumé des demandes",
@@ -96,8 +129,10 @@
     "title": "Mes demandes",
     "types": {
       "absence": "Absence",
-      "timeCorrection": "Correction de temps",
-      "travelExpense": "Frais de déplacement"
+      "complianceException": "Exception de conformité",
+      "earlierClaim": "Demande antérieure",
+      "expenseReport": "Note de frais",
+      "timeCorrection": "Correction de temps"
     },
     "unavailableTitle": "Demandes indisponibles"
   }

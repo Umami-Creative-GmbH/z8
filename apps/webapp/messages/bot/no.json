@@ -231,6 +231,7 @@
       "openDashboard": "Åpne Z8-dashbord",
       "openShifts": "Ledige vakter:",
       "pendingApprovals": "Ventende godkjenninger:",
+      "reviewComplianceExceptions": "Gjennomgå avviksforespørsler",
       "title": "Daglig sammendrag – {date}",
       "viewDashboardAt": "Se fullstendig dashbord på {url}",
       "whosOut": "Hvem som er borte:"

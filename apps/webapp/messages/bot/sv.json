@@ -231,6 +231,7 @@
       "openDashboard": "Öppna Z8-översikten",
       "openShifts": "Lediga arbetspass:",
       "pendingApprovals": "Väntande godkännanden:",
+      "reviewComplianceExceptions": "Granska undantagsbegäranden",
       "title": "Daglig sammanfattning - {date}",
       "viewDashboardAt": "Visa hela instrumentpanelen på {url}",
       "whosOut": "Vilka är borta:"

@@ -231,6 +231,7 @@
       "openDashboard": "Z8 Panosunu Aç",
       "openShifts": "Açık Vardiyalar:",
       "pendingApprovals": "Bekleyen Onaylar:",
+      "reviewComplianceExceptions": "İstisna taleplerini inceleyin",
       "title": "Günlük Özet - {date}",
       "viewDashboardAt": "Tüm panoyu {url} adresinde görüntüleyin",
       "whosOut": "Kimler Yok:"

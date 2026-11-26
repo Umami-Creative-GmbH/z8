@@ -6,19 +6,37 @@
       "decided": "Decisión guardada. Actualice para cargar la cola actual.",
       "description": "Solicitudes a la espera de una decisión del gerente.",
       "empty": "No hay aprobaciones pendientes.",
+      "itemTitle": "{requester}: {title}",
       "openInbox": "Abrir bandeja de entrada",
+      "openInboxForRest": "Abrir la bandeja de entrada para ver el resto",
+      "openInboxLink": "Abrir la bandeja de entrada",
       "ownRequest": "Tu propia solicitud: la decide otro aprobador.",
+      "partialFailure": "No se pudieron cargar algunas aprobaciones: {types}. Es posible que la lista y el total estén incompletos.",
+      "partialFailureNotCounted": "No se pudieron contar algunas aprobaciones: {types}. Es posible que el total esté incompleto.",
       "pendingAriaLabel": "Aprobaciones pendientes",
       "reject": "Rechazar",
       "rejectLabel": "Rechazar {title}",
+      "rejectPanel": {
+        "briefingUnavailable": "No se pudieron actualizar las aprobaciones de hoy. Cierre este panel y vuelva a intentarlo.",
+        "description": "El solicitante ve este motivo con el rechazo.",
+        "noLongerRejectable": "Esta solicitud ya no se puede rechazar aquí.",
+        "title": "Rechazar solicitud"
+      },
       "retry": "Reintentar aprobaciones",
+      "reviewInInbox": "Revisar en la bandeja de entrada",
+      "reviewInInboxNamed": "Revisar en la bandeja de entrada: {title}",
       "title": "Aprobaciones",
       "toast": {
         "approved": "Solicitud aprobada",
         "approveError": "No se pudo aprobar la solicitud",
         "rejected": "Solicitud rechazada",
         "rejectError": "No se pudo rechazar la solicitud"
-      }
+      },
+      "totalAtLeast": "{count}+",
+      "truncated": "{total, plural, one {Mostrando {shown} de # aprobación pendiente.} other {Mostrando {shown} de # aprobaciones pendientes.}}",
+      "truncatedAtLeast": "{total, plural, one {Mostrando {shown} de al menos # aprobación pendiente.} other {Mostrando {shown} de al menos # aprobaciones pendientes.}}",
+      "waitingInInbox": "{total, plural, one {# aprobación pendiente está esperando en la bandeja de entrada.} other {# aprobaciones pendientes están esperando en la bandeja de entrada.}}",
+      "waitingInInboxAtLeast": "{total, plural, one {Al menos # aprobación pendiente está esperando en la bandeja de entrada.} other {Al menos # aprobaciones pendientes están esperando en la bandeja de entrada.}}"
     },
     "briefing": {
       "accessUnavailable": "Este resumen no está disponible para el empleado y la organización actuales.",

@@ -1,5 +1,60 @@
 {
   "settings": {
+    "apprenticeRelease": {
+      "blockWeekTrainingNote": "Upp till 2 timmars företagsintern utbildning per vecka är tillåten på dessa blockdagar (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG). För en anställd under 18 år läggs dessa timmar till blockveckan, som räknas med den genomsnittliga veckoarbetstiden (§ 9 Abs. 2 Nr. 2 JArbSchG), och räknas inte in i dags- och veckogränserna enligt § 8.",
+      "credit": {
+        "exam": "Prov från {start}: {minutes} min tillgodoräknade",
+        "fullDays": "{count, plural, one {# arbetsdag tillgodoräknad i sin helhet} other {# arbetsdagar tillgodoräknade i sin helhet}}",
+        "minutes": "{minutes} min skoltid tillgodoräknad",
+        "schoolTime": "Skola {start}–{end}: {minutes} min tillgodoräknade"
+      },
+      "description": "Yrkesskola, blockveckor och provdagar ger betald ledighet (§ 15 BBiG): de tillgodoräknas som arbetstid, dras aldrig från semestern och ger aldrig ett negativt arbetstidssaldo.",
+      "empty": "Inga ledighetsdagar har registrerats än.",
+      "fields": {
+        "date": "Datum",
+        "endsOn": "Sista dag",
+        "examEndTime": "Provet slutar (inklusive raster)",
+        "examStartTime": "Provet börjar",
+        "examTimeHint": "Provet befriar och tillgodoräknar endast sin egen tid. Lämna båda tomma för att bevilja ledighet för hela dagen.",
+        "includePreExamDay": "Bevilja även ledighet arbetsdagen före det skriftliga slutprovet",
+        "kind": "Ledighet",
+        "lessons": "Lektioner (45 min vardera)",
+        "note": "Anteckning (valfritt)",
+        "schoolEndTime": "Skolan slutar (inklusive raster)",
+        "schoolHoursPerWeek": "Skoltimmar per vecka (klocktimmar)",
+        "schoolStartTime": "Skolan börjar",
+        "schoolTimeHint": "En kort skoldag tillgodoräknar skoltid inklusive raster. Lämna båda tomma för att tillgodoräkna 45 minuter per lektion."
+      },
+      "kind": {
+        "blockWeek": "Blockundervisningsvecka",
+        "examDay": "Provdag",
+        "preExamDay": "Arbetsdag före provet",
+        "schoolDay": "Yrkesskoldag"
+      },
+      "lessons": "{count} lektioner",
+      "record": "Registrera ledighetsdag",
+      "recorded": "Ledighetsdag har registrerats",
+      "refusal": {
+        "dayAlreadyReleased": "Denna dag är redan ledighetsbeviljad. Ta bort den registrerade ledigheten först.",
+        "examTimeInvalid": "Ange när provet börjar och slutar, eller ingetdera. Det måste sluta efter att det börjar.",
+        "invalidRange": "Kontrollera datumen: den sista dagen får inte infalla före den första.",
+        "invalidValue": "Kontrollera lektionerna och skoltimmarna.",
+        "lessonsRequired": "Ange antalet lektioner.",
+        "noPrecedingWorkingDay": "Det finns ingen arbetsdag i veckan före provet att bevilja ledighet för.",
+        "notApprentice": "Ledighetsdagar kan endast registreras så länge den anställdes villkor innebär att personen är lärling.",
+        "overlap": "Denna ledighet överlappar en redan registrerad ledighet.",
+        "reasonRequired": "Förklara varför ledighetsdagen tas bort.",
+        "schoolMinutesRequired": "Ange de planerade skoltimmarna för blockveckan.",
+        "schoolTimeInvalid": "Ange när skolan börjar och slutar, eller ingetdera. Den måste sluta efter att den börjar.",
+        "singleDay": "Endast en blockundervisningsvecka sträcker sig över flera dagar."
+      },
+      "title": "Ledighet för skola och prov",
+      "void": "Ta bort",
+      "voidConfirm": "Ta bort ledighetsdag",
+      "voided": "Ledighetsdag har tagits bort",
+      "voidReason": "Varför tas den bort?",
+      "workplaceReturn": "Under 18 år: återgång till arbetet är inte tillåten efter denna heldag i skolan (§ 9 Abs. 1 Nr. 2 JArbSchG)"
+    },
     "approvalSettings": {
       "pageDescription": "Konfigurera vem som godkänner förfrågningar, när försenade godkännanden eskaleras och vilka godkännandeproblem som behöver följas upp."
     },
@@ -230,6 +285,7 @@
         "employeeDescription": "Denna anställds fullständiga interna kostnad per timme, som används för marginal. Separat från lönen.",
         "employeeTitle": "Kostnadstariff",
         "empty": "Ingen kostnadstariff ännu. Marginalen för den anställdes arbete visas som okänd kostnad.",
+        "emptyContractor": "Ingen kostnadssats ännu. Marginalen använder den här personens externa underleverantörstaxa för dennes underleverantörsarbete; annat arbete och underleverantörsarbete utan taxa visas som okänd kostnad.",
         "history": "Historik",
         "historyAction": "Historik för kostnadssats för {name}",
         "hourly": "Per timme",
@@ -652,14 +708,6 @@
         "title": "Alla periodinlämningar för den här månaden är inte godkända. Detta hindrar inte stängningen:"
       }
     },
-    "compliance": {
-      "description": "Granska och hantera förfrågningar om efterlevnadsundantag från teammedlemmar",
-      "metadata": {
-        "description": "Konfigurera inställningar för ArbZG-efterlevnad och hantera undantagsansökningar",
-        "title": "Efterlevnadsinställningar | ArbZG"
-      },
-      "title": "ArbZG-efterlevnad"
-    },
     "customDomains": {
       "title": "Domän & varumärkesprofilering"
     },
@@ -1016,7 +1064,7 @@
         "all": "Alla anställda i denna organisation",
         "allDescription": "Ansvaret följer aktuellt medlemskap i organisationen. Granskare kan aldrig granska sig själva.",
         "attribution": "Tilldelad av {actor} {time}",
-        "editor": "Verifierarens omfattning",
+        "editTitle": "Redigera granskaransvar",
         "empty": "Inget verifieraransvar tilldelat",
         "failed": "Kunde inte uppdatera eller få åtkomst till körkortsgranskarens ansvarsområde. Kontrollera dina behörigheter och val.",
         "formerEmployee": "Tidigare anställda kan inte läggas till. Välj anställda i den aktuella personalstyrkan.",
@@ -2116,6 +2164,7 @@
           "unavailable": "Den här kontrollen kunde inte slutföras. Försök köra kontrollerna igen."
         },
         "payrollSetup": {
+          "externalContractorsSkipped": "{count, plural, one {# extern uppdragstagare hoppas över för anställningsvillkor och personalidentifierare: löneexporter inkluderar aldrig externa uppdragstagare.} other {# externa uppdragstagare hoppas över för anställningsvillkor och personalidentifierare: löneexporter inkluderar aldrig externa uppdragstagare.}}",
           "fixEmployees": "Granska medarbetare",
           "fixPayrollExport": "Öppna inställningar för löneexport",
           "inviteesSkipped": "{count, plural, one {# inbjuden person hoppas över för anställningsvillkor och personal-ID tills personen ansluter.} other {# inbjudna personer hoppas över för anställningsvillkor och personal-ID tills de ansluter.}}",
@@ -2223,6 +2272,7 @@
           "mappingsMissing": "Inga aktiva löneartskopplingar",
           "mappingsPresent": "{count, plural, other {# exportmål, lönearter kopplade} }",
           "notExported": "Organisationen har inget aktivt löneexportmål, så det finns inga förutsättningar för lönehantering.",
+          "notNeededExternalContractor": "Behövs inte: Extern uppdragstagare",
           "notYetInvited": "Inte än: de är fortfarande inbjudna",
           "personnelIdentifier": "Anställningsnummer",
           "termsConfirmed": "Bekräftat för idag",
@@ -2258,6 +2308,7 @@
           "name": "Policy",
           "none": "Ingen gällande arbetspolicy idag: ingen har tilldelats dem, deras team eller organisationen.",
           "noSchedule": "Inget schema",
+          "notApplicable": "Ingen arbetspolicy gäller: personen arbetar som extern uppdragstagare.",
           "noWorkingDays": "Inga arbetsdagar",
           "title": "Arbetspolicy",
           "workingDays": "Arbetsdagar"
@@ -3085,7 +3136,15 @@
       "updateProfile": "Uppdatera profil",
       "updateSuccess": "Profilen har uppdaterats",
       "uploading": "Laddar upp",
-      "uploadProfilePicture": "Ladda upp profilbild"
+      "uploadProfilePicture": "Ladda upp profilbild",
+      "workingStudent": {
+        "balance": "{remaining} av {limit} veckor över 20 timmar återstår ({used} använda under de senaste 12 månaderna).",
+        "description": "Som arbetande student får du arbeta mer än 20 timmar under högst 26 veckor inom 12 månader.",
+        "lectureFree": "Registrerade föreläsningsfria perioder",
+        "lectureFreeEmpty": "Inga föreläsningsfria perioder har registrerats. Be HR att registrera dina terminsuppehåll.",
+        "noBaseline": "Ingen lagstadgad gräns gäller för denna vecka.",
+        "title": "Status som arbetande student"
+      }
     },
     "projects": {
       "budgetUsed": "Använd budget",

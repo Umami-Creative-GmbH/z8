@@ -6,19 +6,37 @@
       "decided": "Odluka je spremljena. Osvježite za učitavanje trenutačnog reda čekanja.",
       "description": "Zahtjevi koji čekaju odluku voditelja.",
       "empty": "Nema odobrenja na čekanju.",
+      "itemTitle": "{requester}: {title}",
       "openInbox": "Otvori ulaznu poštu",
+      "openInboxForRest": "Otvorite pristiglu poštu kako biste vidjeli ostatak",
+      "openInboxLink": "Otvorite pristiglu poštu",
       "ownRequest": "Vaš vlastiti zahtjev: drugi odobravatelj odlučuje o njemu.",
+      "partialFailure": "Neka odobrenja nije bilo moguće učitati: {types}. Popis i ukupan broj možda nisu potpuni.",
+      "partialFailureNotCounted": "Neka odobrenja nije bilo moguće prebrojati: {types}. Ukupan broj možda nije potpun.",
       "pendingAriaLabel": "Odobrenja na čekanju",
       "reject": "Odbij",
       "rejectLabel": "Odbij {title}",
+      "rejectPanel": {
+        "briefingUnavailable": "Današnja odobrenja nije bilo moguće osvježiti. Zatvorite ovu ploču i pokušajte ponovno.",
+        "description": "Podnositelj zahtjeva vidi ovaj razlog uz odbijanje.",
+        "noLongerRejectable": "Ovaj zahtjev više nije moguće odbiti ovdje.",
+        "title": "Odbijte zahtjev"
+      },
       "retry": "Ponovno pokušaj odobrenja",
+      "reviewInInbox": "Pregledajte u pristigloj pošti",
+      "reviewInInboxNamed": "Pregledajte u pristigloj pošti: {title}",
       "title": "Odobrenja",
       "toast": {
         "approved": "Zahtjev je odobren",
         "approveError": "Nije moguće odobriti zahtjev",
         "rejected": "Zahtjev je odbijen",
         "rejectError": "Nije moguće odbiti zahtjev"
-      }
+      },
+      "totalAtLeast": "{count}+",
+      "truncated": "{total, plural, other {Prikazuje se {shown} od # odobrenja na čekanju.} }",
+      "truncatedAtLeast": "{total, plural, other {Prikazuje se {shown} od najmanje # odobrenja na čekanju.} }",
+      "waitingInInbox": "{total, plural, one {# odobrenje na čekanju čeka u pristigloj pošti.} few {# odobrenja na čekanju čekaju u pristigloj pošti.} other {# odobrenja na čekanju čeka u pristigloj pošti.}}",
+      "waitingInInboxAtLeast": "{total, plural, one {Najmanje # odobrenje na čekanju čeka u pristigloj pošti.} few {Najmanje # odobrenja na čekanju čekaju u pristigloj pošti.} other {Najmanje # odobrenja na čekanju čeka u pristigloj pošti.}}"
     },
     "briefing": {
       "accessUnavailable": "Ovaj sažetak nije dostupan za trenutačnog zaposlenika i organizaciju.",

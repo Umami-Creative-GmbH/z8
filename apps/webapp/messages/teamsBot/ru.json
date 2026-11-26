@@ -80,6 +80,7 @@
     "pendingApprovals": "Ожидающие согласования",
     "pendingExceptionRequests": "{count, plural, one {# запрос на исключение ожидает рассмотрения} few {# запроса на исключение ожидают рассмотрения} other {# запросов на исключение ожидают рассмотрения} }",
     "returns": "Возвращается {date}",
+    "reviewComplianceExceptions": "Рассмотреть запросы на исключения",
     "since": "С {time}",
     "textClockedInEmployee": "• {name} - с {clockedInAt} ({duration})",
     "textCompliance": "**⚠️ Соответствие требованиям:**",

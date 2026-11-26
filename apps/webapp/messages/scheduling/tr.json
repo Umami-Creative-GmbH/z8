@@ -51,6 +51,7 @@
       "overtime": "Fazla mesai: {count}",
       "publishing": "Yayınlanıyor…",
       "restTime": "Dinlenme süresi: {count}",
+      "statutory": "Yasal sınırlar: {count}",
       "totalFindings": "{count, plural, other {Toplam # bulgu} }",
       "warningsDetectedBeforePublish": "Yayınlama öncesinde uyarılar tespit edildi"
     },
@@ -61,6 +62,7 @@
         "maxHours": "Maksimum saat: {count}",
         "overtime": "Fazla mesai: {count}",
         "restTime": "Dinlenme süresi: {count}",
+        "statutory": "Yasal sınırlar: {count}",
         "title": "Bu Tarih Aralığındaki Uyumluluk Uyarıları"
       },
       "focus": {
@@ -73,7 +75,8 @@
       "open": "Açık Vardiya",
       "publish": {
         "failed": "Vardiyalar yayınlanamadı",
-        "published": "{count} vardiya yayınlandı"
+        "published": "{count} vardiya yayınlandı",
+        "statutoryBlocked": "Bazı vardiyalar gençleri koruma sınırlarını (JArbSchG) ihlal ediyor. Yayınlamadan önce vardiyaları değiştirin veya yasal bir sektörel istisnayı onaylayın."
       },
       "retry": "Yeniden Dene",
       "shiftList": "Vardiya listesi",
@@ -82,6 +85,7 @@
         "overlapDescription": "Bu vardiya diğer {count} vardiya ile çakışıyor",
         "overlapWarning": "Vardiya, çakışma uyarısıyla kaydedildi",
         "skillOverrideReasonRequired": "Çalışan bu gün gerekli bir beceriye sahip değil. Bir gerekçe belirtmek için vardiyayı açın.",
+        "statutoryBlocked": "Yayınlanmış bir vardiyada yapılan bu değişiklik, gençleri koruma sınırlarını (JArbSchG) halihazırda yayınlanmış olanın da ötesinde ihlal ediyor. Vardiyayı hiçbir sınırı yeniden veya daha fazla ihlal etmeyecek şekilde değiştirin. Sektörel istisna yalnızca kaydedilmiş bir vardiya için onaylanabilir: bunu istisnayla planlamak için taslak vardiya olarak ekleyin, istisnayı onaylayın ve ardından yayınlayın.",
         "updated": "Vardiya güncellendi"
       },
       "supportFailed": "Şablonlar veya uyumluluk bilgileri yenilenemedi. Yayınlamadan önce tekrar kontrol edin.",
@@ -154,6 +158,7 @@
       "rejectFailed": "Talep reddedilemedi",
       "rejectReason": "Reddetme gerekçesi (isteğe bağlı)",
       "shiftWhen": "{date}, {start}–{end}",
+      "statutoryBlocked": "Bu talebin onaylanması, vardiyayı devralan çalışan için gençleri koruma sınırlarını (JArbSchG) ihlal eder. Talebi reddedin veya vardiyayı başka birinin almasını isteyin.",
       "swapSummary": "{requester} bu vardiyayı {target} kişisine devretmek istiyor",
       "swapWithoutTarget": "{requester} bu vardiyayı devretmek istiyor ancak bir iş arkadaşı belirtmedi",
       "title": "Vardiya talepleri",
@@ -207,6 +212,95 @@
         "overtime": "{period, select, daily {Günlük} weekly {Haftalık} other {Aylık}} fazla mesai ({total} / {threshold} sa)",
         "pendingAbsence": "Bekleyen devamsızlık: {category}",
         "restTime": "Dinlenme süresi çok kısa ({rest} / {required} sa)"
+      }
+    },
+    "statutory": {
+      "apprenticeship": {
+        "blockWeekTraining": "Blok ders haftası: Bu haftanın okul günlerinde {used} dk çalışma, {limit} dk şirket içi eğitime izin verilir; bugün izin verilen sınır aşıldı",
+        "blockWeekTrainingNote": "İzin verilen eğitim (§ 9 Fıkra 1 No. 3 JArbSchG, § 15 Fıkra 1 Cümle 3 BBiG), ortalama haftalık çalışma süresiyle (§ 9 Fıkra 2 No. 2 JArbSchG) sayılan blok haftanın üzerine eklenir ve 18 yaş altı bir çalışanın § 8 günlük ve haftalık sınırlarına dahil edilmez",
+        "blockWeekTrainingWeek": "Blok ders haftası: Bu haftanın okul günlerinde {used} dk çalışma, {limit} dk şirket içi eğitime izin verilir; {date} tarihinde izin verilen sınır aşıldı",
+        "releaseDayShift": "Çırak izin günü: okul, blok ders veya sınav günü",
+        "releaseDayShiftOn": "{date} tarihindeki çırak izin günü: okul, blok ders veya sınav günü",
+        "workplaceReturn": "18 yaş altı: haftanın tam meslek okulu günü olan bugün çalışma yok",
+        "workplaceReturnOn": "18 yaş altı: haftanın tam meslek okulu günü olan {date} tarihinde çalışma yok"
+      },
+      "domain": {
+        "apprenticeship": "Çırak izni (BBiG)",
+        "minijob": "Minijob sınırı",
+        "onCall": "Çağrı üzerine çalışma (§ 12 TzBfG)",
+        "shortTerm": "Kısa süreli istihdam sınırı",
+        "workingStudent": "Çalışan öğrenci sınırı",
+        "youthProtection": "Gençleri koruma (JArbSchG)"
+      },
+      "findings": {
+        "acknowledgeListLabel": "Onaylanması gereken yasal tespitler",
+        "blockedTitle": "Yayınlama reddedildi",
+        "blockingListLabel": "Yayınlamayı engelleyen tespitler",
+        "blocksPublishing": "Yayınlamayı engelliyor",
+        "close": "Kapat",
+        "hide": "Yasal bulguları gizle ({count})",
+        "hideOfTotal": "Yasal bulguları gizle ({count} / {total})",
+        "listLabel": "Yasal bulgular",
+        "openReviews": "İncelemeler ve Çakışmalar'da Aç",
+        "outsideScope": "{count, plural, one {# ek bulgu yönetmediğiniz bir çalışanı ilgilendiriyor.} other {# ek bulgu yönetmediğiniz çalışanları ilgilendiriyor.}}",
+        "outsideScopeOnly": "{count, plural, one {# bulgu yönetmediğiniz bir çalışanı ilgilendiriyor.} other {# bulgu yönetmediğiniz çalışanları ilgilendiriyor.}}",
+        "severity": {
+          "critical": "Kritik",
+          "info": "Not",
+          "warning": "Uyarı"
+        },
+        "show": "Yasal bulguları göster ({count})",
+        "showOfTotal": "Yasal bulguları göster ({count} / {total})",
+        "showShifts": "{name} kişisinin vardiyalarını göster",
+        "unnamedEmployee": "Adsız çalışan",
+        "weekOf": "{date} haftası"
+      },
+      "jarbschg": {
+        "break": "18 yaş altı: {used} dk. mola verildi, {limit} dk. gerekli",
+        "dailyMax": "18 yaş altı: Bugün yapılan {used} dk. çalışma, {limit} dk. olan genç sınırını aşıyor",
+        "dailyMaxOn": "18 yaş altı: {date} tarihindeki {used} dk. çalışma, {limit} dk. olan genç sınırını aşıyor",
+        "daysPerWeek": "18 yaş altı: Bu hafta {used} iş günü çalışıldı, en fazla {limit} güne izin veriliyor",
+        "holidayProhibited": "18 yaş altı: {used} dk. yasaklı çalışma: 24 veya 31 Aralık'ta saat {cutoff} sonrasında ya da 25 Aralık, 1 Ocak, Paskalya Pazarı veya 1 Mayıs'ta çalışılamaz; hiçbir istisna buna izin vermez",
+        "holidayWork": "18 yaş altı: Resmi tatilde çalışma için yasal sektörel istisna gerekir",
+        "nightWork": "18 yaş altı: {from} ile {until} arasında {used} dk. gece çalışması",
+        "nightWorkBeyondSector": "18 yaş altı: Sektörel bir istisnanın izin verdiği saatler dışında {minutes} dk. gece çalışması (15 yaşından itibaren: {from15} - {until15}; 16 yaşından itibaren: en geç {until16}; fırınlarda 17 yaşından itibaren: {bakeryFrom17} itibarıyla; 15 yaş altına izin verilmez); hiçbir istisna buna izin vermez",
+        "restPeriod": "18 yaş altı: Bu vardiyadan önce yalnızca {used} dk. dinlenme süresi var, {limit} dk. gerekli",
+        "saturdayWork": "18 yaş altı: Cumartesi günü çalışma için yasal sektörel istisna gerekir",
+        "shiftSpan": "18 yaş altı: Vardiya süresi (ilk çalışmadan son çalışmanın bitimine kadar) {used} dk.; en fazla {limit} dk. izin verilir (otelcilik/gastronomi, tarım, hayvancılık ve şantiyelerde 11 saat)",
+        "shiftSpanOn": "18 yaş altı: {date} tarihindeki vardiya süresi (ilk çalışmadan son çalışmanın bitimine kadar) {used} dk.; en fazla {limit} dk. izin verilir (otelcilik/gastronomi, tarım, hayvancılık ve şantiyelerde 11 saat)",
+        "sundayWork": "18 yaş altı: Pazar günü çalışma için yasal sektörel istisna gerekir",
+        "uninterrupted": "18 yaş altı: Molasız {used} dk. çalışıldı, en fazla {limit} dk. izin verilir",
+        "weeklyMax": "18 yaş altı: Bu haftaki {used} dk. çalışma, {limit} dk. olan genç sınırını aşıyor",
+        "weeklyMaxWeekOf": "18 yaş altı: {date} haftasındaki {used} dk. çalışma, {limit} dk. olan genç sınırını aşıyor"
+      },
+      "minijob": {
+        "monthlyApproaching": "Minijob aylık sınırına yaklaşıyor",
+        "monthlyDocumented": "Minijob aylık sınırı aşıldı (öngörülemez olarak belgelendi)",
+        "monthlyExceeded": "Minijob aylık sınırı aşıldı",
+        "rollingApproaching": "Minijob 12 aylık kazanç sınırına yaklaşıyor",
+        "rollingExceeded": "Minijob 12 aylık kazanç sınırı aşıldı"
+      },
+      "onCall": {
+        "nearBand": "Çağrı üzerine: Hafta {used} seviyesinde, {limit} olan çağrı aralığı sınırına yaklaşıyor",
+        "overBand": "Çağrı üzerine: Hafta {used} seviyesinde, {limit} çağrı aralığının üzerinde",
+        "shortCall": "Çağrı üzerine: {duration} süreli çağrı, {minimum} asgari sınırının altında",
+        "shortNotice": "{days, plural, other {Çağrı üzerine: # tam gün önceden bildirim yapıldı, {required} gerekli (§ 12 Abs. 3 TzBfG)} }",
+        "shortWorkCall": "Çağrı üzerine: {duration} süreli bir çağrıda çalışıldı, {minimum} asgari çağrı süresinin altında",
+        "underBand": "Çağrı üzerine: Hafta {used} seviyesinde, {limit} çağrı aralığının altında"
+      },
+      "shortTerm": {
+        "calendarDaysExceeded": "Kısa süreli 3 ay sınırı aşıldı: Bu yıl {limit} takvim gününden {used} gün kullanıldı",
+        "calendarDaysRemaining": "Kısa süreli istihdam (3 ay sınırı): Bu yıl {limit} takvim gününden {remaining} gün kaldı",
+        "daysExceeded": "Kısa süreli gün sınırı aşıldı: Bu yıl {limit} iş gününden {used} gün kullanıldı",
+        "daysRemaining": "Kısa süreli istihdam: Bu yıl {limit} iş gününden {remaining} gün kaldı"
+      },
+      "warning": "{area}: yasal sınır risk altında",
+      "warningApproaching": "{area}: yasal sınıra yaklaşıyor",
+      "warningExceeded": "{area}: yasal sınır aşıldı",
+      "warningPercent": "{area}: Yasal sınırın %{percent}'i",
+      "workingStudent": {
+        "ceiling": "Çalışan öğrenci: 12 ayda 20 saatin üzerinde {used} / {limit} hafta",
+        "lectureWeek": "Ders haftasında >20 sa çalışan öğrenci: Hafta içi gündüz {hours} sa çalışma (sınır {limit} sa)"
       }
     },
     "templates": {

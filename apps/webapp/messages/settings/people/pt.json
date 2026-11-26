@@ -409,6 +409,7 @@
         "clearSearch": "Limpar pesquisa",
         "clockReview": "Requer revisão: registro de saída no desligamento",
         "confirmRehire": "Confirmar recontratação",
+        "contractorRehireHint": "Um Prestador de serviços externo não recebe termos de emprego, política de trabalho ou concessão de férias. As taxas do prestador são definidas separadamente.",
         "correctTime": "Corrigir horário",
         "currency": "Moeda",
         "currencyInvalid": "Insira um código de moeda de três letras.",
@@ -423,6 +424,10 @@
         "effectiveDescription": "Acesso encerrado às {cutoff} ({timezone}).",
         "employmentGap": "Sem vínculo empregatício {startDate} – {endDate}",
         "employmentStint": "Período de trabalho {startDate} – {endDate}",
+        "engagement": {
+          "employee": "Funcionário"
+        },
+        "engagementKind": "Contratação",
         "errors": {
           "actorNotAuthorized": "Apenas proprietários e administradores da organização podem gerenciar desligamentos de funcionários.",
           "departureAlreadyEffective": "Este desligamento já entrou em vigor. Readmita o funcionário para restaurar o acesso.",
@@ -668,6 +673,7 @@
           "employeeNotFound": "Colaborador não encontrado.",
           "exceedsBalance": "O pagamento é maior do que o saldo de trabalho do colaborador ao final daquele dia.",
           "exceedsLaterBalance": "O pagamento deixaria o saldo de trabalho abaixo de zero após um pagamento posterior de horas extras. Cancele esse pagamento primeiro ou registre um valor menor.",
+          "externalContractorDay": "Neste dia a pessoa trabalha como Prestador de serviços externo, portanto a folha de pagamento nunca pagaria esse valor. Defina uma data em que ela estava empregada.",
           "failed": "Não foi possível atualizar o saldo de trabalho. Tente novamente.",
           "futureDay": "A data não pode ser posterior a hoje no fuso horário do colaborador.",
           "invalidInput": "Verifique o dia, as horas e os minutos, e o motivo.",

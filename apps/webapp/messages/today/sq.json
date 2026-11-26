@@ -6,19 +6,37 @@
       "decided": "Vendimi u ruajt. Rifreskoni për të ngarkuar radhën aktuale.",
       "description": "Kërkesa në pritje të një vendimi nga menaxheri.",
       "empty": "Nuk ka miratime në pritje.",
+      "itemTitle": "{requester}: {title}",
       "openInbox": "Hap kutinë hyrëse",
+      "openInboxForRest": "Hap kutinë hyrëse për të parë pjesën tjetër",
+      "openInboxLink": "Hap kutinë hyrëse",
       "ownRequest": "Kërkesa juaj: vendos një miratues tjetër.",
+      "partialFailure": "Disa miratime nuk mund të ngarkoheshin: {types}. Lista dhe totali mund të mos jenë të plota.",
+      "partialFailureNotCounted": "Disa miratime nuk mund të numëroheshin: {types}. Totali mund të mos jetë i plotë.",
       "pendingAriaLabel": "Miratimet në pritje",
       "reject": "Refuzo",
       "rejectLabel": "Refuzo {title}",
+      "rejectPanel": {
+        "briefingUnavailable": "Miratimet e sotme nuk mund të rifreskoheshin. Mbyll këtë panel dhe provo përsëri.",
+        "description": "Kërkuesi e sheh këtë arsye bashkë me refuzimin.",
+        "noLongerRejectable": "Kjo kërkesë nuk mund të refuzohet më këtu.",
+        "title": "Refuzo kërkesën"
+      },
       "retry": "Riprovo miratimet",
+      "reviewInInbox": "Shqyrto në kutinë hyrëse",
+      "reviewInInboxNamed": "Shqyrto në kutinë hyrëse: {title}",
       "title": "Miratimet",
       "toast": {
         "approved": "Kërkesa u miratua",
         "approveError": "Kërkesa nuk mund të miratohet",
         "rejected": "Kërkesa u refuzua",
         "rejectError": "Kërkesa nuk mund të refuzohet"
-      }
+      },
+      "totalAtLeast": "{count}+",
+      "truncated": "{total, plural, one {Po shfaqet {shown} nga # miratim në pritje.} other {Po shfaqen {shown} nga # miratime në pritje.}}",
+      "truncatedAtLeast": "{total, plural, one {Po shfaqet {shown} nga të paktën # miratim në pritje.} other {Po shfaqen {shown} nga të paktën # miratime në pritje.}}",
+      "waitingInInbox": "{total, plural, one {# miratim në pritje po pret në kutinë hyrëse.} other {# miratime në pritje po presin në kutinë hyrëse.}}",
+      "waitingInInboxAtLeast": "{total, plural, one {Të paktën # miratim në pritje po pret në kutinë hyrëse.} other {Të paktën # miratime në pritje po presin në kutinë hyrëse.}}"
     },
     "briefing": {
       "accessUnavailable": "Ky informim nuk është i disponueshëm për punonjësin dhe organizatën aktuale.",

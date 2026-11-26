@@ -16,6 +16,10 @@
       "createCategoryButton": "Creează o categorie",
       "deactivate": "Dezactivează",
       "defaults": {
+        "contractorUnavailability": {
+          "description": "Notă în calendar care indică indisponibilitatea unui Contractor extern; nu reprezintă concediu sau absență",
+          "name": "Indisponibil (Contractor extern)"
+        },
         "timeOffInLieu": {
           "description": "Timp liber dedus din soldul orelor de lucru",
           "name": "Timp liber compensatoriu"
@@ -32,6 +36,7 @@
         "activeHelp": "Categoriile active sunt disponibile pentru noi cereri de absență.",
         "color": "Culoare",
         "colorHelp": "Marcaj în calendar",
+        "contractorUnavailabilityRules": "Indisponibilitatea unui Contractor extern este doar un marcaj în calendar: nu consumă niciodată concediu, timp de lucru sau soldul orelor de lucru.",
         "countsAgainstVacation": "Se deduce din soldul de concediu",
         "countsAgainstVacationHelp": "Deduce zilele aprobate din soldul de concediu al angajatului.",
         "deputyRequired": "Înlocuitor obligatoriu",
@@ -59,6 +64,7 @@
         "translations": "Traduceri",
         "translationsHelp": "Etichete localizate opționale pentru angajații care folosesc aplicația în altă limbă.",
         "type": "Tip",
+        "typeContractorUnavailability": "Indisponibilitate Contractor extern",
         "typeHelp": "Grupează rapoartele și fluxurile de lucru secundare pentru absențe.",
         "typePlaceholder": "Selectați tipul categoriei",
         "typeTimeOffInLieu": "Timp liber compensatoriu"

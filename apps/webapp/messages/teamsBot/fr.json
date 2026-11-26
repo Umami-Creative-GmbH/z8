@@ -80,6 +80,7 @@
     "pendingApprovals": "Approbations en attente",
     "pendingExceptionRequests": "{count, plural, one {# demande d'exception en attente d'examen} other {# demandes d'exception en attente d'examen}}",
     "returns": "Retour le {date}",
+    "reviewComplianceExceptions": "Examiner les demandes de dérogation",
     "since": "Depuis {time}",
     "textClockedInEmployee": "• {name} - depuis {clockedInAt} ({duration})",
     "textCompliance": "**⚠️ Conformité :**",

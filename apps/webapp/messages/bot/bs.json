@@ -231,6 +231,7 @@
       "openDashboard": "Otvori Z8 kontrolnu tablu",
       "openShifts": "Otvorene smjene:",
       "pendingApprovals": "Odobrenja na čekanju:",
+      "reviewComplianceExceptions": "Pregledajte zahtjeve za izuzeće",
       "title": "Dnevni pregled - {date}",
       "viewDashboardAt": "Pogledajte punu kontrolnu tablu na {url}",
       "whosOut": "Ko je odsutan:"

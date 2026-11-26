@@ -80,6 +80,7 @@
     "pendingApprovals": "Väntande godkännanden",
     "pendingExceptionRequests": "{count, plural, one {# väntande undantagsbegäran som väntar på granskning} other {# väntande undantagsbegäranden som väntar på granskning}}",
     "returns": "Återkommer {date}",
+    "reviewComplianceExceptions": "Granska undantagsbegäranden",
     "since": "Sedan {time}",
     "textClockedInEmployee": "• {name} - sedan {clockedInAt} ({duration})",
     "textCompliance": "**⚠️ Efterlevnad:**",

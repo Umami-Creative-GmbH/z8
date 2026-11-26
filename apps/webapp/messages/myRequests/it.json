@@ -16,6 +16,7 @@
     },
     "card": {
       "decision": "Decisione",
+      "returned": "Restituita",
       "submitted": "Inviata"
     },
     "empty": {
@@ -53,7 +54,7 @@
       "title": "In revisione"
     },
     "needsAttention": {
-      "description": "Richieste respinte che potrebbero richiedere una correzione prima di essere inviate nuovamente.",
+      "fixDescription": "Richieste restituite o rifiutate che richiedono una correzione prima del nuovo invio.",
       "title": "Richiede attenzione"
     },
     "reasonLabel": "Motivazione",
@@ -65,26 +66,58 @@
       "absence": {
         "title": "Richiesta di assenza"
       },
+      "complianceException": {
+        "durationHours": "{hours} h",
+        "durationHoursMinutes": "{hours} h {minutes} min",
+        "durationMinutes": "{minutes} min",
+        "overtimeDaily": "Eccezione per straordinario giornaliero",
+        "overtimeMonthly": "Eccezione per straordinario mensile",
+        "overtimeWeekly": "Eccezione per straordinario settimanale",
+        "planned": "Pianificato: {duration}",
+        "restPeriod": "Eccezione periodo di riposo",
+        "title": "Eccezione di conformità",
+        "validity": "Valido: {window} ({timeZone})"
+      },
+      "earlierClaim": {
+        "mileage": "Richiesta di rimborso chilometrico precedente",
+        "perDiem": "Richiesta di diaria precedente",
+        "receipt": "Richiesta con ricevuta precedente",
+        "title": "Richiesta precedente"
+      },
+      "expenseReport": {
+        "adjustmentOf": "Rettifica di “{title}”",
+        "adjustmentOfUntitled": "Rettifica di una nota spese precedente",
+        "kind": {
+          "standaloneMileage": "Chilometraggio singolo",
+          "standaloneReceipt": "Ricevuta singola",
+          "trip": "Nota spese di viaggio"
+        },
+        "untitledMileage": "Chilometraggio senza titolo",
+        "untitledReceipt": "Ricevuta senza titolo",
+        "untitledTrip": "Viaggio senza titolo"
+      },
       "timeCorrection": {
         "subtitle": "Correzione per una registrazione oraria",
         "title": "Richiesta di correzione oraria"
-      },
-      "travelExpense": {
-        "title": "Richiesta di rimborso spese di viaggio"
       }
     },
-    "scope": "Le tue richieste di assenza, correzione orario e spese legacy nell'organizzazione attiva",
+    "returnNoteLabel": "Nota del revisore",
+    "scopeAllRequests": "Le tue richieste di assenza, correzione dell'orario, deroga di conformità e note spese nell'organizzazione attiva",
     "sourceError": {
       "absence": "Impossibile caricare le richieste di assenza.",
+      "complianceException": "Impossibile caricare le deroghe di conformità.",
+      "earlierClaim": "Impossibile caricare le richieste precedenti.",
+      "expenseReport": "Impossibile caricare le note spese.",
       "timeCorrection": "Impossibile caricare le richieste di correzione oraria.",
-      "title": "Impossibile caricare alcune richieste.",
-      "travelExpense": "Impossibile caricare le richieste di rimborso spese di viaggio."
+      "title": "Impossibile caricare alcune richieste."
     },
     "status": {
       "approved": "Approvato",
       "cancelled": "Annullato",
+      "expired": "Scaduto",
       "inReview": "In revisione",
-      "rejected": "Respinto"
+      "rejected": "Respinto",
+      "returned": "Restituito"
     },
     "summary": {
       "ariaLabel": "Riepilogo richieste",
@@ -96,8 +129,10 @@
     "title": "Le mie richieste",
     "types": {
       "absence": "Assenza",
-      "timeCorrection": "Correzione orario",
-      "travelExpense": "Spesa di trasferta"
+      "complianceException": "Deroga di conformità",
+      "earlierClaim": "Richiesta precedente",
+      "expenseReport": "Nota spese",
+      "timeCorrection": "Correzione orario"
     },
     "unavailableTitle": "Richieste non disponibili"
   }

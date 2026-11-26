@@ -16,6 +16,10 @@
       "createCategoryButton": "Utwórz kategorię",
       "deactivate": "Dezaktywuj",
       "defaults": {
+        "contractorUnavailability": {
+          "description": "Notatka w kalendarzu informująca o niedostępności wykonawcy zewnętrznego; nie jest to urlop wypoczynkowy ani zwolnienie",
+          "name": "Niedostępność (wykonawca zewnętrzny)"
+        },
         "timeOffInLieu": {
           "description": "Czas wolny rozliczany z bilansu czasu pracy",
           "name": "Czas wolny za nadgodziny"
@@ -32,6 +36,7 @@
         "activeHelp": "Aktywne kategorie są dostępne dla nowych wniosków o nieobecność.",
         "color": "Kolor",
         "colorHelp": "Znacznik w kalendarzu",
+        "contractorUnavailabilityRules": "Niedostępność wykonawcy zewnętrznego jest wyłącznie znacznikiem w kalendarzu: nigdy nie pomniejsza urlopu, czasu pracy ani salda czasu pracy.",
         "countsAgainstVacation": "Wlicza się do bilansu urlopowego",
         "countsAgainstVacationHelp": "Odejmij zatwierdzone dni od puli urlopowej pracownika.",
         "deputyRequired": "Wymagany zastępca",
@@ -59,6 +64,7 @@
         "translations": "Tłumaczenia",
         "translationsHelp": "Opcjonalne zlokalizowane etykiety dla pracowników korzystających z innego języka aplikacji.",
         "type": "Typ",
+        "typeContractorUnavailability": "Niedostępność wykonawcy zewnętrznego",
         "typeHelp": "Grupuje raporty i powiązane przepływy pracy dotyczące nieobecności.",
         "typePlaceholder": "Wybierz typ kategorii",
         "typeTimeOffInLieu": "Czas wolny za nadgodziny"

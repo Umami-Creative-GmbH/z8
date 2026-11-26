@@ -409,7 +409,7 @@
         "clearSearch": "Suche löschen",
         "clockReview": "Überprüfung erforderlich: Ausstempeln beim Offboarding",
         "confirmRehire": "Wiedereinstellung bestätigen",
-        "contractorRehireHint": "Ein Externer Dienstleister erhält keinen Arbeitsvertrag, keine Arbeitszeitrichtlinie und keinen Urlaubsanspruch. Dienstleistersätze werden gesondert festgelegt.",
+        "contractorRehireHint": "Ein externer Auftragnehmer erhält keine Anstellungsbedingungen, Arbeitszeitrichtlinie oder Urlaubsansprüche. Sätze für Auftragnehmer werden separat festgelegt.",
         "correctTime": "Uhrzeit korrigieren",
         "currency": "Währung",
         "currencyInvalid": "Geben Sie einen dreistelligen Währungscode ein.",
@@ -427,7 +427,7 @@
         "engagement": {
           "employee": "Mitarbeiter"
         },
-        "engagementKind": "Beschäftigungsart",
+        "engagementKind": "Auftragsverhältnis",
         "errors": {
           "actorNotAuthorized": "Nur Organisationsinhaber und Administratoren können Mitarbeiteraustritte verwalten.",
           "departureAlreadyEffective": "Dieser Austritt ist bereits wirksam geworden. Stellen Sie den Mitarbeiter erneut ein, um den Zugriff wiederherzustellen.",
@@ -673,7 +673,7 @@
           "employeeNotFound": "Mitarbeiter nicht gefunden.",
           "exceedsBalance": "Die Auszahlung übersteigt den Arbeitszeitsaldo des Mitarbeiters am Ende dieses Tages.",
           "exceedsLaterBalance": "Die Auszahlung würde den Arbeitszeitsaldo nach einer späteren Überstundenauszahlung unter null sinken lassen. Stornieren Sie diese Auszahlung zuerst oder erfassen Sie weniger.",
-          "externalContractorDay": "An diesem Tag arbeitet die Person als Externer Dienstleister, daher würde die Lohnabrechnung diese Auszahlung nie auszahlen. Datieren Sie sie auf einen Tag, an dem die Person angestellt war.",
+          "externalContractorDay": "An diesem Tag arbeitet die Person als externer Auftragnehmer, daher wird diese Auszahlung in der Lohnabrechnung nicht berücksichtigt. Datieren Sie sie auf einen Tag, an dem die Person angestellt war.",
           "failed": "Der Arbeitszeitsaldo konnte nicht aktualisiert werden. Versuchen Sie es erneut.",
           "futureDay": "Der Tag darf in der Zeitzone des Mitarbeiters nicht nach dem heutigen Tag liegen.",
           "invalidInput": "Überprüfen Sie den Tag, die Stunden und Minuten sowie den Grund.",

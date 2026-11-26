@@ -208,7 +208,6 @@
     "adding": "Adding...",
     "all": "All",
     "appName": "Z8",
-    "approve": "Approve",
     "assign": "Assign",
     "back": "Back",
     "backToDashboard": "Back to dashboard",
@@ -372,6 +371,94 @@
       "bellLabel": "{count, plural, =0 {Notifications} other {Notifications (# unread)}}"
     },
     "offline": "Offline",
+    "onCall": {
+      "agreementDocumented": "Agreement documented",
+      "agreementStale": "Shift changed since the agreement",
+      "finding": {
+        "nearBand": "Week called for {used}, approaching the call-off band's limit of {limit}",
+        "other": "On-call rule at risk",
+        "overBand": "Week called for {used}, above the call-off band of {limit}",
+        "shortCall": "Shift of {duration} is shorter than the minimum call of {minimum}",
+        "shortNotice": "{days, plural, one {Called in with # full day notice; {required} are required} other {Called in with # full days notice; {required} are required}}",
+        "shortWorkCall": "Worked a call of {duration}, less than the minimum call of {minimum}",
+        "underBand": "Week called for {used}, below the call-off band of {limit}"
+      },
+      "findingsTitle": "Checks of the last and next four weeks",
+      "hoursKind": {
+        "exact": "Exactly agreed weekly hours",
+        "maximum": "Maximum weekly hours (down to −20 %)",
+        "minimum": "Minimum weekly hours (up to +25 %)",
+        "unspecified": "No weekly hours agreed (20 h apply)"
+      },
+      "minimumCall": "Minimum call {duration}",
+      "noFindings": "No on-call rule is at risk.",
+      "notToday": "Not on call today.",
+      "payroll": {
+        "continuedPaySpan": "Continued pay is owed from {from} to {until} (§ 3 EFZG)",
+        "description": "Average working time before each sick leave or public holiday of on-call employees in this period, to prepare continued pay. Nothing here changes settled days.",
+        "hide": "Hide breakdown",
+        "holidaysPaidAsHolidays": "Public holidays during the illness are paid as their own rows, not as sick days: {dates}",
+        "paidSickDays": "{days, plural, one {Sick pay for # day in this period} other {Sick pay for # days in this period}}",
+        "perDay": "{duration} per day",
+        "rangeTooLong": "Reference hours are listed for at most three months at a time. Choose a shorter period.",
+        "show": "Show breakdown",
+        "sickPayExhausted": "No sick pay in this period: the six weeks of continued pay ended on {date} (§ 3 Abs. 1 EFZG)",
+        "sickPayGuidanceLabel": "Guidance for payroll",
+        "sickPayGuidanceNote": "Sick-pay lines are guidance under § 3 EFZG; the payroll system decides whether and how much continued pay is paid.",
+        "sickPayNotOwed": "No sick pay is owed for this illness: it ended within the first four weeks of employment (§ 3 Abs. 3 EFZG)",
+        "sickPayWaiting": "No sick pay in this period: the claim arises on {date}, after four weeks of employment (§ 3 Abs. 3 EFZG)",
+        "title": "On-call reference hours (§ 12 TzBfG)"
+      },
+      "reference": {
+        "calculate": "Calculate",
+        "dateRequired": "Choose a date.",
+        "denominator": "Counted days",
+        "denominatorValue": "{counted} of {total} days",
+        "description": "For information only: payroll decides what is paid. Nothing here changes settled days or closed months.",
+        "eventDate": "Calculate for a day",
+        "excluded": {
+          "notEmployed": "Not employed",
+          "paidAbsence": "Leave or sickness",
+          "publicHoliday": "Public holiday",
+          "unpaidAbsence": "Unpaid absence"
+        },
+        "excludedPeriod": "{days, plural, one {{from} – {until}: {reason} (# day)} other {{from} – {until}: {reason} (# days)}}",
+        "excludedTitle": "Left out of the average",
+        "noEvents": "No sick leave or public holiday on an on-call day in the last three months.",
+        "none": "—",
+        "numerator": "Worked time",
+        "perDay": "Average per day",
+        "periodThirteenWeeks": "Reference period (13 weeks): {from} – {until}",
+        "periodThreeMonths": "Reference period (3 months): {from} – {until}",
+        "perWeek": "Average per week",
+        "perWorkedDay": "Average per day worked",
+        "publicHoliday": "Public holiday on {date}",
+        "shortened": "Employment began during the reference period, so the shorter period counts.",
+        "sickLeave": "Sick leave from {date}",
+        "thirteenWeeks": "13 weeks",
+        "threeMonths": "3 months",
+        "title": "Reference hours for sick pay and holidays",
+        "workedDays": "Days worked"
+      },
+      "reviews": {
+        "acknowledge": "Document agreement",
+        "acknowledged": "Agreement documented",
+        "changed": "The shift changed since this list was loaded. Review it again before documenting the agreement.",
+        "description": "Short-notice call-ins, calls below the minimum and weeks outside the call-off band in the last and next four weeks. Clocking is never blocked.",
+        "documented": "Agreement documented: {reason}",
+        "draft": "Not published yet. Publish the shift before documenting the employee's agreement.",
+        "empty": "No on-call findings to review.",
+        "notOpen": "The shift no longer has a short-notice finding.",
+        "notPublished": "The shift is not published yet. Publish it before documenting the employee's agreement.",
+        "reason": "Employee's voluntary agreement (§ 12 Abs. 3 TzBfG)",
+        "reasonRequired": "Describe how the employee agreed to the short notice.",
+        "stale": "The shift changed after the agreement was documented. Document it again if it still holds.",
+        "title": "On-call work (§ 12 TzBfG)"
+      },
+      "statutoryMinimumCall": "Statutory minimum call applies",
+      "title": "On-call work (§ 12 TzBfG)",
+      "weekly": "{duration} per week"
+    },
     "open": "Open",
     "openEnded": "Open ended",
     "openMenu": "Open menu",
@@ -425,8 +512,6 @@
     "refreshData": "Refresh data",
     "refreshDataFailed": "Could not refresh data. Please try again.",
     "refreshing": "Refreshing...",
-    "reject": "Reject",
-    "rejecting": "Rejecting…",
     "remove": "Remove",
     "removing": "Removing...",
     "reset": "Reset",
@@ -594,97 +679,19 @@
         "vehiclesTitle": "Organization vehicles"
       }
     },
-    "yes": "Yes",
-    "onCall": {
-      "finding": {
-        "shortNotice": "Called in with {days, plural, one {# full day} other {# full days}} notice; {required} are required",
-        "shortCall": "Shift of {duration} is shorter than the minimum call of {minimum}",
-        "shortWorkCall": "Worked a call of {duration}, less than the minimum call of {minimum}",
-        "nearBand": "Week called for {used}, approaching the call-off band's limit of {limit}",
-        "overBand": "Week called for {used}, above the call-off band of {limit}",
-        "underBand": "Week called for {used}, below the call-off band of {limit}",
-        "other": "On-call rule at risk"
-      },
-      "reference": {
-        "excluded": {
-          "notEmployed": "Not employed",
-          "unpaidAbsence": "Unpaid absence",
-          "paidAbsence": "Leave or sickness",
-          "publicHoliday": "Public holiday"
-        },
-        "none": "—",
-        "periodThreeMonths": "Reference period (3 months): {from} – {until}",
-        "periodThirteenWeeks": "Reference period (13 weeks): {from} – {until}",
-        "numerator": "Worked time",
-        "denominator": "Counted days",
-        "denominatorValue": "{counted} of {total} days",
-        "workedDays": "Days worked",
-        "perDay": "Average per day",
-        "perWeek": "Average per week",
-        "perWorkedDay": "Average per day worked",
-        "excludedTitle": "Left out of the average",
-        "excludedPeriod": "{from} – {until}: {reason} ({days, plural, one {# day} other {# days}})",
-        "shortened": "Employment began during the reference period, so the shorter period counts.",
-        "title": "Reference hours for sick pay and holidays",
-        "threeMonths": "3 months",
-        "thirteenWeeks": "13 weeks",
-        "description": "For information only: payroll decides what is paid. Nothing here changes settled days or closed months.",
-        "noEvents": "No sick leave or public holiday on an on-call day in the last three months.",
-        "sickLeave": "Sick leave from {date}",
-        "publicHoliday": "Public holiday on {date}",
-        "dateRequired": "Choose a date.",
-        "eventDate": "Calculate for a day",
-        "calculate": "Calculate"
-      },
-      "hoursKind": {
-        "exact": "Exactly agreed weekly hours",
-        "minimum": "Minimum weekly hours (up to +25 %)",
-        "maximum": "Maximum weekly hours (down to −20 %)",
-        "unspecified": "No weekly hours agreed (20 h apply)"
-      },
-      "title": "On-call work (§ 12 TzBfG)",
-      "weekly": "{duration} per week",
-      "statutoryMinimumCall": "Statutory minimum call applies",
-      "minimumCall": "Minimum call {duration}",
-      "notToday": "Not on call today.",
-      "findingsTitle": "Checks of the last and next four weeks",
-      "noFindings": "No on-call rule is at risk.",
-      "agreementDocumented": "Agreement documented",
-      "agreementStale": "Shift changed since the agreement",
-      "reviews": {
-        "notOpen": "The shift no longer has a short-notice finding.",
-        "notPublished": "The shift is not published yet. Publish it before documenting the employee's agreement.",
-        "draft": "Not published yet. Publish the shift before documenting the employee's agreement.",
-        "changed": "The shift changed since this list was loaded. Review it again before documenting the agreement.",
-        "acknowledged": "Agreement documented",
-        "reasonRequired": "Describe how the employee agreed to the short notice.",
-        "reason": "Employee's voluntary agreement (§ 12 Abs. 3 TzBfG)",
-        "acknowledge": "Document agreement",
-        "documented": "Agreement documented: {reason}",
-        "stale": "The shift changed after the agreement was documented. Document it again if it still holds.",
-        "title": "On-call work (§ 12 TzBfG)",
-        "description": "Short-notice call-ins, calls below the minimum and weeks outside the call-off band in the last and next four weeks. Clocking is never blocked.",
-        "empty": "No on-call findings to review."
-      },
-      "payroll": {
-        "title": "On-call reference hours (§ 12 TzBfG)",
-        "description": "Average working time before each sick leave or public holiday of on-call employees in this period, to prepare continued pay. Nothing here changes settled days.",
-        "perDay": "{duration} per day",
-        "rangeTooLong": "Reference hours are listed for at most three months at a time. Choose a shorter period.",
-        "paidSickDays": "Sick pay for {days, plural, one {# day} other {# days}} in this period",
-        "continuedPaySpan": "Continued pay is owed from {from} to {until} (§ 3 EFZG)",
-        "sickPayExhausted": "No sick pay in this period: the six weeks of continued pay ended on {date} (§ 3 Abs. 1 EFZG)",
-        "sickPayWaiting": "No sick pay in this period: the claim arises on {date}, after four weeks of employment (§ 3 Abs. 3 EFZG)",
-        "sickPayNotOwed": "No sick pay is owed for this illness: it ended within the first four weeks of employment (§ 3 Abs. 3 EFZG)",
-        "sickPayGuidanceLabel": "Guidance for payroll",
-        "sickPayGuidanceNote": "Sick-pay lines are guidance under § 3 EFZG; the payroll system decides whether and how much continued pay is paid.",
-        "holidaysPaidAsHolidays": "Public holidays during the illness are paid as their own rows, not as sick days: {dates}",
-        "hide": "Hide breakdown",
-        "show": "Show breakdown"
-      }
+    "yes": "Yes"
+  },
+  "contractorCompensation": {
+    "dayUnitRules": {
+      "anyWorkFullDay": "Any day with work counts as a full day",
+      "halfAndFullDay": "Half day up to {minutes} min, full day above",
+      "proratedCapped": "Prorated by a {minutes}-minute day, at most one day",
+      "proratedUncapped": "Prorated by a {minutes}-minute day, without a cap"
     }
   },
   "contractorStatement": {
+    "approvedOnly": "Only approved work is listed. Work awaiting approval is added once it is approved.",
+    "awaitingApprovalExcluded": "Work periods awaiting approval, not included: {count}",
     "basis": {
       "daily": "Day rate",
       "hourly": "Hourly rate"
@@ -756,9 +763,7 @@
     },
     "unpricedNotice": "Some work had no agreed rate on its day. It is listed without an amount and is not in the totals.",
     "vatId": "VAT ID",
-    "workedHours": "Worked hours",
-    "approvedOnly": "Only approved work is listed. Work awaiting approval is added once it is approved.",
-    "awaitingApprovalExcluded": "Work periods awaiting approval, not included: {count}"
+    "workedHours": "Worked hours"
   },
   "drivingLicence": {
     "applyingInterval": "Applying…",
@@ -768,6 +773,9 @@
       "chooseClasses": "Select the classes you actually inspected.",
       "classes": "Classes actually inspected",
       "classExpiry": "Class expiry (if applicable)",
+      "declaredBadge": "Declared",
+      "declaredHelp": "These classes and any dates the employee entered are preselected. Compare them with the original licence and correct anything that differs.",
+      "declaredTitle": "{name} declared {classes}",
       "documentDates": "Original document dates",
       "employeeDeclaration": "The employee personally made the declaration shown above during this check; I attest that declaration.",
       "expiryDate": "Document expiry date",
@@ -808,6 +816,8 @@
       },
       "customOrder": "Sorted by the selected column and direction.",
       "deadline": "{date} ({timezone})",
+      "declared": "Declared {classes}",
+      "declaredDue": "Check declared classes",
       "dueNow": "Check due now",
       "dueOrder": "Checks due now first, then the next deadline.",
       "empty": {
@@ -841,6 +851,31 @@
     "class": {
       "active": "Authorized",
       "ended": "Ended",
+      "group": {
+        "bus": "Buses",
+        "car": "Cars",
+        "motorcycle": "Mopeds and motorcycles",
+        "tractor": "Tractors",
+        "truck": "Trucks"
+      },
+      "name": {
+        "A": "Motorcycle",
+        "A1": "Light motorcycle",
+        "A2": "Mid-size motorcycle",
+        "AM": "Moped",
+        "B": "Car",
+        "BE": "Car with trailer",
+        "C": "Truck",
+        "C1": "Light truck",
+        "C1E": "Light truck with trailer",
+        "CE": "Truck with trailer",
+        "D": "Bus",
+        "D1": "Minibus",
+        "D1E": "Minibus with trailer",
+        "DE": "Bus with trailer",
+        "L": "Slow tractor",
+        "T": "Tractor"
+      },
       "noLongerIntended": "Ended because the employee is no longer an intended driver. Driving again requires a new check.",
       "overdue": "Routine check overdue. This is an organizational suspension, not a statement that legal driving entitlement was withdrawn.",
       "recheck": "A new original check and explicit reinstatement are required.",
@@ -848,6 +883,36 @@
     },
     "declaration": {
       "text": "I confirm that no known driving ban, withdrawal or other impediment prevents the intended driving, and that I meet the applicable driving restrictions."
+    },
+    "declared": {
+      "add": "Add licence classes",
+      "authorized": "Authorized",
+      "classExpires": "Expires {date}",
+      "classExpiry": "{code} ({name}) expires on",
+      "description": "Declared by you, not checked yet. They don't authorize you to drive until a verifier checks your original licence.",
+      "dialogDescription": "Select every class on your driving licence. Your verifier confirms them when checking your original licence.",
+      "dialogTitle": "Which classes are on your licence?",
+      "documentExpires": "Licence card expires",
+      "documentExpiry": "Licence card expires on",
+      "documentExpiryHelp": "Field 4b on the card. Leave empty if your licence has none.",
+      "edit": "Edit",
+      "emptyDescription": "Tell your organization which licence classes you hold. It helps with planning and prepares your check; it does not authorize you to drive.",
+      "emptyMoreDescription": "Add a class you have passed since your last check. Your verifier is asked to check it.",
+      "emptyMoreTitle": "Got another licence class?",
+      "emptyTitle": "What can you drive?",
+      "expiryTitle": "Expiry dates (optional)",
+      "invalid": "Check the selected classes and dates.",
+      "notIntended": "You are not an intended driver anymore, so your organization doesn't collect your licence classes.",
+      "privacy": "Only your classes and expiry dates are saved, no licence number or photo. Your statement doesn't authorize you to drive.",
+      "remove": "Remove my classes",
+      "removed": "Declared licence classes removed",
+      "removing": "Removing…",
+      "save": "{count, plural, one {Save # class} other {Save # classes}}",
+      "saved": "Licence classes saved. Your verifier will check them with your original licence.",
+      "saveFailed": "Your licence classes could not be saved. Your selection is kept; try again.",
+      "saving": "Saving…",
+      "title": "Your declared licence classes",
+      "updated": "Updated"
     },
     "delivery": {
       "uncertain": "Optional reminder emails to you have an uncertain delivery outcome ({count}). They will not be sent again automatically. Your in-app reminders remain available; email delivery does not confirm reading."
@@ -1010,6 +1075,7 @@
     },
     "operational": {
       "advisory": "Driving authorization",
+      "declared": "Declared, not checked yet. Not an authorization to drive.",
       "loading": "Loading driving authorization…",
       "loadingEmployees": "Loading employees for planning…",
       "noEmployees": "No matching employees.",
@@ -1665,6 +1731,10 @@
         "message": "Arrange an available verifier for {employeeName}. This task grants no inspection rights and does not extend any deadline.",
         "title": "Assign driving licence verifier responsibility"
       },
+      "drivingLicenceDeclared": {
+        "message": "{employeeName} declared licence classes {classes}. Inspect the original licence to authorize them; a declaration alone grants nothing.",
+        "title": "Licence classes to check"
+      },
       "drivingLicencePersonalTask": {
         "message": "Remind {employeeName} to arrange an original driving licence check. Direct employee notification was unavailable. Task completion is not direct delivery or reading.",
         "title": "Remind employee in person"
@@ -1707,6 +1777,11 @@
       "formerEmployeeReportsWithoutManager": {
         "message": "{count, plural, one {# employee is still linked only to a former manager: {names}. Assign a current manager.} other {# employees are still linked only to a former manager: {names}. Assign a current manager.}}",
         "title": "Employees without a current manager"
+      },
+      "invitationContractorTermsNeedReview": {
+        "message": "The rate from the invitation of {name} could not be applied when they joined. Set it in their External Contractor compensation; their work stays unpriced until then.",
+        "termsExistMessage": "The rate from the invitation of {name} was not applied when they joined: their engagement already has compensation terms, which still apply. Review in their External Contractor compensation whether they should change.",
+        "title": "An External Contractor's rate needs review"
       },
       "kioskCommandRefused": {
         "forwardedMessage": "A {action, select, clock_in {clock-in} clock_out {clock-out} start_break {break start} resume_break {return from break} other {clocking}} by {employeeName} at {time} on the kiosk {kioskName} was not recorded: {reason, select, wrong_pin {the PIN was wrong} pin_locked {the kiosk PIN was locked after too many wrong attempts} no_pin {there was no kiosk PIN to check it against} pin_unchecked {the PIN could not be checked} kiosk_retired {the kiosk was revoked or paired again before it reconnected} contact_unverifiable {Z8 could not confirm the kiosk's last connection} outside_window {its time was outside the window Z8 accepts} clock_untrusted {the kiosk's clock could not be trusted for it} not_assigned {the employee is not assigned to the kiosk's location} not_adopted {the organization does not accept offline kiosk clockings} month_closed {the month is closed} holiday {the day is a holiday without time recording} conflict {it conflicts with other recorded time} other {Z8 could not accept it}}. Record the time for them or check it with them.",
@@ -2073,11 +2148,6 @@
         "message": "Stay healthy - drink some water",
         "snooze": "Snooze today",
         "title": "Time to hydrate!"
-      },
-      "invitationContractorTermsNeedReview": {
-        "title": "An External Contractor's rate needs review",
-        "message": "The rate from the invitation of {name} could not be applied when they joined. Set it in their External Contractor compensation; their work stays unpriced until then.",
-        "termsExistMessage": "The rate from the invitation of {name} was not applied when they joined: their engagement already has compensation terms, which still apply. Review in their External Contractor compensation whether they should change."
       }
     },
     "countFailed": "Unread count unavailable",
@@ -2685,6 +2755,13 @@
           "createdAt": "When this task or delivery was first recorded, as a UTC instant.",
           "deadline_timezone": "The explicit calendar time zone used for the policy's deadline dates.",
           "declaration_text": "The exact declaration text recorded during the original inspection.",
+          "declared_at": "When you last saved your declared classes, as a UTC instant.",
+          "declared_class_code": "A licence class you declared you hold. It grants no driving authorization.",
+          "declaredClasses": {
+            "summary": "The licence classes you declared yourself and have not had checked yet. A check replaces them; they are deleted when you are no longer an intended driver."
+          },
+          "declared_class_expiry_date": "The class's own expiry date you entered (C and D classes); empty if you entered none.",
+          "declared_document_expires_on": "Your licence card's expiry date as you entered it; empty if you entered none.",
           "document_expires_on": "The document's expiry date, separate from expiry of individual classes.",
           "document_issued_on": "The document's issue date, without a time or time zone.",
           "document_valid_through": "The last calendar day covered by the document's validity.",
@@ -2912,7 +2989,7 @@
             "startedAt": "When the period started.",
             "startProvenance": "Where the start comes from, for example a hire or a rehire.",
             "status": "Whether the period is open or closed.",
-            "summary": "Each period you worked for the organization, as an employee or as an External Contractor."
+            "summary": "Each period you were employed by the organization."
           },
           "employmentTerms": {
             "changeReason": "Why the terms were set or changed.",
@@ -3750,13 +3827,5 @@
   },
   "worksCouncil": {
     "loadingLabel": "Loading works council"
-  },
-  "contractorCompensation": {
-    "dayUnitRules": {
-      "anyWorkFullDay": "Any day with work counts as a full day",
-      "halfAndFullDay": "Half day up to {minutes} min, full day above",
-      "proratedCapped": "Prorated by a {minutes}-minute day, at most one day",
-      "proratedUncapped": "Prorated by a {minutes}-minute day, without a cap"
-    }
   }
 }

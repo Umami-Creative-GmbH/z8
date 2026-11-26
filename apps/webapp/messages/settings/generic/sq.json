@@ -1,5 +1,60 @@
 {
   "settings": {
+    "apprenticeRelease": {
+      "blockWeekTrainingNote": "Në këto ditë bllok lejohen deri në 2 orë trajnim brenda kompanisë në javë (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG). Për një punonjës nën 18 vjeç, këto orë llogariten mbi javën e bllokut, e cila llogaritet me kohën mesatare javore të punës (§ 9 Abs. 2 Nr. 2 JArbSchG), dhe nuk llogariten në kufijtë ditorë dhe javorë sipas § 8.",
+      "credit": {
+        "exam": "Provimi nga {start}: {minutes} min të njohura",
+        "fullDays": "{count, plural, one {# ditë pune e njohur plotësisht} other {# ditë pune të njohura plotësisht}}",
+        "minutes": "{minutes} min orar shkollor të njohura",
+        "schoolTime": "Shkolla {start}–{end}: {minutes} min të njohura"
+      },
+      "description": "Shkolla profesionale, javët e bllokut mësimor dhe ditët e provimeve janë lirim me pagesë (§ 15 BBiG): ato njihen si orar pune, nuk zbriten kurrë nga pushimet dhe nuk krijojnë kurrë saldo negative pune.",
+      "empty": "Ende nuk është regjistruar asnjë ditë lirimi.",
+      "fields": {
+        "date": "Data",
+        "endsOn": "Dita e fundit",
+        "examEndTime": "Përfundimi i provimit (përfshirë pushimet)",
+        "examStartTime": "Fillimi i provimit",
+        "examTimeHint": "Provimi liron dhe njeh vetëm kohën e tij. Lërini të dyja bosh për të liruar të gjithë ditën.",
+        "includePreExamDay": "Liro edhe ditën e punës para provimit përfundimtar me shkrim",
+        "kind": "Lirim",
+        "lessons": "Mësime (nga 45 min secili)",
+        "note": "Shënim (opsionale)",
+        "schoolEndTime": "Përfundimi i shkollës (përfshirë pushimet)",
+        "schoolHoursPerWeek": "Orë shkolle në javë (orë të plota)",
+        "schoolStartTime": "Fillimi i shkollës",
+        "schoolTimeHint": "Një ditë e shkurtër shkollore njeh kohën e shkollës duke përfshirë pushimet. Lërini të dyja bosh për të njohur 45 minuta për mësim."
+      },
+      "kind": {
+        "blockWeek": "Javë bllok e shkollës profesionale",
+        "examDay": "Ditë provimi",
+        "preExamDay": "Ditë pune para provimit",
+        "schoolDay": "Ditë e shkollës profesionale"
+      },
+      "lessons": "{count} mësime",
+      "record": "Regjistro ditën e lirimit",
+      "recorded": "Dita e lirimit u regjistrua",
+      "refusal": {
+        "dayAlreadyReleased": "Kjo ditë është tashmë e liruar. Hiqni fillimisht lirimin e regjistruar për të.",
+        "examTimeInvalid": "Vendosni kur fillon dhe mbaron provimi, ose asnjërën. Ai duhet të përfundojë pas fillimit.",
+        "invalidRange": "Kontrolloni datat: dita e fundit nuk duhet të jetë para ditës së parë.",
+        "invalidValue": "Kontrolloni mësimet dhe orët e shkollës.",
+        "lessonsRequired": "Vendosni numrin e mësimeve.",
+        "noPrecedingWorkingDay": "Nuk ka asnjë ditë pune në javën para provimit për t'u liruar.",
+        "notApprentice": "Ditët e lirimit mund të regjistrohen vetëm për sa kohë kushtet e punonjësit e cilësojnë atë si praktikant.",
+        "overlap": "Ky lirim mbivendoset me një lirim të regjistruar tashmë.",
+        "reasonRequired": "Shpjegoni pse po hiqet dita e lirimit.",
+        "schoolMinutesRequired": "Vendosni orët e planifikuara shkollore të javës bllok.",
+        "schoolTimeInvalid": "Vendosni kur fillon dhe mbaron shkolla, ose asnjërën. Ajo duhet të përfundojë pas fillimit.",
+        "singleDay": "Vetëm një javë bllok mësimor zgjat disa ditë."
+      },
+      "title": "Lirimi për shkollë dhe provim",
+      "void": "Hiq",
+      "voidConfirm": "Hiq ditën e lirimit",
+      "voided": "Dita e lirimit u hoq",
+      "voidReason": "Pse po hiqet?",
+      "workplaceReturn": "Nën 18 vjeç: nuk ka kthim në punë pas kësaj dite të plotë shkollore (§ 9 Abs. 1 Nr. 2 JArbSchG)"
+    },
     "approvalSettings": {
       "pageDescription": "Konfiguroni kush i miraton kërkesat, kur përshkallëzohen miratimet e vonuara dhe cilat çështje miratimi kërkojnë ndjekje."
     },
@@ -230,6 +285,7 @@
         "employeeDescription": "Kostoja e plotë e brendshme për orë e këtij punonjësi, e përdorur për marzhin. E ndarë nga paga.",
         "employeeTitle": "Tarifa e kostos",
         "empty": "Nuk ka ende normë kostoje. Marzhi për punën e këtij punonjësi shfaqet si kosto e panjohur.",
+        "emptyContractor": "Ende nuk ka një tarifë kostoje. Marzhi përdor tarifën e Kontraktuesit të jashtëm të këtij personi për punën e tij si kontraktues; puna tjetër, si dhe puna e kontraktuesit pa tarifë, shfaqet si kosto e panjohur.",
         "history": "Historiku",
         "historyAction": "Historiku i normës së kostos për {name}",
         "hourly": "Orar",
@@ -652,14 +708,6 @@
         "title": "Jo çdo dorëzim periudhe për këtë muaj është miratuar. Kjo nuk e ndalon mbylljen:"
       }
     },
-    "compliance": {
-      "description": "Shqyrtoni dhe menaxhoni kërkesat për përjashtime nga përputhshmëria prej anëtarëve të ekipit",
-      "metadata": {
-        "description": "Konfiguroni cilësimet e përputhshmërisë me ArbZG dhe menaxhoni kërkesat për përjashtim",
-        "title": "Cilësimet e përputhshmërisë | ArbZG"
-      },
-      "title": "Përputhshmëria me ArbZG"
-    },
     "customDomains": {
       "title": "Domeni & Identiteti vizual"
     },
@@ -1016,7 +1064,7 @@
         "all": "Të gjithë punonjësit në këtë organizatë",
         "allDescription": "Përgjegjësia ndjek anëtarësimin aktual në organizatë. Verifikuesit nuk mund të verifikojnë kurrë veten e tyre.",
         "attribution": "Dhënë nga {actor} më {time}",
-        "editor": "Fusha e verifikuesit",
+        "editTitle": "Ndrysho përgjegjësinë e verifikuesit",
         "empty": "Nuk janë caktuar përgjegjësi verifikuesi",
         "failed": "Nuk mund të përditësohej ose të aksesohej përgjegjësia e verifikuesit të lejes së drejtimit. Kontrolloni lejet dhe zgjedhjet tuaja.",
         "formerEmployee": "Ish-punonjësit nuk mund të shtohen. Zgjidhni punonjës nga lista aktuale.",
@@ -2116,6 +2164,7 @@
           "unavailable": "Ky kontroll nuk mund të përfundonte. Riprovoni kontrollet për të provuar përsëri."
         },
         "payrollSetup": {
+          "externalContractorsSkipped": "{count, plural, one {# Kontraktor i jashtëm kapërcehet për kushtet e punësimit dhe identifikuesit e personelit: eksportet e listëpagesave nuk përfshijnë kurrë Kontraktorë të jashtëm.} other {# Kontraktorë të jashtëm kapërcehen për kushtet e punësimit dhe identifikuesit e personelit: eksportet e listëpagesave nuk përfshijnë kurrë Kontraktorë të jashtëm.}}",
           "fixEmployees": "Rishikoni punonjësit",
           "fixPayrollExport": "Hap cilësimet e eksportit të listëpagesave",
           "inviteesSkipped": "{count, plural, one {# person i ftuar kapërcehet për kushtet e punësimit dhe identifikuesit e personelit derisa të bashkohet.} other {# persona të ftuar kapërcehen për kushtet e punësimit dhe identifikuesit e personelit derisa të bashkohen.}}",
@@ -2223,6 +2272,7 @@
           "mappingsMissing": "Nuk ka përputhje aktive të llojeve të pagës",
           "mappingsPresent": "{count, plural, one {# objektiv eksporti, llojet e pagës të përputhura} other {# objektiva eksporti, llojet e pagës të përputhura}}",
           "notExported": "Organizata nuk ka asnjë objektiv aktiv të eksportit të listëpagesës, kështu që nuk ka parakushte për listëpagesën.",
+          "notNeededExternalContractor": "Nuk nevojitet: Kontraktor i jashtëm",
           "notYetInvited": "Ende jo: janë ende të ftuar",
           "personnelIdentifier": "Numri i personelit",
           "termsConfirmed": "Konfirmuar për sot",
@@ -2258,6 +2308,7 @@
           "name": "Politika",
           "none": "Nuk ka politikë efektive pune sot: asnjë nuk i është caktuar atyre, ekipit të tyre ose organizatës.",
           "noSchedule": "Nuk ka orar",
+          "notApplicable": "Nuk zbatohet asnjë politikë pune: ata punojnë si Kontraktor i jashtëm.",
           "noWorkingDays": "Nuk ka ditë pune",
           "title": "Politika e punës",
           "workingDays": "Ditët e punës"
@@ -3085,7 +3136,15 @@
       "updateProfile": "Përditëso profilin",
       "updateSuccess": "Profili u përditësua me sukses",
       "uploading": "Duke ngarkuar",
-      "uploadProfilePicture": "Ngarko foton e profilit"
+      "uploadProfilePicture": "Ngarko foton e profilit",
+      "workingStudent": {
+        "balance": "Kanë mbetur {remaining} nga {limit} javë mbi 20 orë ({used} të përdorura në 12 muajt e fundit).",
+        "description": "Si student punonjës, mund të punoni më shumë se 20 orë në maksimumi 26 javë brenda 12 muajve.",
+        "lectureFree": "Periudhat e regjistruara pa leksione",
+        "lectureFreeEmpty": "Nuk është regjistruar asnjë periudhë pa leksione. Kërkojini burimeve njerëzore të regjistrojnë pushimet tuaja semestrale.",
+        "noBaseline": "Nuk zbatohet asnjë kufi ligjor për këtë javë.",
+        "title": "Statusi i studentit punonjës"
+      }
     },
     "projects": {
       "budgetUsed": "Buxheti i përdorur",

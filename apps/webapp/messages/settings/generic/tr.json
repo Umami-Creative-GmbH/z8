@@ -1,5 +1,60 @@
 {
   "settings": {
+    "apprenticeRelease": {
+      "blockWeekTrainingNote": "Bu blok günlerde haftada 2 saate kadar şirket içi eğitime izin verilir (§ 9 Abs. 1 Nr. 3 JArbSchG, § 15 Abs. 1 Satz 3 BBiG). 18 yaş altındaki bir çalışan için bu saatler, ortalama haftalık çalışma süresiyle sayılan blok haftanın üzerine eklenir (§ 9 Abs. 2 Nr. 2 JArbSchG) ve § 8 günlük ve haftalık sınırlarına dahil edilmez.",
+      "credit": {
+        "exam": "{start} itibarıyla sınav: {minutes} dk sayıldı",
+        "fullDays": "{count, plural, other {# iş günü tam olarak sayıldı} }",
+        "minutes": "{minutes} dk okul süresi sayıldı",
+        "schoolTime": "Okul {start}–{end}: {minutes} dk sayıldı"
+      },
+      "description": "Meslek okulu, blok eğitim haftaları ve sınav günleri ücretli izin kapsamındadır (§ 15 BBiG): çalışma süresi olarak sayılır, asla tatilden düşülmez ve asla negatif çalışma bakiyesine yol açmaz.",
+      "empty": "Henüz kaydedilmiş izin günü yok.",
+      "fields": {
+        "date": "Tarih",
+        "endsOn": "Son gün",
+        "examEndTime": "Sınav bitişi (molalar dahil)",
+        "examStartTime": "Sınav başlangıcı",
+        "examTimeHint": "Sınav yalnızca kendi süresi kadar muafiyet ve çalışma süresi sağlar. Tüm günü izinli saymak için her ikisini de boş bırakın.",
+        "includePreExamDay": "Yazılı final sınavından önceki iş gününü de izinli say",
+        "kind": "İzin",
+        "lessons": "Dersler (her biri 45 dk)",
+        "note": "Not (isteğe bağlı)",
+        "schoolEndTime": "Okul bitişi (molalar dahil)",
+        "schoolHoursPerWeek": "Haftalık okul saati (tam saat)",
+        "schoolStartTime": "Okul başlangıcı",
+        "schoolTimeHint": "Kısa bir okul günü, molalar dahil olmak üzere okul süresini çalışma süresi olarak sayar. Ders başına 45 dakika sayılması için her ikisini de boş bırakın."
+      },
+      "kind": {
+        "blockWeek": "Blok okul haftası",
+        "examDay": "Sınav günü",
+        "preExamDay": "Sınavdan önceki iş günü",
+        "schoolDay": "Meslek okulu günü"
+      },
+      "lessons": "{count} ders",
+      "record": "İzin gününü kaydet",
+      "recorded": "İzin günü kaydedildi",
+      "refusal": {
+        "dayAlreadyReleased": "Bu gün zaten izinli sayılmış. Önce üzerinde kayıtlı izni kaldırın.",
+        "examTimeInvalid": "Sınavın başlangıç ve bitiş saatlerini girin ya da ikisini de boş bırakın. Bitiş saati başlangıç saatinden sonra olmalıdır.",
+        "invalidRange": "Tarihleri kontrol edin: son gün, ilk günden önce olamaz.",
+        "invalidValue": "Dersleri ve okul saatlerini kontrol edin.",
+        "lessonsRequired": "Ders sayısını girin.",
+        "noPrecedingWorkingDay": "Sınavdan önceki haftada izin verilecek bir iş günü yok.",
+        "notApprentice": "İzin günleri yalnızca çalışanın sözleşme şartları çırak olduğunu gösterdiği sürece kaydedilebilir.",
+        "overlap": "Bu izin, önceden kaydedilmiş bir izinle çakışıyor.",
+        "reasonRequired": "İzin gününün neden kaldırıldığını açıklayın.",
+        "schoolMinutesRequired": "Blok haftanın planlanan okul saatlerini girin.",
+        "schoolTimeInvalid": "Okulun başlangıç ve bitiş saatlerini girin ya da ikisini de boş bırakın. Bitiş saati başlangıç saatinden sonra olmalıdır.",
+        "singleDay": "Yalnızca blok okul haftası birden fazla güne yayılır."
+      },
+      "title": "Okul ve sınav izni",
+      "void": "Kaldır",
+      "voidConfirm": "İzin gününü kaldır",
+      "voided": "İzin günü kaldırıldı",
+      "voidReason": "Neden kaldırılıyor?",
+      "workplaceReturn": "18 yaş altı: Bu tam okul gününden sonra işe geri dönüş yok (§ 9 Abs. 1 Nr. 2 JArbSchG)"
+    },
     "approvalSettings": {
       "pageDescription": "İstekleri kimin onaylayacağını, geciken onayların ne zaman bir üst makama aktarılacağını ve hangi onay sorunlarının takip edilmesi gerektiğini yapılandırın."
     },
@@ -230,6 +285,7 @@
         "employeeDescription": "Bu çalışanın kâr marjı için kullanılan, tüm giderler dahil saatlik iç maliyeti. Maaştan ayrıdır.",
         "employeeTitle": "Maliyet oranı",
         "empty": "Henüz maliyet oranı yok. Bu çalışanın işi için marj, maliyeti bilinmiyor olarak görünür.",
+        "emptyContractor": "Henüz maliyet oranı yok. Kâr marjı, bu kişinin yüklenici işleri için Harici Yüklenici oranını kullanır; diğer işler ve oranı olmayan yüklenici işleri, maliyeti bilinmiyor olarak gösterilir.",
         "history": "Geçmiş",
         "historyAction": "{name} için maliyet oranı geçmişi",
         "hourly": "Saatlik",
@@ -652,14 +708,6 @@
         "title": "Bu ay için tüm dönem gönderimleri onaylanmadı. Bu durum kapanışı engellemez:"
       }
     },
-    "compliance": {
-      "description": "Ekip üyelerinden gelen uyumluluk istisnası taleplerini inceleyin ve yönetin",
-      "metadata": {
-        "description": "ArbZG uyumluluk ayarlarını yapılandırın ve istisna taleplerini yönetin",
-        "title": "Uyumluluk Ayarları | ArbZG"
-      },
-      "title": "ArbZG Uyumluluğu"
-    },
     "customDomains": {
       "title": "Alan Adı ve Markalama"
     },
@@ -1016,7 +1064,7 @@
         "all": "Bu kuruluştaki tüm çalışanlar",
         "allDescription": "Sorumluluk mevcut kuruluş üyeliğini takip eder. Doğrulayıcılar hiçbir zaman kendilerini doğrulayamaz.",
         "attribution": "{actor} tarafından {time} tarihinde verildi",
-        "editor": "Doğrulayıcı kapsamı",
+        "editTitle": "Doğrulayıcı sorumluluğunu düzenle",
         "empty": "Atanmış doğrulayıcı sorumluluğu yok",
         "failed": "Sürücü belgesi doğrulayıcı sorumluluğu güncellenemedi veya buna erişilemedi. İzinlerinizi ve seçimlerinizi kontrol edin.",
         "formerEmployee": "Eski çalışanlar eklenemez. Mevcut kadrodaki çalışanları seçin.",
@@ -2116,6 +2164,7 @@
           "unavailable": "Bu denetim tamamlanamadı. Tekrar denemek için denetimleri yeniden çalıştırın."
         },
         "payrollSetup": {
+          "externalContractorsSkipped": "{count, plural, other {# Harici Yüklenici için istihdam şartları ve personel tanımlayıcıları atlandı: bordro dışa aktarmaları Harici Yüklenicileri asla içermez.} }",
           "fixEmployees": "Çalışanları incele",
           "fixPayrollExport": "Bordro dışa aktarma ayarlarını aç",
           "inviteesSkipped": "{count, plural, other {Davet edilen # kişi, katılana kadar istihdam koşulları ve personel kimlikleri için atlanır.} }",
@@ -2223,6 +2272,7 @@
           "mappingsMissing": "Etkin ücret türü eşlemesi yok",
           "mappingsPresent": "{count, plural, other {# dışa aktarma hedefi, ücret türleri eşlendi} }",
           "notExported": "Kuruluşun etkin bir bordro dışa aktarma hedefi yok, bu nedenle bordro ön koşulu bulunmuyor.",
+          "notNeededExternalContractor": "Gerekli değil: Harici Yüklenici",
           "notYetInvited": "Henüz değil: Hâlâ davetliler",
           "personnelIdentifier": "Personel numarası",
           "termsConfirmed": "Bugün için onaylandı",
@@ -2258,6 +2308,7 @@
           "name": "Politika",
           "none": "Bugün geçerli bir çalışma politikası yok: Kendilerine, ekiplerine veya kuruluşa atanmış bir politika bulunmuyor.",
           "noSchedule": "Çalışma planı yok",
+          "notApplicable": "Hiçbir çalışma politikası geçerli değildir: Harici Yüklenici olarak çalışmaktadır.",
           "noWorkingDays": "Çalışma günü yok",
           "title": "Çalışma politikası",
           "workingDays": "Çalışma günleri"
@@ -3085,7 +3136,15 @@
       "updateProfile": "Profili Güncelle",
       "updateSuccess": "Profil başarıyla güncellendi",
       "uploading": "Yükleniyor",
-      "uploadProfilePicture": "Profil resmi yükle"
+      "uploadProfilePicture": "Profil resmi yükle",
+      "workingStudent": {
+        "balance": "20 saatin üzerindeki {limit} haftadan {remaining} hafta kaldı (son 12 ayda {used} kullanıldı).",
+        "description": "Çalışan bir öğrenci olarak, 12 ay içinde en fazla 26 haftada 20 saatten fazla çalışabilirsiniz.",
+        "lectureFree": "Kaydedilen ders dışı dönemler",
+        "lectureFreeEmpty": "Kaydedilmiş ders dışı dönem yok. İK'dan dönem tatillerinizi kaydetmesini isteyin.",
+        "noBaseline": "Bu hafta için yasal bir sınır geçerli değildir.",
+        "title": "Çalışan öğrenci durumu"
+      }
     },
     "projects": {
       "budgetUsed": "Kullanılan bütçe",

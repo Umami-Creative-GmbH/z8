@@ -208,7 +208,6 @@
     "adding": "Hinzufügen...",
     "all": "Alle",
     "appName": "Z8",
-    "approve": "Genehmigen",
     "assign": "Zuweisen",
     "back": "Zurück",
     "backToDashboard": "Zurück zum Dashboard",
@@ -372,6 +371,94 @@
       "bellLabel": "{count, plural, =0 {Benachrichtigungen} other {Benachrichtigungen (# ungelesen)}}"
     },
     "offline": "Offline",
+    "onCall": {
+      "agreementDocumented": "Vereinbarung dokumentiert",
+      "agreementStale": "Schicht seit der Vereinbarung geändert",
+      "finding": {
+        "nearBand": "Woche mit {used} abgerufen, nähert sich der Grenze des Abrufrahmens von {limit}",
+        "other": "Regel zur Arbeit auf Abruf gefährdet",
+        "overBand": "Woche mit {used} abgerufen, über dem Abrufrahmen von {limit}",
+        "shortCall": "Schicht von {duration} ist kürzer als der Mindestabruf von {minimum}",
+        "shortNotice": "{days, plural, one {Mit # vollem Tag Vorankündigung abgerufen; {required} sind erforderlich} other {Mit # vollen Tagen Vorankündigung abgerufen; {required} sind erforderlich}}",
+        "shortWorkCall": "Einsatz von {duration} gearbeitet, weniger als der Mindestabruf von {minimum}",
+        "underBand": "Woche mit {used} abgerufen, unter dem Abrufrahmen von {limit}"
+      },
+      "findingsTitle": "Prüfungen der letzten und nächsten vier Wochen",
+      "hoursKind": {
+        "exact": "Exakt vereinbarte Wochenstunden",
+        "maximum": "Maximale Wochenstunden (bis zu −20 %)",
+        "minimum": "Minimale Wochenstunden (bis zu +25 %)",
+        "unspecified": "Keine Wochenstunden vereinbart (es gelten 20 Std.)"
+      },
+      "minimumCall": "Mindestabruf {duration}",
+      "noFindings": "Keine Regel zur Arbeit auf Abruf ist gefährdet.",
+      "notToday": "Heute nicht auf Abruf.",
+      "payroll": {
+        "continuedPaySpan": "Entgeltfortzahlung besteht von {from} bis {until} (§ 3 EFZG)",
+        "description": "Durchschnittliche Arbeitszeit vor jeder Krankmeldung oder jedem Feiertag von Beschäftigten auf Abruf in diesem Zeitraum zur Vorbereitung der Entgeltfortzahlung. Hierdurch werden keine abgerechneten Tage geändert.",
+        "hide": "Aufschlüsselung ausblenden",
+        "holidaysPaidAsHolidays": "Feiertage während der Krankheit werden als eigene Zeilen vergütet, nicht als Krankheitstage: {dates}",
+        "paidSickDays": "{days, plural, one {Entgeltfortzahlung für # Tag in diesem Zeitraum} other {Entgeltfortzahlung für # Tage in diesem Zeitraum}}",
+        "perDay": "{duration} pro Tag",
+        "rangeTooLong": "Referenzstunden werden für jeweils höchstens drei Monate aufgeführt. Wählen Sie einen kürzeren Zeitraum.",
+        "show": "Aufschlüsselung anzeigen",
+        "sickPayExhausted": "Keine Entgeltfortzahlung in diesem Zeitraum: Die sechs Wochen Entgeltfortzahlung endeten am {date} (§ 3 Abs. 1 EFZG)",
+        "sickPayGuidanceLabel": "Hinweise für die Lohnabrechnung",
+        "sickPayGuidanceNote": "Die Zeilen zur Entgeltfortzahlung dienen als Orientierung gemäß § 3 EFZG; das Lohnabrechnungssystem entscheidet, ob und in welcher Höhe Entgeltfortzahlung geleistet wird.",
+        "sickPayNotOwed": "Für diese Erkrankung besteht kein Anspruch auf Entgeltfortzahlung: Sie endete innerhalb der ersten vier Wochen des Arbeitsverhältnisses (§ 3 Abs. 3 EFZG)",
+        "sickPayWaiting": "Keine Entgeltfortzahlung in diesem Zeitraum: Der Anspruch entsteht am {date}, nach vierwöchiger Beschäftigungsdauer (§ 3 Abs. 3 EFZG)",
+        "title": "Referenzstunden für Arbeit auf Abruf (§ 12 TzBfG)"
+      },
+      "reference": {
+        "calculate": "Berechnen",
+        "dateRequired": "Wählen Sie ein Datum aus.",
+        "denominator": "Gezählte Tage",
+        "denominatorValue": "{counted} von {total} Tagen",
+        "description": "Nur zur Information: Die Lohnabrechnung entscheidet, was ausgezahlt wird. Nichts hier ändert bereits abgerechnete Tage oder geschlossene Monate.",
+        "eventDate": "Für einen Tag berechnen",
+        "excluded": {
+          "notEmployed": "Nicht beschäftigt",
+          "paidAbsence": "Urlaub oder Krankheit",
+          "publicHoliday": "Feiertag",
+          "unpaidAbsence": "Unbezahlte Abwesenheit"
+        },
+        "excludedPeriod": "{days, plural, one {{from} – {until}: {reason} (# Tag)} other {{from} – {until}: {reason} (# Tage)}}",
+        "excludedTitle": "Im Durchschnitt nicht berücksichtigt",
+        "noEvents": "Keine Krankheit oder Feiertage an einem Abrufarbeitstag in den letzten drei Monaten.",
+        "none": "—",
+        "numerator": "Geleistete Arbeitszeit",
+        "perDay": "Durchschnitt pro Tag",
+        "periodThirteenWeeks": "Referenzzeitraum (13 Wochen): {from} – {until}",
+        "periodThreeMonths": "Referenzzeitraum (3 Monate): {from} – {until}",
+        "perWeek": "Durchschnitt pro Woche",
+        "perWorkedDay": "Durchschnitt pro gearbeitetem Tag",
+        "publicHoliday": "Feiertag am {date}",
+        "shortened": "Das Beschäftigungsverhältnis begann während des Referenzzeitraums, daher zählt der kürzere Zeitraum.",
+        "sickLeave": "Krankheit ab {date}",
+        "thirteenWeeks": "13 Wochen",
+        "threeMonths": "3 Monate",
+        "title": "Referenzstunden für Entgeltfortzahlung und Feiertage",
+        "workedDays": "Gearbeitete Tage"
+      },
+      "reviews": {
+        "acknowledge": "Vereinbarung dokumentieren",
+        "acknowledged": "Vereinbarung dokumentiert",
+        "changed": "Die Schicht wurde seit dem Laden dieser Liste geändert. Überprüfen Sie sie erneut, bevor Sie die Vereinbarung dokumentieren.",
+        "description": "Kurzfristige Abrufe, Abrufe unterhalb des Minimums und Wochen außerhalb des Abrufkorridors in den letzten und nächsten vier Wochen. Die Zeiterfassung wird niemals blockiert.",
+        "documented": "Vereinbarung dokumentiert: {reason}",
+        "draft": "Noch nicht veröffentlicht. Veröffentlichen Sie die Schicht, bevor Sie das Einverständnis des Mitarbeiters dokumentieren.",
+        "empty": "Keine Auffälligkeiten zur Abrufarbeit zu überprüfen.",
+        "notOpen": "Für die Schicht liegt keine Auffälligkeit wegen Kurzfristigkeit mehr vor.",
+        "notPublished": "Die Schicht ist noch nicht veröffentlicht. Veröffentlichen Sie sie, bevor Sie das Einverständnis des Mitarbeiters dokumentieren.",
+        "reason": "Freiwilliges Einverständnis des Mitarbeiters (§ 12 Abs. 3 TzBfG)",
+        "reasonRequired": "Beschreiben Sie, wie der Mitarbeiter der kurzfristigen Ankündigung zugestimmt hat.",
+        "stale": "Die Schicht wurde nach der Dokumentation der Vereinbarung geändert. Dokumentieren Sie sie erneut, falls sie weiterhin gilt.",
+        "title": "Arbeit auf Abruf (§ 12 TzBfG)"
+      },
+      "statutoryMinimumCall": "Gesetzlicher Mindestabruf gilt",
+      "title": "Arbeit auf Abruf (§ 12 TzBfG)",
+      "weekly": "{duration} pro Woche"
+    },
     "open": "Öffnen",
     "openEnded": "Unbegrenzt",
     "openMenu": "Menü öffnen",
@@ -425,8 +512,6 @@
     "refreshData": "Daten aktualisieren",
     "refreshDataFailed": "Daten konnten nicht aktualisiert werden. Bitte versuchen Sie es erneut.",
     "refreshing": "Aktualisiere...",
-    "reject": "Ablehnen",
-    "rejecting": "Wird abgelehnt…",
     "remove": "Entfernen",
     "removing": "Entfernen...",
     "reset": "Zurücksetzen",
@@ -594,97 +679,19 @@
         "vehiclesTitle": "Organisationsfahrzeuge"
       }
     },
-    "yes": "Ja",
-    "onCall": {
-      "finding": {
-        "shortNotice": "Mit {days, plural, one {# vollen Tag} other {# vollen Tagen}} Vorlauf abgerufen; {required} sind erforderlich",
-        "shortCall": "Schicht von {duration} ist kürzer als der Mindesteinsatz von {minimum}",
-        "shortWorkCall": "Einsatz von {duration} gearbeitet, weniger als der Mindesteinsatz von {minimum}",
-        "nearBand": "Woche mit {used} abgerufen, nahe an der Grenze des Abrufkorridors von {limit}",
-        "overBand": "Woche mit {used} abgerufen, über dem Abrufkorridor von {limit}",
-        "underBand": "Woche mit {used} abgerufen, unter dem Abrufkorridor von {limit}",
-        "other": "Regel der Arbeit auf Abruf gefährdet"
-      },
-      "reference": {
-        "excluded": {
-          "notEmployed": "Nicht beschäftigt",
-          "unpaidAbsence": "Unbezahlte Abwesenheit",
-          "paidAbsence": "Urlaub oder Krankheit",
-          "publicHoliday": "Feiertag"
-        },
-        "none": "—",
-        "periodThreeMonths": "Referenzzeitraum (3 Monate): {from} – {until}",
-        "periodThirteenWeeks": "Referenzzeitraum (13 Wochen): {from} – {until}",
-        "numerator": "Gearbeitete Zeit",
-        "denominator": "Berücksichtigte Tage",
-        "denominatorValue": "{counted} von {total} Tagen",
-        "workedDays": "Arbeitstage",
-        "perDay": "Durchschnitt pro Tag",
-        "perWeek": "Durchschnitt pro Woche",
-        "perWorkedDay": "Durchschnitt pro Arbeitstag",
-        "excludedTitle": "Nicht im Durchschnitt berücksichtigt",
-        "excludedPeriod": "{from} – {until}: {reason} ({days, plural, one {# Tag} other {# Tage}})",
-        "shortened": "Das Arbeitsverhältnis begann im Referenzzeitraum, daher gilt der kürzere Zeitraum.",
-        "title": "Referenzstunden für Entgeltfortzahlung und Feiertage",
-        "threeMonths": "3 Monate",
-        "thirteenWeeks": "13 Wochen",
-        "description": "Nur zur Information: Was gezahlt wird, entscheidet die Lohnabrechnung. Abgerechnete Tage und abgeschlossene Monate bleiben unverändert.",
-        "noEvents": "Keine Krankheit und kein Feiertag an einem Abruftag in den letzten drei Monaten.",
-        "sickLeave": "Krank ab {date}",
-        "publicHoliday": "Feiertag am {date}",
-        "dateRequired": "Wähle ein Datum.",
-        "eventDate": "Für einen Tag berechnen",
-        "calculate": "Berechnen"
-      },
-      "hoursKind": {
-        "exact": "Genau vereinbarte Wochenstunden",
-        "minimum": "Mindestwochenstunden (bis +25 %)",
-        "maximum": "Höchstwochenstunden (bis −20 %)",
-        "unspecified": "Keine Wochenstunden vereinbart (20 Std. gelten)"
-      },
-      "title": "Arbeit auf Abruf (§ 12 TzBfG)",
-      "weekly": "{duration} pro Woche",
-      "statutoryMinimumCall": "Gesetzlicher Mindesteinsatz gilt",
-      "minimumCall": "Mindesteinsatz {duration}",
-      "notToday": "Heute nicht auf Abruf.",
-      "findingsTitle": "Prüfungen der letzten und nächsten vier Wochen",
-      "noFindings": "Keine Regel der Arbeit auf Abruf gefährdet.",
-      "agreementDocumented": "Zustimmung dokumentiert",
-      "agreementStale": "Schicht seit der Zustimmung geändert",
-      "reviews": {
-        "notOpen": "Für die Schicht gibt es keinen Hinweis auf zu kurzen Vorlauf mehr.",
-        "notPublished": "Die Schicht ist noch nicht veröffentlicht. Veröffentliche sie, bevor du die Zustimmung der Person dokumentierst.",
-        "draft": "Noch nicht veröffentlicht. Veröffentliche die Schicht, bevor du die Zustimmung der Person dokumentierst.",
-        "changed": "Die Schicht hat sich geändert, seit diese Liste geladen wurde. Prüfe sie erneut, bevor du die Zustimmung dokumentierst.",
-        "acknowledged": "Zustimmung dokumentiert",
-        "reasonRequired": "Beschreibe, wie die Person dem kurzen Vorlauf zugestimmt hat.",
-        "reason": "Freiwillige Zustimmung der Person (§ 12 Abs. 3 TzBfG)",
-        "acknowledge": "Zustimmung dokumentieren",
-        "documented": "Zustimmung dokumentiert: {reason}",
-        "stale": "Die Schicht wurde nach der dokumentierten Zustimmung geändert. Dokumentiere sie erneut, wenn sie weiter gilt.",
-        "title": "Arbeit auf Abruf (§ 12 TzBfG)",
-        "description": "Abrufe mit zu kurzem Vorlauf, Einsätze unter dem Minimum und Wochen außerhalb des Abrufkorridors in den letzten und nächsten vier Wochen. Ein- und Ausstempeln wird nie blockiert.",
-        "empty": "Keine Befunde zur Arbeit auf Abruf zu prüfen."
-      },
-      "payroll": {
-        "title": "Referenzstunden bei Arbeit auf Abruf (§ 12 TzBfG)",
-        "description": "Durchschnittliche Arbeitszeit vor jeder Krankheit und jedem Feiertag von Beschäftigten auf Abruf in diesem Zeitraum, zur Vorbereitung der Entgeltfortzahlung. Abgerechnete Tage bleiben unverändert.",
-        "perDay": "{duration} pro Tag",
-        "rangeTooLong": "Referenzstunden werden für höchstens drei Monate auf einmal aufgelistet. Wähle einen kürzeren Zeitraum.",
-        "paidSickDays": "Entgeltfortzahlung im Krankheitsfall für {days, plural, one {# Tag} other {# Tage}} in diesem Zeitraum",
-        "continuedPaySpan": "Entgeltfortzahlung geschuldet vom {from} bis {until} (§ 3 EFZG)",
-        "sickPayExhausted": "Keine Entgeltfortzahlung in diesem Zeitraum: Die sechs Wochen endeten am {date} (§ 3 Abs. 1 EFZG)",
-        "sickPayWaiting": "Keine Entgeltfortzahlung in diesem Zeitraum: Der Anspruch entsteht am {date}, nach vier Wochen Beschäftigung (§ 3 Abs. 3 EFZG)",
-        "sickPayNotOwed": "Für diese Krankheit ist keine Entgeltfortzahlung geschuldet: Sie endete in den ersten vier Wochen der Beschäftigung (§ 3 Abs. 3 EFZG)",
-        "sickPayGuidanceLabel": "Hinweis für die Entgeltabrechnung",
-        "sickPayGuidanceNote": "Die Angaben zur Entgeltfortzahlung (§ 3 EFZG) sind Hinweise; ob und in welcher Höhe gezahlt wird, entscheidet das Entgeltabrechnungssystem.",
-        "holidaysPaidAsHolidays": "Feiertage während der Krankheit werden in eigenen Zeilen bezahlt, nicht als Krankheitstage: {dates}",
-        "hide": "Aufschlüsselung ausblenden",
-        "show": "Aufschlüsselung anzeigen"
-      }
+    "yes": "Ja"
+  },
+  "contractorCompensation": {
+    "dayUnitRules": {
+      "anyWorkFullDay": "Jeder Tag mit Arbeit zählt als voller Tag",
+      "halfAndFullDay": "Halber Tag bis {minutes} Min., darüber voller Tag",
+      "proratedCapped": "Anteilig berechnet auf Basis eines {minutes}-Minuten-Tages, maximal ein Tag",
+      "proratedUncapped": "Anteilig berechnet auf Basis eines {minutes}-Minuten-Tages, ohne Begrenzung"
     }
   },
   "contractorStatement": {
+    "approvedOnly": "Nur genehmigte Arbeitszeit wird aufgeführt. Zur Genehmigung ausstehende Arbeitszeit wird hinzugefügt, sobald sie genehmigt wurde.",
+    "awaitingApprovalExcluded": "Zur Genehmigung ausstehende Arbeitszeiten, nicht enthalten: {count}",
     "basis": {
       "daily": "Tagessatz",
       "hourly": "Stundensatz"
@@ -692,73 +699,71 @@
     "byProject": "Nach Projekt",
     "columns": {
       "amount": "Betrag",
-      "basis": "Vergütung",
+      "basis": "Bezahlt von",
       "currency": "Währung",
       "date": "Datum",
-      "dayUnitRule": "Tagesregel",
+      "dayUnitRule": "Tageseinheit-Regel",
       "end": "Ende",
       "project": "Projekt",
       "rate": "Satz",
-      "rowType": "Zeilenart",
-      "start": "Beginn",
+      "rowType": "Zeilentyp",
+      "start": "Start",
       "task": "Aufgabe",
       "time": "Uhrzeit (lokal)",
       "unit": "Einheit",
       "units": "Einheiten",
-      "workedMinutes": "Gearbeitete Minuten"
+      "workedMinutes": "Geleistete Minuten"
     },
-    "company": "Firma",
-    "contractor": "Dienstleister",
-    "contractorNumber": "Dienstleisternummer",
-    "empty": "Keine abgeschlossene Arbeit als Externer Dienstleister in diesem Zeitraum.",
+    "company": "Unternehmen",
+    "contractor": "Auftragnehmer",
+    "contractorNumber": "Auftragnehmernummer",
+    "empty": "Keine abgeschlossene Arbeit als externer Auftragnehmer in diesem Zeitraum.",
     "errors": {
       "failed": "Der Nachweis konnte nicht erstellt werden",
-      "invalidPeriod": "Wählen Sie einen Zeitraum von höchstens einem Jahr, dessen erster Tag nicht nach dem letzten liegt.",
+      "invalidPeriod": "Wählen Sie einen Zeitraum von maximal einem Jahr, dessen erster Tag nicht nach dem letzten liegt.",
       "notAllowed": "Sie können nur Ihre eigenen Nachweise herunterladen.",
-      "notContractor": "Diese Person war in diesem Zeitraum nicht als Externer Dienstleister tätig.",
+      "notContractor": "Diese Person hatte in diesem Zeitraum keinen Einsatz als externer Auftragnehmer.",
       "notFound": "Diese Person wurde in Ihrer Organisation nicht gefunden."
     },
     "export": {
-      "adminDescription": "Laden Sie herunter, was dieser Externe Dienstleister gearbeitet hat und was seine Sätze dafür ergeben, um seine Rechnung zu prüfen. Ein Prüfnachweis, keine Rechnung.",
-      "csv": "CSV für Tabellen",
+      "adminDescription": "Laden Sie herunter, was dieser externe Auftragnehmer gearbeitet hat und wie die vereinbarten Sätze dies bewerten, um die Rechnung zu prüfen. Ein Prüfnachweis, keine Rechnung.",
+      "csv": "CSV für Tabellenkalkulationen",
       "download": "Nachweis herunterladen",
       "downloaded": "Nachweis heruntergeladen",
       "format": "Format",
       "from": "Von",
       "fromRequired": "Wählen Sie den ersten Tag",
       "pdf": "PDF",
-      "selfDescription": "Laden Sie Ihre erfasste Arbeit und den Preis nach Ihren vereinbarten Sätzen herunter, um Ihre Rechnung zu erstellen oder zu prüfen. Ein Prüfnachweis, keine Rechnung.",
+      "selfDescription": "Laden Sie Ihre erfasste Arbeit und die Bewertung anhand Ihrer vereinbarten Sätze herunter, um Ihre Rechnung vorzubereiten oder zu prüfen. Ein Prüfnachweis, keine Rechnung.",
       "title": "Zeit- und Honorarnachweis",
       "to": "Bis",
-      "toBeforeFrom": "Der letzte Tag darf nicht vor dem ersten liegen",
+      "toBeforeFrom": "Der letzte Tag darf nicht vor dem ersten Tag liegen",
       "toRequired": "Wählen Sie den letzten Tag"
     },
     "generated": "Erstellt (UTC)",
     "noProject": "Kein Projekt",
-    "noRate": "Kein Satz vereinbart",
-    "notice": "Nur zur Prüfung. Kein Rechnungs- oder Gutschriftsdokument: Z8 stellt keine Rechnungen aus. Der Nachweis listet die in Z8 erfasste Arbeit und ihren Preis nach den vereinbarten Sätzen, damit eine Rechnung daran geprüft werden kann.",
+    "noRate": "Es gilt kein Satz",
+    "notice": "Nur Prüfnachweis. Keine Rechnung oder Gutschrift im Gutschriftsverfahren: Z8 stellt niemals Rechnungen aus. Er führt die in Z8 erfasste Arbeit und deren Bewertung anhand der vereinbarten Sätze des Auftragnehmers auf, damit Rechnungen damit abgeglichen werden können.",
     "organization": "Organisation",
     "page": "Seite",
     "period": "Zeitraum",
     "referenceCode": "Bestell- oder Kostenstellenreferenz",
     "rows": {
       "day": "Tag",
-      "total": "Summe",
-      "unpriced": "Ohne Satz",
+      "total": "Gesamt",
+      "unpriced": "Nicht bepreist",
       "work": "Arbeit"
     },
-    "times": "Tage sind die lokalen Kalendertage des Dienstleisters; Uhrzeiten werden mit dem bei der Arbeit erfassten UTC-Versatz angezeigt.",
-    "title": "Zeit- und Honorarnachweis für Externe Dienstleister",
-    "totals": "Summen",
+    "times": "Tage beziehen sich auf die lokalen Kalendertage des Auftragnehmers; Uhrzeiten werden mit dem bei der Arbeit erfassten UTC-Offset angezeigt.",
+    "title": "Zeit- und Honorarnachweis für Auftragnehmer",
+    "totals": "Gesamtsummen",
     "units": {
       "days": "Tage",
       "hours": "Stunden"
     },
-    "unpricedNotice": "Für manche Arbeit galt an ihrem Tag kein vereinbarter Satz. Sie ist ohne Betrag aufgeführt und nicht in den Summen enthalten.",
+    "unpricedNotice": "Für einige Arbeiten war am jeweiligen Tag kein Satz vereinbart. Sie sind ohne Betrag aufgeführt und nicht in den Gesamtsummen enthalten.",
     "vatId": "USt-IdNr.",
-    "workedHours": "Gearbeitete Stunden",
-    "approvedOnly": "Nur freigegebene Arbeit ist aufgeführt. Arbeit, deren Freigabe aussteht, kommt hinzu, sobald sie freigegeben ist.",
-    "awaitingApprovalExcluded": "Nicht enthaltene Arbeitszeiträume mit ausstehender Freigabe: {count}"
+    "workedHours": "Geleistete Stunden"
   },
   "drivingLicence": {
     "applyingInterval": "Wird angewendet…",
@@ -768,6 +773,9 @@
       "chooseClasses": "Wählen Sie die Klassen aus, die Sie tatsächlich geprüft haben.",
       "classes": "Tatsächlich geprüfte Klassen",
       "classExpiry": "Ablaufdatum der Klasse (falls zutreffend)",
+      "declaredBadge": "Angegeben",
+      "declaredHelp": "Diese Klassen und alle vom Mitarbeiter eingegebenen Daten sind vorausgewählt. Vergleichen Sie sie mit dem Originalführerschein und korrigieren Sie etwaige Abweichungen.",
+      "declaredTitle": "{name} hat {classes} angegeben",
       "documentDates": "Daten des Originaldokuments",
       "employeeDeclaration": "Der Mitarbeiter hat die oben gezeigte Erklärung bei dieser Prüfung persönlich abgegeben; ich bestätige diese Erklärung.",
       "expiryDate": "Ablaufdatum des Dokuments",
@@ -808,6 +816,8 @@
       },
       "customOrder": "Sortiert nach der ausgewählten Spalte und Richtung.",
       "deadline": "{date} ({timezone})",
+      "declared": "Angegeben: {classes}",
+      "declaredDue": "Angegebene Klassen prüfen",
       "dueNow": "Prüfung jetzt fällig",
       "dueOrder": "Jetzt fällige Prüfungen zuerst, dann die nächste Frist.",
       "empty": {
@@ -841,6 +851,31 @@
     "class": {
       "active": "Berechtigt",
       "ended": "Beendet",
+      "group": {
+        "bus": "Busse",
+        "car": "Pkw",
+        "motorcycle": "Mopeds und Motorräder",
+        "tractor": "Traktoren",
+        "truck": "Lkw"
+      },
+      "name": {
+        "A": "Motorrad",
+        "A1": "Leichtkraftrad",
+        "A2": "Mittelschweres Motorrad",
+        "AM": "Moped",
+        "B": "Pkw",
+        "BE": "Pkw mit Anhänger",
+        "C": "Lkw",
+        "C1": "Leichter Lkw",
+        "C1E": "Leichter Lkw mit Anhänger",
+        "CE": "Lkw mit Anhänger",
+        "D": "Bus",
+        "D1": "Kleinbus",
+        "D1E": "Kleinbus mit Anhänger",
+        "DE": "Bus mit Anhänger",
+        "L": "Traktor (langsam)",
+        "T": "Traktor"
+      },
       "noLongerIntended": "Beendet, da der Mitarbeiter kein vorgesehener Fahrer mehr ist. Vor einer erneuten Fahrt ist eine neue Prüfung erforderlich.",
       "overdue": "Regelprüfung überfällig. Dies ist eine organisatorische Aussetzung, keine Feststellung über den Entzug der gesetzlichen Fahrerlaubnis.",
       "recheck": "Eine erneute Originalprüfung und eine ausdrückliche Wiederherstellung sind erforderlich.",
@@ -848,6 +883,36 @@
     },
     "declaration": {
       "text": "Ich bestätige, dass kein bekanntes Fahrverbot, kein Entzug oder sonstiges Hindernis dem vorgesehenen Führen von Fahrzeugen entgegensteht und dass ich die geltenden Fahrbeschränkungen erfülle."
+    },
+    "declared": {
+      "add": "Führerscheinklassen hinzufügen",
+      "authorized": "Berechtigt",
+      "classExpires": "Läuft am {date} ab",
+      "classExpiry": "{code} ({name}) läuft ab am",
+      "description": "Von Ihnen angegeben, noch nicht geprüft. Sie berechtigen erst zum Fahren, wenn ein Prüfer Ihren Originalführerschein kontrolliert hat.",
+      "dialogDescription": "Wählen Sie alle Klassen auf Ihrem Führerschein aus. Ihr Prüfer bestätigt diese bei der Kontrolle Ihres Originalführerscheins.",
+      "dialogTitle": "Welche Klassen stehen auf Ihrem Führerschein?",
+      "documentExpires": "Führerscheinkarte läuft ab",
+      "documentExpiry": "Führerscheinkarte läuft ab am",
+      "documentExpiryHelp": "Feld 4b auf der Karte. Leer lassen, wenn auf Ihrem Führerschein keines angegeben ist.",
+      "edit": "Bearbeiten",
+      "emptyDescription": "Teilen Sie Ihrer Organisation mit, welche Führerscheinklassen Sie besitzen. Dies hilft bei der Planung und bereitet Ihre Prüfung vor; es berechtigt Sie nicht zum Fahren.",
+      "emptyMoreDescription": "Fügen Sie eine Klasse hinzu, die Sie seit Ihrer letzten Prüfung erworben haben. Ihr Prüfer wird gebeten, diese zu prüfen.",
+      "emptyMoreTitle": "Haben Sie eine weitere Führerscheinklasse?",
+      "emptyTitle": "Was dürfen Sie fahren?",
+      "expiryTitle": "Ablaufdaten (optional)",
+      "invalid": "Überprüfen Sie die ausgewählten Klassen und Daten.",
+      "notIntended": "Sie sind nicht mehr als Fahrer vorgesehen, daher erfasst Ihre Organisation Ihre Führerscheinklassen nicht.",
+      "privacy": "Es werden nur Ihre Klassen und Ablaufdaten gespeichert, keine Führerscheinnummer oder Foto. Ihre Angabe berechtigt Sie nicht zum Fahren.",
+      "remove": "Meine Klassen entfernen",
+      "removed": "Angegebene Führerscheinklassen entfernt",
+      "removing": "Wird entfernt…",
+      "save": "{count, plural, one {# Klasse speichern} other {# Klassen speichern}}",
+      "saved": "Führerscheinklassen gespeichert. Ihre zuständige Prüfperson gleicht diese mit Ihrem Originalführerschein ab.",
+      "saveFailed": "Ihre Führerscheinklassen konnten nicht gespeichert werden. Ihre Auswahl bleibt erhalten; versuchen Sie es erneut.",
+      "saving": "Wird gespeichert…",
+      "title": "Ihre angegebenen Führerscheinklassen",
+      "updated": "Aktualisiert"
     },
     "delivery": {
       "uncertain": "Bei optionalen Erinnerungs-E-Mails an Sie ist der Zustellstatus ungewiss ({count}). Sie werden nicht automatisch erneut gesendet. Ihre In-App-Erinnerungen bleiben verfügbar; die E-Mail-Zustellung bestätigt keine Kenntnisnahme."
@@ -1010,6 +1075,7 @@
     },
     "operational": {
       "advisory": "Fahrberechtigung",
+      "declared": "Angegeben, noch nicht geprüft. Keine Fahrberechtigung.",
       "loading": "Fahrberechtigung wird geladen…",
       "loadingEmployees": "Mitarbeiter für die Planung werden geladen…",
       "noEmployees": "Keine übereinstimmenden Mitarbeiter.",
@@ -1184,16 +1250,16 @@
   },
   "engagement": {
     "absenceRefusals": {
-      "contractorRecordsUnavailabilityOnly": "An diesen Tagen arbeitet die Person als Externer Dienstleister: Es kann nur Nichtverfügbarkeit erfasst werden.",
-      "spansEngagementChange": "Diese Tage umfassen einen Wechsel zwischen Anstellung und Tätigkeit als Externer Dienstleister. Erfassen Sie jeden Teil separat.",
-      "unavailabilityIsForContractors": "An diesen Tagen ist die Person angestellt: Nichtverfügbarkeit gibt es nur für Externe Dienstleister."
+      "contractorRecordsUnavailabilityOnly": "An diesen Tagen arbeiten sie als externer Auftragnehmer: Es kann nur Nichtverfügbarkeit erfasst werden.",
+      "spansEngagementChange": "Dieser Zeitraum umfasst einen Wechsel zwischen Festanstellung und der Tätigkeit als externer Auftragnehmer. Erfassen Sie jeden Teil separat.",
+      "unavailabilityIsForContractors": "An diesen Tagen sind sie angestellt: Nichtverfügbarkeit gilt nur für externe Auftragnehmer."
     },
-    "externalContractor": "Externer Dienstleister",
+    "externalContractor": "Externer Auftragnehmer",
     "filter": {
       "all": "Alle",
-      "contractors": "Externe Dienstleister",
+      "contractors": "Externe Auftragnehmer",
       "employees": "Mitarbeiter",
-      "label": "Beschäftigungsart"
+      "label": "Vertragsverhältnis"
     }
   },
   "errors": {
@@ -1665,6 +1731,10 @@
         "message": "Weisen Sie {employeeName} einen verfügbaren Prüfer zu. Diese Aufgabe gewährt keine Prüfrechte und verlängert keine Fristen.",
         "title": "Verantwortlichkeit für Führerscheinprüfung zuweisen"
       },
+      "drivingLicenceDeclared": {
+        "message": "{employeeName} hat die Führerscheinklassen {classes} angegeben. Prüfen Sie das Originaldokument, um die Berechtigung zu erteilen; eine Angabe allein berechtigt zu nichts.",
+        "title": "Zu prüfende Führerscheinklassen"
+      },
       "drivingLicencePersonalTask": {
         "message": "{employeeName} daran erinnern, eine Originalprüfung des Führerscheins zu veranlassen. Eine direkte Benachrichtigung des Mitarbeiters war nicht verfügbar. Der Abschluss der Aufgabe stellt keine direkte Zustellung oder Kenntnisnahme dar.",
         "title": "Mitarbeiter persönlich erinnern"
@@ -1707,6 +1777,11 @@
       "formerEmployeeReportsWithoutManager": {
         "message": "{count, plural, one {# Mitarbeiter ist weiterhin nur mit einer ehemaligen Führungskraft verknüpft: {names}. Weisen Sie eine aktuelle Führungskraft zu.} other {# Mitarbeiter sind weiterhin nur mit einer ehemaligen Führungskraft verknüpft: {names}. Weisen Sie eine aktuelle Führungskraft zu.}}",
         "title": "Mitarbeiter ohne aktuelle Führungskraft"
+      },
+      "invitationContractorTermsNeedReview": {
+        "message": "Der Satz aus der Einladung von {name} konnte beim Beitritt nicht übernommen werden. Legen Sie ihn in der Vergütung für externe Auftragnehmer fest; bis dahin bleibt die Arbeit ohne Preis.",
+        "termsExistMessage": "Der Satz aus der Einladung von {name} wurde beim Beitritt nicht angewendet: Für dieses Vertragsverhältnis gelten bereits Vergütungsbedingungen, die weiterhin gültig sind. Überprüfen Sie in der Vergütung für externe Auftragnehmer, ob diese geändert werden sollen.",
+        "title": "Der Satz eines externen Auftragnehmers muss überprüft werden"
       },
       "kioskCommandRefused": {
         "forwardedMessage": "{action, select, clock_in {Ein Einstempeln} clock_out {Ein Ausstempeln} start_break {Ein Pausenbeginn} resume_break {Ein Pausenende} other {Eine Buchung}} von {employeeName} um {time} am Kiosk {kioskName} wurde nicht erfasst: {reason, select, wrong_pin {die PIN war falsch} pin_locked {die Kiosk-PIN wurde nach zu vielen Fehlversuchen gesperrt} no_pin {es gab keine Kiosk-PIN zum Abgleich} pin_unchecked {die PIN konnte nicht überprüft werden} kiosk_retired {der Kiosk wurde widerrufen oder erneut gekoppelt, bevor er sich wieder verbunden hat} contact_unverifiable {Z8 konnte die letzte Verbindung des Kiosks nicht bestätigen} outside_window {die Zeit lag außerhalb des von Z8 akzeptierten Zeitfensters} clock_untrusted {der Kioskuhr konnte nicht vertraut werden} not_assigned {der Mitarbeiter ist dem Standort des Kiosks nicht zugewiesen} not_adopted {die Organisation akzeptiert keine Offline-Buchungen am Kiosk} month_closed {der Monat ist abgeschlossen} holiday {der Tag ist ein Feiertag ohne Zeiterfassung} conflict {sie steht im Konflikt mit einer anderen erfassten Zeit} other {Z8 konnte sie nicht annehmen}}. Erfassen Sie die Zeit für die Person oder stimmen Sie sie mit ihr ab.",
@@ -1874,9 +1949,9 @@
         "title": "Neue Gehaltsabrechnung in Ihrer Personalakte"
       },
       "plannedEngagementEndNeedsReview": {
-        "notScheduled": "Das geplante Auftragsende von {name} ({plannedEndDate}) konnte nicht als Austrittsdatum geplant werden. Planen Sie es auf der Mitarbeiterseite.",
-        "passed": "Das geplante Auftragsende von {name} ({plannedEndDate}) war beim Beitritt bereits vorbei, deshalb ist das Austrittsdatum heute ({leavingDate}). Ändern Sie es, falls der Auftrag weiterläuft.",
-        "title": "Ein geplantes Auftragsende muss geprüft werden"
+        "notScheduled": "Das geplante Einsatzende von {name} ({plannedEndDate}) konnte nicht als Austrittsdatum festgelegt werden. Planen Sie es auf der Mitarbeiterseite.",
+        "passed": "Das geplante Einsatzende von {name} ({plannedEndDate}) war beim Beitritt bereits vergangen, daher ist das Austrittsdatum heute ({leavingDate}). Ändern Sie es, falls der Einsatz fortgesetzt wird.",
+        "title": "Ein geplantes Einsatzende muss überprüft werden"
       },
       "policyForgottenClockOutReminder": {
         "message": "Sie haben die erforderlichen Stunden für {day} um {endTime} ({timezone}) erreicht. Stempeln Sie aus, wenn Sie Ihre Arbeit beendet haben."
@@ -2073,11 +2148,6 @@
         "message": "Bleiben Sie gesund – trinken Sie etwas Wasser",
         "snooze": "Heute pausieren",
         "title": "Zeit, etwas zu trinken!"
-      },
-      "invitationContractorTermsNeedReview": {
-        "title": "Der Satz eines Externen Dienstleisters muss geprüft werden",
-        "message": "Der Satz aus der Einladung von {name} konnte beim Beitritt nicht übernommen werden. Legen Sie ihn in der Vergütung Externer Dienstleister fest; bis dahin bleibt die Arbeit unbepreist.",
-        "termsExistMessage": "Der Satz aus der Einladung von {name} wurde beim Beitritt nicht übernommen: Für das Engagement gibt es bereits einen Satz, der weiter gilt. Prüfen Sie in der Vergütung Externer Dienstleister, ob er geändert werden soll."
       }
     },
     "countFailed": "Anzahl ungelesener Elemente nicht verfügbar",
@@ -2685,6 +2755,13 @@
           "createdAt": "Wann diese Aufgabe oder Zustellung erstmals erfasst wurde, als UTC-Zeitpunkt.",
           "deadline_timezone": "Die explizite Kalender-Zeitzone, die für die Fristdaten der Richtlinie verwendet wird.",
           "declaration_text": "Der genaue Erklärungstext, der während der ursprünglichen Prüfung erfasst wurde.",
+          "declared_at": "Zeitpunkt, zu dem Sie Ihre angegebenen Klassen zuletzt gespeichert haben, als UTC-Zeitpunkt.",
+          "declared_class_code": "Eine Führerscheinklasse, von der Sie angegeben haben, sie zu besitzen. Sie erteilt keine Fahrberechtigung.",
+          "declaredClasses": {
+            "summary": "Die Führerscheinklassen, die Sie selbst angegeben und noch nicht haben prüfen lassen. Eine Überprüfung ersetzt diese; sie werden gelöscht, wenn Sie nicht mehr als Fahrer vorgesehen sind."
+          },
+          "declared_class_expiry_date": "Das von Ihnen eingegebene Ablaufdatum der Klasse selbst (C- und D-Klassen); leer, wenn keines eingegeben wurde.",
+          "declared_document_expires_on": "Das von Ihnen eingegebene Ablaufdatum Ihres Führerscheindokuments; leer, wenn keines eingegeben wurde.",
           "document_expires_on": "Das Ablaufdatum des Dokuments, unabhängig vom Ablauf einzelner Klassen.",
           "document_issued_on": "Das Ausstellungsdatum des Dokuments ohne Uhrzeit oder Zeitzone.",
           "document_valid_through": "Der letzte Kalendertag, der von der Gültigkeit des Dokuments abgedeckt wird.",
@@ -2804,22 +2881,22 @@
             "summary": "Die Sätze, die die Organisation Kunden für Ihre Arbeit in Rechnung stellt."
           },
           "contractorCompensationTerms": {
-            "capAtOneDay": "Ob ein Tag höchstens als ein Tag zählt, wie lange auch gearbeitet wurde.",
-            "compensationBasis": "Ob Sie nach Stunden (hourly) oder nach Tagen (daily) vergütet werden.",
+            "capAtOneDay": "Gibt an, ob ein Tag unabhängig von der Arbeitsdauer maximal als ein Tag zählt.",
+            "compensationBasis": "Gibt an, ob Sie nach Stunden (hourly) oder nach Tagen (daily) bezahlt werden.",
             "currency": "Die Währung des Satzes.",
-            "dayUnitRule": "Wie die Arbeit eines Tages bei einem Tagessatz zählt: jede Arbeit als ganzer Tag (any_work_full_day), halbe oder ganze Tage nach einer Schwelle (half_and_full_day) oder anteilig an einem Standardtag (prorated_by_standard_day). Leer bei einem Stundensatz.",
-            "effectiveFrom": "Der erste Tag, an dem diese Konditionen gelten (JJJJ-MM-TT).",
-            "effectiveTo": "Der erste Tag, an dem diese Konditionen nicht mehr gelten (JJJJ-MM-TT); leer, solange sie gelten.",
-            "employmentPeriodId": "Der Zeitraum, zu dem diese Konditionen gehören (seine ID in employment_periods).",
-            "halfDayThresholdMinutes": "Bis zu so vielen Minuten Arbeit zählt ein Tag als halber Tag; mehr zählt als ganzer Tag.",
+            "dayUnitRule": "Wie die Arbeit eines Tages für einen Tagessatz zählt: jede Arbeit als voller Tag (any_work_full_day), halbe oder volle Tage anhand eines Schwellenwerts (half_and_full_day) oder anteilig zu einem Standardarbeitstag (prorated_by_standard_day). Leer bei einem Stundensatz.",
+            "effectiveFrom": "Der erste Tag, an dem diese Bedingungen gelten (JJJJ-MM-TT).",
+            "effectiveTo": "Der erste Tag, an dem diese Bedingungen nicht mehr gelten (JJJJ-MM-TT); leer, solange sie gelten.",
+            "employmentPeriodId": "Der Zeitraum, zu dem diese Bedingungen gehören (dessen ID in employment_periods).",
+            "halfDayThresholdMinutes": "Bis zu so vielen Minuten Arbeit pro Tag gilt als halber Tag; mehr gilt als ganzer Tag.",
             "rate": "Ihr Satz pro Stunde oder pro Tag.",
-            "standardDayMinutes": "Die Minuten eines Standardtags, an denen die Arbeit eines Tages gemessen wird.",
-            "summary": "Ihr Stunden- oder Tagessatz als Externer Dienstleister im Zeitverlauf."
+            "standardDayMinutes": "Die Minuten eines Standardarbeitstags, an denen die Arbeit eines Tages gemessen wird.",
+            "summary": "Ihr Stunden- oder Tagessatz als externer Auftragnehmer im Zeitverlauf."
           },
           "contractorDetails": {
             "companyName": "Das Unternehmen, über das Sie beauftragt werden.",
             "referenceCode": "Die Bestell- oder Kostenstellenreferenz, mit der Ihre Rechnungen abgeglichen werden.",
-            "summary": "Ihre Vertragsangaben als Externer Dienstleister.",
+            "summary": "Ihre Vertragsdaten als externer Auftragnehmer.",
             "vatId": "Ihre USt-IdNr. oder Steuernummer."
           },
           "costCenters": {
@@ -2888,7 +2965,7 @@
             "contractType": "Ihre Vertragsart.",
             "email": "Die E-Mail-Adresse Ihres Benutzerkontos.",
             "endDate": "Wann Ihr Beschäftigungsverhältnis endete; leer, solange es fortbesteht.",
-            "engagementKind": "Ob Sie heute als Mitarbeiter (employee) oder als Externer Dienstleister (contractor) für die Organisation tätig sind.",
+            "engagementKind": "Gibt an, ob Sie heute als Angestellter (employee) oder als externer Auftragnehmer (contractor) für die Organisation arbeiten.",
             "firstName": "Ihr Vorname in Ihrer Personalakte.",
             "gender": "Ihr Geschlecht.",
             "isActive": "Gibt an, ob Ihre Personalakte aktiv ist.",
@@ -2908,11 +2985,11 @@
           },
           "employmentPeriods": {
             "endedAt": "Wann der Zeitraum endete; leer, solange er offen ist.",
-            "engagementKind": "Ob Sie in diesem Zeitraum als Mitarbeiter (employee) oder als Externer Dienstleister (contractor) tätig waren.",
+            "engagementKind": "Gibt an, ob Sie in diesem Zeitraum als Angestellter (employee) oder als externer Auftragnehmer (contractor) gearbeitet haben.",
             "startedAt": "Wann der Zeitraum begann.",
             "startProvenance": "Ursprung des Beginns, zum Beispiel eine Einstellung oder Wiedereinstellung.",
             "status": "Ob der Zeitraum offen oder geschlossen ist.",
-            "summary": "Jeder Zeitraum, in dem Sie für die Organisation tätig waren, angestellt oder als Externer Dienstleister."
+            "summary": "Jeder Zeitraum, in dem Sie bei der Organisation angestellt waren."
           },
           "employmentTerms": {
             "changeReason": "Warum die Bedingungen festgelegt oder geändert wurden.",
@@ -3750,13 +3827,5 @@
   },
   "worksCouncil": {
     "loadingLabel": "Betriebsrat wird geladen"
-  },
-  "contractorCompensation": {
-    "dayUnitRules": {
-      "anyWorkFullDay": "Jeder Tag mit Arbeit zählt als voller Tag",
-      "halfAndFullDay": "Halber Tag bis {minutes} Min., darüber voller Tag",
-      "proratedCapped": "Anteilig nach einem {minutes}-Minuten-Tag, höchstens ein Tag",
-      "proratedUncapped": "Anteilig nach einem {minutes}-Minuten-Tag, ohne Obergrenze"
-    }
   }
 }

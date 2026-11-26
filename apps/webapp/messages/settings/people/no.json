@@ -409,6 +409,7 @@
         "clearSearch": "Tøm søk",
         "clockReview": "Må gjennomgås: utstempling ved fratredelse",
         "confirmRehire": "Bekreft gjenansettelse",
+        "contractorRehireHint": "En ekstern oppdragstaker får ingen ansettelsesvilkår, arbeidspolicy eller feriekvote. Oppdragstakersatser angis separat.",
         "correctTime": "Korriger tid",
         "currency": "Valuta",
         "currencyInvalid": "Angi en valutakode på tre bokstaver.",
@@ -423,6 +424,10 @@
         "effectiveDescription": "Tilgangen ble avsluttet {cutoff} ({timezone}).",
         "employmentGap": "Ikke ansatt {startDate} – {endDate}",
         "employmentStint": "Ansettelse {startDate} – {endDate}",
+        "engagement": {
+          "employee": "Ansatt"
+        },
+        "engagementKind": "Engasjement",
         "errors": {
           "actorNotAuthorized": "Kun organisasjonseiere og -administratorer kan administrere ansattes fratredelser.",
           "departureAlreadyEffective": "Denne fratredelsen har allerede trådt i kraft. Gjenansett den ansatte for å gjenopprette tilgangen.",
@@ -668,6 +673,7 @@
           "employeeNotFound": "Fant ikke den ansatte.",
           "exceedsBalance": "Utbetalingen er høyere enn den ansattes arbeidssaldo ved slutten av den dagen.",
           "exceedsLaterBalance": "Utbetalingen vil føre til at arbeidssaldoen blir negativ etter en senere overtidsutbetaling. Kanseller den utbetalingen først, eller registrer et lavere beløp.",
+          "externalContractorDay": "På denne dagen jobber personen som ekstern oppdragstaker, så lønnsavdelingen ville aldri utbetale dette. Sett datoen til en dag vedkommende var ansatt.",
           "failed": "Kunne ikke oppdatere arbeidssaldoen. Prøv igjen.",
           "futureDay": "Dagen kan ikke være etter i dag i den ansattes tidssone.",
           "invalidInput": "Sjekk dagen, timene og minuttene, samt årsaken.",

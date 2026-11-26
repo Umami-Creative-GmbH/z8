@@ -208,7 +208,6 @@
     "adding": "Dodavanje...",
     "all": "Sve",
     "appName": "Z8",
-    "approve": "Odobri",
     "assign": "Dodijeli",
     "back": "Nazad",
     "backToDashboard": "Nazad na kontrolnu tablu",
@@ -372,6 +371,94 @@
       "bellLabel": "{count, plural, =0 {Obavještenja} other {Obavještenja (# nepročitanih)}}"
     },
     "offline": "Van mreže",
+    "onCall": {
+      "agreementDocumented": "Sporazum evidentiran",
+      "agreementStale": "Smjena je promijenjena nakon postizanja sporazuma",
+      "finding": {
+        "nearBand": "Za sedmicu je pozvano {used}, što se približava granici raspona pozivanja od {limit}",
+        "other": "Pravilo rada na poziv u opasnosti",
+        "overBand": "Za sedmicu je pozvano {used}, što je iznad raspona pozivanja od {limit}",
+        "shortCall": "Smjena od {duration} je kraća od minimalnog poziva od {minimum}",
+        "shortNotice": "{days, plural, one {Poziv uz najavu od # punog dana; potrebno je {required}} few {Poziv uz najavu od # puna dana; potrebno je {required}} other {Poziv uz najavu od # punih dana; potrebno je {required}}}",
+        "shortWorkCall": "Odrađen je poziv u trajanju od {duration}, što je manje od minimalnog poziva od {minimum}",
+        "underBand": "Za sedmicu je pozvano {used}, što je ispod raspona pozivanja od {limit}"
+      },
+      "findingsTitle": "Provjere za posljednje i naredne četiri sedmice",
+      "hoursKind": {
+        "exact": "Tačno ugovoreni sedmični sati",
+        "maximum": "Maksimalni sedmični sati (do −20 %)",
+        "minimum": "Minimalni sedmični sati (do +25 %)",
+        "unspecified": "Nisu ugovoreni sedmični sati (primjenjuje se 20 h)"
+      },
+      "minimumCall": "Minimalni poziv {duration}",
+      "noFindings": "Nijedno pravilo rada na poziv nije ugroženo.",
+      "notToday": "Danas nije na pozivu.",
+      "payroll": {
+        "continuedPaySpan": "Naknada plaće se duguje od {from} do {until} (§ 3 EFZG)",
+        "description": "Prosječno radno vrijeme prije svakog bolovanja ili državnog praznika zaposlenika na poziv u ovom periodu, radi pripreme naknade plaće. Ništa ovdje ne mijenja obračunate dane.",
+        "hide": "Sakrij raščlambu",
+        "holidaysPaidAsHolidays": "Državni praznici tokom bolesti isplaćuju se kao zasebni redovi, a ne kao dani bolovanja: {dates}",
+        "paidSickDays": "{days, plural, one {Naknada za bolovanje za # dan u ovom periodu} other {Naknada za bolovanje za # dana u ovom periodu} }",
+        "perDay": "{duration} po danu",
+        "rangeTooLong": "Referentni sati se navode za najviše tri mjeseca odjednom. Odaberite kraći period.",
+        "show": "Prikaži raščlambu",
+        "sickPayExhausted": "Nema naknade za bolovanje u ovom periodu: šest sedmica nastavka isplate plaće završilo je {date} (§ 3 stav 1 EFZG)",
+        "sickPayGuidanceLabel": "Smjernice za obračun plaća",
+        "sickPayGuidanceNote": "Stavke naknade za bolovanje služe kao smjernica prema § 3 EFZG; sistem za obračun plaća odlučuje hoće li se i koliko nastavka isplate plaće isplatiti.",
+        "sickPayNotOwed": "Za ovu bolest se ne duguje naknada za bolovanje: završila je unutar prve četiri sedmice radnog odnosa (§ 3 stav 3 EFZG)",
+        "sickPayWaiting": "Nema naknade za bolovanje u ovom periodu: pravo nastaje {date}, nakon četiri sedmice radnog odnosa (§ 3 stav 3 EFZG)",
+        "title": "Referentni sati rada na poziv (§ 12 TzBfG)"
+      },
+      "reference": {
+        "calculate": "Izračunaj",
+        "dateRequired": "Odaberite datum.",
+        "denominator": "Uračunati dani",
+        "denominatorValue": "{counted} od {total} dana",
+        "description": "Samo u informativne svrhe: obračun plaća odlučuje šta se isplaćuje. Ništa ovdje ne mijenja obračunate dane ili zaključene mjesece.",
+        "eventDate": "Izračunaj za dan",
+        "excluded": {
+          "notEmployed": "Nije u radnom odnosu",
+          "paidAbsence": "Odsustvo ili bolovanje",
+          "publicHoliday": "Državni praznik",
+          "unpaidAbsence": "Neplaćeno odsustvo"
+        },
+        "excludedPeriod": "{days, plural, one {{from} – {until}: {reason} (# dan)} other {{from} – {until}: {reason} (# dana)}}",
+        "excludedTitle": "Izostavljeno iz prosjeka",
+        "noEvents": "Nema bolovanja ili državnog praznika na dan pripravnosti u posljednja tri mjeseca.",
+        "none": "—",
+        "numerator": "Odrađeno vrijeme",
+        "perDay": "Prosjek po danu",
+        "periodThirteenWeeks": "Referentni period (13 sedmica): {from} – {until}",
+        "periodThreeMonths": "Referentni period (3 mjeseca): {from} – {until}",
+        "perWeek": "Prosjek po sedmici",
+        "perWorkedDay": "Prosjek po odrađenom danu",
+        "publicHoliday": "Državni praznik: {date}",
+        "shortened": "Zaposlenje je počelo tokom referentnog perioda, pa se računa kraći period.",
+        "sickLeave": "Bolovanje od {date}",
+        "thirteenWeeks": "13 sedmica",
+        "threeMonths": "3 mjeseca",
+        "title": "Referentni sati za naknadu za bolovanje i praznike",
+        "workedDays": "Odrađeni dani"
+      },
+      "reviews": {
+        "acknowledge": "Dokumentuj dogovor",
+        "acknowledged": "Dogovor dokumentovan",
+        "changed": "Smjena je promijenjena od učitavanja ove liste. Pregledajte je ponovo prije dokumentovanja dogovora.",
+        "description": "Pozivi u kratkom roku, pozivi ispod minimuma i sedmice izvan okvira pozivanja u prethodne i naredne četiri sedmice. Evidentiranje radnog vremena se nikada ne blokira.",
+        "documented": "Dogovor dokumentovan: {reason}",
+        "draft": "Još nije objavljeno. Objavite smjenu prije dokumentovanja dogovora sa zaposlenikom.",
+        "empty": "Nema nalaza o pripravnosti za pregled.",
+        "notOpen": "Smjena više nema nalaz o kratkom roku.",
+        "notPublished": "Smjena još nije objavljena. Objavite je prije dokumentovanja dogovora sa zaposlenikom.",
+        "reason": "Dobrovoljni pristanak zaposlenika (§ 12 Abs. 3 TzBfG)",
+        "reasonRequired": "Opišite kako je zaposlenik pristao na kratak rok.",
+        "stale": "Smjena se promijenila nakon što je dogovor dokumentovan. Dokumentujte je ponovo ako i dalje vrijedi.",
+        "title": "Rad na poziv (§ 12 TzBfG)"
+      },
+      "statutoryMinimumCall": "Primjenjuje se zakonski minimalni poziv",
+      "title": "Rad na poziv (§ 12 TzBfG)",
+      "weekly": "{duration} sedmično"
+    },
     "open": "Otvori",
     "openEnded": "Neodređeno",
     "openMenu": "Otvori meni",
@@ -425,8 +512,6 @@
     "refreshData": "Osvježi podatke",
     "refreshDataFailed": "Nije uspjelo osvježavanje podataka. Pokušajte ponovo.",
     "refreshing": "Osvježavanje...",
-    "reject": "Odbij",
-    "rejecting": "Odbijanje…",
     "remove": "Ukloni",
     "removing": "Uklanjanje...",
     "reset": "Poništi",
@@ -596,6 +681,90 @@
     },
     "yes": "Da"
   },
+  "contractorCompensation": {
+    "dayUnitRules": {
+      "anyWorkFullDay": "Svaki dan s radom računa se kao puni dan",
+      "halfAndFullDay": "Pola dana do {minutes} min, puni dan preko toga",
+      "proratedCapped": "Srazmjerno obračunato prema danu od {minutes} min, najviše jedan dan",
+      "proratedUncapped": "Srazmjerno obračunato prema danu od {minutes} min, bez gornje granice"
+    }
+  },
+  "contractorStatement": {
+    "approvedOnly": "Prikazan je samo odobreni rad. Rad koji čeka odobrenje dodaje se nakon što bude odobren.",
+    "awaitingApprovalExcluded": "Periodi rada koji čekaju odobrenje, nisu uključeni: {count}",
+    "basis": {
+      "daily": "Dnevna tarifa",
+      "hourly": "Satnica"
+    },
+    "byProject": "Po projektu",
+    "columns": {
+      "amount": "Iznos",
+      "basis": "Platio/la",
+      "currency": "Valuta",
+      "date": "Datum",
+      "dayUnitRule": "Pravilo za dnevnu jedinicu",
+      "end": "Kraj",
+      "project": "Projekat",
+      "rate": "Tarifa",
+      "rowType": "Vrsta reda",
+      "start": "Početak",
+      "task": "Zadatak",
+      "time": "Vrijeme (lokalno)",
+      "unit": "Jedinica",
+      "units": "Jedinice",
+      "workedMinutes": "Odrađene minute"
+    },
+    "company": "Kompanija",
+    "contractor": "Izvođač",
+    "contractorNumber": "Broj izvođača",
+    "empty": "Nema završenog rada kao vanjski izvođač u ovom periodu.",
+    "errors": {
+      "failed": "Izvještaj nije bilo moguće kreirati",
+      "invalidPeriod": "Odaberite period od najviše godinu dana čiji prvi dan nije nakon posljednjeg.",
+      "notAllowed": "Možete preuzeti samo vlastite izvještaje.",
+      "notContractor": "Ova osoba nije imala angažman kao vanjski izvođač u ovom periodu.",
+      "notFound": "Ova osoba nije pronađena u vašoj organizaciji."
+    },
+    "export": {
+      "adminDescription": "Preuzmite evidenciju rada ovog vanjskog izvođača i obračun prema njegovim tarifama kako biste provjerili njegovu fakturu. Ovo je izvještaj za verifikaciju, a ne faktura.",
+      "csv": "CSV za proračunske tabele",
+      "download": "Preuzmi izvještaj",
+      "downloaded": "Izvještaj je preuzet",
+      "format": "Format",
+      "from": "Od",
+      "fromRequired": "Odaberite prvi dan",
+      "pdf": "PDF",
+      "selfDescription": "Preuzmite svoj zabilježeni rad i obračun prema ugovorenim tarifama kako biste pripremili ili provjerili svoju fakturu. Ovo je izvještaj za verifikaciju, a ne faktura.",
+      "title": "Izvještaj o vremenu i naknadama",
+      "to": "Do",
+      "toBeforeFrom": "Posljednji dan ne može biti prije prvog dana",
+      "toRequired": "Odaberite posljednji dan"
+    },
+    "generated": "Generisano (UTC)",
+    "noProject": "Nema projekta",
+    "noRate": "Ne primjenjuje se nijedna tarifa",
+    "notice": "Samo izvještaj za verifikaciju. Nije faktura niti knjižno odobrenje za samofakturisanje (Gutschrift): Z8 nikada ne izdaje fakture. Prikazuje rad zabilježen u Z8 i obračun prema ugovorenim tarifama izvođača, kako bi se faktura mogla provjeriti na osnovu njega.",
+    "organization": "Organizacija",
+    "page": "Stranica",
+    "period": "Period",
+    "referenceCode": "Referenca narudžbenice ili mjesta troška",
+    "rows": {
+      "day": "Dan",
+      "total": "Ukupno",
+      "unpriced": "Neobračunato",
+      "work": "Rad"
+    },
+    "times": "Dani predstavljaju lokalne kalendarske dane izvođača; vremena su prikazana prema UTC pomaku zabilježenom uz rad.",
+    "title": "Izjava o verifikaciji radnog vremena i naknada izvođača",
+    "totals": "Ukupno",
+    "units": {
+      "days": "Dani",
+      "hours": "Sati"
+    },
+    "unpricedNotice": "Za dio rada nije bila dogovorena tarifa na taj dan. Naveden je bez iznosa i nije uključen u ukupne vrijednosti.",
+    "vatId": "PDV broj",
+    "workedHours": "Odrađeni sati"
+  },
   "drivingLicence": {
     "applyingInterval": "Primjenjivanje…",
     "applyInterval": "Primijeni promjenu intervala",
@@ -604,6 +773,9 @@
       "chooseClasses": "Odaberite kategorije koje ste stvarno pregledali.",
       "classes": "Stvarno pregledane kategorije",
       "classExpiry": "Istek kategorije (ako je primjenjivo)",
+      "declaredBadge": "Prijavljeno",
+      "declaredHelp": "Ove kategorije i svi datumi koje je zaposlenik unio unaprijed su odabrani. Uporedite ih s originalnom vozačkom dozvolom i ispravite sve što se razlikuje.",
+      "declaredTitle": "{name} prijavljuje {classes}",
       "documentDates": "Datumi originalnog dokumenta",
       "employeeDeclaration": "Zaposlenik je lično dao gore prikazanu izjavu tokom ove provjere; potvrđujem tu izjavu.",
       "expiryDate": "Datum isteka dokumenta",
@@ -644,6 +816,8 @@
       },
       "customOrder": "Sortirano prema odabranoj koloni i smjeru.",
       "deadline": "{date} ({timezone})",
+      "declared": "Prijavljeno: {classes}",
+      "declaredDue": "Provjeri prijavljene kategorije",
       "dueNow": "Provjera dospijeva sada",
       "dueOrder": "Prvo provjere koje dospijevaju sada, a zatim sljedeći rok.",
       "empty": {
@@ -677,6 +851,31 @@
     "class": {
       "active": "Ovlašteno",
       "ended": "Završeno",
+      "group": {
+        "bus": "Autobusi",
+        "car": "Automobili",
+        "motorcycle": "Mopedi i motocikli",
+        "tractor": "Traktori",
+        "truck": "Kamioni"
+      },
+      "name": {
+        "A": "Motocikl",
+        "A1": "Laki motocikl",
+        "A2": "Motocikl srednje veličine",
+        "AM": "Moped",
+        "B": "Automobil",
+        "BE": "Automobil s prikolicom",
+        "C": "Kamion",
+        "C1": "Laki kamion",
+        "C1E": "Laki kamion s prikolicom",
+        "CE": "Kamion s prikolicom",
+        "D": "Autobus",
+        "D1": "Minibus",
+        "D1E": "Minibus s prikolicom",
+        "DE": "Autobus s prikolicom",
+        "L": "Spori traktor",
+        "T": "Traktor"
+      },
       "noLongerIntended": "Završeno jer zaposlenik više nije predviđeni vozač. Ponovna vožnja zahtijeva novu provjeru.",
       "overdue": "Redovna provjera je prekoračena. Ovo je organizacijska suspenzija, a ne izjava da je zakonsko pravo na vožnju oduzeto.",
       "recheck": "Potrebna je nova originalna provjera i izričito vraćanje ovlaštenja.",
@@ -684,6 +883,36 @@
     },
     "declaration": {
       "text": "Potvrđujem da nikakva poznata zabrana vožnje, oduzimanje ili druga prepreka ne sprječava namjeravanu vožnju, te da ispunjavam važeća ograničenja vožnje."
+    },
+    "declared": {
+      "add": "Dodaj kategorije vozačke dozvole",
+      "authorized": "Ovlašteno",
+      "classExpires": "Ističe {date}",
+      "classExpiry": "{code} ({name}) ističe",
+      "description": "Prijavili ste sami, još nije provjereno. Ovo vam ne daje ovlaštenje za vožnju dok ovlaštena osoba ne provjeri vašu originalnu vozačku dozvolu.",
+      "dialogDescription": "Odaberite svaku kategoriju sa svoje vozačke dozvole. Verifikator će ih potvrditi prilikom provjere vaše originalne dozvole.",
+      "dialogTitle": "Koje kategorije imate na vozačkoj dozvoli?",
+      "documentExpires": "Vozačka dozvola ističe",
+      "documentExpiry": "Vozačka dozvola ističe dana",
+      "documentExpiryHelp": "Polje 4b na kartici. Ostavite prazno ako ga vaša vozačka dozvola nema.",
+      "edit": "Uredi",
+      "emptyDescription": "Navedite svojoj organizaciji koje kategorije posjedujete. To pomaže pri planiranju i pripremi provjere; ne predstavlja ovlaštenje za vožnju.",
+      "emptyMoreDescription": "Dodajte kategoriju koju ste položili od posljednje provjere. Od verifikatora će se tražiti da je provjeri.",
+      "emptyMoreTitle": "Imate li još neku kategoriju?",
+      "emptyTitle": "Šta možete voziti?",
+      "expiryTitle": "Datumi isteka (opcionalno)",
+      "invalid": "Provjerite odabrane kategorije i datume.",
+      "notIntended": "Više niste predviđeni vozač, pa vaša organizacija ne prikuplja vaše kategorije vozačke dozvole.",
+      "privacy": "Spremaju se samo vaše kategorije i datumi isteka, bez broja vozačke dozvole ili fotografije. Vaša izjava vam ne daje ovlaštenje za vožnju.",
+      "remove": "Ukloni moje kategorije",
+      "removed": "Prijavljene kategorije vozačke dozvole su uklonjene",
+      "removing": "Uklanjanje…",
+      "save": "{count, plural, one {Spremi # kategoriju} few {Spremi # kategorije} other {Spremi # kategorija}}",
+      "saved": "Kategorije vozačke dozvole su spremljene. Vaš verifikator će ih provjeriti uvidom u vašu originalnu vozačku dozvolu.",
+      "saveFailed": "Nije bilo moguće spremiti vaše kategorije vozačke dozvole. Vaš odabir je zadržan; pokušajte ponovo.",
+      "saving": "Spremanje…",
+      "title": "Vaše prijavljene kategorije vozačke dozvole",
+      "updated": "Ažurirano"
     },
     "delivery": {
       "uncertain": "Opcionalni e-mail podsjetnici upućeni vama imaju neizvjestan ishod isporuke ({count}). Neće se ponovo automatski slati. Vaši podsjetnici unutar aplikacije ostaju dostupni; isporuka e-pošte ne potvrđuje čitanje."
@@ -846,6 +1075,7 @@
     },
     "operational": {
       "advisory": "Ovlaštenje za vožnju",
+      "declared": "Prijavljeno, još nije provjereno. Ne predstavlja ovlaštenje za vožnju.",
       "loading": "Učitavanje ovlaštenja za vožnju…",
       "loadingEmployees": "Učitavanje zaposlenika za planiranje…",
       "noEmployees": "Nema podudarnih uposlenika.",
@@ -1017,6 +1247,20 @@
     "team": "Tim",
     "totalEmployees": "{count} zaposlenika",
     "tryDifferentSearch": "Pokušajte prilagoditi pretragu ili filtere"
+  },
+  "engagement": {
+    "absenceRefusals": {
+      "contractorRecordsUnavailabilityOnly": "Ovih datuma rade kao vanjski saradnik: moguće je evidentirati samo nedostupnost.",
+      "spansEngagementChange": "Ovi datumi obuhvataju prelaz između radnog odnosa i rada u statusu vanjskog saradnika. Zabilježite svaki dio zasebno.",
+      "unavailabilityIsForContractors": "Ovih datuma su u radnom odnosu: nedostupnost se odnosi samo na vanjske saradnike."
+    },
+    "externalContractor": "Vanjski saradnik",
+    "filter": {
+      "all": "Svi",
+      "contractors": "Vanjski saradnici",
+      "employees": "Zaposlenici",
+      "label": "Angažman"
+    }
   },
   "errors": {
     "failedToLoad": "Učitavanje podataka nije uspjelo",
@@ -1487,6 +1731,10 @@
         "message": "Organizujte dostupnog verifikatora za zaposlenika {employeeName}. Ovaj zadatak ne daje prava inspekcije i ne produžava nijedan rok.",
         "title": "Dodijeli odgovornost verifikatora vozačke dozvole"
       },
+      "drivingLicenceDeclared": {
+        "message": "{employeeName} je prijavio/la kategorije vozačke dozvole {classes}. Izvršite uvid u originalnu vozačku dozvolu da ih autorizujete; sama prijava ne daje ovlaštenje.",
+        "title": "Kategorije vozačke dozvole za provjeru"
+      },
       "drivingLicencePersonalTask": {
         "message": "Podsjetite zaposlenika {employeeName} da organizuje provjeru originalne vozačke dozvole. Direktno obavještenje zaposlenika nije bilo dostupno. Završetak zadatka ne predstavlja direktnu dostavu ili čitanje.",
         "title": "Lično podsjeti zaposlenika"
@@ -1529,6 +1777,11 @@
       "formerEmployeeReportsWithoutManager": {
         "message": "{count, plural, one {# zaposlenik je i dalje povezan samo s bivšim menadžerom: {names}. Dodijelite trenutnog menadžera.} other {# zaposlenika je i dalje povezano samo s bivšim menadžerom: {names}. Dodijelite trenutnog menadžera.}}",
         "title": "Zaposlenici bez trenutnog menadžera"
+      },
+      "invitationContractorTermsNeedReview": {
+        "message": "Tarifa iz pozivnice za {name} nije se mogla primijeniti prilikom pridruživanja. Postavite je u kompenzaciji vanjskog saradnika; do tada rad ostaje bez određene cijene.",
+        "termsExistMessage": "Tarifa iz pozivnice za {name} nije primijenjena prilikom pridruživanja: angažman već ima uslove kompenzacije koji se i dalje primjenjuju. Provjerite u kompenzaciji vanjskog saradnika da li ih treba promijeniti.",
+        "title": "Potrebno je pregledati tarifu vanjskog saradnika"
       },
       "kioskCommandRefused": {
         "forwardedMessage": "Radnja ({action, select, clock_in {prijava} clock_out {odjava} start_break {početak pauze} resume_break {povratak s pauze} other {evidencija}}) zaposlenika {employeeName} u {time} na kiosku {kioskName} nije zabilježena: {reason, select, wrong_pin {PIN nije bio tačan} pin_locked {PIN kioska je zaključan nakon previše netačnih pokušaja} no_pin {nije bilo PIN-a kioska s kojim bi se uporedio} pin_unchecked {PIN se nije mogao provjeriti} kiosk_retired {kiosk je opozvan ili ponovo uparen prije nego što se ponovo povezao} contact_unverifiable {Z8 nije mogao potvrditi posljednje povezivanje kioska} outside_window {vrijeme je bilo izvan vremenskog okvira koji Z8 prihvata} clock_untrusted {satu kioska se nije moglo vjerovati za ovu radnju} not_assigned {zaposlenik nije dodijeljen na lokaciju kioska} not_adopted {organizacija ne prihvata vanmrežne evidencije s kioska} month_closed {mjesec je zaključen} holiday {dan je praznik bez evidencije radnog vremena} conflict {postoji konflikt s drugim evidentiranim vremenom} other {Z8 to nije mogao prihvatiti}}. Evidentirajte vrijeme za njih ili ga provjerite s njima.",
@@ -1694,6 +1947,11 @@
       "personnelFilePayslipsShared": {
         "message": "Vaša platna lista za {payPeriod} je podijeljena s vama.",
         "title": "Nova platna lista u vašem personalnom dosijeu"
+      },
+      "plannedEngagementEndNeedsReview": {
+        "notScheduled": "Planirani završetak angažmana za {name} ({plannedEndDate}) nije se mogao zakazati kao datum odlaska. Zakažite ga na stranici zaposlenika.",
+        "passed": "Planirani završetak angažmana za {name} ({plannedEndDate}) već je bio prošao u trenutku pridruživanja, pa je datum odlaska postavljen na danas ({leavingDate}). Promijenite ga ako se angažman nastavlja.",
+        "title": "Potrebno je pregledati planirani završetak angažmana"
       },
       "policyForgottenClockOutReminder": {
         "message": "Dostigli ste potrebne radne sate za dan {day} u {endTime} ({timezone}). Odjavite se ako ste završili s radom."
@@ -2497,6 +2755,13 @@
           "createdAt": "Kada je ovaj zadatak ili isporuka prvi put zabilježena, kao UTC trenutak.",
           "deadline_timezone": "Eksplicitna kalendarska vremenska zona koja se koristi za datume rokova u pravilniku.",
           "declaration_text": "Tačan tekst izjave zabilježen tokom originalnog pregleda.",
+          "declared_at": "Kada ste zadnji put spremili svoje prijavljene kategorije, kao UTC trenutak.",
+          "declared_class_code": "Kategorija vozačke dozvole za koju ste naveli da je posjedujete. Ne daje ovlaštenje za vožnju.",
+          "declaredClasses": {
+            "summary": "Kategorije vozačke dozvole koje ste sami prijavili i koje još nisu provjerene. Provjera ih zamjenjuje; brišu se kada više niste predviđeni vozač."
+          },
+          "declared_class_expiry_date": "Datum isteka same kategorije koji ste unijeli (kategorije C i D); prazno ako niste unijeli nijedan.",
+          "declared_document_expires_on": "Datum isteka vaše vozačke dozvole kako ste ga unijeli; prazno ako niste unijeli nijedan.",
           "document_expires_on": "Datum isteka dokumenta, odvojeno od isteka pojedinačnih kategorija.",
           "document_issued_on": "Datum izdavanja dokumenta, bez vremena ili vremenske zone.",
           "document_valid_through": "Posljednji kalendarski dan obuhvaćen važenjem dokumenta.",
@@ -2615,6 +2880,25 @@
             "project": "Projekat na koji se stopa primjenjuje; prazno za sav vaš rad.",
             "summary": "Stope koje organizacija fakturiše klijentima za vaš rad."
           },
+          "contractorCompensationTerms": {
+            "capAtOneDay": "Da li se dan računa kao najviše jedan dan, bez obzira na dužinu rada.",
+            "compensationBasis": "Da li se plaća po satu (po satu) ili po danu (dnevno).",
+            "currency": "Valuta tarife.",
+            "dayUnitRule": "Kako se radni dan računa za dnevnu tarifu: bilo kakav rad kao puni dan (any_work_full_day), pola ili puni dan prema pragu (half_and_full_day) ili srazmjerno standardnom danu (prorated_by_standard_day). Prazno za satnicu.",
+            "effectiveFrom": "Prvi dan od kojeg se ovi uslovi primjenjuju (GGGG-MM-DD).",
+            "effectiveTo": "Prvi dan od kojeg se ovi uslovi više ne primjenjuju (GGGG-MM-DD); prazno dok se primjenjuju.",
+            "employmentPeriodId": "Period kojem ovi uslovi pripadaju (njegov id u employment_periods).",
+            "halfDayThresholdMinutes": "Ovoliko minuta rada dnevno računa se kao pola dana; više od toga računa se kao puni dan.",
+            "rate": "Vaša tarifa po satu ili po danu.",
+            "standardDayMinutes": "Broj minuta standardnog dana prema kojem se mjeri radni dan.",
+            "summary": "Vaša satnica ili dnevna tarifa kao vanjskog saradnika tokom vremena."
+          },
+          "contractorDetails": {
+            "companyName": "Kompanija preko koje ugovarate rad.",
+            "referenceCode": "Referenca narudžbenice ili mjesta troška s kojom se upoređuju vaše fakture.",
+            "summary": "Vaši podaci o ugovoru kao vanjskog saradnika.",
+            "vatId": "Vaš PDV broj ili porezni identifikacijski broj."
+          },
           "costCenters": {
             "code": "Šifra mjesta troška.",
             "costCenter": "Naziv mjesta troška.",
@@ -2681,6 +2965,7 @@
             "contractType": "Vrsta vašeg ugovora.",
             "email": "E-mail adresa vašeg korisničkog računa.",
             "endDate": "Kada je vaš radni odnos prestao; prazno dok traje.",
+            "engagementKind": "Da li danas radite za organizaciju kao zaposlenik (employee) ili kao vanjski saradnik (contractor).",
             "firstName": "Vaše ime u vašoj evidenciji zaposlenika.",
             "gender": "Vaš spol.",
             "isActive": "Da li je vaša evidencija zaposlenika aktivna.",
@@ -2700,6 +2985,7 @@
           },
           "employmentPeriods": {
             "endedAt": "Kada je period završio; prazno dok je otvoren.",
+            "engagementKind": "Da li ste u ovom periodu radili kao zaposlenik (employee) ili kao vanjski saradnik (contractor).",
             "startedAt": "Kada je period započeo.",
             "startProvenance": "Odakle potiče početak, naprimjer zapošljavanje ili ponovno zapošljavanje.",
             "status": "Da li je period otvoren ili zatvoren.",

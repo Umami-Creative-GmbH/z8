@@ -51,6 +51,7 @@
       "overtime": "Overtid: {count}",
       "publishing": "Publiserer…",
       "restTime": "Hviletid: {count}",
+      "statutory": "Lovpålagte grenser: {count}",
       "totalFindings": "{count, plural, other {# funn totalt} }",
       "warningsDetectedBeforePublish": "Advarsler oppdaget før publisering"
     },
@@ -61,6 +62,7 @@
         "maxHours": "Maks timer: {count}",
         "overtime": "Overtid: {count}",
         "restTime": "Hviletid: {count}",
+        "statutory": "Lovpålagte grenser: {count}",
         "title": "Samsvarsadvarsler i dette datointervallet"
       },
       "focus": {
@@ -73,7 +75,8 @@
       "open": "Åpen vakt",
       "publish": {
         "failed": "Kunne ikke publisere vakter",
-        "published": "Publiserte {count} vakt(er)"
+        "published": "Publiserte {count} vakt(er)",
+        "statutoryBlocked": "Noen vakter bryter grensene for ungdomsvern (JArbSchG). Endre vaktene eller bekreft et lovbestemt bransjeunntak før publisering."
       },
       "retry": "Prøv på nytt",
       "shiftList": "Vaktliste",
@@ -82,6 +85,7 @@
         "overlapDescription": "Denne vakten overlapper med {count} annen/andre vakt(er)",
         "overlapWarning": "Vakt lagret med overlappsvarsel",
         "skillOverrideReasonRequired": "Den ansatte mangler en nødvendig ferdighet denne dagen. Åpne vakten for å oppgi en årsak.",
+        "statutoryBlocked": "Denne endringen i en publisert vakt bryter grensene for ungdomsvern (JArbSchG) utover det som allerede var publisert. Endre vakten slik at den ikke bryter noen grense på nytt eller ytterligere. Et bransjeunntak kan bare bekreftes for en lagret vakt: Hvis du vil planlegge med et unntak, legger du den til som en utkastvakt, bekrefter unntaket og publiserer den deretter.",
         "updated": "Vakt oppdatert"
       },
       "supportFailed": "Maler eller samsvarsinformasjon kunne ikke oppdateres. Kontroller på nytt før publisering.",
@@ -154,6 +158,7 @@
       "rejectFailed": "Kunne ikke avvise forespørselen",
       "rejectReason": "Årsak til avvisning (valgfritt)",
       "shiftWhen": "{date}, {start}–{end}",
+      "statutoryBlocked": "Godkjenning av denne forespørselen vil bryte grensene for ungdomsvern (JArbSchG) for den ansatte som tar vakten. Avslå forespørselen eller be noen andre om å ta vakten.",
       "swapSummary": "{requester} ønsker å gi denne vakten til {target}",
       "swapWithoutTarget": "{requester} ønsker å gi fra seg denne vakten, men har ikke oppgitt en kollega",
       "title": "Vaktforespørsler",
@@ -207,6 +212,95 @@
         "overtime": "{period, select, daily {Daglig} weekly {Ukentlig} other {Månedlig}} overtid ({total} av {threshold} t)",
         "pendingAbsence": "Ventende fravær: {category}",
         "restTime": "Hvileperiode for kort ({rest} av {required} t)"
+      }
+    },
+    "statutory": {
+      "apprenticeship": {
+        "blockWeekTraining": "Samlingsuke: {used} min arbeid på denne ukens skoledager, {limit} min bedriftsopplæring tillatt; kvoten er overskredet denne dagen",
+        "blockWeekTrainingNote": "Den tillatte opplæringen (§ 9 ledd 1 nr. 3 JArbSchG, § 15 ledd 1 setning 3 BBiG) kommer på toppen av samlingsuken, som teller med gjennomsnittlig ukentlig arbeidstid (§ 9 ledd 2 nr. 2 JArbSchG), og teller ikke mot grensene for daglig og ukentlig arbeidstid for personer under 18 år etter § 8",
+        "blockWeekTrainingWeek": "Samlingsuke: {used} min arbeid på denne ukens skoledager, {limit} min bedriftsopplæring tillatt; kvoten er overskredet {date}",
+        "releaseDayShift": "Fridag for lærling: skole-, samlings- eller eksamensdag",
+        "releaseDayShiftOn": "Fridag for lærling {date}: skole-, samlings- eller eksamensdag",
+        "workplaceReturn": "Under 18: ingen jobb denne dagen, ukens fulle yrkesskoledag",
+        "workplaceReturnOn": "Under 18: ingen jobb {date}, ukens fulle yrkesskoledag"
+      },
+      "domain": {
+        "apprenticeship": "Lærlingfritak (BBiG)",
+        "minijob": "Minijobb-grense",
+        "onCall": "Tilkallingsarbeid (§ 12 TzBfG)",
+        "shortTerm": "Grense for kortsiktig ansettelse",
+        "workingStudent": "Grense for studentarbeid",
+        "youthProtection": "Ungdomsvern (JArbSchG)"
+      },
+      "findings": {
+        "acknowledgeListLabel": "Lovbestemte funn som må bekreftes",
+        "blockedTitle": "Publisering avvist",
+        "blockingListLabel": "Funn som blokkerer publisering",
+        "blocksPublishing": "Blokkerer publisering",
+        "close": "Lukk",
+        "hide": "Skjul lovbestemte funn ({count})",
+        "hideOfTotal": "Skjul lovbestemte funn ({count} av {total})",
+        "listLabel": "Lovbestemte funn",
+        "openReviews": "Åpne i Gjennomganger og konflikter",
+        "outsideScope": "{count, plural, one {# funn til gjelder en ansatt du ikke administrerer.} other {# funn til gjelder ansatte du ikke administrerer.}}",
+        "outsideScopeOnly": "{count, plural, one {# funn gjelder en ansatt du ikke administrerer.} other {# funn gjelder ansatte du ikke administrerer.}}",
+        "severity": {
+          "critical": "Kritisk",
+          "info": "Merknad",
+          "warning": "Advarsel"
+        },
+        "show": "Vis lovbestemte funn ({count})",
+        "showOfTotal": "Vis lovbestemte funn ({count} av {total})",
+        "showShifts": "Vis vaktene til {name}",
+        "unnamedEmployee": "Navnløs ansatt",
+        "weekOf": "Uken fra {date}"
+      },
+      "jarbschg": {
+        "break": "Under 18: {used} min pause tatt, {limit} min påkrevd",
+        "dailyMax": "Under 18: {used} min arbeid denne dagen overskrider ungdomsgrensen på {limit} min",
+        "dailyMaxOn": "Under 18: {used} min arbeid den {date} overskrider ungdomsgrensen på {limit} min",
+        "daysPerWeek": "Under 18: {used} arbeidsdager denne uken, maks {limit} tillatt",
+        "holidayProhibited": "Under 18: {used} min forbudt arbeid: ikke tillatt etter {cutoff} den 24. eller 31. desember, eller den 25. desember, 1. januar, 1. påskedag eller 1. mai; ingen unntak tillater det",
+        "holidayWork": "Under 18: arbeid på en offentlig høytidsdag krever et lovbestemt bransjeunntak",
+        "nightWork": "Under 18: {used} min nattarbeid mellom {from} og {until}",
+        "nightWorkBeyondSector": "Under 18: {minutes} min nattarbeid utenfor timene et bransjeunntak tillater (fra 15 år: {from15} til {until15}; fra 16 år til {until16}; fra 17 år i bakerier fra {bakeryFrom17}; ingen under 15 år); ingen unntak tillater det",
+        "restPeriod": "Under 18: bare {used} min hvile før denne vakten, {limit} min påkrevd",
+        "saturdayWork": "Under 18: lørdagsarbeid krever et lovbestemt bransjeunntak",
+        "shiftSpan": "Under 18: vaktspennet er {used} min, fra første arbeid til slutten av det siste; maks {limit} min tillatt (11 t i servering, landbruk, dyrehold og på byggeplasser)",
+        "shiftSpanOn": "Under 18: vaktspennet den {date} er {used} min, fra første arbeid til slutten av det siste; maks {limit} min tillatt (11 t i servering, landbruk, dyrehold og på byggeplasser)",
+        "sundayWork": "Under 18: søndagsarbeid krever et lovbestemt bransjeunntak",
+        "uninterrupted": "Under 18: {used} min arbeidet uten pause, maks {limit} min tillatt",
+        "weeklyMax": "Under 18: {used} min arbeid denne uken overskrider ungdomsgrensen på {limit} min",
+        "weeklyMaxWeekOf": "Under 18: {used} min arbeid i uken fra {date} overskrider ungdomsgrensen på {limit} min"
+      },
+      "minijob": {
+        "monthlyApproaching": "Månedlig grense for minijobb nærmer seg",
+        "monthlyDocumented": "Månedlig grense for minijobb overskredet (dokumentert som uforutsett)",
+        "monthlyExceeded": "Månedlig grense for minijobb overskredet",
+        "rollingApproaching": "12-måneders inntektsgrense for minijobb nærmer seg",
+        "rollingExceeded": "12-måneders inntektsgrense for minijobb overskredet"
+      },
+      "onCall": {
+        "nearBand": "Tilkalling: uken er på {used}, nærmer seg tilkallingsrammens grense på {limit}",
+        "overBand": "Tilkalling: uken er på {used}, over tilkallingsrammen på {limit}",
+        "shortCall": "Tilkalling: innkalling på {duration} er under minimumskravet på {minimum}",
+        "shortNotice": "{days, plural, one {Tilkalling: # hel dags varsel, {required} påkrevd (§ 12 Abs. 3 TzBfG)} other {Tilkalling: # hele dagers varsel, {required} påkrevd (§ 12 Abs. 3 TzBfG)}}",
+        "shortWorkCall": "Tilkalling: utførte en innkalling på {duration}, under minimumskravet på {minimum}",
+        "underBand": "Tilkalling: uken er på {used}, under tilkallingsrammen på {limit}"
+      },
+      "shortTerm": {
+        "calendarDaysExceeded": "3-månedersgrensen for korttidsarbeid er overskredet: {used} av {limit} kalenderdager i år",
+        "calendarDaysRemaining": "Korttidsarbeid (3-månedersgrense): {remaining} av {limit} kalenderdager igjen i år",
+        "daysExceeded": "Dagsgrensen for korttidsarbeid er overskredet: {used} av {limit} arbeidsdager i år",
+        "daysRemaining": "Korttidsarbeid: {remaining} av {limit} arbeidsdager igjen i år"
+      },
+      "warning": "{area}: lovbestemt grense i fare",
+      "warningApproaching": "{area}: nærmer seg lovbestemt grense",
+      "warningExceeded": "{area}: lovbestemt grense overskredet",
+      "warningPercent": "{area}: {percent} % av den lovfestede grensen",
+      "workingStudent": {
+        "ceiling": "Arbeidende student: {used} av {limit} uker over 20 t i løpet av 12 måneder",
+        "lectureWeek": "Arbeidende student > 20 t i undervisningsuke: {hours} t dagtidsarbeid på hverdager (grense {limit} t)"
       }
     },
     "templates": {

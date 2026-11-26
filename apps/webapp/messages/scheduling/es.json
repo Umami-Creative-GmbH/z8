@@ -51,6 +51,7 @@
       "overtime": "Horas extra: {count}",
       "publishing": "Publicando…",
       "restTime": "Tiempo de descanso: {count}",
+      "statutory": "Límites legales: {count}",
       "totalFindings": "{count, plural, one {# hallazgo en total} other {# hallazgos en total}}",
       "warningsDetectedBeforePublish": "Advertencias detectadas antes de publicar"
     },
@@ -61,6 +62,7 @@
         "maxHours": "Horas máximas: {count}",
         "overtime": "Horas extra: {count}",
         "restTime": "Tiempo de descanso: {count}",
+        "statutory": "Límites legales: {count}",
         "title": "Advertencias de cumplimiento en este rango de fechas"
       },
       "focus": {
@@ -73,7 +75,8 @@
       "open": "Turno abierto",
       "publish": {
         "failed": "Error al publicar los turnos",
-        "published": "Se han publicado {count} turno(s)"
+        "published": "Se han publicado {count} turno(s)",
+        "statutoryBlocked": "Algunos turnos infringen los límites de protección de menores (JArbSchG). Modifica los turnos o reconoce una excepción sectorial legal antes de publicar."
       },
       "retry": "Reintentar",
       "shiftList": "Lista de turnos",
@@ -82,6 +85,7 @@
         "overlapDescription": "Este turno se solapa con otros {count} turno(s)",
         "overlapWarning": "Turno guardado con advertencia de solapamiento",
         "skillOverrideReasonRequired": "El empleado carece de una habilidad requerida para este día. Abra el turno para indicar un motivo.",
+        "statutoryBlocked": "Este cambio en un turno publicado infringe los límites de protección de menores (JArbSchG) más allá de lo ya publicado. Modifica el turno para que no vuelva a infringir ningún límite ni lo supere más. Solo se puede reconocer una excepción sectorial para un turno guardado: para planificarlo con una, añádelo como turno en borrador, reconoce la excepción y luego publícalo.",
         "updated": "Turno actualizado"
       },
       "supportFailed": "No se pudieron actualizar las plantillas o la información de cumplimiento. Vuelve a comprobarlo antes de publicar.",
@@ -154,6 +158,7 @@
       "rejectFailed": "No se pudo rechazar la solicitud",
       "rejectReason": "Motivo del rechazo (opcional)",
       "shiftWhen": "{date}, {start}–{end}",
+      "statutoryBlocked": "Aprobar esta solicitud infringiría los límites de protección de menores (JArbSchG) para el empleado que asume el turno. Rechaza la solicitud o pide a otra persona que asuma el turno.",
       "swapSummary": "{requester} desea ceder este turno a {target}",
       "swapWithoutTarget": "{requester} desea ceder este turno, pero no ha nombrado a ningún compañero",
       "title": "Solicitudes de turno",
@@ -207,6 +212,95 @@
         "overtime": "{period, select, daily {Horas extras diarias} weekly {Horas extras semanales} other {Horas extras mensuales}} ({total} de {threshold} h)",
         "pendingAbsence": "Ausencia pendiente: {category}",
         "restTime": "Período de descanso demasiado corto ({rest} de {required} h)"
+      }
+    },
+    "statutory": {
+      "apprenticeship": {
+        "blockWeekTraining": "Semana de formación por bloques: {used} min de trabajo en los días lectivos de esta semana, {limit} min de formación en la empresa permitidos; se supera el límite permitido este día",
+        "blockWeekTrainingNote": "La formación permitida (§ 9 párr. 1 n.º 3 JArbSchG, § 15 párr. 1 frase 3 BBiG) se suma a la semana de bloques, que cuenta con la jornada laboral semanal media (§ 9 párr. 2 n.º 2 JArbSchG), y no computa para los límites diarios y semanales del § 8 para menores de 18 años",
+        "blockWeekTrainingWeek": "Semana de formación por bloques: {used} min de trabajo en los días lectivos de esta semana, {limit} min de formación en la empresa permitidos; se supera el límite permitido el {date}",
+        "releaseDayShift": "Día de dispensa para aprendices: día lectivo, de formación por bloques o de examen",
+        "releaseDayShiftOn": "Día de dispensa para aprendices el {date}: día lectivo, de formación por bloques o de examen",
+        "workplaceReturn": "Menor de 18 años: no se trabaja este día, día lectivo completo de formación profesional de la semana",
+        "workplaceReturnOn": "Menor de 18 años: no se trabaja el {date}, día lectivo completo de formación profesional de la semana"
+      },
+      "domain": {
+        "apprenticeship": "Dispensa para aprendices (BBiG)",
+        "minijob": "Límite de minijob",
+        "onCall": "Trabajo a demanda (§ 12 TzBfG)",
+        "shortTerm": "Límite de empleo a corto plazo",
+        "workingStudent": "Límite de estudiante trabajador",
+        "youthProtection": "Protección de menores (JArbSchG)"
+      },
+      "findings": {
+        "acknowledgeListLabel": "Incidencias legales por reconocer",
+        "blockedTitle": "Publicación rechazada",
+        "blockingListLabel": "Incidencias que bloquean la publicación",
+        "blocksPublishing": "Bloquea la publicación",
+        "close": "Cerrar",
+        "hide": "Ocultar observaciones normativas ({count})",
+        "hideOfTotal": "Ocultar observaciones normativas ({count} de {total})",
+        "listLabel": "Observaciones normativas",
+        "openReviews": "Abrir en Revisiones y conflictos",
+        "outsideScope": "{count, plural, one {# observación más afecta a un empleado que no gestionas.} other {# observaciones más afectan a empleados que no gestionas.}}",
+        "outsideScopeOnly": "{count, plural, one {# observación afecta a un empleado que no gestionas.} other {# observaciones afectan a empleados que no gestionas.}}",
+        "severity": {
+          "critical": "Crítico",
+          "info": "Nota",
+          "warning": "Advertencia"
+        },
+        "show": "Mostrar observaciones normativas ({count})",
+        "showOfTotal": "Mostrar observaciones normativas ({count} de {total})",
+        "showShifts": "Mostrar turnos de {name}",
+        "unnamedEmployee": "Empleado sin nombre",
+        "weekOf": "Semana del {date}"
+      },
+      "jarbschg": {
+        "break": "Menor de 18: {used} min de descansos tomados, {limit} min obligatorios",
+        "dailyMax": "Menor de 18: {used} min de trabajo hoy excede el límite juvenil de {limit} min",
+        "dailyMaxOn": "Menor de 18: {used} min de trabajo el {date} excede el límite juvenil de {limit} min",
+        "daysPerWeek": "Menor de 18: {used} días laborables esta semana, máximo {limit} permitidos",
+        "holidayProhibited": "Menor de 18: {used} min de trabajo prohibido: ninguno después de las {cutoff} el 24 o 31 de diciembre, ni el 25 de diciembre, 1 de enero, Domingo de Pascua o 1 de mayo; ninguna excepción lo permite",
+        "holidayWork": "Menor de 18: trabajar en un día festivo requiere una excepción legal por sector",
+        "nightWork": "Menor de 18: {used} min de trabajo nocturno entre las {from} y las {until}",
+        "nightWorkBeyondSector": "Menor de 18: {minutes} min de trabajo nocturno fuera de las horas permitidas por excepción sectorial (a partir de 15: {from15} a {until15}; a partir de 16 hasta {until16}; a partir de 17 en panaderías desde {bakeryFrom17}; ninguno menor de 15); ninguna excepción lo permite",
+        "restPeriod": "Menor de 18: solo {used} min de descanso antes de este turno, {limit} min obligatorios",
+        "saturdayWork": "Menor de 18: trabajar en sábado requiere una excepción legal por sector",
+        "shiftSpan": "Menor de 18: la amplitud de la jornada es de {used} min, desde el primer trabajo hasta el final del último; máximo {limit} min permitidos (11 h en hostelería, agricultura, ganadería y obras de construcción)",
+        "shiftSpanOn": "Menor de 18: la amplitud de la jornada el {date} es de {used} min, desde el primer trabajo hasta el final del último; máximo {limit} min permitidos (11 h en hostelería, agricultura, ganadería y obras de construcción)",
+        "sundayWork": "Menor de 18: trabajar en domingo requiere una excepción legal por sector",
+        "uninterrupted": "Menor de 18: {used} min trabajados sin descanso, máximo {limit} min permitidos",
+        "weeklyMax": "Menor de 18: {used} min de trabajo esta semana excede el límite juvenil de {limit} min",
+        "weeklyMaxWeekOf": "Menor de 18: {used} min de trabajo en la semana del {date} excede el límite juvenil de {limit} min"
+      },
+      "minijob": {
+        "monthlyApproaching": "Límite mensual de minijob próximo a alcanzarse",
+        "monthlyDocumented": "Límite mensual de minijob superado (documentado como imprevisible)",
+        "monthlyExceeded": "Límite mensual de minijob superado",
+        "rollingApproaching": "Límite de ingresos de minijob de 12 meses próximo a alcanzarse",
+        "rollingExceeded": "Límite de ingresos de minijob de 12 meses superado"
+      },
+      "onCall": {
+        "nearBand": "Bajo demanda: semana en {used}, acercándose al límite de la franja de disponibilidad de {limit}",
+        "overBand": "Bajo demanda: semana en {used}, por encima de la franja de disponibilidad de {limit}",
+        "shortCall": "Bajo demanda: la llamada de {duration} está por debajo del mínimo de {minimum}",
+        "shortNotice": "{days, plural, one {Bajo demanda: preaviso de # día completo, {required} obligatorio(s) (§ 12 párr. 3 TzBfG)} other {Bajo demanda: preaviso de # días completos, {required} obligatorio(s) (§ 12 párr. 3 TzBfG)}}",
+        "shortWorkCall": "Bajo demanda: se trabajó una llamada de {duration}, por debajo de la llamada mínima de {minimum}",
+        "underBand": "Bajo demanda: semana en {used}, por debajo de la franja de disponibilidad de {limit}"
+      },
+      "shortTerm": {
+        "calendarDaysExceeded": "Límite de empleo a corto plazo de 3 meses superado: {used} de {limit} días naturales este año",
+        "calendarDaysRemaining": "Empleo a corto plazo (límite de 3 meses): quedan {remaining} de {limit} días naturales este año",
+        "daysExceeded": "Límite de días de empleo a corto plazo superado: {used} de {limit} días laborables este año",
+        "daysRemaining": "Empleo a corto plazo: quedan {remaining} de {limit} días laborables este año"
+      },
+      "warning": "{area}: límite legal en riesgo",
+      "warningApproaching": "{area}: aproximándose al límite legal",
+      "warningExceeded": "{area}: límite legal superado",
+      "warningPercent": "{area}: {percent} % del límite legal",
+      "workingStudent": {
+        "ceiling": "Estudiante trabajador: {used} de {limit} semanas por encima de 20 h en 12 meses",
+        "lectureWeek": "Estudiante trabajador >20 h en semana lectiva: {hours} h de trabajo diurno en días laborables (límite {limit} h)"
       }
     },
     "templates": {

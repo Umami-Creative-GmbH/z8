@@ -80,6 +80,7 @@
     "pendingApprovals": "Εκκρεμείς εγκρίσεις",
     "pendingExceptionRequests": "{count, plural, one {# εκκρεμές αίτημα εξαίρεσης προς εξέταση} other {# εκκρεμή αιτήματα εξαίρεσης προς εξέταση}}",
     "returns": "Επιστρέφει {date}",
+    "reviewComplianceExceptions": "Έλεγχος αιτημάτων εξαίρεσης",
     "since": "Από {time}",
     "textClockedInEmployee": "• {name} - από {clockedInAt} ({duration})",
     "textCompliance": "**⚠️ Συμμόρφωση:**",

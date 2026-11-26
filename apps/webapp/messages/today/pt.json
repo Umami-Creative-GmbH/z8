@@ -6,19 +6,37 @@
       "decided": "Decisão salva. Atualize para carregar a fila atual.",
       "description": "Solicitações aguardando decisão do gerente.",
       "empty": "Não há aprovações pendentes.",
+      "itemTitle": "{requester}: {title}",
       "openInbox": "Abrir caixa de entrada",
+      "openInboxForRest": "Abra a caixa de entrada para ver o restante",
+      "openInboxLink": "Abrir a caixa de entrada",
       "ownRequest": "Sua própria solicitação: outro aprovador decide.",
+      "partialFailure": "Não foi possível carregar algumas aprovações: {types}. A lista e o total podem estar incompletos.",
+      "partialFailureNotCounted": "Não foi possível contabilizar algumas aprovações: {types}. O total pode estar incompleto.",
       "pendingAriaLabel": "Aprovações pendentes",
       "reject": "Rejeitar",
       "rejectLabel": "Rejeitar {title}",
+      "rejectPanel": {
+        "briefingUnavailable": "Não foi possível atualizar as aprovações de hoje. Feche este painel e tente novamente.",
+        "description": "O solicitante vê este motivo com a rejeição.",
+        "noLongerRejectable": "Esta solicitação não pode mais ser rejeitada aqui.",
+        "title": "Rejeitar solicitação"
+      },
       "retry": "Tentar aprovações novamente",
+      "reviewInInbox": "Revisar na caixa de entrada",
+      "reviewInInboxNamed": "Revisar na caixa de entrada: {title}",
       "title": "Aprovações",
       "toast": {
         "approved": "Solicitação aprovada",
         "approveError": "Não foi possível aprovar a solicitação",
         "rejected": "Solicitação rejeitada",
         "rejectError": "Não foi possível rejeitar a solicitação"
-      }
+      },
+      "totalAtLeast": "{count}+",
+      "truncated": "{total, plural, one {Mostrando {shown} de # aprovação pendente.} other {Mostrando {shown} de # aprovações pendentes.}}",
+      "truncatedAtLeast": "{total, plural, one {Mostrando {shown} de pelo menos # aprovação pendente.} other {Mostrando {shown} de pelo menos # aprovações pendentes.}}",
+      "waitingInInbox": "{total, plural, one {# aprovação pendente está aguardando na caixa de entrada.} other {# aprovações pendentes estão aguardando na caixa de entrada.}}",
+      "waitingInInboxAtLeast": "{total, plural, one {Pelo menos # aprovação pendente está aguardando na caixa de entrada.} other {Pelo menos # aprovações pendentes estão aguardando na caixa de entrada.}}"
     },
     "briefing": {
       "accessUnavailable": "Este resumo não está disponível para o funcionário e organização atuais.",

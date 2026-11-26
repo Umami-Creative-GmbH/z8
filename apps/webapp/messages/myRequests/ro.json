@@ -16,6 +16,7 @@
     },
     "card": {
       "decision": "Decizie",
+      "returned": "Returnat",
       "submitted": "Trimis"
     },
     "empty": {
@@ -53,7 +54,7 @@
       "title": "În curs de examinare"
     },
     "needsAttention": {
-      "description": "Cereri respinse care ar putea necesita o corecție înainte de retrimitere.",
+      "fixDescription": "Cereri returnate sau respinse care necesită o corecție înainte de retrimitere.",
       "title": "Necesită atenție"
     },
     "reasonLabel": "Motiv",
@@ -65,26 +66,58 @@
       "absence": {
         "title": "Cerere de absență"
       },
+      "complianceException": {
+        "durationHours": "{hours} h",
+        "durationHoursMinutes": "{hours} h {minutes} min",
+        "durationMinutes": "{minutes} min",
+        "overtimeDaily": "Excepție pentru ore suplimentare zilnice",
+        "overtimeMonthly": "Excepție pentru ore suplimentare lunare",
+        "overtimeWeekly": "Excepție pentru ore suplimentare săptămânale",
+        "planned": "Planificat: {duration}",
+        "restPeriod": "Excepție pentru perioada de odihnă",
+        "title": "Excepție de conformitate",
+        "validity": "Valabil: {window} ({timeZone})"
+      },
+      "earlierClaim": {
+        "mileage": "Cerere anterioară pentru kilometraj",
+        "perDiem": "Cerere anterioară pentru diurnă",
+        "receipt": "Cerere anterioară pentru chitanță",
+        "title": "Cerere anterioară"
+      },
+      "expenseReport": {
+        "adjustmentOf": "Ajustare a „{title}”",
+        "adjustmentOfUntitled": "Ajustare a unui raport anterior",
+        "kind": {
+          "standaloneMileage": "Kilometraj individual",
+          "standaloneReceipt": "Chitanță individuală",
+          "trip": "Raport de deplasare"
+        },
+        "untitledMileage": "Kilometraj fără titlu",
+        "untitledReceipt": "Chitanță fără titlu",
+        "untitledTrip": "Deplasare fără titlu"
+      },
       "timeCorrection": {
         "subtitle": "Corecție pentru o înregistrare de pontaj",
         "title": "Cerere de corectare a pontajului"
-      },
-      "travelExpense": {
-        "title": "Decont de cheltuieli de deplasare"
       }
     },
-    "scope": "Cererile tale de absență, de corectare a pontajului și de cheltuieli anterioare din organizația activă",
+    "returnNoteLabel": "Nota evaluatorului",
+    "scopeAllRequests": "Cererile dvs. de absență, corectare a timpului, excepție de conformitate și decont de cheltuieli din organizația activă",
     "sourceError": {
       "absence": "Cererile de absență nu au putut fi încărcate.",
+      "complianceException": "Excepțiile de conformitate nu au putut fi încărcate.",
+      "earlierClaim": "Cererile anterioare nu au putut fi încărcate.",
+      "expenseReport": "Deconturile de cheltuieli nu au putut fi încărcate.",
       "timeCorrection": "Cererile de corectare a pontajului nu au putut fi încărcate.",
-      "title": "Unele cereri nu au putut fi încărcate.",
-      "travelExpense": "Cererile de decontare a cheltuielilor de deplasare nu au putut fi încărcate."
+      "title": "Unele cereri nu au putut fi încărcate."
     },
     "status": {
       "approved": "Aprobat",
       "cancelled": "Anulat",
+      "expired": "Expirat",
       "inReview": "În examinare",
-      "rejected": "Respins"
+      "rejected": "Respins",
+      "returned": "Returnat"
     },
     "summary": {
       "ariaLabel": "Rezumat cereri",
@@ -96,8 +129,10 @@
     "title": "Cererile mele",
     "types": {
       "absence": "Absență",
-      "timeCorrection": "Corectare pontaj",
-      "travelExpense": "Cheltuială de deplasare"
+      "complianceException": "Excepție de conformitate",
+      "earlierClaim": "Cerere anterioară",
+      "expenseReport": "Decont de cheltuieli",
+      "timeCorrection": "Corectare pontaj"
     },
     "unavailableTitle": "Cereri indisponibile"
   }

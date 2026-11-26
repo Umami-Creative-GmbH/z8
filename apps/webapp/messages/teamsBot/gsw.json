@@ -80,6 +80,7 @@
     "pendingApprovals": "Offeni Gnehmigunge",
     "pendingExceptionRequests": "{count, plural, one {# offeni Uusnahmeaafraag wartet uf Prüefig} other {# offeni Uusnahmeaafraage wartet uf Prüefig}}",
     "returns": "Chunt am {date} zrugg",
+    "reviewComplianceExceptions": "Ausnahmeanträge überprüfen",
     "since": "Sit {time}",
     "textClockedInEmployee": "• {name} - sit {clockedInAt} ({duration})",
     "textCompliance": "**⚠️ Compliance:**",

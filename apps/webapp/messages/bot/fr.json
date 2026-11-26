@@ -231,6 +231,7 @@
       "openDashboard": "Ouvrir le tableau de bord Z8",
       "openShifts": "Créneaux ouverts :",
       "pendingApprovals": "Approbations en attente :",
+      "reviewComplianceExceptions": "Examiner les demandes d'exception",
       "title": "Récapitulatif quotidien - {date}",
       "viewDashboardAt": "Consulter le tableau de bord complet sur {url}",
       "whosOut": "Qui est absent :"

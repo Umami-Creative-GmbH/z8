@@ -20,6 +20,10 @@
           "description": "Nylige ugyldige verifiseringer: {invalidVerifications}",
           "title": "Revisjonsverifisering mislyktes"
         },
+        "pendingExceptions": {
+          "description": "{count, plural, other {# samsvarsunntak venter på avgjørelse} }",
+          "title": "Ventende samsvarsunntak"
+        },
         "sensitiveAction": {
           "description": "{action} på {entityType}",
           "title": "Sensitiv handling: {action}"
@@ -53,7 +57,10 @@
           "generalPolicyViolations": "Andre brudd på retningslinjer: {count}",
           "overtimeViolations": "Overtidsbrudd: {count}",
           "pendingExceptions": "Ventende unntak: {count}",
-          "restPeriodViolations": "Brudd på hviletid: {count}"
+          "restPeriodViolations": "Brudd på hviletid: {count}",
+          "statutoryAcknowledgements": "Lovpålagte bekreftelser: {pending} venter, {stale} ugyldiggjort av nyere arbeid eller vakter",
+          "statutoryFindings": "{warning, plural, one {Lovpålagte funn: {critical} kritiske, # advarsel} other {Lovpålagte funn: {critical} kritiske, # advarsler}}",
+          "statutoryUnavailable": "Noen lovpålagte kontroller kunne ikke lastes inn."
         }
       },
       "footer": {
@@ -61,12 +68,19 @@
         "refreshMeaning": "Oppdatering laster inn registrerte signaler på nytt; den revurderer ikke funn etter nye retningslinjer."
       },
       "links": {
-        "inspectCompliance": "Inspiser samsvar",
         "inspectInAuditLog": "Inspiser i revisjonslogg",
         "openAuditExport": "Åpne revisjonseksport",
         "openAuditLog": "Åpne revisjonslogg",
-        "openComplianceSettings": "Åpne samsvarsinnstillinger",
-        "reviewAuditExport": "Gjennomgå revisjonseksport"
+        "reviewAuditExport": "Gjennomgå revisjonseksport",
+        "reviewComplianceExceptions": "Gjennomgå samsvarsunntak",
+        "reviewPolicyViolations": "Gjennomgå retningslinjebrudd",
+        "statutoryDomain": {
+          "minijob": "Minijobb: {count} åpne",
+          "on_call": "Beredskap: {count} åpne",
+          "short_term": "Korttidsarbeid: {count} åpne",
+          "working_student": "Arbeidende studenter: {count} åpne",
+          "youth_apprentice": "Ungdom og lærlinger: {count} åpne"
+        }
       },
       "loading": "Laster inn samsvarssignaler",
       "overview": "Samsvarsoversikt",
@@ -104,6 +118,7 @@
             "healthy": "Ingen nylige problemer med personalretningslinjer ble oppdaget",
             "warning": "Personalsamsvar avviker"
           },
+          "statutoryReviews": "Lovpålagte gjennomganger",
           "title": "Samsvar for arbeidsstyrke"
         }
       },
@@ -121,11 +136,6 @@
       }
     },
     "exception": {
-      "approved": "Unntak godkjent",
-      "approvedDescription": "Samsvarsunntaket er godkjent.",
-      "approveFailed": "Kunne ikke godkjenne",
-      "approveFor": "Godkjenn unntak ({type}) for {name}",
-      "loadError": "Ventende unntaksforespørsler kunne ikke lastes inn.",
       "plannedDuration": "Planlagt",
       "plannedDurationHelp": "Estimer hvor mye ekstra tid du forventer å trenge utover grensen.",
       "plannedHours": "Planlagte timer",
@@ -135,35 +145,16 @@
       "reason": "Begrunnelse for unntak",
       "reasonPlaceholder": "Forklar hvorfor du trenger dette unntaket (f.eks. hastende prosjektfrist, kritisk kundemøte)...",
       "reasonRequiredDescription": "Vennligst oppgi en begrunnelse for unntaksforespørselen.",
-      "rejectDescription": "Oppgi en begrunnelse for å avvise denne unntaksforespørselen (valgfritt)",
-      "rejected": "Unntak avslått",
-      "rejectedDescription": "Samsvarsunntaket har blitt avslått.",
-      "rejectFailed": "Kunne ikke avvise",
-      "rejectFor": "Avvis unntak ({type}) for {name}",
-      "rejectionPlaceholder": "Oppgi årsak til å avslå dette unntaket...",
-      "rejectionReason": "Årsak til avslag",
-      "rejectionReasonTooLong": "Årsak må være 500 tegn eller færre.",
-      "rejectTitle": "Avslå unntaksforespørsel",
       "requestDescription": "Be om forhåndsgodkjenning fra lederen din for å fortsette til tross for samsvarsbegrensninger. Godkjente unntak er gyldige i 24 timer.",
-      "requestedAt": "Forespurt",
       "requestFailed": "Forespørsel mislyktes",
       "requestSubmitted": "Unntaksforespørsel sendt inn",
       "requestSubmittedDescription": "Lederen din blir varslet og kan godkjenne eller avslå forespørselen din.",
       "requestTitle": "Be om samsvarsunntak",
       "submit": "Send inn forespørsel",
-      "type": "Unntakstype",
-      "types": {
-        "overtimeDaily": "Daglig overtid",
-        "overtimeMonthly": "Månedlig overtid",
-        "overtimeWeekly": "Ukentlig overtid",
-        "restPeriod": "Hvileperiode"
-      }
+      "type": "Unntakstype"
     },
     "hasApprovedException": "Du har et godkjent unntak. Du kan fortsette.",
     "moreAlerts": "mer",
-    "noExceptions": "Ingen ventende unntaksforespørsler",
-    "pendingExceptions": "Ventende unntaksforespørsler",
-    "pendingExceptionsDescription": "Gå gjennom unntaksforespørsler som krever din godkjenning",
     "requestException": "Be om unntak",
     "restPeriodMessage": "Du trenger {time} mer hvile før du kan stemple inn. Neste tillatte innstempling: {nextTime}",
     "restPeriodRequired": "Hvileperiode påkrevd"

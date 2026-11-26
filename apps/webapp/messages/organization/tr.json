@@ -217,9 +217,33 @@
     },
     "invite": {
       "allowCreateOrganizations": "Bu kullanıcının organizasyon oluşturmasına izin ver",
+      "contractor": {
+        "companyName": "Yüklenici şirket",
+        "compensation": {
+          "description": "Katıldıklarında görevlerinin başlangıcından itibaren geçerli olur. Yalnızca kuruluş yöneticileri görebilir; daha sonra da ayarlayabilirsiniz.",
+          "label": "Ücreti şimdi belirleyin"
+        },
+        "legend": "Yüklenici ayrıntıları (isteğe bağlı)",
+        "noProjects": "Henüz etkin proje yok. Projeleri daha sonra atayabilirsiniz.",
+        "plannedEndDate": "Planlanan görev bitişi",
+        "plannedEndDateDescription": "Son çalışma günü. Katıldıklarında, erişimlerini ve lisanslarını sonlandıran planlanmış bir ayrılma tarihi haline gelir.",
+        "plannedEndDateNotFuture": "Planlanan görev bitişi bugünden sonraki bir tarih olmalıdır.",
+        "projects": "Projeler",
+        "referenceCode": "PO veya masraf merkezi",
+        "vatId": "KDV Numarası"
+      },
       "description": "{organizationName} organizasyonuna katılmak için davetiye gönder",
       "emailLabel": "E-posta Adresi",
+      "engagement": {
+        "contractorDescription": "Projelerdeki süreyi takip eder; istihdam şartları, çalışma politikası veya izin hakkı yoktur",
+        "employee": "Çalışan",
+        "employeeDescription": "İstihdam şartları, çalışma politikası ve izin hakkı geçerlidir",
+        "label": "Olarak davet et"
+      },
       "error": "Davetiye gönderilemedi",
+      "errors": {
+        "projectNotFound": "Seçilen bir proje artık bu kuruluşa ait değil. Projeleri tekrar seçin."
+      },
       "kioskOnly": {
         "description": "Şirket e-postası olmayan personel içindir. Giriş yapamazlar ve yalnızca kiosk'larda PIN kodları ile giriş-çıkış yapabilirler. Daha sonra bir e-posta ekleyebilirsiniz.",
         "firstName": "Ad",
