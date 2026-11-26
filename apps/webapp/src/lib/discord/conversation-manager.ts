@@ -8,6 +8,12 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { discordConversation, discordUserMapping } from "@/db/schema";
+import {
+	type ChatDispatchTargetHint,
+	listInstallationActiveConversations,
+	resolveInstallationConversationForUser,
+	resolveSwitchedActiveChatInstallation,
+} from "@/lib/chat-installations/runtime-target";
 import { createLogger } from "@/lib/logger";
 import { createDM, type DiscordCallOutcome, openDMChannelWithOutcome } from "./api";
 
@@ -46,9 +52,8 @@ export async function saveConversation(
 	try {
 		// The recipient reached the bot again: approval cards waiting for a
 		// usable destination can be delivered now.
-		const { rearmApprovalDeliveryForRepairedDestination } = await import(
-			"@/lib/approvals/delivery/recovery"
-		);
+		const { rearmApprovalDeliveryForRepairedDestination } =
+			await import("@/lib/approvals/delivery/recovery");
 		await rearmApprovalDeliveryForRepairedDestination({
 			organizationId,
 			userId,
@@ -88,7 +93,22 @@ export async function resolveApprovalDMChannel(
 export async function getChannelIdForUser(
 	userId: string,
 	organizationId: string,
+	options?: ChatDispatchTargetHint,
 ): Promise<string | null> {
+	const resolution = await resolveSwitchedActiveChatInstallation(
+		organizationId,
+		"discord",
+		options,
+	);
+	if (resolution.kind === "organization_owned_active") {
+		const conv = await resolveInstallationConversationForUser({
+			organizationId,
+			installationId: resolution.target.installationId,
+			userId,
+		});
+		return conv?.externalConversationId ?? null;
+	}
+
 	const conversation = await db.query.discordConversation.findFirst({
 		where: and(
 			eq(discordConversation.userId, userId),
@@ -134,7 +154,24 @@ export async function getOrCreateDMChannel(
  */
 export async function getOrganizationConversations(
 	organizationId: string,
+	options?: ChatDispatchTargetHint,
 ): Promise<Array<{ userId: string; channelId: string }>> {
+	const resolution = await resolveSwitchedActiveChatInstallation(
+		organizationId,
+		"discord",
+		options,
+	);
+	if (resolution.kind === "organization_owned_active") {
+		const conversations = await listInstallationActiveConversations({
+			organizationId,
+			installationId: resolution.target.installationId,
+		});
+		return conversations.map((conv) => ({
+			userId: conv.userId,
+			channelId: conv.externalConversationId,
+		}));
+	}
+
 	const conversations = await db.query.discordConversation.findMany({
 		where: and(
 			eq(discordConversation.organizationId, organizationId),

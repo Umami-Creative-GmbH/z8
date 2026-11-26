@@ -18,6 +18,7 @@ import type { ApprovalEscalationJobResult } from "@/lib/approvals/escalation/sch
 import type { AbsenceCategoryNoticesJobResult } from "@/lib/jobs/absence-category-notices";
 import type { AbsenceDeputyRemindersJobResult } from "@/lib/jobs/absence-deputy-reminders";
 import type { BillingSeatReconciliationResult } from "@/lib/jobs/billing-seat-reconciliation";
+import type { DurableChatDispatchMaintenanceResult } from "@/lib/jobs/durable-chat-dispatch-maintenance";
 import type { ClosedMonthAutoCloseJobResult } from "@/lib/jobs/closed-month-auto-close";
 import type { ContractChangeBatchRecoveryResult } from "@/lib/jobs/contract-change-batches";
 import type { DeputyCoverSummariesJobResult } from "@/lib/jobs/deputy-cover-summaries";
@@ -816,6 +817,17 @@ export const CRON_JOBS = {
 			return deliverMfaNotices();
 		},
 		defaultJobOptions: { attempts: 2, priority: 5 },
+	},
+	"cron:durable-chat-dispatch-maintenance": {
+		schedule: "0 * * * *",
+		description:
+			"Close unresolved uncertain durable chat notification dispatches as unknown after 7 days",
+		processor: async (): Promise<DurableChatDispatchMaintenanceResult> => {
+			const { runDurableChatDispatchMaintenance } =
+				await import("@/lib/jobs/durable-chat-dispatch-maintenance");
+			return runDurableChatDispatchMaintenance();
+		},
+		defaultJobOptions: { attempts: 2, priority: 8 },
 	},
 } as const satisfies Record<string, CronJobDefinition>;
 

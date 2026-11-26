@@ -8,10 +8,29 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { teamsTenantConfig } from "@/db/schema";
+import {
+	type ChatDispatchTargetHint,
+	listSwitchedActiveChatInstallationsForProvider,
+	resolveSwitchedActiveChatInstallation,
+	type SwitchedActiveChatInstallation,
+} from "@/lib/chat-installations/runtime-target";
 import { createLogger } from "@/lib/logger";
 import type { ResolvedTenant, TenantResolutionResult } from "./types";
 
 const logger = createLogger("TeamsTenantResolver");
+
+function toResolvedTeamsTenantFromInstallation(
+	target: SwitchedActiveChatInstallation,
+): ResolvedTenant {
+	return {
+		tenantId: target.externalSpaceId ?? target.installationId,
+		tenantName: target.externalSpaceName,
+		organizationId: target.organizationId,
+		setupStatus: "active",
+		...target.effectiveSettings,
+		serviceUrl: null,
+	};
+}
 
 /**
  * Resolve a Teams tenant ID to a Z8 organization configuration
@@ -70,9 +89,18 @@ export async function resolveTenant(tenantId: string): Promise<TenantResolutionR
  */
 export async function getTenantConfigByOrganization(
 	organizationId: string,
-	options: { throwOnError?: boolean } = {},
+	options: { throwOnError?: boolean } & ChatDispatchTargetHint = {},
 ): Promise<ResolvedTenant | null> {
 	try {
+		const resolution = await resolveSwitchedActiveChatInstallation(
+			organizationId,
+			"teams",
+			options,
+		);
+		if (resolution.kind === "organization_owned_active") {
+			return toResolvedTeamsTenantFromInstallation(resolution.target);
+		}
+
 		const config = await db.query.teamsTenantConfig.findFirst({
 			where: eq(teamsTenantConfig.organizationId, organizationId),
 		});
@@ -143,24 +171,32 @@ export async function isTeamsEnabledForOrganization(
  */
 export async function getAllActiveTenants(): Promise<ResolvedTenant[]> {
 	try {
+		const switchedInstallations = await listSwitchedActiveChatInstallationsForProvider("teams");
+		const switchedOrgIds = new Set(switchedInstallations.map((inst) => inst.organizationId));
+		const switchedTenants = switchedInstallations.map(toResolvedTeamsTenantFromInstallation);
+
 		const configs = await db.query.teamsTenantConfig.findMany({
 			where: eq(teamsTenantConfig.setupStatus, "active"),
 		});
 
-		return configs.map((config) => ({
-			tenantId: config.tenantId,
-			tenantName: config.tenantName,
-			organizationId: config.organizationId,
-			setupStatus: config.setupStatus,
-			enableApprovals: config.enableApprovals,
-			enableCommands: config.enableCommands,
-			enableDailyDigest: config.enableDailyDigest,
-			enableEscalations: config.enableEscalations,
-			digestTime: config.digestTime,
-			digestTimezone: config.digestTimezone,
-			escalationTimeoutHours: config.escalationTimeoutHours,
-			serviceUrl: config.serviceUrl,
-		}));
+		const legacyTenants = configs
+			.filter((config) => !switchedOrgIds.has(config.organizationId))
+			.map((config) => ({
+				tenantId: config.tenantId,
+				tenantName: config.tenantName,
+				organizationId: config.organizationId,
+				setupStatus: config.setupStatus,
+				enableApprovals: config.enableApprovals,
+				enableCommands: config.enableCommands,
+				enableDailyDigest: config.enableDailyDigest,
+				enableEscalations: config.enableEscalations,
+				digestTime: config.digestTime,
+				digestTimezone: config.digestTimezone,
+				escalationTimeoutHours: config.escalationTimeoutHours,
+				serviceUrl: config.serviceUrl,
+			}));
+
+		return [...switchedTenants, ...legacyTenants];
 	} catch (error) {
 		logger.error({ error }, "Failed to get all active tenants");
 		return [];

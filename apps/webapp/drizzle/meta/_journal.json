@@ -2381,6 +2381,13 @@
       "when": 1814025600000,
       "tag": "0339_chat_installations_foundation",
       "breakpoints": true
+    },
+    {
+      "idx": 343,
+      "version": "7",
+      "when": 1814371200000,
+      "tag": "0343_durable_chat_notification_dispatch",
+      "breakpoints": true
     }
   ]
 }

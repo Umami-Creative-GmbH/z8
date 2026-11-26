@@ -10,6 +10,14 @@ import { db } from "@/db";
 import { approvalRequest, employee } from "@/db/schema";
 import { isApprovalNotificationDeliveredByOwner } from "@/lib/approvals/delivery/store";
 import { resolveBotTemporalContext } from "@/lib/bot-platform/temporal-context";
+import {
+	DurableDispatchConfirmedUnsentError,
+	DurableDispatchUncertainError,
+	extractRedactedErrorDiagnostics,
+	isConfirmedUnsentError,
+	isUncertainDispatchError,
+} from "@/lib/chat-installations/durable-dispatch";
+import type { ChatDispatchTargetHint } from "@/lib/chat-installations/runtime-target";
 import { createLogger } from "@/lib/logger";
 import { localizeOutboundNotification } from "./outbound-localization";
 import { resolveRecipientDisplayContext } from "./recipient-display-context";
@@ -41,10 +49,7 @@ export async function isTelegramAvailable(
 		return await isTelegramEnabledForOrganization(organizationId);
 	} catch (error) {
 		if (options.throwOnError) throw error;
-		logger.debug(
-			{ error, organizationId },
-			"Telegram availability check failed",
-		);
+		logger.debug({ error, organizationId }, "Telegram availability check failed");
 		return false;
 	}
 }
@@ -54,8 +59,9 @@ export async function isTelegramAvailable(
  */
 export async function sendTelegramNotification(
 	params: TelegramNotificationParams,
-	options: { durable?: boolean } = {},
+	options: { durable?: boolean; dispatchTarget?: ChatDispatchTargetHint } = {},
 ): Promise<undefined | "unavailable"> {
+	let providerCallStarted = false;
 	try {
 		const {
 			getChatIdForUser,
@@ -65,7 +71,12 @@ export async function sendTelegramNotification(
 		} = await import("@/lib/telegram");
 		const { escapeMarkdownV2 } = await import("@/lib/telegram/formatters");
 
-		const botConfig = await getBotConfigByOrganization(params.organizationId);
+		const hasTarget = Boolean(
+			options.dispatchTarget?.installationId || options.dispatchTarget?.credentialRevisionId,
+		);
+		const botConfig = hasTarget
+			? await getBotConfigByOrganization(params.organizationId, options.dispatchTarget)
+			: await getBotConfigByOrganization(params.organizationId);
 		if (!botConfig) return options.durable ? "unavailable" : undefined;
 		const display = await resolveRecipientDisplayContext({
 			userId: params.userId,
@@ -90,10 +101,7 @@ export async function sendTelegramNotification(
 		}
 
 		// Handle approval-related notifications specially
-		if (
-			params.type === "approval_request_submitted" &&
-			params.entityType === "approval_request"
-		) {
+		if (params.type === "approval_request_submitted" && params.entityType === "approval_request") {
 			const approval = await db.query.approvalRequest.findFirst({
 				where: and(
 					eq(approvalRequest.id, params.entityId || ""),
@@ -111,6 +119,7 @@ export async function sendTelegramNotification(
 				});
 
 				if (emp) {
+					providerCallStarted = true;
 					await sendApprovalMessageToManager(
 						approval.id,
 						emp.id,
@@ -153,7 +162,9 @@ export async function sendTelegramNotification(
 			return options.durable ? "unavailable" : undefined;
 		}
 
-		const chatId = await getChatIdForUser(params.userId, params.organizationId);
+		const chatId = hasTarget
+			? await getChatIdForUser(params.userId, params.organizationId, options.dispatchTarget)
+			: await getChatIdForUser(params.userId, params.organizationId);
 		if (!chatId) {
 			logger.debug(
 				{ userId: params.userId, organizationId: params.organizationId },
@@ -177,19 +188,38 @@ export async function sendTelegramNotification(
 			text += `\n\n[${escapeMarkdownV2(localized.actionLabel)}](${escapeMarkdownV2(params.actionUrl)})`;
 		}
 
+		providerCallStarted = true;
 		const acknowledgement = await sendMessage(botConfig.botToken, {
 			chat_id: chatId,
 			text,
 			parse_mode: "MarkdownV2",
 		});
-		if (options.durable && !acknowledgement) throw new Error("telegram_delivery_unacknowledged");
+		if (options.durable && !acknowledgement) {
+			throw new DurableDispatchUncertainError("telegram_delivery_unacknowledged", {
+				reason: "provider_unacknowledged",
+			});
+		}
 
-		logger.debug(
-			{ userId: params.userId, type: params.type },
-			"Telegram notification sent",
-		);
+		logger.debug({ userId: params.userId, type: params.type }, "Telegram notification sent");
 	} catch (error) {
-		if (options.durable) throw error;
+		if (options.durable) {
+			if (isConfirmedUnsentError(error) || isUncertainDispatchError(error)) {
+				throw error;
+			}
+			const message = error instanceof Error ? error.message : "telegram_delivery_failed";
+			if (!providerCallStarted) {
+				throw new DurableDispatchConfirmedUnsentError(
+					message,
+					extractRedactedErrorDiagnostics(error, "telegram_preflight_failed"),
+					error,
+				);
+			}
+			throw new DurableDispatchUncertainError(
+				message,
+				extractRedactedErrorDiagnostics(error, "telegram_provider_call_uncertain"),
+				{ classification: "provider_error", causeError: error },
+			);
+		}
 		logger.error({ error, params }, "Failed to send Telegram notification");
 		throw error;
 	}
