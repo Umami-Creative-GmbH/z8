@@ -132,7 +132,19 @@ export interface ChatVerificationEvidence {
 	privateDeliveryChannelId?: string | null;
 	privateDeliveryExpiresAt?: string | null;
 	commandsRegisteredAt?: string | null;
-	lastFailureStep?: "credentials" | "identity" | "signed_event" | "private_test" | null;
+	commandsRegisteredRevisionId?: string | null;
+	commandsRegistrationStatus?: "pending" | "registered" | "failed" | null;
+	commandsRegistrationErrorCode?: string | null;
+	commandsRegistrationAttemptedAt?: string | null;
+	privateDeliveryErrorCode?: string | null;
+	privateDeliveryRecoveryHint?: string | null;
+	lastFailureStep?:
+		| "credentials"
+		| "identity"
+		| "signed_event"
+		| "command_registration"
+		| "private_test"
+		| null;
 	lastFailureCode?: string | null;
 	lastFailureAt?: string | null;
 	enrollmentProofCount?: number;

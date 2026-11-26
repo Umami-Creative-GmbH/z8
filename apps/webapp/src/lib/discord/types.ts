@@ -62,6 +62,7 @@ export interface DiscordInteraction {
 	type: number;
 	data?: DiscordInteractionData;
 	token: string;
+	guild_id?: string;
 	member?: DiscordMember;
 	user?: DiscordUser;
 	channel_id?: string;

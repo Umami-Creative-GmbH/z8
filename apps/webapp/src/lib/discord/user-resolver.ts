@@ -7,7 +7,13 @@
 
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { discordLinkCode, discordUserMapping, employee } from "@/db/schema";
+import {
+	chatInstallation,
+	chatInstallationMemberLink,
+	discordLinkCode,
+	discordUserMapping,
+	employee,
+} from "@/db/schema";
 import { resolveCommandActorEmployee } from "@/lib/integrations/resolve-command-actor";
 import { createLogger } from "@/lib/logger";
 import type { ResolvedDiscordUser } from "./types";
@@ -23,14 +29,73 @@ export type DiscordUserResolutionResult =
 	| { status: "not_linked"; discordUserId: string };
 
 /**
- * Resolve a Discord user to a Z8 user within an organization
+ * Resolve a Discord user to a Z8 user within an organization.
+ * When `options.installationId` is supplied, checks installation-scoped live member
+ * links first (strictly excluding candidate enrollments) and only falls back to legacy
+ * `discord_user_mapping` if the installation is legacy-backed.
  */
 export async function resolveDiscordUser(
 	discordUserId: string,
 	organizationId: string,
 	discordUsername?: string,
+	options?: { installationId?: string | null },
 ): Promise<DiscordUserResolutionResult> {
-	// Check existing mapping
+	if (options?.installationId && typeof db.select === "function") {
+		const [instLink] = await db
+			.select()
+			.from(chatInstallationMemberLink)
+			.where(
+				and(
+					eq(chatInstallationMemberLink.organizationId, organizationId),
+					eq(chatInstallationMemberLink.installationId, options.installationId),
+					eq(chatInstallationMemberLink.externalUserId, discordUserId),
+					eq(chatInstallationMemberLink.isCandidateEnrollment, false),
+					eq(chatInstallationMemberLink.isActive, true),
+				),
+			)
+			.limit(1);
+
+		if (instLink) {
+			const emp = await resolveCommandActorEmployee(instLink.userId, instLink.organizationId);
+			if (!emp) return { status: "not_linked", discordUserId };
+
+			await db
+				.update(chatInstallationMemberLink)
+				.set({
+					lastSeenAt: new Date(),
+					...(discordUsername ? { externalUsername: discordUsername } : {}),
+				})
+				.where(eq(chatInstallationMemberLink.id, instLink.id));
+
+			return {
+				status: "found",
+				user: {
+					userId: instLink.userId,
+					employeeId: emp.id,
+					organizationId: instLink.organizationId,
+					discordUserId: instLink.externalUserId,
+					discordUsername: discordUsername ?? instLink.externalUsername,
+				},
+			};
+		}
+
+		// Do not leak legacy mappings into a non-legacy organization-owned Discord installation.
+		const [inst] = await db
+			.select({ legacyTable: chatInstallation.legacyTable })
+			.from(chatInstallation)
+			.where(
+				and(
+					eq(chatInstallation.id, options.installationId),
+					eq(chatInstallation.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+		if (inst && inst.legacyTable === null) {
+			return { status: "not_linked", discordUserId };
+		}
+	}
+
+	// Check existing legacy mapping
 	const mapping = await db.query.discordUserMapping.findFirst({
 		where: and(
 			eq(discordUserMapping.discordUserId, discordUserId),
@@ -40,10 +105,7 @@ export async function resolveDiscordUser(
 	});
 
 	if (mapping) {
-		const emp = await resolveCommandActorEmployee(
-			mapping.userId,
-			mapping.organizationId,
-		);
+		const emp = await resolveCommandActorEmployee(mapping.userId, mapping.organizationId);
 		if (!emp) return { status: "not_linked", discordUserId };
 
 		// Update last seen and username if changed
@@ -109,10 +171,7 @@ export async function generateLinkCode(
 		status: "pending",
 	});
 
-	logger.info(
-		{ userId, organizationId, codeLength: code.length },
-		"Discord link code generated",
-	);
+	logger.info({ userId, organizationId, codeLength: code.length }, "Discord link code generated");
 
 	return { code, expiresAt };
 }
@@ -175,10 +234,7 @@ export async function claimLinkCode(
 
 	// Get employee ID
 	const emp = await db.query.employee.findFirst({
-		where: and(
-			eq(employee.userId, linkCode.userId),
-			eq(employee.organizationId, organizationId),
-		),
+		where: and(eq(employee.userId, linkCode.userId), eq(employee.organizationId, organizationId)),
 		columns: { id: true },
 	});
 
@@ -225,10 +281,7 @@ export async function claimLinkCode(
 /**
  * Unlink a Discord account
  */
-export async function unlinkDiscordUser(
-	userId: string,
-	organizationId: string,
-): Promise<boolean> {
+export async function unlinkDiscordUser(userId: string, organizationId: string): Promise<boolean> {
 	const result = await db
 		.update(discordUserMapping)
 		.set({ isActive: false })

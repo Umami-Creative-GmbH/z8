@@ -12,54 +12,11 @@
 
 import type { NextRequest } from "next/server";
 import { connection, NextResponse } from "next/server";
+import { verifyDiscordSignature } from "@/lib/discord/signature";
+import { InteractionResponseType, InteractionType } from "@/lib/discord/types";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("DiscordInteractions");
-
-/**
- * Verify Discord interaction signature using Ed25519.
- * Discord sends `X-Signature-Ed25519` and `X-Signature-Timestamp` headers.
- */
-async function verifyDiscordSignature(
-	publicKey: string,
-	signature: string,
-	timestamp: string,
-	body: string,
-): Promise<boolean> {
-	try {
-		const encoder = new TextEncoder();
-		const keyBytes = hexToUint8Array(publicKey);
-
-		const cryptoKey = await crypto.subtle.importKey(
-			"raw",
-			keyBytes.buffer as ArrayBuffer,
-			{ name: "Ed25519", namedCurve: "Ed25519" },
-			false,
-			["verify"],
-		);
-
-		const signatureBytes = hexToUint8Array(signature);
-		const message = encoder.encode(timestamp + body);
-
-		return await crypto.subtle.verify(
-			"Ed25519",
-			cryptoKey,
-			signatureBytes.buffer as ArrayBuffer,
-			message,
-		);
-	} catch (error) {
-		logger.error({ error }, "Signature verification failed");
-		return false;
-	}
-}
-
-function hexToUint8Array(hex: string): Uint8Array {
-	const bytes = new Uint8Array(hex.length / 2);
-	for (let i = 0; i < hex.length; i += 2) {
-		bytes[i / 2] = Number.parseInt(hex.substring(i, i + 2), 16);
-	}
-	return bytes;
-}
 
 export async function POST(
 	request: NextRequest,
@@ -103,8 +60,25 @@ export async function POST(
 		const interaction = JSON.parse(bodyText);
 
 		// Handle PING (Discord sends this to verify the endpoint)
-		if (interaction.type === 1) {
-			return NextResponse.json({ type: 1 });
+		if (interaction.type === InteractionType.PING) {
+			return NextResponse.json({ type: InteractionResponseType.PONG });
+		}
+
+		// Retiring legacy Discord installations continue servicing old approval card button
+		// clicks (MESSAGE_COMPONENT) under current authority, while refusing new slash commands.
+		if (
+			bot.setupStatus === "retiring" &&
+			interaction.type === InteractionType.APPLICATION_COMMAND
+		) {
+			return NextResponse.json({
+				type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+				data: {
+					content:
+						"This Discord bot is retiring. Please use your organization's active Z8 Discord bot or open Z8 directly.",
+					flags: 64,
+					allowed_mentions: { parse: [] },
+				},
+			});
 		}
 
 		// Process the interaction asynchronously

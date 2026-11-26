@@ -444,6 +444,7 @@ const sourceShape0: CatalogSourceMetadata = {
 				teamsPrepare: 1,
 				teamsSwitch: 1,
 				telegram: 1,
+				discordLifecycle: 1,
 			},
 		},
 		onboarding: {
