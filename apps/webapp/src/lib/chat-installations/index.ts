@@ -35,6 +35,19 @@ export {
 	backfillOrganizationChatInstallations,
 } from "./backfill";
 export {
+	type ApprovalKindDisclosure,
+	type ApprovalKindSupportMode,
+	buildProviderCapabilityDisclosure,
+	type CapabilityDisclosureDb,
+	type ChatFeatureCapabilityItem,
+	type ChatFeatureCapabilityKind,
+	type ChatFeatureCapabilityNoteCode,
+	type EscalationPolicyDisclosure,
+	getProviderCapabilityDisclosure,
+	mapPilotAdmissionToSupportMode,
+	type ProviderCapabilityDisclosure,
+} from "./capability-disclosure";
+export {
 	buildCredentialRevisionPrefix,
 	type CleanupCredentialRevisionResult,
 	type CredentialRevisionRecord,
@@ -115,8 +128,12 @@ export {
 	handleSlackCandidateCommandRequest,
 	handleSlackCandidateEventRequest,
 	handleSlackCandidateInteractionRequest,
+	handleSlackInstallationCommandRequest,
+	handleSlackInstallationEventRequest,
+	handleSlackInstallationInteractionRequest,
 	type SlackCandidateHttpRequestInput,
 	type SlackCandidateHttpResponse,
+	type SlackInstallationRouteDeps,
 } from "./slack-candidate-routes";
 export {
 	buildSlackCandidateSetupView,
@@ -142,6 +159,34 @@ export {
 	type SlackVerificationStepView,
 	sendSlackCandidateTestMessage,
 } from "./slack-setup";
+export {
+	buildChatSwitchImpactPreview,
+	CHAT_INSTALLATION_RETIREMENT_DAYS,
+	CHAT_INSTALLATION_RETIREMENT_HOURS,
+	type ChatSwitchAuditEvent,
+	type ChatSwitchDb,
+	type ChatSwitchImpactPreview,
+	type ChatSwitchLifecycleDeps,
+	type ChatSwitchRefusalCode,
+	classifyEmployeeSwitchReachability,
+	computeRetirementDeadline,
+	computeSwitchImpactDigest,
+	type ConfirmChatInstallationSwitchInput,
+	type ConfirmChatInstallationSwitchResult,
+	confirmChatInstallationSwitch,
+	type DisconnectLegacySlackResult,
+	disconnectLegacySlackInstallation,
+	type EmployeeSwitchReachabilitySummary,
+	evaluateInstallationRetirementEligibility,
+	hasMaterialSwitchImpactChanged,
+	isChatInstallationSwitchEnabled,
+	type RetireSettledChatInstallationsResult,
+	type RetiringInstallationPreviewItem,
+	retireSettledChatInstallations,
+	type SwitchImpactDigestInput,
+	type SwitchInstallationPreviewItem,
+	type SwitchMaterialCounts,
+} from "./switch-lifecycle";
 export {
 	handleTeamsCandidateHealthRequest,
 	handleTeamsCandidateMessageRequest,

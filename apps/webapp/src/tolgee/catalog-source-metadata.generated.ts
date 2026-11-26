@@ -432,11 +432,13 @@ const sourceShape0: CatalogSourceMetadata = {
 		"settings/integrations": {
 			settings: {
 				calendar: 1,
+				capabilities: 1,
 				chatInstallations: 1,
 				clockinImport: 1,
 				clockodoImport: 1,
 				discord: 1,
 				slack: 1,
+				slackSwitch: 1,
 				teamsNotifications: 1,
 				teamsPrepare: 1,
 				telegram: 1,

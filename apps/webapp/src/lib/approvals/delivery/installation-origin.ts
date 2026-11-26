@@ -460,8 +460,9 @@ export function isUncertainWorkExpiredForUnknownClosure(input: {
 async function loadOrganizationProviderInstallations(
 	organizationId: string,
 	provider: ApprovalDeliveryProvider,
+	dbClient: Pick<typeof defaultDb, "select"> = defaultDb,
 ): Promise<ChatInstallationOriginRecord[]> {
-	const found = await defaultDb
+	const found = await dbClient
 		.select()
 		.from(chatInstallation)
 		.where(
@@ -515,8 +516,9 @@ export async function resolveActiveApprovalDeliveryInstallation(
 export async function loadOrganizationInstallationById(
 	organizationId: string,
 	installationId: string,
+	dbClient: Pick<typeof defaultDb, "select"> = defaultDb,
 ): Promise<ChatInstallationOriginRecord | null> {
-	const [row] = await defaultDb
+	const [row] = await dbClient
 		.select()
 		.from(chatInstallation)
 		.where(
@@ -754,7 +756,9 @@ export async function resolveLegacyCardInstallationId(input: {
 export async function countOutstandingApprovalWorkByInstallation(
 	organizationId: string,
 	installationId: string,
+	options?: { db?: Pick<typeof defaultDb, "select" | "execute"> },
 ): Promise<InstallationOutstandingApprovalCounts> {
+	const dbClient = options?.db ?? defaultDb;
 	const empty: InstallationOutstandingApprovalCounts = {
 		organizationId,
 		installationId,
@@ -773,7 +777,7 @@ export async function countOutstandingApprovalWorkByInstallation(
 		totalOutstanding: 0,
 	};
 
-	const target = await loadOrganizationInstallationById(organizationId, installationId);
+	const target = await loadOrganizationInstallationById(organizationId, installationId, dbClient);
 	if (!target) {
 		return empty;
 	}
@@ -781,6 +785,7 @@ export async function countOutstandingApprovalWorkByInstallation(
 	const providerInstallations = await loadOrganizationProviderInstallations(
 		organizationId,
 		target.provider,
+		dbClient,
 	);
 	const nonCandidateInstallations = providerInstallations.filter(
 		(row) => row.status !== "candidate",
@@ -796,7 +801,7 @@ export async function countOutstandingApprovalWorkByInstallation(
 			: null;
 
 	const messageRows = rows(
-		await defaultDb.execute(sql`
+		await dbClient.execute(sql`
 			select m.lifecycle, count(*)::int as cnt
 			from approval_delivery_message m
 			where m.organization_id = ${organizationId}
@@ -824,7 +829,7 @@ export async function countOutstandingApprovalWorkByInstallation(
 	const openTrackedMessages = openCanonicalMessages + openLegacyOwnerMessages;
 
 	const workRows = rows(
-		await defaultDb.execute(sql`
+		await dbClient.execute(sql`
 			select d.effect,
 				coalesce(d.dispatch_attempt_state, 'none') as attempt_state,
 				count(*)::int as cnt
@@ -888,6 +893,7 @@ export async function countOutstandingApprovalWorkByInstallation(
 		organizationId,
 		installation: target,
 		isUniqueLegacyInstallation,
+		dbClient,
 	});
 
 	return {
@@ -913,12 +919,14 @@ async function countPendingLegacyCardsForInstallation(input: {
 	organizationId: string;
 	installation: ChatInstallationOriginRecord;
 	isUniqueLegacyInstallation: boolean;
+	dbClient?: Pick<typeof defaultDb, "execute">;
 }): Promise<number> {
 	const { organizationId, installation, isUniqueLegacyInstallation } = input;
+	const dbClient = input.dbClient ?? defaultDb;
 	switch (installation.provider) {
 		case "telegram": {
 			const [row] = rows(
-				await defaultDb.execute(sql`
+				await dbClient.execute(sql`
 					select count(*)::int as cnt
 					from telegram_approval_message c
 					join approval_request r
@@ -937,7 +945,7 @@ async function countPendingLegacyCardsForInstallation(input: {
 		}
 		case "slack": {
 			const [row] = rows(
-				await defaultDb.execute(sql`
+				await dbClient.execute(sql`
 					select count(*)::int as cnt
 					from slack_approval_message c
 					join approval_request r
@@ -956,7 +964,7 @@ async function countPendingLegacyCardsForInstallation(input: {
 		}
 		case "discord": {
 			const [row] = rows(
-				await defaultDb.execute(sql`
+				await dbClient.execute(sql`
 					select count(*)::int as cnt
 					from discord_approval_message c
 					join approval_request r
@@ -989,7 +997,7 @@ async function countPendingLegacyCardsForInstallation(input: {
 							)`
 					: sql``;
 			const [row] = rows(
-				await defaultDb.execute(sql`
+				await dbClient.execute(sql`
 					select count(*)::int as cnt
 					from teams_approval_card c
 					join approval_request r

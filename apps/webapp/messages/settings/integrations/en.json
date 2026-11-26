@@ -51,6 +51,42 @@
       "title": "Calendar Sync",
       "titleTemplatePlaceholder": "Out of Office - {categoryName}"
     },
+    "capabilities": {
+      "approvalKind": {
+        "absence": "Absences",
+        "manualTimeSubmission": "Manual time submissions",
+        "policyClockOut": "Automatic clock-outs",
+        "timeCorrection": "Time corrections",
+        "travelExpense": "Travel expenses"
+      },
+      "approvalKindsHeading": "Support by approval kind",
+      "delivery": {
+        "active": "Delivery enabled for this approval kind",
+        "inactive": "Handled in the Z8 inbox unless delivery is enabled"
+      },
+      "description": "Feature availability and approval card behavior are shown separately from connection readiness.",
+      "escalationDeliveryOnlyNote": "Controls channel delivery only; timeout is managed by escalation policy.",
+      "escalationPolicyOwnsTiming": "Your organization's approval escalation policy owns escalation timing ({hours} h response window). The {channelName} escalation setting controls delivery over this channel only.",
+      "feature": {
+        "approvals": "Approvals",
+        "commands": "Commands",
+        "dailyDigest": "Daily digest",
+        "escalations": "Escalations",
+        "notifications": "Notifications"
+      },
+      "featuresHeading": "Channel features",
+      "mode": {
+        "inChatDecision": "In-chat decision",
+        "reviewInZ8": "Review in Z8",
+        "unverified": "Unverified"
+      },
+      "slackReviewNote": "Slack approval cards link to Z8 for authenticated review and decisions.",
+      "state": {
+        "disabled": "Disabled",
+        "enabled": "Enabled"
+      },
+      "title": "{channelName} capabilities & approval support"
+    },
     "chatInstallations": {
       "blockers": {
         "duplicateIdentity": {
@@ -439,6 +475,57 @@
         }
       },
       "title": "Slack"
+    },
+    "slackSwitch": {
+      "acknowledgeUnready": "I understand that {count} active employees still need to connect or verify direct messages with the replacement Slack app, and I want to switch now.",
+      "completeVerificationFirst": "Complete all candidate verification steps above before confirming the switch.",
+      "confirmButton": "Confirm switch to verified Slack app",
+      "description": "Review employee reachability, open approval cards, and in-flight notifications before activating your verified organization-owned Slack app.",
+      "errors": {
+        "alreadySwitched": "This Slack installation is already active.",
+        "candidateNotFound": "No candidate Slack installation was found. Prepare and verify one first.",
+        "candidateNotReady": "Complete all Slack app verification steps before switching.",
+        "candidateVerificationExpired": "Verification proofs for the candidate Slack app have expired. Re-verify before switching.",
+        "confirmFailed": "Could not switch Slack installation.",
+        "impactChanged": "Impact or installation revisions changed since your review. Review the updated summary and confirm again.",
+        "migrationBlocked": "Resolve the migration blockers above before switching Slack installations.",
+        "refreshFailed": "Could not refresh Slack switch impact preview.",
+        "switchNotEnabled": "Switching to an organization-owned Slack app is not enabled for this organization yet.",
+        "unreadyAckRequired": "Acknowledge that some employees still need to connect or verify direct messages before switching."
+      },
+      "gate": {
+        "disabled": "Switch gated",
+        "enabled": "Switch enabled"
+      },
+      "gateDisabledNotice": "Organization-owned Slack switching is not yet enabled for this organization. You can prepare, verify, and review impact now; activation unlocks once enabled for your organization.",
+      "generatedAt": "Snapshot: {timestamp}",
+      "metrics": {
+        "actionNeeded": "Employee action needed",
+        "actionNeededHint": "Must link or reopen DM in Settings → Notifications",
+        "carryForwardHint": "{count} same-workspace identities carry forward; DM reachability verified on first use",
+        "inFlightNotifications": "In-flight notifications",
+        "inFlightNotificationsHint": "Bound to their original installation without duplicate resends",
+        "outstandingApprovals": "Outstanding approval cards",
+        "outstandingApprovalsHint": "{refresh} refresh jobs queued; old cards keep their Z8 review links",
+        "unknownReachability": "Unknown reachability",
+        "unknownReachabilityHint": "Linked identity whose replacement DM has not been verified yet",
+        "verifiedReachable": "Verified reachable",
+        "verifiedReachableHint": "Direct messages confirmed with replacement app"
+      },
+      "readyToConfirmHint": "New Slack notifications, commands, and digests will use your organization-owned Slack app immediately after switching.",
+      "refresh": "Refresh impact",
+      "refreshedAnnouncement": "Slack switch impact preview refreshed.",
+      "retirement": {
+        "deadline": "Automatic retirement deadline: {deadline}",
+        "description": "Retiring installations continue refreshing their existing approval cards until all open cards settle or the 30-day limit is reached. Pending approvals always remain available in the Z8 inbox.",
+        "noDeadline": "Retiring when open cards settle",
+        "outstandingCount": "{count} open cards / jobs",
+        "previousApp": "Previous Slack app",
+        "title": "Retiring Slack installations"
+      },
+      "summaryHeading": "Switch impact summary",
+      "switchedAnnouncement": "Switched to your organization-owned Slack app. Previous approval cards remain serviced during retirement.",
+      "title": "Review impact & switch Slack app"
     },
     "teamsNotifications": {
       "title": "Microsoft Teams"

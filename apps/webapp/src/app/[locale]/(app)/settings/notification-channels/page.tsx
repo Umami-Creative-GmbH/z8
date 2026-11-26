@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { ChatCapabilityDisclosureCard } from "@/components/settings/chat-capability-disclosure-card";
 import { DiscordChannelSettings } from "@/components/settings/discord-channel-settings";
 import { NotificationChannelSettings } from "@/components/settings/notification-channel-settings";
 
@@ -18,9 +19,13 @@ import {
 	updateTeamsNotificationChannelSettings,
 } from "./actions";
 import { ChatInstallationInventoryPanel } from "./chat-installation-inventory-panel";
-import { SlackConnectButton } from "./slack-connect-button";
 import { SlackPrepareTestSection } from "./slack-prepare-test-section";
 import { getSlackCandidateSetup } from "./slack-setup-actions";
+import {
+	getProviderCapabilityDisclosure,
+	getSlackSwitchImpactPreview,
+} from "./slack-switch-actions";
+import { SlackSwitchReviewSection } from "./slack-switch-review-section";
 import { TeamsPrepareTestSection } from "./teams-prepare-test-section";
 import { getTeamsCandidateSetup } from "./teams-setup-actions";
 import { TelegramPanel } from "./telegram-panel";
@@ -30,7 +35,19 @@ async function ChatSettingsContent() {
 	const [
 		{ organizationId },
 		t,
-		[slack, teams, discord, inventory, slackCandidate, teamsCandidate],
+		[
+			slack,
+			teams,
+			discord,
+			inventory,
+			slackCandidate,
+			teamsCandidate,
+			slackSwitchPreview,
+			slackCapabilities,
+			teamsCapabilities,
+			telegramCapabilities,
+			discordCapabilities,
+		],
 	] = await Promise.all([
 		access,
 		getTranslate(),
@@ -42,6 +59,11 @@ async function ChatSettingsContent() {
 				getChatInstallationsInventory(),
 				getSlackCandidateSetup(),
 				getTeamsCandidateSetup(),
+				getSlackSwitchImpactPreview(),
+				getProviderCapabilityDisclosure({ provider: "slack" }),
+				getProviderCapabilityDisclosure({ provider: "teams" }),
+				getProviderCapabilityDisclosure({ provider: "telegram" }),
+				getProviderCapabilityDisclosure({ provider: "discord" }),
 			]),
 		),
 	]);
@@ -49,6 +71,7 @@ async function ChatSettingsContent() {
 	const inventoryLoadFailed = !inventory.success;
 	const slackCandidateData = slackCandidate.success ? slackCandidate.data : null;
 	const teamsCandidateData = teamsCandidate.success ? teamsCandidate.data : null;
+	const slackSwitchPreviewData = slackSwitchPreview.success ? slackSwitchPreview.data : null;
 
 	return (
 		<SettingsTabbedPage
@@ -72,12 +95,24 @@ async function ChatSettingsContent() {
 								initialInventory={inventoryData?.providers.slack ?? null}
 								initialLoadFailed={inventoryLoadFailed}
 							/>
+							<ChatCapabilityDisclosureCard
+								channelName="Slack"
+								disclosure={slackCapabilities.success ? slackCapabilities.data : null}
+							/>
 							<SlackPrepareTestSection initialSetup={slackCandidateData} />
+							<SlackSwitchReviewSection initialPreview={slackSwitchPreviewData} />
 							<NotificationChannelSettings
 								channelName="Slack"
 								config={slack.success ? slack.data : null}
 								updateAction={updateSlackNotificationChannelSettings}
-								connectAction={<SlackConnectButton organizationId={organizationId} />}
+								connectAction={
+									<p className="text-sm text-muted-foreground">
+										{t(
+											"settings.notifications.slack.orgOwnedConnectHint",
+											"Prepare, verify, and switch to your organization-owned Slack app using the setup workflow above.",
+										)}
+									</p>
+								}
 							/>
 						</div>
 					),
@@ -97,6 +132,10 @@ async function ChatSettingsContent() {
 								channelName="Microsoft Teams"
 								initialInventory={inventoryData?.providers.teams ?? null}
 								initialLoadFailed={inventoryLoadFailed}
+							/>
+							<ChatCapabilityDisclosureCard
+								channelName="Microsoft Teams"
+								disclosure={teamsCapabilities.success ? teamsCapabilities.data : null}
 							/>
 							<TeamsPrepareTestSection initialSetup={teamsCandidateData} />
 							<NotificationChannelSettings
@@ -131,6 +170,10 @@ async function ChatSettingsContent() {
 								initialInventory={inventoryData?.providers.telegram ?? null}
 								initialLoadFailed={inventoryLoadFailed}
 							/>
+							<ChatCapabilityDisclosureCard
+								channelName="Telegram"
+								disclosure={telegramCapabilities.success ? telegramCapabilities.data : null}
+							/>
 							<TelegramPanel />
 						</div>
 					),
@@ -150,6 +193,10 @@ async function ChatSettingsContent() {
 								channelName="Discord"
 								initialInventory={inventoryData?.providers.discord ?? null}
 								initialLoadFailed={inventoryLoadFailed}
+							/>
+							<ChatCapabilityDisclosureCard
+								channelName="Discord"
+								disclosure={discordCapabilities.success ? discordCapabilities.data : null}
 							/>
 							<DiscordChannelSettings
 								config={discord.success ? discord.data : null}

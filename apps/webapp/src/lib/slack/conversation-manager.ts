@@ -8,6 +8,7 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { slackConversation } from "@/db/schema";
+import { upsertInstallationConversation } from "@/lib/chat-installations/inventory";
 import {
 	type ChatDispatchTargetHint,
 	listInstallationActiveConversations,
@@ -21,14 +22,49 @@ const logger = createLogger("SlackConversationManager");
 /**
  * Save or update a conversation reference.
  * Called on every incoming interaction to keep channel_id current.
+ * When `options.installationId` is set (organization-owned Slack installation),
+ * writes strictly to `chat_installation_conversation` so legacy and replacement
+ * conversations remain isolated.
  */
 export async function saveConversation(
 	channelId: string,
 	channelType: string,
 	userId: string,
 	organizationId: string,
+	options?: {
+		installationId?: string | null;
+		externalUserId?: string | null;
+	},
 ): Promise<void> {
 	try {
+		if (options?.installationId) {
+			const now = new Date();
+			await upsertInstallationConversation(
+				{
+					organizationId,
+					installationId: options.installationId,
+					userId,
+					externalUserId: options.externalUserId ?? null,
+					externalConversationId: channelId,
+					conversationType: channelType === "im" ? "private" : channelType,
+					reachabilityStatus: "reachable",
+					verifiedAt: now,
+					lastUsedAt: now,
+				},
+				{ db },
+			);
+			if (channelType === "im" || channelType === "private") {
+				const { rearmApprovalDeliveryForRepairedDestination } =
+					await import("@/lib/approvals/delivery/recovery");
+				await rearmApprovalDeliveryForRepairedDestination({
+					organizationId,
+					userId,
+					provider: "slack",
+				});
+			}
+			return;
+		}
+
 		const existing = await db.query.slackConversation.findFirst({
 			where: and(
 				eq(slackConversation.userId, userId),

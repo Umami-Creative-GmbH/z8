@@ -6,8 +6,9 @@
  */
 
 import { and, eq } from "drizzle-orm";
+import { Temporal } from "temporal-polyfill";
 import { db } from "@/db";
-import { slackWorkspaceConfig } from "@/db/schema";
+import { chatInstallation, slackWorkspaceConfig } from "@/db/schema";
 import {
 	type ChatDispatchTargetHint,
 	listSwitchedActiveChatInstallationsForProvider,
@@ -15,6 +16,7 @@ import {
 	resolveSwitchedActiveChatInstallation,
 	type SwitchedActiveChatInstallation,
 } from "@/lib/chat-installations/runtime-target";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import { getOrgSecret } from "@/lib/vault";
 import type { ResolvedSlackBot } from "./types";
@@ -47,6 +49,7 @@ async function hydrateSwitchedSlackBot(
 
 	return {
 		organizationId: target.organizationId,
+		installationId: target.installationId,
 		botAccessToken,
 		slackTeamId: target.externalSpaceId ?? "",
 		slackTeamName: target.externalSpaceName,
@@ -80,9 +83,16 @@ export async function getBotConfigByOrganization(
 }
 
 /**
- * Get bot config by Slack workspace/team ID
+ * Get bot config by Slack workspace/team ID for legacy deployment-managed endpoints.
+ * Keeps verified legacy callbacks working for eligible non-replaced installations,
+ * allows retiring legacy installations ONLY when `options.allowRetiring` is true
+ * (e.g. old-card interactions before the 30-day retirement deadline), and blocks
+ * retired/revoked or superseded legacy routes.
  */
-export async function getBotConfigByTeamId(slackTeamId: string): Promise<ResolvedSlackBot | null> {
+export async function getBotConfigByTeamId(
+	slackTeamId: string,
+	options?: { allowRetiring?: boolean; now?: Date },
+): Promise<ResolvedSlackBot | null> {
 	const config = await db.query.slackWorkspaceConfig.findFirst({
 		where: and(
 			eq(slackWorkspaceConfig.slackTeamId, slackTeamId),
@@ -92,7 +102,54 @@ export async function getBotConfigByTeamId(slackTeamId: string): Promise<Resolve
 
 	if (!config) return null;
 
-	return hydrateBot(config);
+	let legacyInstallationId: string | null = null;
+	if (typeof db.select === "function") {
+		const installations = await db
+			.select()
+			.from(chatInstallation)
+			.where(
+				and(
+					eq(chatInstallation.organizationId, config.organizationId),
+					eq(chatInstallation.provider, "slack"),
+				),
+			);
+
+		if (installations.length > 0) {
+			const legacyInst = installations.find(
+				(row) => row.legacyTable === "slack_workspace_config" && row.legacyRecordId === config.id,
+			);
+			const hasActiveOrgOwned = installations.some(
+				(row) => row.status === "active" && row.credentialSource === "organization_owned",
+			);
+
+			if (legacyInst) {
+				legacyInstallationId = legacyInst.id;
+				if (legacyInst.status === "retired" || legacyInst.status === "revoked") {
+					return null;
+				}
+				if (legacyInst.status === "retiring") {
+					if (!options?.allowRetiring) return null;
+					const now = options?.now ?? new Date();
+					if (
+						legacyInst.revokedAt !== null ||
+						(legacyInst.retirementDeadlineAt !== null &&
+							Temporal.Instant.compare(
+								instantFromDate(legacyInst.retirementDeadlineAt),
+								instantFromDate(now),
+							) <= 0)
+					) {
+						return null;
+					}
+				}
+			} else if (hasActiveOrgOwned && !options?.allowRetiring) {
+				return null;
+			}
+		}
+	}
+
+	const bot = await hydrateBot(config);
+	if (!bot) return null;
+	return legacyInstallationId ? { ...bot, installationId: legacyInstallationId } : bot;
 }
 
 /**

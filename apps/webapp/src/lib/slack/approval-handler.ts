@@ -1,7 +1,10 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { slackApprovalMessage, slackUserMapping } from "@/db/schema";
-import { resolveLegacyCardInstallationId } from "@/lib/approvals/delivery/installation-origin";
+import {
+	checkInboundApprovalCardInstallationEligibility,
+	resolveLegacyCardInstallationId,
+} from "@/lib/approvals/delivery/installation-origin";
 import { prepareApprovalPresentation } from "@/lib/approvals/presentation";
 import { approvalAttemptNotice } from "@/lib/bot-platform/approval-notice";
 import { createLogger } from "@/lib/logger";
@@ -28,18 +31,12 @@ export async function handleApprovalAction(
 	bot: ResolvedSlackBot,
 ): Promise<void> {
 	if (!action.value || !["approval_approve", "approval_reject"].includes(action.action_id)) return;
-	const user = await resolveSlackUser(slackUserId, bot.slackTeamId);
+	const user = await resolveSlackUser(slackUserId, bot.slackTeamId, undefined, {
+		organizationId: bot.organizationId,
+		installationId: bot.installationId,
+	});
 	if (user.status !== "found") return;
 	try {
-		const { attemptBotApproval } = await import("@/lib/bot-platform/approval-decision");
-		const result = await attemptBotApproval({
-			approvalId: action.value,
-			actorEmployeeId: user.user.employeeId,
-			organizationId: bot.organizationId,
-			action: action.action_id === "approval_approve" ? "approve" : "reject",
-			platform: "slack",
-		});
-		if (result.status !== "review_required" && result.status !== "historical") return;
 		if (!payload.channel || !payload.message) return;
 		const tracked = await db.query.slackApprovalMessage.findFirst({
 			where: and(
@@ -51,6 +48,23 @@ export async function handleApprovalAction(
 			),
 		});
 		if (!tracked) return;
+		const eligibility = await checkInboundApprovalCardInstallationEligibility({
+			organizationId: bot.organizationId,
+			provider: "slack",
+			incomingInstallationId: bot.installationId ?? null,
+			messageInstallationId: tracked.installationId ?? null,
+			messageReceiverScope: `slack-team:${bot.slackTeamId}`,
+		});
+		if (!eligibility.allowed) return;
+		const { attemptBotApproval } = await import("@/lib/bot-platform/approval-decision");
+		const result = await attemptBotApproval({
+			approvalId: action.value,
+			actorEmployeeId: user.user.employeeId,
+			organizationId: bot.organizationId,
+			action: action.action_id === "approval_approve" ? "approve" : "reject",
+			platform: "slack",
+		});
+		if (result.status !== "review_required" && result.status !== "historical") return;
 		const notice = await approvalAttemptNotice(
 			result,
 			{ userId: user.user.userId, organizationId: bot.organizationId },
