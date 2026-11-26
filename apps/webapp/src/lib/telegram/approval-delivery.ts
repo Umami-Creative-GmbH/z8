@@ -40,7 +40,9 @@ async function resolveTelegramTokenForInstallation(
 	});
 	if (fromRevision) return fromRevision;
 	if (installation.legacyTable === "telegram_bot_config") {
-		const legacyBot = await getBotConfigByOrganization(organizationId);
+		const legacyBot = await getBotConfigByOrganization(organizationId, {
+			installationId: installation.id,
+		});
 		return legacyBot?.botToken ?? null;
 	}
 	return null;
@@ -89,7 +91,9 @@ export const telegramApprovalDeliveryAdapter: ApprovalDeliveryAdapter = {
 					return { kind: "suppressed", reason: "escalations_disabled" };
 				}
 			} else if (target.legacyTable === "telegram_bot_config") {
-				const legacy = await getBotConfigByOrganization(input.organizationId);
+				const legacy = await getBotConfigByOrganization(input.organizationId, {
+					installationId: target.id,
+				});
 				if (!legacy) return { kind: "failed", outcome: "unavailable", reason: "bot_unavailable" };
 				if (legacy.setupStatus !== "active") {
 					return { kind: "suppressed", reason: "integration_disabled" };

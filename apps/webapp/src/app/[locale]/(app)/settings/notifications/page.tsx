@@ -1,4 +1,4 @@
-import { NotificationSettings } from "@/components/notifications";
+import { NotificationSettings } from "@/components/notifications/notification-settings";
 import { PageHeader } from "@/components/ui/page-header";
 import { requireUser } from "@/lib/auth-helpers";
 import { getTranslate } from "@/tolgee/server";

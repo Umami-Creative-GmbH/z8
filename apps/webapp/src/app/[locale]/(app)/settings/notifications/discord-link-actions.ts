@@ -11,6 +11,7 @@ import {
 	unlinkMemberChatLink,
 } from "@/lib/chat-installations";
 import { AuthorizationError, ExternalServiceError, ValidationError } from "@/lib/effect/errors";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
 
 const generateDiscordLinkCodeSchema = z.strictObject({
@@ -47,13 +48,16 @@ export const getMemberDiscordLinkStateAction = organizationAction(
 		schema: noInput,
 	},
 	({ actor, organizationId }) =>
-		Effect.tryPromise({
-			try: (): Promise<MemberDiscordLinkState> =>
-				getMemberDiscordLinkState({ userId: actor.userId, organizationId }),
-			catch: discordLinkFailure(
-				"getMemberDiscordLinkState",
-				"Couldn't load your Discord connection status",
-			),
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			return yield* Effect.tryPromise({
+				try: (): Promise<MemberDiscordLinkState> =>
+					getMemberDiscordLinkState({ userId: actor.userId, organizationId }, { db: dbService.db }),
+				catch: discordLinkFailure(
+					"getMemberDiscordLinkState",
+					"Couldn't load your Discord connection status",
+				),
+			});
 		}),
 );
 
@@ -65,15 +69,19 @@ export const generateMemberDiscordLinkCode = organizationAction(
 	},
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
 			const purpose = input.purpose ?? "member_link";
 			const result = yield* Effect.tryPromise({
 				try: () =>
-					issueMemberDiscordLinkCode({
-						userId: actor.userId,
-						organizationId,
-						purpose,
-						installationId: input.installationId,
-					}),
+					issueMemberDiscordLinkCode(
+						{
+							userId: actor.userId,
+							organizationId,
+							purpose,
+							installationId: input.installationId,
+						},
+						{ db: dbService.db },
+					),
 				catch: discordLinkFailure(
 					"issueMemberDiscordLinkCode",
 					"Failed to generate Discord link code",
@@ -92,7 +100,7 @@ export const generateMemberDiscordLinkCode = organizationAction(
 					return yield* Effect.fail(
 						new ValidationError({
 							message: "Discord is not available for linking in this organization.",
-							refusal: "installation_unavailable",
+							refusal: "chat_link_unavailable",
 						}),
 					);
 				case "ineligible":
@@ -108,7 +116,7 @@ export const generateMemberDiscordLinkCode = organizationAction(
 					return yield* Effect.fail(
 						new ValidationError({
 							message: "Too many link code requests. Please wait a few minutes and try again.",
-							refusal: "rate_limited",
+							refusal: "chat_link_rate_limited",
 						}),
 					);
 			}
@@ -123,13 +131,17 @@ export const recheckMemberDiscordDmAction = organizationAction(
 	},
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
 			const result = yield* Effect.tryPromise({
 				try: (): Promise<RecheckMemberDiscordDmResult> =>
-					recheckMemberDiscordDmReachability({
-						userId: actor.userId,
-						organizationId,
-						installationId: input.installationId,
-					}),
+					recheckMemberDiscordDmReachability(
+						{
+							userId: actor.userId,
+							organizationId,
+							installationId: input.installationId,
+						},
+						{ db: dbService.db },
+					),
 				catch: discordLinkFailure(
 					"recheckMemberDiscordDmReachability",
 					"Failed to check Discord direct message delivery",
@@ -175,14 +187,20 @@ export const unlinkMemberDiscordAccount = organizationAction(
 		schema: unlinkDiscordSchema,
 	},
 	({ actor, organizationId, input }) =>
-		Effect.tryPromise({
-			try: () =>
-				unlinkMemberChatLink({
-					userId: actor.userId,
-					organizationId,
-					provider: "discord",
-					installationId: input.installationId,
-				}),
-			catch: discordLinkFailure("unlinkMemberChatLink", "Failed to unlink Discord account"),
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			return yield* Effect.tryPromise({
+				try: () =>
+					unlinkMemberChatLink(
+						{
+							userId: actor.userId,
+							organizationId,
+							provider: "discord",
+							installationId: input.installationId,
+						},
+						{ db: dbService.db },
+					),
+				catch: discordLinkFailure("unlinkMemberChatLink", "Failed to unlink Discord account"),
+			});
 		}),
 );

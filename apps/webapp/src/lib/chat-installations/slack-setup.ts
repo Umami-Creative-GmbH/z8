@@ -1,4 +1,3 @@
-import { randomBytes } from "node:crypto";
 import { and, asc, eq } from "drizzle-orm";
 import { db as defaultDb } from "@/db";
 import {
@@ -9,9 +8,7 @@ import {
 	chatInstallation,
 	chatInstallationCredentialRevision,
 } from "@/db/schema";
-import { env } from "@/env";
-import { AuditAction, logAudit } from "@/lib/audit-logger";
-import { createLogger } from "@/lib/logger";
+import { AuditAction } from "@/lib/audit-logger";
 import {
 	openConversationWithOutcome,
 	postMessageWithOutcome,
@@ -27,9 +24,14 @@ import {
 	storeInstallationCredentialRevision,
 } from "./credential-revisions";
 import { upsertInstallationConversation } from "./inventory";
+import {
+	computeExpiryIso,
+	defaultRecordAudit,
+	generateRouteId,
+	isFreshTimestamp,
+	resolveAppUrl,
+} from "./setup-utils";
 import type { ChatInstallationsDb } from "./types";
-
-const logger = createLogger("SlackCandidateSetup");
 
 /**
  * Freshness window for candidate Slack verification proofs (signed app+workspace event
@@ -244,15 +246,6 @@ export interface SlackSetupRuntimeDeps {
 	now?: () => Date;
 }
 
-function generateRouteId(): string {
-	return randomBytes(18).toString("base64url");
-}
-
-function resolveAppUrl(override?: string): string {
-	const raw = (override || env.APP_URL || "https://z8-time.app").trim();
-	return raw.replace(/\/+$/, "");
-}
-
 function yamlEscape(value: string): string {
 	return JSON.stringify(value);
 }
@@ -373,25 +366,6 @@ export function generateSlackAppManifest(input: {
 		yaml,
 		urls,
 	};
-}
-
-function isFreshTimestamp(
-	verifiedAtIso: string | null | undefined,
-	expiresAtIso: string | null | undefined,
-	now: Date,
-	ttlMs: number,
-): boolean {
-	if (!verifiedAtIso) return false;
-	const verifiedMs = Date.parse(verifiedAtIso);
-	if (Number.isNaN(verifiedMs)) return false;
-	if (now.getTime() - verifiedMs > ttlMs) return false;
-	if (expiresAtIso) {
-		const expiresMs = Date.parse(expiresAtIso);
-		if (!Number.isNaN(expiresMs) && now.getTime() > expiresMs) {
-			return false;
-		}
-	}
-	return true;
 }
 
 /**
@@ -733,25 +707,6 @@ function createDrizzleSlackSetupRepository(db: ChatInstallationsDb): SlackSetupR
 
 export function resolveSlackSetupRepository(deps?: SlackSetupRuntimeDeps): SlackSetupRepository {
 	return deps?.repository ?? createDrizzleSlackSetupRepository(deps?.db ?? defaultDb);
-}
-
-async function defaultRecordAudit(event: SlackSetupAuditEvent): Promise<void> {
-	try {
-		await logAudit({
-			action: event.action,
-			actorId: event.actorId,
-			organizationId: event.organizationId,
-			targetId: event.targetId,
-			targetType: "chat_installation",
-			metadata: event.metadata,
-			timestamp: new Date(),
-		});
-	} catch (error) {
-		logger.warn(
-			{ error, organizationId: event.organizationId, installationId: event.targetId },
-			"Failed to record redacted chat installation audit log",
-		);
-	}
 }
 
 function slackFailureCode(failure: SlackCallFailure): string {
@@ -1326,7 +1281,7 @@ export async function sendSlackCandidateTestMessage(
 		privateDeliveryRevisionId: candidate.activeCredentialRevisionId,
 		privateDeliveryTargetUserId: slackUserId,
 		privateDeliveryChannelId: deliveryResult.channelId,
-		privateDeliveryExpiresAt: new Date(now.getTime() + ttlMs).toISOString(),
+		privateDeliveryExpiresAt: computeExpiryIso(now, ttlMs),
 		...(candidate.verificationEvidence?.lastFailureStep === "private_test"
 			? { lastFailureStep: null, lastFailureCode: null, lastFailureAt: null }
 			: {}),

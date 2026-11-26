@@ -26,6 +26,7 @@ import {
 	type DiscordSetupRuntimeDeps,
 	resolveDiscordSetupRepository,
 } from "./discord-setup";
+import { computeExpiryIso } from "./setup-utils";
 import type { ChatEffectiveSettings } from "./types";
 
 const logger = createLogger("DiscordInstallationRoutes");
@@ -390,7 +391,7 @@ export async function handleDiscordInstallationInteractionRequest(
 				signedEventVerifiedAt: now.toISOString(),
 				signedEventRevisionId: auth.revisionId,
 				signedEventType: "PING",
-				signedEventExpiresAt: new Date(now.getTime() + ttlMs).toISOString(),
+				signedEventExpiresAt: computeExpiryIso(now, ttlMs),
 				...(previousEvidence?.lastFailureStep === "signed_event"
 					? { lastFailureStep: null, lastFailureCode: null, lastFailureAt: null }
 					: {}),

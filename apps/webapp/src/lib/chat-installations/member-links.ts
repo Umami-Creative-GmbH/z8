@@ -55,6 +55,8 @@ export type MemberChatLinkStatus =
 export type MemberChatLinkRecoveryHint =
 	| "link_required"
 	| "start_bot_private_chat"
+	| "discord_enable_server_dms"
+	| "discord_share_server_with_bot"
 	| "verification_error"
 	| "installation_remediation"
 	| null;
@@ -67,6 +69,10 @@ export interface MemberChatCandidateEnrollmentView {
 	externalUsername: string | null;
 	externalDisplayName: string | null;
 	canGenerateLinkCode: boolean;
+	reachabilityStatus?: ChatConversationReachabilityStatus | null;
+	reachabilityReason?: string | null;
+	recoveryHint?: MemberChatLinkRecoveryHint;
+	canRecheckDm?: boolean;
 }
 
 export interface MemberChatChannelLinkView {
@@ -81,6 +87,9 @@ export interface MemberChatChannelLinkView {
 	canGenerateLinkCode: boolean;
 	canUnlink: boolean;
 	recoveryHint: MemberChatLinkRecoveryHint;
+	reachabilityStatus?: ChatConversationReachabilityStatus | null;
+	reachabilityReason?: string | null;
+	canRecheckDm?: boolean;
 	candidateEnrollment?: MemberChatCandidateEnrollmentView | null;
 }
 
@@ -1538,15 +1547,16 @@ export async function getMemberChatLinks(
 		const remediationInst =
 			providerInstallations.find((row) => row.status === "remediation_required") ?? null;
 		const candidateInst =
-			provider === "telegram"
-				? (providerInstallations.find(
-						(row) =>
-							row.status === "candidate" &&
-							Boolean(
-								row.externalBotId || row.externalBotUsername || row.activeCredentialRevisionId,
-							),
-					) ?? null)
-				: null;
+			providerInstallations.find(
+				(row) =>
+					row.status === "candidate" &&
+					Boolean(
+						row.externalBotId ||
+						row.externalBotUsername ||
+						row.externalAppId ||
+						row.activeCredentialRevisionId,
+					),
+			) ?? null;
 
 		const installationLink = activeInst ? (linkByInstallationId.get(activeInst.id) ?? null) : null;
 		const installationConv = activeInst
@@ -1592,6 +1602,31 @@ export async function getMemberChatLinks(
 			conversationReachability: installationConv?.reachabilityStatus ?? null,
 		});
 
+		const discordDmHint = (reason: string | null | undefined): MemberChatLinkRecoveryHint =>
+			reason === "discord_missing_access"
+				? "discord_share_server_with_bot"
+				: "discord_enable_server_dms";
+
+		let effectiveStatus = derived.status;
+		let effectiveHint = derived.recoveryHint;
+		const reachabilityStatus = installationConv?.reachabilityStatus ?? null;
+		const reachabilityReason = installationConv?.reachabilityReason ?? null;
+
+		if (
+			provider === "discord" &&
+			Boolean(activeInst) &&
+			hasLiveLink &&
+			!providerVerificationFailed
+		) {
+			if (reachabilityStatus === "action_needed" || reachabilityStatus === "unreachable") {
+				effectiveStatus = "action_needed";
+				effectiveHint = discordDmHint(reachabilityReason);
+			} else if (!isLegacyActive && reachabilityStatus !== "reachable") {
+				effectiveStatus = "action_needed";
+				effectiveHint = discordDmHint(reachabilityReason);
+			}
+		}
+
 		const botUsername =
 			provider === "telegram"
 				? (activeInst?.externalBotUsername ??
@@ -1613,15 +1648,34 @@ export async function getMemberChatLinks(
 		const candidateLink = candidateInst
 			? (candidateLinkByInstallationId.get(candidateInst.id) ?? null)
 			: null;
+		const candidateConv = candidateInst
+			? (conversationByInstallationId.get(candidateInst.id) ?? null)
+			: null;
+		const candidateDiscordDmBlocked =
+			provider === "discord" &&
+			Boolean(candidateLink) &&
+			candidateConv?.reachabilityStatus !== "reachable";
 		const candidateEnrollment: MemberChatCandidateEnrollmentView | null = candidateInst
 			? {
 					installationId: candidateInst.id,
 					botUsername: candidateInst.externalBotUsername,
 					installationLabel: labelForInstallation(candidateInst),
-					status: candidateLink ? "enrolled" : "action_needed",
+					status: candidateLink && !candidateDiscordDmBlocked ? "enrolled" : "action_needed",
 					externalUsername: candidateLink?.externalUsername ?? null,
 					externalDisplayName: candidateLink?.externalDisplayName ?? null,
 					canGenerateLinkCode: !providerVerificationFailed,
+					...(provider === "discord"
+						? {
+								reachabilityStatus: candidateConv?.reachabilityStatus ?? null,
+								reachabilityReason: candidateConv?.reachabilityReason ?? null,
+								recoveryHint: !candidateLink
+									? "link_required"
+									: candidateDiscordDmBlocked
+										? discordDmHint(candidateConv?.reachabilityReason)
+										: null,
+								canRecheckDm: Boolean(candidateLink),
+							}
+						: {}),
 				}
 			: null;
 
@@ -1634,16 +1688,22 @@ export async function getMemberChatLinks(
 		return {
 			provider,
 			available,
-			status: derived.status,
+			status: effectiveStatus,
 			installationId: activeInst?.id ?? remediationInst?.id ?? null,
 			installationLabel,
 			botUsername,
 			externalUsername,
 			externalDisplayName,
-			canGenerateLinkCode:
-				provider === "telegram" && Boolean(activeInst) && !providerVerificationFailed,
+			canGenerateLinkCode: Boolean(activeInst) && !providerVerificationFailed,
 			canUnlink: Boolean(activeInst) && hasLiveLink,
-			recoveryHint: derived.recoveryHint,
+			recoveryHint: effectiveHint,
+			...(provider === "discord"
+				? {
+						reachabilityStatus,
+						reachabilityReason,
+						canRecheckDm: Boolean(activeInst) && hasLiveLink && !providerVerificationFailed,
+					}
+				: {}),
 			...(candidateEnrollment ? { candidateEnrollment } : {}),
 		};
 	});
@@ -1656,31 +1716,51 @@ export async function getMemberChatLinks(
 }
 
 /**
- * Resolves the organization's active/legacy Telegram installation (backfilling if needed)
- * and issues a short-lived, digest-only `member_link` proof for the employee.
+ * Resolves an organization's target chat installation for any provider (Telegram, Slack,
+ * Microsoft Teams, Discord) and issues a short-lived, single-use, digest-only link proof
+ * for either live linking (`member_link`) or staged replacement enrollment
+ * (`candidate_enrollment`).
  */
-export async function issueMemberTelegramLinkCode(
-	input: { userId: string; organizationId: string },
+export async function issueMemberChatLinkCode(
+	input: {
+		userId: string;
+		organizationId: string;
+		provider: ChatInstallationProvider;
+		purpose?: ChatLinkProofPurpose;
+		installationId?: string;
+	},
 	deps?: ChatLinkRuntimeDeps,
 ): Promise<IssueChatLinkProofResult> {
 	const db = deps?.db ?? defaultDb;
+	const purpose: ChatLinkProofPurpose = input.purpose ?? "member_link";
 	if (deps?.syncLegacy !== false) {
 		await backfillOrganizationChatInstallations(input.organizationId, deps);
+	}
+
+	const allowedStatuses =
+		purpose === "candidate_enrollment"
+			? (["candidate"] as const)
+			: (["active", "legacy_active"] as const);
+
+	const conditions = [
+		eq(chatInstallation.organizationId, input.organizationId),
+		eq(chatInstallation.provider, input.provider),
+		inArray(chatInstallation.status, [...allowedStatuses]),
+	];
+	if (input.installationId) {
+		conditions.push(eq(chatInstallation.id, input.installationId));
 	}
 
 	const rows = await db
 		.select()
 		.from(chatInstallation)
-		.where(
-			and(
-				eq(chatInstallation.organizationId, input.organizationId),
-				eq(chatInstallation.provider, "telegram"),
-				inArray(chatInstallation.status, ["active", "legacy_active"]),
-			),
-		)
+		.where(and(...conditions))
 		.orderBy(asc(chatInstallation.createdAt), asc(chatInstallation.id));
 
-	const target = rows.find((row) => row.status === "active") ?? rows[0] ?? null;
+	const target =
+		purpose === "candidate_enrollment"
+			? (rows[0] ?? null)
+			: (rows.find((row) => row.status === "active") ?? rows[0] ?? null);
 	if (!target) {
 		return { status: "installation_unavailable" };
 	}
@@ -1690,6 +1770,25 @@ export async function issueMemberTelegramLinkCode(
 			organizationId: input.organizationId,
 			installationId: target.id,
 			userId: input.userId,
+			purpose,
+		},
+		deps,
+	);
+}
+
+/**
+ * Resolves the organization's active/legacy Telegram installation (backfilling if needed)
+ * and issues a short-lived, digest-only `member_link` proof for the employee.
+ */
+export async function issueMemberTelegramLinkCode(
+	input: { userId: string; organizationId: string },
+	deps?: ChatLinkRuntimeDeps,
+): Promise<IssueChatLinkProofResult> {
+	return issueMemberChatLinkCode(
+		{
+			userId: input.userId,
+			organizationId: input.organizationId,
+			provider: "telegram",
 			purpose: "member_link",
 		},
 		deps,
@@ -1705,36 +1804,15 @@ export async function issueMemberTelegramCandidateLinkCode(
 	input: { userId: string; organizationId: string; installationId?: string },
 	deps?: ChatLinkRuntimeDeps,
 ): Promise<IssueChatLinkProofResult> {
-	const db = deps?.db ?? defaultDb;
-
-	const conditions = [
-		eq(chatInstallation.organizationId, input.organizationId),
-		eq(chatInstallation.provider, "telegram"),
-		eq(chatInstallation.status, "candidate"),
-	];
-	if (input.installationId) {
-		conditions.push(eq(chatInstallation.id, input.installationId));
-	}
-
-	const [target] = await db
-		.select()
-		.from(chatInstallation)
-		.where(and(...conditions))
-		.orderBy(asc(chatInstallation.createdAt), asc(chatInstallation.id))
-		.limit(1);
-
-	if (!target) {
-		return { status: "installation_unavailable" };
-	}
-
-	return issueChatLinkProof(
+	return issueMemberChatLinkCode(
 		{
-			organizationId: input.organizationId,
-			installationId: target.id,
 			userId: input.userId,
+			organizationId: input.organizationId,
+			provider: "telegram",
 			purpose: "candidate_enrollment",
+			installationId: input.installationId,
 		},
-		deps,
+		{ ...deps, syncLegacy: false },
 	);
 }
 

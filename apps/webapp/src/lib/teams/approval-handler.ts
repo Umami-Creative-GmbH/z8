@@ -64,6 +64,32 @@ export async function handleApprovalAction(
 ): Promise<void> {
 	const recipient = { userId: user.userId, organizationId: tenant.organizationId };
 	try {
+		const effectiveAppId = tenant.microsoftAppId ?? env.MICROSOFT_APP_ID;
+		const tenantId = context.activity ? teamsActivityTenant(context.activity) : null;
+		const receiverScope = tenantId ? teamsReceiverScope(effectiveAppId, tenantId) : null;
+		const tracked =
+			context.activity?.replyToId && db.query?.teamsApprovalCard?.findFirst
+				? await db.query.teamsApprovalCard.findFirst({
+						where: and(
+							eq(teamsApprovalCard.organizationId, tenant.organizationId),
+							eq(teamsApprovalCard.approvalRequestId, approvalId),
+							eq(teamsApprovalCard.recipientUserId, user.userId),
+							eq(teamsApprovalCard.teamsActivityId, context.activity.replyToId),
+						),
+					})
+				: null;
+		const eligibility = await checkInboundApprovalCardInstallationEligibility({
+			organizationId: tenant.organizationId,
+			provider: "teams",
+			incomingInstallationId: tenant.installationId ?? null,
+			incomingReceiverScope: receiverScope,
+			messageInstallationId: tracked?.installationId ?? null,
+			messageReceiverScope: receiverScope,
+		});
+		if (!eligibility.allowed) {
+			await context.sendActivity(await approvalUnavailableReply(recipient));
+			return;
+		}
 		const { attemptBotApproval } = await import("@/lib/bot-platform/approval-decision");
 		const result = await attemptBotApproval({
 			approvalId,

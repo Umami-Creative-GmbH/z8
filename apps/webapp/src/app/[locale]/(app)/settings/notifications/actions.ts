@@ -133,7 +133,7 @@ export async function getNotificationPreferences(): Promise<
 
 		const chatAvailability = yield* dbService.query(
 			"getNotificationPreferencesChannelAvailability",
-			() => getOrganizationChatChannelAvailability(eligibleOrganizationId),
+			() => getOrganizationChatChannelAvailability(eligibleOrganizationId, { db: dbService.db }),
 		);
 
 		const availableChannels = buildAvailableNotificationChannels(chatAvailability);

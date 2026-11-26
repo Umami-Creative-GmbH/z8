@@ -13,9 +13,13 @@ import {
 	type NotificationType,
 } from "@/lib/notifications/types";
 
-vi.mock("@/hooks/use-member-chat-links", () => ({
-	useMemberChatLinks: vi.fn(),
-}));
+vi.mock("@/hooks/use-member-chat-links", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@/hooks/use-member-chat-links")>();
+	return {
+		...actual,
+		useMemberChatLinks: vi.fn(),
+	};
+});
 
 vi.mock("@/hooks/use-notification-preferences", () => ({
 	useNotificationPreferences: vi.fn(),
@@ -96,10 +100,11 @@ describe("NotificationSettings", () => {
 			error: null,
 			refetch: vi.fn(),
 			isRetrying: false,
-			generatedTelegramCode: null,
-			clearGeneratedTelegramCode: vi.fn(),
-			generateTelegramCodeAsync: vi.fn(),
-			isGeneratingTelegramCode: false,
+			generatedCodes: {},
+			generatingCodeKey: null,
+			generateLinkCodeAsync: vi.fn(),
+			recheckingDiscordInstallationId: null,
+			recheckDiscordDmAsync: vi.fn(),
 			unlinkAccountAsync: vi.fn(),
 			unlinkingProvider: null,
 		});
@@ -252,10 +257,11 @@ describe("NotificationSettings", () => {
 			error: null,
 			refetch: vi.fn(),
 			isRetrying: false,
-			generatedTelegramCode: null,
-			clearGeneratedTelegramCode: vi.fn(),
-			generateTelegramCodeAsync: vi.fn(),
-			isGeneratingTelegramCode: false,
+			generatedCodes: {},
+			generatingCodeKey: null,
+			generateLinkCodeAsync: vi.fn(),
+			recheckingDiscordInstallationId: null,
+			recheckDiscordDmAsync: vi.fn(),
 			unlinkAccountAsync: vi.fn(),
 			unlinkingProvider: null,
 		});
@@ -302,10 +308,11 @@ describe("NotificationSettings", () => {
 			error: null,
 			refetch: vi.fn(),
 			isRetrying: false,
-			generatedTelegramCode: null,
-			clearGeneratedTelegramCode: vi.fn(),
-			generateTelegramCodeAsync: vi.fn(),
-			isGeneratingTelegramCode: false,
+			generatedCodes: {},
+			generatingCodeKey: null,
+			generateLinkCodeAsync: vi.fn(),
+			recheckingDiscordInstallationId: null,
+			recheckDiscordDmAsync: vi.fn(),
 			unlinkAccountAsync: vi.fn(),
 			unlinkingProvider: null,
 		});

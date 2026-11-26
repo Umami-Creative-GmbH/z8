@@ -8,6 +8,10 @@
 import { executeCommand, parseCommand } from "@/lib/bot-platform/command-registry";
 import { getReplyTranslate } from "@/lib/bot-platform/reply-translate";
 import type { BotCommandContext } from "@/lib/bot-platform/types";
+import { and, asc, eq, inArray } from "drizzle-orm";
+import { db } from "@/db";
+import { chatInstallation } from "@/db/schema";
+import { redeemChatLinkProof } from "@/lib/chat-installations/member-links";
 import { createLogger } from "@/lib/logger";
 import { postMessage } from "./api";
 import { handleApprovalAction } from "./approval-handler";
@@ -168,7 +172,7 @@ async function handleDirectMessage(
 
 	// Handle link command in DM
 	if (text.toLowerCase().startsWith("link ")) {
-		const result = await handleLinkCommand(text, slackUserId, undefined, bot);
+		const result = await handleLinkCommand(text, slackUserId, undefined, bot, channelId);
 		await postMessage(bot.botAccessToken, {
 			channel: channelId,
 			text: result.text,
@@ -247,6 +251,7 @@ async function handleLinkCommand(
 	slackUserId: string,
 	slackUsername: string | undefined,
 	bot: ResolvedSlackBot,
+	dmChannelId?: string,
 ): Promise<{ text: string }> {
 	const parts = text.split(/\s+/);
 	const code = parts[1];
@@ -258,6 +263,57 @@ async function handleLinkCommand(
 		};
 	}
 
+	let installationId = bot.installationId ?? null;
+	if (!installationId && typeof db.select === "function") {
+		const rows = await db
+			.select({ id: chatInstallation.id, status: chatInstallation.status })
+			.from(chatInstallation)
+			.where(
+				and(
+					eq(chatInstallation.organizationId, bot.organizationId),
+					eq(chatInstallation.provider, "slack"),
+					inArray(chatInstallation.status, ["active", "legacy_active"]),
+				),
+			)
+			.orderBy(asc(chatInstallation.createdAt), asc(chatInstallation.id));
+		installationId = rows.find((row) => row.status === "active")?.id ?? rows[0]?.id ?? null;
+	}
+
+	// Active org-owned Slack installations MUST redeem installation-bound digest proofs
+	// into `chat_installation_member_link` (strictly segregated from legacy slackLinkCode).
+	if (bot.installationId) {
+		const proofResult = await redeemChatLinkProof({
+			organizationId: bot.organizationId,
+			installationId: bot.installationId,
+			purpose: "member_link",
+			code,
+			externalUserId: slackUserId,
+			externalUsername: slackUsername ?? null,
+			externalConversationId: dmChannelId ?? null,
+			conversationType: dmChannelId ? "im" : undefined,
+		});
+		return formatSlackLinkProofReply(proofResult, bot.organizationId);
+	}
+
+	// Legacy Slack path: try installation-bound digest proof first if a legacy_active
+	// installation exists (codes generated in Settings -> Notifications), then fall back
+	// to legacy `slack_link_code`.
+	if (installationId) {
+		const proofResult = await redeemChatLinkProof({
+			organizationId: bot.organizationId,
+			installationId,
+			purpose: "member_link",
+			code,
+			externalUserId: slackUserId,
+			externalUsername: slackUsername ?? null,
+			externalConversationId: dmChannelId ?? null,
+			conversationType: dmChannelId ? "im" : undefined,
+		});
+		if (proofResult.status !== "invalid_code") {
+			return formatSlackLinkProofReply(proofResult, bot.organizationId);
+		}
+	}
+
 	const result = await claimLinkCode(
 		code,
 		slackUserId,
@@ -266,9 +322,24 @@ async function handleLinkCommand(
 		slackUsername,
 	);
 
+	return formatSlackLinkProofReply(result, bot.organizationId);
+}
+
+async function formatSlackLinkProofReply(
+	result:
+		| { status: "success"; userId: string; employeeId: string }
+		| { status: "invalid_code" }
+		| { status: "expired" }
+		| { status: "already_used" }
+		| { status: "already_linked" }
+		| { status: "ineligible"; reason?: string }
+		| { status: "rate_limited"; retryAfterSeconds?: number }
+		| { status: "installation_unavailable" },
+	organizationId: string,
+): Promise<{ text: string }> {
 	const { t } = await getReplyTranslate({
 		userId: result.status === "success" ? result.userId : null,
-		organizationId: bot.organizationId,
+		organizationId,
 	});
 
 	switch (result.status) {
@@ -280,19 +351,11 @@ async function handleLinkCommand(
 				),
 			};
 
-		case "invalid_code":
-			return {
-				text: t(
-					"bot.static.linkInvalid",
-					"Invalid link code. Please check your code and try again.",
-				),
-			};
-
 		case "expired":
 			return {
 				text: t(
 					"bot.static.linkExpired",
-					"This link code has expired. Please generate a new one from your Z8 settings.",
+					"This link code has expired. Please generate a new one in Z8 under Settings → Notifications.",
 				),
 			};
 
@@ -301,6 +364,32 @@ async function handleLinkCommand(
 				text: t(
 					"bot.static.linkAlreadyLinkedSlack",
 					"This Slack account is already linked to a Z8 account in this workspace.",
+				),
+			};
+
+		case "ineligible":
+			return {
+				text: t(
+					"bot.static.linkIneligible",
+					"Your Z8 account is not eligible to link in this organization. Please contact your administrator.",
+				),
+			};
+
+		case "rate_limited":
+			return {
+				text: t(
+					"bot.static.linkRateLimited",
+					"Too many link attempts. Please wait a few minutes and generate a new code in Settings → Notifications.",
+				),
+			};
+
+		case "already_used":
+		case "installation_unavailable":
+		case "invalid_code":
+			return {
+				text: t(
+					"bot.static.linkInvalid",
+					"Invalid link code. Please check your code and try again.",
 				),
 			};
 	}

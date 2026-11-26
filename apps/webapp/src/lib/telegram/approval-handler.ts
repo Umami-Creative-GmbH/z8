@@ -66,6 +66,29 @@ export async function handleApprovalCallback(
 	);
 	if (user.status !== "found") return undefined;
 	try {
+		const receiverScope = telegramReceiverScope(bot.botToken);
+		const trackedBeforeDecision =
+			query.message && db.query?.telegramApprovalMessage?.findFirst
+				? await db.query.telegramApprovalMessage.findFirst({
+						where: and(
+							eq(telegramApprovalMessage.organizationId, bot.organizationId),
+							eq(telegramApprovalMessage.approvalRequestId, data.id),
+							eq(telegramApprovalMessage.recipientUserId, user.user.userId),
+							eq(telegramApprovalMessage.chatId, String(query.message.chat.id)),
+							eq(telegramApprovalMessage.messageId, String(query.message.message_id)),
+						),
+					})
+				: null;
+		const eligibility = await checkInboundApprovalCardInstallationEligibility({
+			organizationId: bot.organizationId,
+			provider: "telegram",
+			incomingInstallationId: bot.installationId ?? null,
+			incomingReceiverScope: receiverScope,
+			messageInstallationId: trackedBeforeDecision?.installationId ?? null,
+			messageReceiverScope: receiverScope,
+		});
+		if (!eligibility.allowed) return undefined;
+
 		// The attempt below records its outcome whether or not a card is edited afterwards.
 		// react-doctor-disable-next-line react-doctor/async-defer-await
 		const { attemptBotApproval } = await import("@/lib/bot-platform/approval-decision");
@@ -79,7 +102,6 @@ export async function handleApprovalCallback(
 		if (!query.message) return undefined;
 		// This attempt never decides. A card the owner adopted from this path
 		// (#408) is edited by the owner only.
-		const receiverScope = telegramReceiverScope(bot.botToken);
 		const adopted = receiverScope
 			? await findApprovalDeliveryMessageByRemoteIdentity({
 					organizationId: bot.organizationId,
@@ -93,15 +115,7 @@ export async function handleApprovalCallback(
 			return (await reassignedAcknowledgment(adopted, bot, user.user.userId)) ?? undefined;
 		}
 		if (result.status !== "review_required" && result.status !== "historical") return undefined;
-		const tracked = await db.query.telegramApprovalMessage.findFirst({
-			where: and(
-				eq(telegramApprovalMessage.organizationId, bot.organizationId),
-				eq(telegramApprovalMessage.approvalRequestId, data.id),
-				eq(telegramApprovalMessage.recipientUserId, user.user.userId),
-				eq(telegramApprovalMessage.chatId, String(query.message.chat.id)),
-				eq(telegramApprovalMessage.messageId, String(query.message.message_id)),
-			),
-		});
+		const tracked = trackedBeforeDecision;
 		if (!tracked) return undefined;
 		const notice = await approvalAttemptNotice(
 			result,

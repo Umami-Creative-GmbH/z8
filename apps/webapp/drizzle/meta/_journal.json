@@ -2383,38 +2383,38 @@
       "breakpoints": true
     },
     {
-      "idx": 341,
+      "idx": 340,
       "version": "7",
       "when": 1814198400000,
-      "tag": "0341_chat_installation_link_proof",
+      "tag": "0340_chat_installation_link_proof",
+      "breakpoints": true
+    },
+    {
+      "idx": 341,
+      "version": "7",
+      "when": 1814284800000,
+      "tag": "0341_approval_delivery_installation_origin",
       "breakpoints": true
     },
     {
       "idx": 342,
       "version": "7",
-      "when": 1814284800000,
-      "tag": "0342_approval_delivery_installation_origin",
+      "when": 1814371200000,
+      "tag": "0342_durable_chat_notification_dispatch",
       "breakpoints": true
     },
     {
       "idx": 343,
       "version": "7",
-      "when": 1814371200000,
-      "tag": "0343_durable_chat_notification_dispatch",
+      "when": 1814457600000,
+      "tag": "0343_chat_installation_recovery_cleanup",
       "breakpoints": true
     },
     {
       "idx": 344,
       "version": "7",
-      "when": 1814457600000,
-      "tag": "0344_chat_installation_recovery_cleanup",
-      "breakpoints": true
-    },
-    {
-      "idx": 345,
-      "version": "7",
       "when": 1814544000000,
-      "tag": "0345_telegram_digest_installation_dispatch",
+      "tag": "0344_telegram_digest_installation_dispatch",
       "breakpoints": true
     }
   ]

@@ -14,6 +14,7 @@ import {
 	IconShieldCheck,
 	IconShieldOff,
 } from "@tabler/icons-react";
+import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useRouter } from "next/navigation";
@@ -31,9 +32,83 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TFormControl, TFormItem, TFormLabel } from "@/components/ui/tanstack-form";
 import type { ChatSwitchImpactPreview } from "@/lib/chat-installations/switch-lifecycle";
 import type { TelegramVerificationStepStatus } from "@/lib/chat-installations/telegram-setup";
 import type { ServerActionResult } from "@/lib/effect/result";
+import {
+	actionErrorMessage,
+	type RefusalMessages,
+} from "@/lib/organization-action/action-error-message";
+
+const TELEGRAM_LIFECYCLE_REFUSALS = {
+	impact_changed: [
+		"settings.telegramLifecycle.errors.impactChanged",
+		"Switch impact or installation revisions changed since you reviewed them. Review the updated summary and confirm again.",
+	],
+	invalid_bot_token_format: [
+		"settings.telegramLifecycle.errors.invalidTokenFormat",
+		"Enter a valid BotFather token (for example, 123456789:ABCdef...).",
+	],
+	invalid_bot_token: [
+		"settings.telegramLifecycle.errors.invalidToken",
+		"Telegram rejected the bot token. Check your BotFather token and try again.",
+	],
+	bot_claimed_by_other_org: [
+		"settings.telegramLifecycle.errors.botClaimedByOtherOrg",
+		"This Telegram bot is already claimed by another Z8 organization.",
+	],
+	switch_not_enabled: [
+		"settings.telegramLifecycle.errors.switchNotEnabled",
+		"Telegram switching is currently gated off for this organization.",
+	],
+	migration_blocked: [
+		"settings.telegramLifecycle.errors.migrationBlocked",
+		"Resolve migration blockers before switching Telegram bots.",
+	],
+	candidate_not_ready: [
+		"settings.telegramLifecycle.errors.candidateNotReady",
+		"Complete bot identity, webhook receipt, and private delivery checks before switching.",
+	],
+	candidate_verification_expired: [
+		"settings.telegramLifecycle.errors.candidateVerificationExpired",
+		"Candidate verification proofs have expired. Re-verify before switching.",
+	],
+	unready_acknowledgement_required: [
+		"settings.telegramLifecycle.errors.unreadyAckRequired",
+		"Acknowledge that some employees still need to link the replacement Telegram bot before switching.",
+	],
+	external_identity_mismatch: [
+		"settings.telegramLifecycle.errors.rotationIdentityMismatch",
+		"The provided token belongs to a different Telegram bot. Token rotation requires the exact same bot identity.",
+	],
+	secret_store_unavailable: [
+		"settings.telegramLifecycle.errors.secretStoreUnavailable",
+		"The organization secret store is temporarily unavailable. Try again shortly.",
+	],
+	invalid_chat_id: [
+		"settings.telegramLifecycle.errors.invalidChatId",
+		"Enter a valid numeric Telegram chat ID or link your candidate bot first.",
+	],
+	candidate_chat_required: [
+		"settings.telegramLifecycle.errors.candidateChatRequired",
+		"Send /start to your candidate bot on Telegram or provide your Telegram chat ID first.",
+	],
+} satisfies RefusalMessages<
+	| "impact_changed"
+	| "invalid_bot_token_format"
+	| "invalid_bot_token"
+	| "bot_claimed_by_other_org"
+	| "switch_not_enabled"
+	| "migration_blocked"
+	| "candidate_not_ready"
+	| "candidate_verification_expired"
+	| "unready_acknowledgement_required"
+	| "external_identity_mismatch"
+	| "secret_store_unavailable"
+	| "invalid_chat_id"
+	| "candidate_chat_required"
+>;
 
 export interface TelegramLifecyclePanelProps {
 	initialState: TelegramLifecycleState | null;
@@ -137,9 +212,7 @@ export function TelegramLifecyclePanel({
 	const summaryRef = useRef<HTMLDivElement | null>(null);
 
 	const [state, setState] = useState<TelegramLifecycleState | null>(initialState);
-	const [candidateToken, setCandidateToken] = useState("");
 	const [testChatId, setTestChatId] = useState("");
-	const [rotateToken, setRotateToken] = useState("");
 	const [acknowledgedUnready, setAcknowledgedUnready] = useState(false);
 	const [impactChangedNotice, setImpactChangedNotice] = useState<string | null>(null);
 	const [announcement, setAnnouncement] = useState("");
@@ -159,7 +232,7 @@ export function TelegramLifecyclePanel({
 	};
 
 	const applyError = (result: {
-		error: string;
+		code?: string;
 		refusal?: string;
 		details?: Record<string, unknown>;
 	}) => {
@@ -173,23 +246,25 @@ export function TelegramLifecyclePanel({
 			setAcknowledgedUnready(false);
 		}
 
+		const message = actionErrorMessage(t, result, TELEGRAM_LIFECYCLE_REFUSALS, [
+			"settings.telegramLifecycle.errors.actionFailed",
+			"Could not complete the Telegram bot action. Try again.",
+		]);
+
+		// Branch on refusal ONLY for flow (focusing refreshed impact summary), never wording.
 		if (result.refusal === "impact_changed") {
-			const driftMessage = t(
-				"settings.telegramLifecycle.errors.impactChanged",
-				"Switch impact or installation revisions changed since you reviewed them. Review the updated summary and confirm again.",
-			);
-			setImpactChangedNotice(driftMessage);
+			setImpactChangedNotice(message);
 			setErrorMessage(null);
-			announce(driftMessage);
+			announce(message);
 			queueMicrotask(() => {
 				summaryRef.current?.focus();
 			});
 			return;
 		}
 
-		setErrorMessage(result.error);
-		announce(result.error);
-		toast.error(result.error);
+		setErrorMessage(message);
+		announce(message);
+		toast.error(message);
 	};
 
 	const refreshMutation = useMutation({
@@ -229,7 +304,7 @@ export function TelegramLifecyclePanel({
 		mutationFn: (input: SaveTelegramCredentialsActionInput) => saveCredentialsAction(input),
 		onSuccess: (res) => {
 			if (res.success) {
-				setCandidateToken("");
+				candidateCredentialsForm.reset();
 				applySuccess(
 					res.data,
 					t(
@@ -240,6 +315,21 @@ export function TelegramLifecyclePanel({
 			} else {
 				applyError(res);
 			}
+		},
+	});
+
+	const candidateCredentialsForm = useForm({
+		defaultValues: {
+			botToken: "",
+		},
+		onSubmit: async ({ value }) => {
+			const installationId = state?.candidateSetup?.installationId;
+			const trimmed = value.botToken.trim();
+			if (!installationId || !trimmed) return;
+			saveCredentialsMutation.mutate({
+				installationId,
+				botToken: trimmed,
+			});
 		},
 	});
 
@@ -317,7 +407,7 @@ export function TelegramLifecyclePanel({
 		mutationFn: (input: SaveTelegramCredentialsActionInput) => rotateCredentialsAction(input),
 		onSuccess: (res) => {
 			if (res.success) {
-				setRotateToken("");
+				rotateTokenForm.reset();
 				applySuccess(
 					res.data,
 					t(
@@ -329,6 +419,21 @@ export function TelegramLifecyclePanel({
 			} else {
 				applyError(res);
 			}
+		},
+	});
+
+	const rotateTokenForm = useForm({
+		defaultValues: {
+			botToken: "",
+		},
+		onSubmit: async ({ value }) => {
+			const installationId = state?.recoveryState.activeInstallation?.id;
+			const trimmed = value.botToken.trim();
+			if (!installationId || !trimmed) return;
+			rotateMutation.mutate({
+				installationId,
+				botToken: trimmed,
+			});
 		},
 	});
 
@@ -395,10 +500,8 @@ export function TelegramLifecyclePanel({
 		candidateSetup.endpointGeneration > 0 &&
 		recoveryState.restoreCandidatePreview,
 	);
-	const tokenInputId = `${idPrefix}-candidate-token`;
 	const testChatInputId = `${idPrefix}-test-chat-id`;
 	const ackCheckboxId = `${idPrefix}-ack-unready`;
-	const rotateTokenInputId = `${idPrefix}-rotate-token`;
 
 	const canSubmitSwitch =
 		Boolean(candidate) &&
@@ -506,49 +609,58 @@ export function TelegramLifecyclePanel({
 							className="space-y-3 rounded-lg border bg-muted/30 p-3"
 							onSubmit={(event) => {
 								event.preventDefault();
-								if (!candidateToken.trim()) return;
-								saveCredentialsMutation.mutate({
-									installationId: candidateSetup.installationId,
-									botToken: candidateToken.trim(),
-								});
+								event.stopPropagation();
+								void candidateCredentialsForm.handleSubmit();
 							}}
 						>
-							<div className="space-y-1.5">
-								<Label htmlFor={tokenInputId}>
-									{t("settings.telegramLifecycle.botTokenLabel", "BotFather Token (write-only)")}
-								</Label>
-								<div className="flex flex-col gap-2 sm:flex-row">
-									<Input
-										id={tokenInputId}
-										type="password"
-										autoComplete="off"
-										value={candidateToken}
-										onChange={(event) => setCandidateToken(event.target.value)}
-										placeholder="123456789:ABCdefGHIjklMNOpqrsTUVwxyz"
-										className="min-w-0 flex-1 font-mono text-sm"
-									/>
-									<Button
-										type="submit"
-										size="sm"
-										disabled={saveCredentialsMutation.isPending || !candidateToken.trim()}
-									>
-										{saveCredentialsMutation.isPending && (
-											<IconLoader2
-												className="mr-1.5 size-4 motion-safe:animate-spin"
-												aria-hidden="true"
-											/>
-										)}
-										{t(
-											"settings.telegramLifecycle.verifyTokenButton",
-											"Verify bot & configure webhook",
-										)}
-									</Button>
-								</div>
-								<p className="break-all text-xs text-muted-foreground">
-									{t("settings.telegramLifecycle.webhookEndpointLabel", "Dedicated webhook route:")}{" "}
-									<code className="font-mono">{candidateSetup.webhookUrl}</code>
-								</p>
-							</div>
+							<candidateCredentialsForm.Field name="botToken">
+								{(field) => (
+									<TFormItem className="space-y-1.5">
+										<TFormLabel>
+											{t(
+												"settings.telegramLifecycle.botTokenLabel",
+												"BotFather Token (write-only)",
+											)}
+										</TFormLabel>
+										<div className="flex flex-col gap-2 sm:flex-row">
+											<TFormControl>
+												<Input
+													type="password"
+													autoComplete="off"
+													value={field.state.value}
+													onBlur={field.handleBlur}
+													onChange={(event) => field.handleChange(event.target.value)}
+													placeholder="123456789:ABCdefGHIjklMNOpqrsTUVwxyz"
+													className="min-w-0 flex-1 font-mono text-sm"
+												/>
+											</TFormControl>
+											<Button
+												type="submit"
+												size="sm"
+												disabled={saveCredentialsMutation.isPending || !field.state.value.trim()}
+											>
+												{saveCredentialsMutation.isPending && (
+													<IconLoader2
+														className="mr-1.5 size-4 motion-safe:animate-spin"
+														aria-hidden="true"
+													/>
+												)}
+												{t(
+													"settings.telegramLifecycle.verifyTokenButton",
+													"Verify bot & configure webhook",
+												)}
+											</Button>
+										</div>
+										<p className="break-all text-xs text-muted-foreground">
+											{t(
+												"settings.telegramLifecycle.webhookEndpointLabel",
+												"Dedicated webhook route:",
+											)}{" "}
+											<code className="font-mono">{candidateSetup.webhookUrl}</code>
+										</p>
+									</TFormItem>
+								)}
+							</candidateCredentialsForm.Field>
 						</form>
 
 						{/* 4 Separate, Independently Tracked Verification Steps */}
@@ -904,11 +1016,8 @@ export function TelegramLifecyclePanel({
 								className="space-y-3 rounded-lg border p-3"
 								onSubmit={(event) => {
 									event.preventDefault();
-									if (!rotateToken.trim() || !recoveryState.activeInstallation) return;
-									rotateMutation.mutate({
-										installationId: recoveryState.activeInstallation.id,
-										botToken: rotateToken.trim(),
-									});
+									event.stopPropagation();
+									void rotateTokenForm.handleSubmit();
 								}}
 							>
 								<p className="text-sm font-medium">
@@ -920,34 +1029,42 @@ export function TelegramLifecyclePanel({
 								<p className="text-xs text-muted-foreground">
 									{recoveryState.rotationGuidance.interruptionDetails}
 								</p>
-								<div className="flex flex-col gap-2 sm:flex-row">
-									<Label htmlFor={rotateTokenInputId} className="sr-only">
-										{t("settings.telegramLifecycle.rotateTokenLabel", "New BotFather token")}
-									</Label>
-									<Input
-										id={rotateTokenInputId}
-										type="password"
-										autoComplete="off"
-										value={rotateToken}
-										onChange={(event) => setRotateToken(event.target.value)}
-										placeholder="123456789:NEWrotatedBotToken..."
-										className="min-w-0 flex-1 font-mono text-sm"
-									/>
-									<Button
-										type="submit"
-										variant="outline"
-										size="sm"
-										disabled={rotateMutation.isPending || !rotateToken.trim()}
-									>
-										{rotateMutation.isPending && (
-											<IconLoader2
-												className="mr-1.5 size-4 motion-safe:animate-spin"
-												aria-hidden="true"
-											/>
-										)}
-										{t("settings.telegramLifecycle.rotateButton", "Rotate token")}
-									</Button>
-								</div>
+								<rotateTokenForm.Field name="botToken">
+									{(field) => (
+										<TFormItem>
+											<TFormLabel className="sr-only">
+												{t("settings.telegramLifecycle.rotateTokenLabel", "New BotFather token")}
+											</TFormLabel>
+											<div className="flex flex-col gap-2 sm:flex-row">
+												<TFormControl>
+													<Input
+														type="password"
+														autoComplete="off"
+														value={field.state.value}
+														onBlur={field.handleBlur}
+														onChange={(event) => field.handleChange(event.target.value)}
+														placeholder="123456789:NEWrotatedBotToken..."
+														className="min-w-0 flex-1 font-mono text-sm"
+													/>
+												</TFormControl>
+												<Button
+													type="submit"
+													variant="outline"
+													size="sm"
+													disabled={rotateMutation.isPending || !field.state.value.trim()}
+												>
+													{rotateMutation.isPending && (
+														<IconLoader2
+															className="mr-1.5 size-4 motion-safe:animate-spin"
+															aria-hidden="true"
+														/>
+													)}
+													{t("settings.telegramLifecycle.rotateButton", "Rotate token")}
+												</Button>
+											</div>
+										</TFormItem>
+									)}
+								</rotateTokenForm.Field>
 							</form>
 						)}
 

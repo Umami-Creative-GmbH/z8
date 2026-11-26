@@ -17,7 +17,7 @@
  *   back to legacy config when no switched installation is active).
  */
 
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { createLifecycleDatabaseFixture } from "@/lib/employee-lifecycle/testing/database.test.fixture";
@@ -709,7 +709,8 @@ describe("durable chat notification dispatch & switch safety (PostgreSQL)", () =
 		const attemptsB = await db
 			.select()
 			.from(chatNotificationDispatchAttempt)
-			.where(eq(chatNotificationDispatchAttempt.organizationId, org2));
+			.where(eq(chatNotificationDispatchAttempt.organizationId, org2))
+			.orderBy(asc(chatNotificationDispatchAttempt.attemptNumber));
 		expect(attemptsB).toHaveLength(2);
 		expect(
 			attemptsB.map((a) => ({ n: a.attemptNumber, status: a.status, inst: a.installationId })),

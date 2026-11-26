@@ -36,11 +36,8 @@ vi.mock("@/db", () => {
 			return (state.rows[table] ?? []).filter((row) =>
 				[...query.sql.matchAll(/"[^"]+"\."([^"]+)" = \$(\d+)/g)].every(
 					(match) =>
-						row[
-							match[1].replace(/_([a-z])/g, (_match, letter: string) =>
-								letter.toUpperCase(),
-							)
-						] === query.params[Number(match[2]) - 1],
+						row[match[1].replace(/_([a-z])/g, (_match, letter: string) => letter.toUpperCase())] ===
+						query.params[Number(match[2]) - 1],
 				),
 			);
 		};
@@ -61,8 +58,7 @@ vi.mock("@/db", () => {
 				].map((table) => [
 					table,
 					{
-						findFirst: async (input: { where: SQL }) =>
-							(await findRows(table)(input))[0],
+						findFirst: async (input: { where: SQL }) => (await findRows(table)(input))[0],
 						findMany: findRows(table),
 					},
 				]),
@@ -111,20 +107,16 @@ vi.mock("@/lib/approvals/presentation/bound-card", () => ({
 // Legacy absence cards (#384): legacy-bound-approval.integration.test.ts. The
 // fixtures here model canonical absence authority.
 vi.mock("@/lib/approvals/authority", async (importOriginal) => {
-	const actual =
-		await importOriginal<typeof import("@/lib/approvals/authority")>();
+	const actual = await importOriginal<typeof import("@/lib/approvals/authority")>();
 	return {
 		...actual,
-		readApprovalAuthoritySnapshot: async () =>
-			actual.resolveApprovalAuthority("canonical"),
+		readApprovalAuthoritySnapshot: async () => actual.resolveApprovalAuthority("canonical"),
 	};
 });
 // Legacy time cards (#432): legacy-time-bound-approval.integration.test.ts. The
 // time fixtures here have no legacy revision, so they keep the existing path.
 vi.mock("@/lib/approvals/evidence/legacy-time", async (importOriginal) => ({
-	...(await importOriginal<
-		typeof import("@/lib/approvals/evidence/legacy-time")
-	>()),
+	...(await importOriginal<typeof import("@/lib/approvals/evidence/legacy-time")>()),
 	readTimeRequestAuthority: async () => "undetermined",
 }));
 // Historical replays here were never card decisions: no evidence names a binding.
@@ -137,8 +129,7 @@ vi.mock("@/lib/approvals/presentation/travel-expense-card", () => ({
 	prepareBoundTravelExpenseCard: async () => null,
 }));
 vi.mock("@/lib/app-url", () => ({
-	getOrganizationBaseUrl: async (organizationId: string) =>
-		`https://${organizationId}.z8.test`,
+	getOrganizationBaseUrl: async (organizationId: string) => `https://${organizationId}.z8.test`,
 }));
 vi.mock("@/lib/slack/user-resolver", () => ({
 	resolveSlackUser: state.resolve,
@@ -168,7 +159,15 @@ vi.mock("@/lib/approvals/delivery/store", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@/lib/approvals/delivery/store")>()),
 	isApprovalNotificationDeliveredByOwner: async () => false,
 }));
+vi.mock("@/lib/approvals/delivery/installation-origin", () => ({
+	checkInboundApprovalCardInstallationEligibility: async () => ({
+		allowed: true,
+		reason: "legacy_untagged",
+	}),
+	resolveLegacyCardInstallationId: async () => null,
+}));
 vi.mock("@/lib/teams/bot-adapter", () => ({
+	resolveTeamsOutboundTransportForOrganization: async () => null,
 	sendAdaptiveCard: state.sends.teams,
 	sendProactiveMessage: state.sends.teams,
 }));
@@ -233,6 +232,7 @@ vi.mock("@/lib/teams", async () => ({
 	getConversationReferenceForUser: async () => ({
 		conversation: { id: "conversation" },
 	}),
+	resolveTeamsOutboundTransportForOrganization: async () => null,
 	sendProactiveMessage: state.sends.teams,
 }));
 
@@ -241,30 +241,25 @@ describe.each([
 	{ platform: "telegram", send: sendTelegramNotification },
 	{ platform: "discord", send: sendDiscordNotification },
 	{ platform: "teams", send: sendTeamsNotification },
-] as const)(
-	"$platform existing approval-reference notification route",
-	({ platform, send }) => {
-		it.each([true, false])(
-			"keeps foreign=%s approval details out of fallback output",
-			async (foreign) => {
-				if (foreign) state.rows.approvalRequest[0].organizationId = "foreign";
-				await send({
-					userId: "user",
-					organizationId: "org",
-					type: "approval_request_submitted",
-					entityType: "approval_request",
-					entityId: "approval",
-					title: "SECRET TITLE",
-					message: "SECRET MESSAGE",
-				});
-				expect(state.sends[platform]).toHaveBeenCalledTimes(foreign ? 0 : 1);
-				expect(JSON.stringify(state.sends[platform].mock.calls)).not.toContain(
-					"SECRET",
-				);
-			},
-		);
-	},
-);
+] as const)("$platform existing approval-reference notification route", ({ platform, send }) => {
+	it.each([true, false])(
+		"keeps foreign=%s approval details out of fallback output",
+		async (foreign) => {
+			if (foreign) state.rows.approvalRequest[0].organizationId = "foreign";
+			await send({
+				userId: "user",
+				organizationId: "org",
+				type: "approval_request_submitted",
+				entityType: "approval_request",
+				entityId: "approval",
+				title: "SECRET TITLE",
+				message: "SECRET MESSAGE",
+			});
+			expect(state.sends[platform]).toHaveBeenCalledTimes(foreign ? 0 : 1);
+			expect(JSON.stringify(state.sends[platform].mock.calls)).not.toContain("SECRET");
+		},
+	);
+});
 
 const managerId = "10000000-0000-4000-8000-000000000001";
 // Production defers Next.js-only decision imports so escalation workers can
@@ -316,9 +311,7 @@ const platformCases = [
 				} as Parameters<typeof telegramAction>[0],
 				{ a: action === "approve" ? "ap" : "rj", id: "approval" },
 				"provider-user",
-				{ organizationId: "org", botToken: "token" } as Parameters<
-					typeof telegramAction
-				>[3],
+				{ organizationId: "org", botToken: "token" } as Parameters<typeof telegramAction>[3],
 			),
 	},
 	{
@@ -326,14 +319,10 @@ const platformCases = [
 		send: () => sendDiscord("approval", managerId, "org", "token"),
 		act: (action: "approve" | "reject" = "approve") =>
 			discordAction(
-				{ id: "interaction", token: "interaction-token" } as Parameters<
-					typeof discordAction
-				>[0],
+				{ id: "interaction", token: "interaction-token" } as Parameters<typeof discordAction>[0],
 				{ a: action === "approve" ? "ap" : "rj", id: "approval" },
 				"provider-user",
-				{ organizationId: "org", botToken: "token" } as Parameters<
-					typeof discordAction
-				>[3],
+				{ organizationId: "org", botToken: "token" } as Parameters<typeof discordAction>[3],
 			),
 	},
 	{
@@ -341,14 +330,10 @@ const platformCases = [
 		send: () => sendTeams("approval", managerId, "org"),
 		act: (action: "approve" | "reject" = "approve") =>
 			teamsAction(
-				{ sendActivity: state.replies.teams } as unknown as Parameters<
-					typeof teamsAction
-				>[0],
+				{ sendActivity: state.replies.teams } as unknown as Parameters<typeof teamsAction>[0],
 				"approval",
 				action,
-				{ employeeId: managerId, userId: "user" } as Parameters<
-					typeof teamsAction
-				>[3],
+				{ employeeId: managerId, userId: "user" } as Parameters<typeof teamsAction>[3],
 				{ organizationId: "org" } as Parameters<typeof teamsAction>[4],
 			),
 	},
@@ -426,34 +411,30 @@ beforeEach(() => {
 describe.each(platformCases)(
 	"$platform approval preparation to transport",
 	({ platform, send, act }) => {
-		it.each([
-			"absence_entry",
-			"time_entry",
-			"travel_expense_claim",
-			"unknown_kind",
-		])("sends only a review notice for unbound %s", async (kind) => {
-			state.rows.approvalRequest[0].entityType = kind;
-			await send();
-			expect(state.sends[platform]).toHaveBeenCalledOnce();
-			const output = JSON.stringify(state.sends[platform].mock.calls);
-			expect(output).toContain("Review required");
-			// Exact item on the organization's origin, never the generic inbox.
-			expect(output).toContain(
-				"https://org.z8.test/approvals/review/org/compatibility/approval",
-			);
-			expect(output).not.toContain("/approvals/inbox");
-			expect(output).not.toMatch(
-				/SECRET|private@example|correctedTime|Time Correction|callback_data|approval_approve|Action.Submit|Action.Http/,
-			);
-			expect(state.track).toHaveBeenCalledWith(
-				expect.objectContaining({
-					organizationId: "org",
-					recipientUserId: "user",
-					approvalRequestId: "approval",
-				}),
-			);
-			expect(state.read.mock.calls.flat()).not.toContain("timeEntry");
-		});
+		it.each(["absence_entry", "time_entry", "travel_expense_claim", "unknown_kind"])(
+			"sends only a review notice for unbound %s",
+			async (kind) => {
+				state.rows.approvalRequest[0].entityType = kind;
+				await send();
+				expect(state.sends[platform]).toHaveBeenCalledOnce();
+				const output = JSON.stringify(state.sends[platform].mock.calls);
+				expect(output).toContain("Review required");
+				// Exact item on the organization's origin, never the generic inbox.
+				expect(output).toContain("https://org.z8.test/approvals/review/org/compatibility/approval");
+				expect(output).not.toContain("/approvals/inbox");
+				expect(output).not.toMatch(
+					/SECRET|private@example|correctedTime|Time Correction|callback_data|approval_approve|Action.Submit|Action.Http/,
+				);
+				expect(state.track).toHaveBeenCalledWith(
+					expect.objectContaining({
+						organizationId: "org",
+						recipientUserId: "user",
+						approvalRequestId: "approval",
+					}),
+				);
+				expect(state.read.mock.calls.flat()).not.toContain("timeEntry");
+			},
+		);
 		it.each([
 			"foreign request",
 			"wrong assignee",
@@ -462,17 +443,12 @@ describe.each(platformCases)(
 			"missing membership",
 			"terminal request",
 		])("suppresses disclosure for %s", async (condition) => {
-			if (condition === "foreign request")
-				state.rows.approvalRequest[0].organizationId = "foreign";
-			if (condition === "wrong assignee")
-				state.rows.approvalRequest[0].approverId = "someone-else";
-			if (condition === "foreign employee")
-				state.rows.employee[0].organizationId = "foreign";
-			if (condition === "inactive employee")
-				state.rows.employee[0].isActive = false;
+			if (condition === "foreign request") state.rows.approvalRequest[0].organizationId = "foreign";
+			if (condition === "wrong assignee") state.rows.approvalRequest[0].approverId = "someone-else";
+			if (condition === "foreign employee") state.rows.employee[0].organizationId = "foreign";
+			if (condition === "inactive employee") state.rows.employee[0].isActive = false;
 			if (condition === "missing membership") state.rows.member = [];
-			if (condition === "terminal request")
-				state.rows.approvalRequest[0].status = "approved";
+			if (condition === "terminal request") state.rows.approvalRequest[0].status = "approved";
 			await send();
 			expect(state.sends[platform]).not.toHaveBeenCalled();
 			expect(state.track).not.toHaveBeenCalled();
@@ -484,9 +460,7 @@ describe.each(platformCases)(
 				expect(state.replies[platform]).toHaveBeenCalledOnce();
 				const output = JSON.stringify(state.replies[platform].mock.calls);
 				expect(output).toContain("No decision was made");
-				expect(output).toContain(
-					"https://org.z8.test/approvals/review/org/compatibility/approval",
-				);
+				expect(output).toContain("https://org.z8.test/approvals/review/org/compatibility/approval");
 				expect(output).not.toMatch(/SECRET|successfully|resolvedAt/);
 				// Only a committed decision by the same approver can be confirmed.
 				expect(state.decide).toHaveBeenCalledExactlyOnceWith({
@@ -506,10 +480,7 @@ describe.each(platformCases)(
 				expect(state.track).not.toHaveBeenCalled();
 			},
 		);
-		it.each([
-			"right_not_held",
-			"reassigned",
-		] as const)(
+		it.each(["right_not_held", "reassigned"] as const)(
 			"discloses nothing when the decision refuses as %s: the card is not theirs",
 			async (reason) => {
 				state.decide.mockResolvedValueOnce({ status: "refused", reason });
@@ -519,12 +490,7 @@ describe.each(platformCases)(
 				expect(state.track).not.toHaveBeenCalled();
 			},
 		);
-		it.each([
-			"already_decided",
-			"unclassified",
-			"changed",
-			"not_found",
-		] as const)(
+		it.each(["already_decided", "unclassified", "changed", "not_found"] as const)(
 			"answers review required when the decision refuses as %s",
 			async (reason) => {
 				state.decide.mockResolvedValueOnce({ status: "refused", reason });
@@ -539,9 +505,7 @@ describe.each(platformCases)(
 			// The time approval decision finds no time approval behind the id.
 			state.decide.mockResolvedValueOnce({ status: "refused", reason: "not_found" });
 			await act();
-			expect(JSON.stringify(state.replies[platform].mock.calls)).toContain(
-				"No decision was made",
-			);
+			expect(JSON.stringify(state.replies[platform].mock.calls)).toContain("No decision was made");
 		});
 		it("does not disclose to a former canonical assignee even if the compatibility representative is stale", async () => {
 			state.rows.approvalWorkflowStage = [
@@ -622,8 +586,7 @@ describe.each(platformCases)(
 		it.each(["approve", "reject"] as const)(
 			"preserves a verified historical %s without claiming final request status or new actor/time",
 			async (action) => {
-				state.rows.approvalRequest[0].status =
-					action === "approve" ? "approved" : "rejected";
+				state.rows.approvalRequest[0].status = action === "approve" ? "approved" : "rejected";
 				state.decide.mockResolvedValue({
 					...decided,
 					outcome: action === "approve" ? "approved" : "rejected",
@@ -632,9 +595,7 @@ describe.each(platformCases)(
 				const output = JSON.stringify(state.replies[platform].mock.calls);
 				expect(output).toContain("previously recorded");
 				expect(output).toContain("no new decision was made");
-				expect(output).toContain(
-					"https://org.z8.test/approvals/review/org/compatibility/approval",
-				);
+				expect(output).toContain("https://org.z8.test/approvals/review/org/compatibility/approval");
 				expect(output).not.toMatch(/SECRET|2026|Request approved|successfully/);
 				expect(state.track).not.toHaveBeenCalled();
 			},
@@ -648,14 +609,10 @@ describe.each(platformCases)(
 			"removed membership",
 		])("rejects callback access for %s", async (condition) => {
 			if (condition === "missing request") state.rows.approvalRequest = [];
-			if (condition === "foreign request")
-				state.rows.approvalRequest[0].organizationId = "foreign";
-			if (condition === "foreign actor")
-				state.rows.employee[0].organizationId = "foreign";
-			if (condition === "inactive actor")
-				state.rows.employee[0].isActive = false;
-			if (condition === "wrong assignee")
-				state.rows.approvalRequest[0].approverId = "someone-else";
+			if (condition === "foreign request") state.rows.approvalRequest[0].organizationId = "foreign";
+			if (condition === "foreign actor") state.rows.employee[0].organizationId = "foreign";
+			if (condition === "inactive actor") state.rows.employee[0].isActive = false;
+			if (condition === "wrong assignee") state.rows.approvalRequest[0].approverId = "someone-else";
 			if (condition === "removed membership") state.rows.member = [];
 			// The time approval decision refuses what it finds no right for.
 			state.decide.mockResolvedValue({
@@ -671,9 +628,7 @@ describe.each(platformCases)(
 			);
 		});
 		it("does not turn provider rejection into a decision or tracking success", async () => {
-			state.sends[platform].mockRejectedValueOnce(
-				new Error("Provider unavailable"),
-			);
+			state.sends[platform].mockRejectedValueOnce(new Error("Provider unavailable"));
 			await send();
 			expect(state.track).not.toHaveBeenCalled();
 			expect(state.decide).not.toHaveBeenCalled();
@@ -683,9 +638,7 @@ describe.each(platformCases)(
 			async (failure) => {
 				state.decide.mockResolvedValue(decided);
 				if (failure === "reject")
-					state.replies[platform].mockRejectedValueOnce(
-						new Error("Provider unavailable"),
-					);
+					state.replies[platform].mockRejectedValueOnce(new Error("Provider unavailable"));
 				else state.replies[platform].mockResolvedValueOnce(false);
 				await act().catch(() => undefined);
 				expect(state.decide).toHaveBeenCalledOnce();
@@ -706,8 +659,7 @@ describe("Telegram webhook dispatcher after review-only cutover", () => {
 		"malformed",
 		"acknowledgment failure",
 	])("acknowledges exactly once for %s", async (scenario) => {
-		if (scenario === "unlinked")
-			state.resolve.mockResolvedValueOnce({ status: "not_found" });
+		if (scenario === "unlinked") state.resolve.mockResolvedValueOnce({ status: "not_found" });
 		if (scenario === "resolver failure")
 			state.resolve.mockRejectedValueOnce(new Error("Resolver unavailable"));
 		if (scenario === "read failure")
@@ -715,23 +667,16 @@ describe("Telegram webhook dispatcher after review-only cutover", () => {
 				throw new Error("Database unavailable");
 			});
 		if (scenario === "delivery failure")
-			state.replies.telegram.mockRejectedValueOnce(
-				new Error("Provider unavailable"),
-			);
+			state.replies.telegram.mockRejectedValueOnce(new Error("Provider unavailable"));
 		if (scenario === "acknowledgment failure")
-			state.acknowledge.mockRejectedValueOnce(
-				new Error("Acknowledgment unavailable"),
-			);
+			state.acknowledge.mockRejectedValueOnce(new Error("Acknowledgment unavailable"));
 		await handleTelegramUpdate(
 			{
 				update_id: 1,
 				callback_query: {
 					id: "query",
 					from: { id: 1, is_bot: false, first_name: "Manager" },
-					data:
-						scenario === "malformed"
-							? "{"
-							: JSON.stringify({ a: "ap", id: "approval" }),
+					data: scenario === "malformed" ? "{" : JSON.stringify({ a: "ap", id: "approval" }),
 					message: {
 						message_id: 20,
 						date: 0,
@@ -739,31 +684,20 @@ describe("Telegram webhook dispatcher after review-only cutover", () => {
 					},
 				},
 			},
-			{ organizationId: "org", botToken: "token" } as Parameters<
-				typeof handleTelegramUpdate
-			>[1],
+			{ organizationId: "org", botToken: "token" } as Parameters<typeof handleTelegramUpdate>[1],
 		);
 		// No committed or verified outcome, so the acknowledgment carries no text.
-		expect(state.acknowledge).toHaveBeenCalledExactlyOnceWith(
-			"token",
-			"query",
-			undefined,
-		);
+		expect(state.acknowledge).toHaveBeenCalledExactlyOnceWith("token", "query", undefined);
 		expect(state.track).not.toHaveBeenCalled();
 	});
 });
 
 it("loads the new notice translations through the actual bot translator", async () => {
-	const { getBotTranslate } = await vi.importActual<
-		typeof import("@/lib/bot-platform/i18n")
-	>("@/lib/bot-platform/i18n");
+	const { getBotTranslate } =
+		await vi.importActual<typeof import("@/lib/bot-platform/i18n")>("@/lib/bot-platform/i18n");
 	const translate = await getBotTranslate("de");
-	expect(translate("bot.approval.reviewRequiredTitle", "fallback")).toBe(
-		"Prüfung erforderlich",
-	);
-	expect(translate("bot.approval.historicalTitle", "fallback")).toBe(
-		"Historische Entscheidung",
-	);
+	expect(translate("bot.approval.reviewRequiredTitle", "fallback")).toBe("Prüfung erforderlich");
+	expect(translate("bot.approval.historicalTitle", "fallback")).toBe("Historische Entscheidung");
 });
 
 describe.each(platformCases.slice(0, 2))(
@@ -772,10 +706,7 @@ describe.each(platformCases.slice(0, 2))(
 		it.each(["organizationId", "recipientUserId", "approvalRequestId"])(
 			"does not edit a tracking row with mismatched %s",
 			async (field) => {
-				const table =
-					platform === "slack"
-						? "slackApprovalMessage"
-						: "telegramApprovalMessage";
+				const table = platform === "slack" ? "slackApprovalMessage" : "telegramApprovalMessage";
 				state.rows[table][0][field] = "foreign";
 				await act();
 				expect(state.replies[platform]).not.toHaveBeenCalled();

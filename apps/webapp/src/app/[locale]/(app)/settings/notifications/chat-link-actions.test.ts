@@ -4,7 +4,9 @@ import type { StubCaller } from "@/test/organization-action";
 const mocks = vi.hoisted(() => ({
 	caller: null as StubCaller | null,
 	getMemberChatLinks: vi.fn(),
+	issueMemberChatLinkCode: vi.fn(),
 	issueMemberTelegramLinkCode: vi.fn(),
+	issueMemberTelegramCandidateLinkCode: vi.fn(),
 	unlinkMemberChatLink: vi.fn(),
 }));
 
@@ -16,12 +18,18 @@ vi.mock("@/lib/effect/runtime", async () => {
 
 vi.mock("@/lib/chat-installations/member-links", () => ({
 	getMemberChatLinks: mocks.getMemberChatLinks,
+	issueMemberChatLinkCode: mocks.issueMemberChatLinkCode,
 	issueMemberTelegramLinkCode: mocks.issueMemberTelegramLinkCode,
+	issueMemberTelegramCandidateLinkCode: mocks.issueMemberTelegramCandidateLinkCode,
 	unlinkMemberChatLink: mocks.unlinkMemberChatLink,
 }));
 
-const { generateMemberTelegramLinkCode, getMemberChatLinksAction, unlinkMemberChatAccount } =
-	await import("./chat-link-actions");
+const {
+	generateMemberChatLinkCode,
+	generateMemberTelegramLinkCode,
+	getMemberChatLinksAction,
+	unlinkMemberChatAccount,
+} = await import("./chat-link-actions");
 
 const orgMember: StubCaller = {
 	userId: "user-1",
@@ -49,6 +57,15 @@ beforeEach(() => {
 		hasOrganizationContext: true,
 		channels: [],
 	});
+	mocks.issueMemberChatLinkCode.mockResolvedValue({
+		status: "issued",
+		proofId: "proof-chat-1",
+		code: "TEAM-1234-5678",
+		expiresAt: new Date("2026-11-26T12:25:00.000Z"),
+		installationId: "inst-teams-1",
+		purpose: "member_link",
+		botUsername: null,
+	});
 	mocks.issueMemberTelegramLinkCode.mockResolvedValue({
 		status: "issued",
 		proofId: "proof-1",
@@ -62,7 +79,7 @@ beforeEach(() => {
 });
 
 describe("member chat link settings actions", () => {
-	it("loads the active organization's member chat links", async () => {
+	it("loads the active organization's member chat links using DatabaseService", async () => {
 		const result = await getMemberChatLinksAction();
 
 		expect(result).toEqual({
@@ -73,11 +90,43 @@ describe("member chat link settings actions", () => {
 				channels: [],
 			},
 		});
-		expect(mocks.getMemberChatLinks).toHaveBeenCalledWith({
-			userId: "user-1",
-			organizationId: "org-1",
-		});
+		expect(mocks.getMemberChatLinks).toHaveBeenCalledWith(
+			{
+				userId: "user-1",
+				organizationId: "org-1",
+			},
+			{ db: expect.anything() },
+		);
 	});
+
+	it.each(["telegram", "slack", "teams", "discord"] as const)(
+		"issues a short-lived %s link code scoped to the active organization",
+		async (provider) => {
+			const result = await generateMemberChatLinkCode({ provider });
+
+			expect(result).toEqual({
+				success: true,
+				data: {
+					code: "TEAM-1234-5678",
+					expiresAt: "2026-11-26T12:25:00.000Z",
+					installationId: "inst-teams-1",
+					botUsername: null,
+					provider,
+					purpose: "member_link",
+				},
+			});
+			expect(mocks.issueMemberChatLinkCode).toHaveBeenCalledWith(
+				{
+					userId: "user-1",
+					organizationId: "org-1",
+					provider,
+					purpose: "member_link",
+					installationId: undefined,
+				},
+				{ db: expect.anything() },
+			);
+		},
+	);
 
 	it("issues a short-lived Telegram link code scoped to the active organization", async () => {
 		const result = await generateMemberTelegramLinkCode();
@@ -91,13 +140,16 @@ describe("member chat link settings actions", () => {
 				botUsername: "z8_acme_bot",
 			},
 		});
-		expect(mocks.issueMemberTelegramLinkCode).toHaveBeenCalledWith({
-			userId: "user-1",
-			organizationId: "org-1",
-		});
+		expect(mocks.issueMemberTelegramLinkCode).toHaveBeenCalledWith(
+			{
+				userId: "user-1",
+				organizationId: "org-1",
+			},
+			{ db: expect.anything() },
+		);
 	});
 
-	it("surfaces rate limiting when too many Telegram link codes are issued", async () => {
+	it("surfaces stable refusal code when too many link codes are issued", async () => {
 		mocks.issueMemberTelegramLinkCode.mockResolvedValueOnce({
 			status: "rate_limited",
 			retryAfterSeconds: 180,
@@ -105,19 +157,26 @@ describe("member chat link settings actions", () => {
 
 		const result = await generateMemberTelegramLinkCode();
 
-		expect(result).toMatchObject({ success: false, code: "ValidationError" });
+		expect(result).toMatchObject({
+			success: false,
+			code: "ValidationError",
+			refusal: "chat_link_rate_limited",
+		});
 	});
 
-	it("unlinks the member's own Telegram link in the active organization", async () => {
+	it("unlinks the member's own link in the active organization using DatabaseService", async () => {
 		const result = await unlinkMemberChatAccount({ provider: "telegram" });
 
 		expect(result).toEqual({ success: true, data: { unlinked: true } });
-		expect(mocks.unlinkMemberChatLink).toHaveBeenCalledWith({
-			userId: "user-1",
-			organizationId: "org-1",
-			provider: "telegram",
-			installationId: undefined,
-		});
+		expect(mocks.unlinkMemberChatLink).toHaveBeenCalledWith(
+			{
+				userId: "user-1",
+				organizationId: "org-1",
+				provider: "telegram",
+				installationId: undefined,
+			},
+			{ db: expect.anything() },
+		);
 	});
 
 	it.each([
@@ -131,6 +190,10 @@ describe("member chat link settings actions", () => {
 			success: false,
 			code: "AuthorizationError",
 		});
+		expect(await generateMemberChatLinkCode({ provider: "teams" })).toMatchObject({
+			success: false,
+			code: "AuthorizationError",
+		});
 		expect(await generateMemberTelegramLinkCode()).toMatchObject({
 			success: false,
 			code: "AuthorizationError",
@@ -141,6 +204,7 @@ describe("member chat link settings actions", () => {
 		});
 
 		expect(mocks.getMemberChatLinks).not.toHaveBeenCalled();
+		expect(mocks.issueMemberChatLinkCode).not.toHaveBeenCalled();
 		expect(mocks.issueMemberTelegramLinkCode).not.toHaveBeenCalled();
 		expect(mocks.unlinkMemberChatLink).not.toHaveBeenCalled();
 	});

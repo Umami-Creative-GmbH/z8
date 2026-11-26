@@ -2,15 +2,24 @@
 
 import { Effect } from "effect";
 import { z } from "zod";
-import { CHAT_INSTALLATION_PROVIDERS } from "@/db/schema/chat-installations";
+import {
+	CHAT_INSTALLATION_PROVIDERS,
+	type ChatInstallationProvider,
+} from "@/db/schema/chat-installations";
+import type { ChatLinkProofPurpose } from "@/db/schema";
+
+export type { ChatLinkProofPurpose };
 import {
 	getMemberChatLinks,
+	type IssueChatLinkProofResult,
+	issueMemberChatLinkCode,
 	issueMemberTelegramCandidateLinkCode,
 	issueMemberTelegramLinkCode,
 	type MemberChatLinksSnapshot,
 	unlinkMemberChatLink,
 } from "@/lib/chat-installations/member-links";
 import { AuthorizationError, ExternalServiceError, ValidationError } from "@/lib/effect/errors";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
 
 export interface GeneratedMemberLinkCode {
@@ -18,7 +27,15 @@ export interface GeneratedMemberLinkCode {
 	expiresAt: string;
 	installationId: string;
 	botUsername: string | null;
+	provider?: ChatInstallationProvider;
+	purpose?: ChatLinkProofPurpose;
 }
+
+const generateChatLinkCodeSchema = z.strictObject({
+	provider: z.enum(CHAT_INSTALLATION_PROVIDERS),
+	purpose: z.enum(["member_link", "candidate_enrollment"]).optional(),
+	installationId: z.string().uuid().optional(),
+});
 
 const unlinkChatAccountSchema = z.strictObject({
 	provider: z.enum(CHAT_INSTALLATION_PROVIDERS),
@@ -34,6 +51,50 @@ function chatLinkFailure(operation: string, message: string) {
 		new ExternalServiceError({ message, service: "chat-installations", operation, cause });
 }
 
+function mapIssuedLinkCodeOutcome(
+	result: IssueChatLinkProofResult,
+	context: {
+		userId: string;
+		resource: string;
+		unavailableMessage: string;
+		provider?: ChatInstallationProvider;
+	},
+) {
+	switch (result.status) {
+		case "issued":
+			return Effect.succeed({
+				code: result.code,
+				expiresAt: result.expiresAt.toISOString(),
+				installationId: result.installationId,
+				botUsername: result.botUsername,
+				...(context.provider ? { provider: context.provider, purpose: result.purpose } : {}),
+			} satisfies GeneratedMemberLinkCode);
+		case "installation_unavailable":
+			return Effect.fail(
+				new ValidationError({
+					message: context.unavailableMessage,
+					refusal: "chat_link_unavailable",
+				}),
+			);
+		case "ineligible":
+			return Effect.fail(
+				new AuthorizationError({
+					message: "You are not eligible to link a chat account in this organization",
+					userId: context.userId,
+					resource: context.resource,
+					action: "member",
+				}),
+			);
+		case "rate_limited":
+			return Effect.fail(
+				new ValidationError({
+					message: "Too many link code requests. Please wait a few minutes and try again.",
+					refusal: "chat_link_rate_limited",
+				}),
+			);
+	}
+}
+
 /**
  * Loads the current employee's chat link status across the active organization's
  * configured chat channels (Telegram, Slack, Teams, Discord).
@@ -41,10 +102,55 @@ function chatLinkFailure(operation: string, message: string) {
 export const getMemberChatLinksAction = organizationAction(
 	{ name: "notifications.getMemberChatLinks", requires: "member", schema: noInput },
 	({ actor, organizationId }) =>
-		Effect.tryPromise({
-			try: (): Promise<MemberChatLinksSnapshot> =>
-				getMemberChatLinks({ userId: actor.userId, organizationId }),
-			catch: chatLinkFailure("getMemberChatLinks", "Couldn't verify chat connections"),
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			return yield* Effect.tryPromise({
+				try: (): Promise<MemberChatLinksSnapshot> =>
+					getMemberChatLinks({ userId: actor.userId, organizationId }, { db: dbService.db }),
+				catch: chatLinkFailure("getMemberChatLinks", "Couldn't verify chat connections"),
+			});
+		}),
+);
+
+/**
+ * Generates a short-lived, single-use, installation-bound link proof for any
+ * configured chat provider (Telegram, Slack, Microsoft Teams, Discord) and
+ * lane (`member_link` or `candidate_enrollment`).
+ */
+export const generateMemberChatLinkCode = organizationAction(
+	{
+		name: "notifications.generateChatLinkCode",
+		requires: "member",
+		schema: generateChatLinkCodeSchema,
+	},
+	({ actor, organizationId, input }) =>
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			const purpose: ChatLinkProofPurpose = input.purpose ?? "member_link";
+			const result = yield* Effect.tryPromise({
+				try: () =>
+					issueMemberChatLinkCode(
+						{
+							userId: actor.userId,
+							organizationId,
+							provider: input.provider,
+							purpose,
+							installationId: input.installationId,
+						},
+						{ db: dbService.db },
+					),
+				catch: chatLinkFailure("issueMemberChatLinkCode", "Failed to generate link code"),
+			});
+
+			return yield* mapIssuedLinkCodeOutcome(result, {
+				userId: actor.userId,
+				resource: "notifications.generateChatLinkCode",
+				unavailableMessage:
+					purpose === "candidate_enrollment"
+						? "No staged replacement installation is available for this channel"
+						: "This chat channel is not configured for this organization",
+				provider: input.provider,
+			});
 		}),
 );
 
@@ -56,41 +162,21 @@ export const generateMemberTelegramLinkCode = organizationAction(
 	{ name: "notifications.generateTelegramLinkCode", requires: "member", schema: noInput },
 	({ actor, organizationId }) =>
 		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
 			const result = yield* Effect.tryPromise({
-				try: () => issueMemberTelegramLinkCode({ userId: actor.userId, organizationId }),
+				try: () =>
+					issueMemberTelegramLinkCode(
+						{ userId: actor.userId, organizationId },
+						{ db: dbService.db },
+					),
 				catch: chatLinkFailure("issueMemberTelegramLinkCode", "Failed to generate link code"),
 			});
 
-			switch (result.status) {
-				case "issued":
-					return {
-						code: result.code,
-						expiresAt: result.expiresAt.toISOString(),
-						installationId: result.installationId,
-						botUsername: result.botUsername,
-					} satisfies GeneratedMemberLinkCode;
-				case "installation_unavailable":
-					return yield* Effect.fail(
-						new ValidationError({
-							message: "Telegram is not configured for this organization",
-						}),
-					);
-				case "ineligible":
-					return yield* Effect.fail(
-						new AuthorizationError({
-							message: "You are not eligible to link a chat account in this organization",
-							userId: actor.userId,
-							resource: "notifications.generateTelegramLinkCode",
-							action: "member",
-						}),
-					);
-				case "rate_limited":
-					return yield* Effect.fail(
-						new ValidationError({
-							message: "Too many link code requests. Please wait a few minutes and try again.",
-						}),
-					);
-			}
+			return yield* mapIssuedLinkCodeOutcome(result, {
+				userId: actor.userId,
+				resource: "notifications.generateTelegramLinkCode",
+				unavailableMessage: "Telegram is not configured for this organization",
+			});
 		}),
 );
 
@@ -106,49 +192,28 @@ export const generateMemberTelegramCandidateLinkCode = organizationAction(
 	},
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
 			const result = yield* Effect.tryPromise({
 				try: () =>
-					issueMemberTelegramCandidateLinkCode({
-						userId: actor.userId,
-						organizationId,
-						installationId: input.installationId,
-					}),
+					issueMemberTelegramCandidateLinkCode(
+						{
+							userId: actor.userId,
+							organizationId,
+							installationId: input.installationId,
+						},
+						{ db: dbService.db },
+					),
 				catch: chatLinkFailure(
 					"issueMemberTelegramCandidateLinkCode",
 					"Failed to generate replacement bot link code",
 				),
 			});
 
-			switch (result.status) {
-				case "issued":
-					return {
-						code: result.code,
-						expiresAt: result.expiresAt.toISOString(),
-						installationId: result.installationId,
-						botUsername: result.botUsername,
-					} satisfies GeneratedMemberLinkCode;
-				case "installation_unavailable":
-					return yield* Effect.fail(
-						new ValidationError({
-							message: "No staged replacement Telegram bot is available for this organization",
-						}),
-					);
-				case "ineligible":
-					return yield* Effect.fail(
-						new AuthorizationError({
-							message: "You are not eligible to link a chat account in this organization",
-							userId: actor.userId,
-							resource: "notifications.generateTelegramCandidateLinkCode",
-							action: "member",
-						}),
-					);
-				case "rate_limited":
-					return yield* Effect.fail(
-						new ValidationError({
-							message: "Too many link code requests. Please wait a few minutes and try again.",
-						}),
-					);
-			}
+			return yield* mapIssuedLinkCodeOutcome(result, {
+				userId: actor.userId,
+				resource: "notifications.generateTelegramCandidateLinkCode",
+				unavailableMessage: "No staged replacement Telegram bot is available for this organization",
+			});
 		}),
 );
 
@@ -163,14 +228,20 @@ export const unlinkMemberChatAccount = organizationAction(
 		schema: unlinkChatAccountSchema,
 	},
 	({ actor, organizationId, input }) =>
-		Effect.tryPromise({
-			try: () =>
-				unlinkMemberChatLink({
-					userId: actor.userId,
-					organizationId,
-					provider: input.provider,
-					installationId: input.installationId,
-				}),
-			catch: chatLinkFailure("unlinkMemberChatLink", "Failed to unlink chat account"),
+		Effect.gen(function* () {
+			const dbService = yield* DatabaseService;
+			return yield* Effect.tryPromise({
+				try: () =>
+					unlinkMemberChatLink(
+						{
+							userId: actor.userId,
+							organizationId,
+							provider: input.provider,
+							installationId: input.installationId,
+						},
+						{ db: dbService.db },
+					),
+				catch: chatLinkFailure("unlinkMemberChatLink", "Failed to unlink chat account"),
+			});
 		}),
 );

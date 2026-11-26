@@ -31,6 +31,7 @@ import { Switch } from "@/components/ui/switch";
 import { useMemberChatLinks } from "@/hooks/use-member-chat-links";
 import { useNotificationPreferences } from "@/hooks/use-notification-preferences";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
+import type { ChatLinkProofPurpose } from "@/app/[locale]/(app)/settings/notifications/chat-link-actions";
 import type { ChatInstallationProvider } from "@/db/schema/chat-installations";
 import type { AbsenceDeputyNotificationType } from "@/lib/absences/deputy-notification-types";
 import {
@@ -39,10 +40,47 @@ import {
 	type NotificationChannel,
 	type NotificationType,
 } from "@/lib/notifications/types";
+import {
+	actionErrorMessage,
+	type RefusalMessages,
+} from "@/lib/organization-action/action-error-message";
 import type { ClockingReminderType } from "@/lib/time-tracking/clocking-reminders/occasion";
 import { ChatConnectionsCard } from "./chat-connections-card";
-import { DiscordMemberLinkCard } from "./discord-member-link-card";
 import { PushPermissionModal } from "./push-permission-modal";
+
+const CHAT_LINK_REFUSALS = {
+	chat_link_unavailable: [
+		"settings.notifications.chatLinks.errors.unavailable",
+		"This chat channel is not available for linking in your organization.",
+	],
+	chat_link_rate_limited: [
+		"settings.notifications.chatLinks.errors.rateLimited",
+		"Too many link code requests. Please wait a few minutes and try again.",
+	],
+	installation_unavailable: [
+		"settings.notifications.chatLinks.errors.unavailable",
+		"This chat channel is not available for linking in your organization.",
+	],
+	not_linked: [
+		"settings.notifications.chatLinks.errors.notLinked",
+		"Link your chat account with a link code first.",
+	],
+	credentials_missing: [
+		"settings.notifications.chatLinks.errors.credentialsMissing",
+		"Bot credentials are currently unavailable. Contact your administrator.",
+	],
+	secret_store_unavailable: [
+		"settings.notifications.chatLinks.errors.secretStoreUnavailable",
+		"The organization secret store is temporarily unavailable. Try again shortly.",
+	],
+} satisfies RefusalMessages<
+	| "chat_link_unavailable"
+	| "chat_link_rate_limited"
+	| "installation_unavailable"
+	| "not_linked"
+	| "credentials_missing"
+	| "secret_store_unavailable"
+>;
 
 // Group notification types by category for better UX
 const NOTIFICATION_CATEGORIES = [
@@ -381,26 +419,66 @@ function useNotificationSettingsViewModel() {
 
 	const chatLinks = useMemberChatLinks();
 
-	const handleGenerateTelegramCode = async () => {
+	const handleGenerateLinkCode = async (input: {
+		provider: ChatInstallationProvider;
+		purpose: ChatLinkProofPurpose;
+		installationId?: string;
+	}) => {
 		try {
-			await chatLinks.generateTelegramCodeAsync();
-		} catch (error) {
+			const res = await chatLinks.generateLinkCodeAsync(input);
+			if (!res.success) {
+				toast.error(
+					actionErrorMessage(t, res, CHAT_LINK_REFUSALS, [
+						"settings.notifications.chatLinks.generateFailed",
+						"Failed to generate link code",
+					]),
+				);
+			}
+		} catch {
 			toast.error(
-				error instanceof Error
-					? error.message
-					: t("settings.notifications.chatLinks.generateFailed", "Failed to generate link code"),
+				t("settings.notifications.chatLinks.generateFailed", "Failed to generate link code"),
 			);
 		}
 	};
 
-	const handleGenerateTelegramCandidateCode = async (installationId: string) => {
+	const handleRecheckDiscordDm = async (installationId: string) => {
 		try {
-			await chatLinks.generateTelegramCandidateCodeAsync(installationId);
-		} catch (error) {
+			const res = await chatLinks.recheckDiscordDmAsync(installationId);
+			if (!res.success) {
+				toast.error(
+					actionErrorMessage(t, res, CHAT_LINK_REFUSALS, [
+						"settings.notifications.chatLinks.dmRecheckFailed",
+						"Could not verify Discord direct messages.",
+					]),
+				);
+				return;
+			}
+			if (res.data.kind === "reachable") {
+				toast.success(
+					t(
+						"settings.notifications.chatLinks.dmVerified",
+						"Discord direct message delivery is verified.",
+					),
+				);
+				return;
+			}
+			toast.warning(
+				res.data.code === "discord_missing_access"
+					? t(
+							"settings.notifications.chatLinks.hints.discordShareServer",
+							"Z8 could not open a Discord DM because you do not share a server with this bot. Join a shared server with the bot, enable Direct Messages for that server, and click Verify DM delivery.",
+						)
+					: t(
+							"settings.notifications.chatLinks.hints.discordEnableDms",
+							"Discord privacy settings blocked direct messages from this bot (error 50007). Open your Discord server Privacy Settings, enable Direct Messages, ensure the bot is not blocked, and click Verify DM delivery.",
+						),
+			);
+		} catch {
 			toast.error(
-				error instanceof Error
-					? error.message
-					: t("settings.notifications.chatLinks.generateFailed", "Failed to generate link code"),
+				t(
+					"settings.notifications.chatLinks.dmRecheckFailed",
+					"Could not verify Discord direct messages.",
+				),
 			);
 		}
 	};
@@ -410,13 +488,20 @@ function useNotificationSettingsViewModel() {
 		installationId?: string,
 	) => {
 		try {
-			await chatLinks.unlinkAccountAsync({ provider, installationId });
+			const res = await chatLinks.unlinkAccountAsync({ provider, installationId });
+			if (!res.success) {
+				toast.error(
+					actionErrorMessage(t, res, CHAT_LINK_REFUSALS, [
+						"settings.notifications.chatLinks.unlinkFailed",
+						"Failed to unlink chat account",
+					]),
+				);
+				return;
+			}
 			toast.success(t("settings.notifications.chatLinks.unlinkedToast", "Chat account unlinked"));
-		} catch (error) {
+		} catch {
 			toast.error(
-				error instanceof Error
-					? error.message
-					: t("settings.notifications.chatLinks.unlinkFailed", "Failed to unlink chat account"),
+				t("settings.notifications.chatLinks.unlinkFailed", "Failed to unlink chat account"),
 			);
 		}
 	};
@@ -715,8 +800,8 @@ function useNotificationSettingsViewModel() {
 		getChannelDescription,
 		getChannelLabel,
 		getTypeLabel,
-		handleGenerateTelegramCandidateCode,
-		handleGenerateTelegramCode,
+		handleGenerateLinkCode,
+		handleRecheckDiscordDm,
 		handleRequestPermission,
 		handleToggle,
 		handleUnlinkChatAccount,
@@ -747,8 +832,8 @@ function NotificationSettingsView({
 		getChannelDescription,
 		getChannelLabel,
 		getTypeLabel,
-		handleGenerateTelegramCandidateCode,
-		handleGenerateTelegramCode,
+		handleGenerateLinkCode,
+		handleRecheckDiscordDm,
 		handleRequestPermission,
 		handleToggle,
 		handleUnlinkChatAccount,
@@ -892,21 +977,16 @@ function NotificationSettingsView({
 				error={chatLinks.error}
 				isRetrying={chatLinks.isRetrying}
 				onRetry={() => void chatLinks.refetch()}
-				generatedTelegramCode={chatLinks.generatedTelegramCode}
-				isGeneratingTelegramCode={chatLinks.isGeneratingTelegramCode}
-				onGenerateTelegramCode={() => void handleGenerateTelegramCode()}
-				generatedTelegramCandidateCode={chatLinks.generatedTelegramCandidateCode}
-				isGeneratingTelegramCandidateCode={chatLinks.isGeneratingTelegramCandidateCode}
-				onGenerateTelegramCandidateCode={(installationId) =>
-					void handleGenerateTelegramCandidateCode(installationId)
-				}
+				generatedCodes={chatLinks.generatedCodes}
+				generatingCodeKey={chatLinks.generatingCodeKey}
+				onGenerateLinkCode={(input) => void handleGenerateLinkCode(input)}
+				recheckingDiscordInstallationId={chatLinks.recheckingDiscordInstallationId}
+				onRecheckDiscordDm={(installationId) => void handleRecheckDiscordDm(installationId)}
 				unlinkingProvider={chatLinks.unlinkingProvider}
 				onUnlink={(provider, installationId) =>
 					void handleUnlinkChatAccount(provider, installationId)
 				}
 			/>
-
-			<DiscordMemberLinkCard />
 
 			{/* Channel legend */}
 			<div className="flex flex-wrap gap-4 text-sm text-muted-foreground">

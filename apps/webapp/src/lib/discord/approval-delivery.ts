@@ -45,7 +45,9 @@ async function resolveDiscordTokenForInstallation(
 		return { botToken: fromRevision, applicationId: installation.externalAppId };
 	}
 	if (installation.legacyTable === "discord_bot_config") {
-		const legacyBot = await getBotConfigByOrganization(organizationId);
+		const legacyBot = await getBotConfigByOrganization(organizationId, {
+			installationId: installation.id,
+		});
 		if (legacyBot) {
 			return {
 				botToken: legacyBot.botToken,
@@ -100,7 +102,9 @@ export const discordApprovalDeliveryAdapter: ApprovalDeliveryAdapter = {
 					return { kind: "suppressed", reason: "escalations_disabled" };
 				}
 			} else if (target.legacyTable === "discord_bot_config") {
-				const legacy = await getBotConfigByOrganization(input.organizationId);
+				const legacy = await getBotConfigByOrganization(input.organizationId, {
+					installationId: target.id,
+				});
 				if (!legacy) return { kind: "failed", outcome: "unavailable", reason: "bot_unavailable" };
 				if (legacy.setupStatus !== "active") {
 					return { kind: "suppressed", reason: "integration_disabled" };

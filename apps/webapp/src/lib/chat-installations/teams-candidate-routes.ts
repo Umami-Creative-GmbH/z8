@@ -19,6 +19,7 @@ import type { ResolvedTenant } from "@/lib/teams/types";
 import { readInstallationCredentialRevision } from "./credential-revisions";
 import { isValidGuid } from "./legacy-analysis";
 import { redeemChatLinkProof } from "./member-links";
+import { computeExpiryIso } from "./setup-utils";
 import {
 	computeTeamsCandidateSetupStatus,
 	resolveTeamsSetupRepository,
@@ -702,7 +703,7 @@ export async function handleTeamsInstallationMessageRequest(
 				signedEventVerifiedAt: now.toISOString(),
 				signedEventRevisionId: activeRevisionId,
 				signedEventType: activity.type || "message",
-				signedEventExpiresAt: new Date(now.getTime() + ttlMs).toISOString(),
+				signedEventExpiresAt: computeExpiryIso(now, ttlMs),
 				...(enrollmentProofDelta > 0
 					? {
 							enrollmentProofCount:

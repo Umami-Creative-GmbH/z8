@@ -1,4 +1,3 @@
-import { randomBytes } from "node:crypto";
 import { and, asc, eq } from "drizzle-orm";
 import { db as defaultDb } from "@/db";
 import {
@@ -10,8 +9,7 @@ import {
 	chatInstallation,
 	chatInstallationCredentialRevision,
 } from "@/db/schema";
-import { env } from "@/env";
-import { AuditAction, logAudit } from "@/lib/audit-logger";
+import { AuditAction } from "@/lib/audit-logger";
 import {
 	openDMChannelWithOutcome,
 	sendMessageWithOutcome,
@@ -40,6 +38,13 @@ import {
 	rotateChatInstallationCredentials,
 	type VerifyRotationIdentityResult,
 } from "./recovery-lifecycle";
+import {
+	computeExpiryIso,
+	defaultRecordAudit,
+	generateRouteId,
+	isFreshTimestamp,
+	resolveAppUrl,
+} from "./setup-utils";
 import type { ChatInstallationsDb } from "./types";
 
 const logger = createLogger("DiscordCandidateSetup");
@@ -212,15 +217,6 @@ export interface DiscordSetupRuntimeDeps {
 	now?: () => Date;
 }
 
-function generateRouteId(): string {
-	return randomBytes(18).toString("base64url");
-}
-
-function resolveAppUrl(override?: string): string {
-	const raw = (override || env.APP_URL || "https://z8-time.app").trim();
-	return raw.replace(/\/+$/, "");
-}
-
 /**
  * Builds the non-secret installation-scoped Interactions Endpoint URL configured
  * in the Discord Developer Portal.
@@ -228,25 +224,6 @@ function resolveAppUrl(override?: string): string {
 export function buildDiscordInteractionEndpointUrl(routeId: string, appUrl?: string): string {
 	const baseUrl = resolveAppUrl(appUrl);
 	return `${baseUrl}/api/discord/installations/${encodeURIComponent(routeId)}/interactions`;
-}
-
-function isFreshTimestamp(
-	verifiedAtIso: string | null | undefined,
-	expiresAtIso: string | null | undefined,
-	now: Date,
-	ttlMs: number,
-): boolean {
-	if (!verifiedAtIso) return false;
-	const verifiedMs = Date.parse(verifiedAtIso);
-	if (Number.isNaN(verifiedMs)) return false;
-	if (now.getTime() - verifiedMs > ttlMs) return false;
-	if (expiresAtIso) {
-		const expiresMs = Date.parse(expiresAtIso);
-		if (!Number.isNaN(expiresMs) && now.getTime() > expiresMs) {
-			return false;
-		}
-	}
-	return true;
 }
 
 /**
@@ -624,25 +601,6 @@ export function resolveDiscordSetupRepository(
 	deps?: DiscordSetupRuntimeDeps,
 ): DiscordSetupRepository {
 	return deps?.repository ?? createDrizzleDiscordSetupRepository(deps?.db ?? defaultDb);
-}
-
-async function defaultRecordAudit(event: DiscordSetupAuditEvent): Promise<void> {
-	try {
-		await logAudit({
-			action: event.action,
-			actorId: event.actorId,
-			organizationId: event.organizationId,
-			targetId: event.targetId,
-			targetType: "chat_installation",
-			metadata: event.metadata,
-			timestamp: new Date(),
-		});
-	} catch (error) {
-		logger.warn(
-			{ error, organizationId: event.organizationId, installationId: event.targetId },
-			"Failed to record redacted Discord installation audit log",
-		);
-	}
 }
 
 export async function defaultSendDiscordPrivateDm(
@@ -1382,7 +1340,7 @@ export async function sendDiscordCandidatePrivateTestMessage(
 		privateDeliveryRevisionId: candidate.activeCredentialRevisionId,
 		privateDeliveryTargetUserId: discordUserId,
 		privateDeliveryChannelId: deliveryResult.channelId,
-		privateDeliveryExpiresAt: new Date(now.getTime() + ttlMs).toISOString(),
+		privateDeliveryExpiresAt: computeExpiryIso(now, ttlMs),
 		privateDeliveryErrorCode: null,
 		privateDeliveryRecoveryHint: null,
 		...(candidate.verificationEvidence?.lastFailureStep === "private_test"

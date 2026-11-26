@@ -15,6 +15,12 @@ import type {
 } from "@/lib/slack/types";
 import { readInstallationCredentialRevision } from "./credential-revisions";
 import {
+	type RedeemChatLinkProofInput,
+	type RedeemChatLinkProofResult,
+	redeemChatLinkProof,
+} from "./member-links";
+import { computeExpiryIso } from "./setup-utils";
+import {
 	computeSlackCandidateSetupStatus,
 	resolveSlackSetupRepository,
 	SLACK_VERIFICATION_FRESHNESS_MS,
@@ -58,6 +64,8 @@ export interface SlackInstallationRouteDeps extends SlackSetupRuntimeDeps {
 		payload: SlackSlashCommandPayload,
 		bot: ResolvedSlackBot,
 	) => Promise<{ text: string }>;
+	redeemLinkProof?: (input: RedeemChatLinkProofInput) => Promise<RedeemChatLinkProofResult>;
+	postCandidateDmReply?: (botToken: string, channelId: string, text: string) => Promise<unknown>;
 }
 
 type AuthenticatedInstallationResult =
@@ -388,11 +396,77 @@ export async function handleSlackCandidateEventRequest(
 			};
 		}
 
-		const isSegregatedEnrollmentDm =
+		let enrollmentRedeemed = false;
+		const isCandidateDm =
 			body.event?.type === "message" &&
 			body.event?.channel_type === "im" &&
 			typeof body.event?.text === "string" &&
-			body.event.text.trim().toLowerCase().startsWith("enroll ");
+			Boolean(body.event?.user) &&
+			body.event?.user !== auth.installation.externalBotId;
+
+		if (isCandidateDm) {
+			const match = body.event!.text!.trim().match(/^(?:enroll|link)\s+(\S+)/i);
+			const enrollmentCode = match?.[1]?.trim();
+			if (enrollmentCode && body.event?.user) {
+				const redeem = deps?.redeemLinkProof
+					? deps.redeemLinkProof
+					: (proofInput: RedeemChatLinkProofInput) =>
+							redeemChatLinkProof(proofInput, {
+								db: deps?.db as typeof defaultDb | undefined,
+								now: () => now,
+							});
+				const redemption = await redeem({
+					organizationId: auth.installation.organizationId,
+					installationId: auth.installation.id,
+					purpose: "candidate_enrollment",
+					code: enrollmentCode,
+					externalUserId: body.event.user,
+					externalConversationId: body.event.channel ?? null,
+					conversationType: "im",
+				});
+				enrollmentRedeemed = redemption.status === "success";
+				if (auth.secrets.bot_token && body.event.channel) {
+					const replyText =
+						redemption.status === "success"
+							? "You are enrolled for your organization's replacement Slack app. Your current live Slack connection remains active until your admin completes the switch."
+							: redemption.status === "expired"
+								? "This enrollment code has expired. Generate a new code in Z8 under Settings → Notifications."
+								: redemption.status === "already_used"
+									? "This enrollment code has already been used. Generate a new code in Z8 under Settings → Notifications."
+									: redemption.status === "already_linked"
+										? "This Slack account is already enrolled for another Z8 account on this replacement app."
+										: redemption.status === "ineligible"
+											? "Your Z8 account is not eligible to enroll in this organization."
+											: redemption.status === "rate_limited"
+												? "Too many enrollment attempts. Please wait a few minutes and try again."
+												: "Invalid enrollment code. Generate a code in Z8 under Settings → Notifications and send `enroll YOUR_CODE`.";
+					try {
+						if (deps?.postCandidateDmReply) {
+							await deps.postCandidateDmReply(
+								auth.secrets.bot_token,
+								body.event.channel,
+								replyText,
+							);
+						} else {
+							const { postMessage } = await import("@/lib/slack/api");
+							await postMessage(auth.secrets.bot_token, {
+								channel: body.event.channel,
+								text: replyText,
+							});
+						}
+					} catch (replyError) {
+						logger.warn(
+							{
+								error: replyError,
+								organizationId: auth.installation.organizationId,
+								installationId: auth.installation.id,
+							},
+							"Failed to send candidate Slack enrollment DM reply",
+						);
+					}
+				}
+			}
+		}
 
 		const previousEvidence = auth.installation.verificationEvidence;
 		const nextEvidence: ChatVerificationEvidence = {
@@ -401,8 +475,8 @@ export async function handleSlackCandidateEventRequest(
 			signedEventVerifiedAt: now.toISOString(),
 			signedEventRevisionId: auth.revisionId,
 			signedEventType: body.event?.type ?? "event_callback",
-			signedEventExpiresAt: new Date(now.getTime() + ttlMs).toISOString(),
-			...(isSegregatedEnrollmentDm
+			signedEventExpiresAt: computeExpiryIso(now, ttlMs),
+			...(enrollmentRedeemed
 				? {
 						enrollmentProofCount: (previousEvidence?.enrollmentProofCount ?? 0) + 1,
 						lastEnrollmentProofAt: now.toISOString(),

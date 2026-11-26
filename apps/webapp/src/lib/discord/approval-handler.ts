@@ -67,6 +67,38 @@ export async function handleApprovalButtonClick(
 	}
 	const recipient = { userId: user.user.userId, organizationId: bot.organizationId };
 	try {
+		const receiverScope = discordReceiverScope(bot.applicationId);
+		const tracked =
+			interaction.message?.id && db.query?.discordApprovalMessage?.findFirst
+				? await db.query.discordApprovalMessage.findFirst({
+						where: and(
+							eq(discordApprovalMessage.organizationId, bot.organizationId),
+							eq(discordApprovalMessage.approvalRequestId, data.id),
+							eq(discordApprovalMessage.recipientUserId, user.user.userId),
+							eq(discordApprovalMessage.messageId, interaction.message.id),
+						),
+					})
+				: null;
+		const eligibility = await checkInboundApprovalCardInstallationEligibility({
+			organizationId: bot.organizationId,
+			provider: "discord",
+			incomingInstallationId: bot.installationId ?? null,
+			incomingReceiverScope: receiverScope,
+			messageInstallationId: tracked?.installationId ?? null,
+			messageReceiverScope: receiverScope,
+		});
+		if (!eligibility.allowed) {
+			await createInteractionResponse(
+				interaction.id,
+				interaction.token,
+				InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+				{
+					content: escapeDiscordMarkdown(await approvalUnavailableReply(recipient)),
+					flags: EPHEMERAL,
+				},
+			);
+			return;
+		}
 		const { attemptBotApproval } = await import("@/lib/bot-platform/approval-decision");
 		const result = await attemptBotApproval({
 			approvalId: data.id,

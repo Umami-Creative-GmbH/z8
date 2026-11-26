@@ -12,10 +12,8 @@ import {
 	chatInstallationSwitchControl,
 	telegramBotConfig,
 } from "@/db/schema";
-import { env } from "@/env";
-import { AuditAction, logAudit } from "@/lib/audit-logger";
+import { AuditAction } from "@/lib/audit-logger";
 import { dateFromInstant, instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
-import { createLogger } from "@/lib/logger";
 import {
 	deleteWebhookWithOutcome,
 	getMeWithOutcome,
@@ -56,8 +54,12 @@ import {
 	rotateChatInstallationCredentials,
 	withStableBotEndpointLock,
 } from "./recovery-lifecycle";
-
-const logger = createLogger("TelegramCandidateSetup");
+import {
+	defaultRecordAudit,
+	generateRouteId,
+	isFreshTimestamp,
+	resolveAppUrl,
+} from "./setup-utils";
 
 /**
  * Freshness window for candidate Telegram verification proofs (authenticated inbound
@@ -258,10 +260,6 @@ function getNow(deps?: Pick<TelegramSetupRuntimeDeps, "now">): Date {
 	return deps?.now ? deps.now() : dateFromInstant(systemClock.nowInstant());
 }
 
-function generateRouteId(): string {
-	return randomBytes(18).toString("base64url");
-}
-
 function generateWebhookSecret(): string {
 	// Telegram `secret_token` accepts 1-256 chars from A-Z, a-z, 0-9, _ and -
 	return randomBytes(32).toString("base64url");
@@ -271,32 +269,8 @@ function normalizeBotToken(raw: string): string {
 	return raw.trim().replace(/^bot/i, "");
 }
 
-function resolveAppUrl(override?: string): string {
-	const raw = (override || env.APP_URL || "https://z8-time.app").trim();
-	return raw.replace(/\/+$/, "");
-}
-
 export function buildTelegramInstallationWebhookUrl(routeId: string, appUrl?: string): string {
 	return `${resolveAppUrl(appUrl)}/api/telegram/installations/${encodeURIComponent(routeId)}/webhook`;
-}
-
-function isFreshTimestamp(
-	verifiedAtIso: string | null | undefined,
-	expiresAtIso: string | null | undefined,
-	now: Date,
-	ttlMs: number,
-): boolean {
-	if (!verifiedAtIso) return false;
-	const verifiedMs = Date.parse(verifiedAtIso);
-	if (Number.isNaN(verifiedMs)) return false;
-	if (now.getTime() - verifiedMs > ttlMs) return false;
-	if (expiresAtIso) {
-		const expiresMs = Date.parse(expiresAtIso);
-		if (!Number.isNaN(expiresMs) && now.getTime() > expiresMs) {
-			return false;
-		}
-	}
-	return true;
 }
 
 function formatTelegramOutcomeFailureCode(
@@ -719,25 +693,6 @@ export function resolveTelegramSetupRepository(
 	deps?: TelegramSetupRuntimeDeps,
 ): TelegramSetupRepository {
 	return deps?.repository ?? createDrizzleTelegramSetupRepository(deps?.db ?? defaultDb);
-}
-
-async function defaultRecordAudit(event: TelegramSetupAuditEvent): Promise<void> {
-	try {
-		await logAudit({
-			action: event.action,
-			actorId: event.actorId,
-			organizationId: event.organizationId,
-			targetId: event.targetId,
-			targetType: "chat_installation",
-			metadata: event.metadata,
-			timestamp: new Date(),
-		});
-	} catch (error) {
-		logger.warn(
-			{ error, organizationId: event.organizationId, installationId: event.targetId },
-			"Failed to record redacted Telegram installation audit event",
-		);
-	}
 }
 
 export async function buildTelegramCandidateSetupView(

@@ -20,13 +20,17 @@ import { useTranslate } from "@tolgee/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Temporal } from "temporal-polyfill";
-import type { GeneratedMemberLinkCode } from "@/app/[locale]/(app)/settings/notifications/chat-link-actions";
+import type {
+	ChatLinkProofPurpose,
+	GeneratedMemberLinkCode,
+} from "@/app/[locale]/(app)/settings/notifications/chat-link-actions";
 import { linkCodeMinutesRemaining } from "@/components/settings/telegram-link-code";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { ChatInstallationProvider } from "@/db/schema/chat-installations";
+import { chatLinkCodeKey } from "@/hooks/use-member-chat-links";
 import type {
 	MemberChatChannelLinkView,
 	MemberChatLinkRecoveryHint,
@@ -70,17 +74,37 @@ export interface ChatConnectionsCardProps {
 	error: Error | null;
 	isRetrying: boolean;
 	onRetry: () => void;
-	generatedTelegramCode: GeneratedMemberLinkCode | null;
-	isGeneratingTelegramCode: boolean;
-	onGenerateTelegramCode: () => void;
-	generatedTelegramCandidateCode?: GeneratedMemberLinkCode | null;
-	isGeneratingTelegramCandidateCode?: boolean;
-	onGenerateTelegramCandidateCode?: (installationId: string) => void;
+	generatedCodes: Record<string, GeneratedMemberLinkCode>;
+	generatingCodeKey: string | null;
+	onGenerateLinkCode: (input: {
+		provider: ChatInstallationProvider;
+		purpose: ChatLinkProofPurpose;
+		installationId?: string;
+	}) => void;
+	recheckingDiscordInstallationId?: string | null;
+	onRecheckDiscordDm?: (installationId: string) => void;
 	unlinkingProvider: ChatInstallationProvider | null;
 	onUnlink: (provider: ChatInstallationProvider, installationId?: string) => void;
 }
 
-function TelegramCodeExpiry({ expiresAt }: { expiresAt: string }) {
+function formatLinkCommand(
+	provider: ChatInstallationProvider,
+	purpose: ChatLinkProofPurpose,
+	code: string,
+): string {
+	switch (provider) {
+		case "telegram":
+			return `/link ${code}`;
+		case "slack":
+			return purpose === "candidate_enrollment" ? `enroll ${code}` : `/z8 link ${code}`;
+		case "teams":
+			return `link ${code}`;
+		case "discord":
+			return `/link code:${code}`;
+	}
+}
+
+function LinkCodeExpiry({ expiresAt }: { expiresAt: string }) {
 	const { t } = useTranslate();
 	const [minutesRemaining, setMinutesRemaining] = useState(() =>
 		linkCodeMinutesRemaining(expiresAt, Temporal.Now.instant()),
@@ -121,17 +145,16 @@ export function ChatConnectionsCard({
 	error,
 	isRetrying,
 	onRetry,
-	generatedTelegramCode,
-	isGeneratingTelegramCode,
-	onGenerateTelegramCode,
-	generatedTelegramCandidateCode = null,
-	isGeneratingTelegramCandidateCode = false,
-	onGenerateTelegramCandidateCode,
+	generatedCodes,
+	generatingCodeKey,
+	onGenerateLinkCode,
+	recheckingDiscordInstallationId = null,
+	onRecheckDiscordDm,
 	unlinkingProvider,
 	onUnlink,
 }: ChatConnectionsCardProps) {
 	const { t } = useTranslate();
-	const [copied, setCopied] = useState(false);
+	const [copiedCommand, setCopiedCommand] = useState<string | null>(null);
 
 	if (!hasOrganizationContext) {
 		return null;
@@ -238,19 +261,43 @@ export function ChatConnectionsCard({
 		if (!hint) return null;
 		switch (hint) {
 			case "link_required":
-				return provider === "telegram"
-					? t(
+				switch (provider) {
+					case "telegram":
+						return t(
 							"settings.notifications.chatLinks.hints.telegramLinkRequired",
 							"Generate a short-lived link code and send it to your organization's Telegram bot.",
-						)
-					: t(
-							"settings.notifications.chatLinks.hints.linkRequired",
-							"Link your account in this chat app to receive notifications and use commands.",
 						);
+					case "slack":
+						return t(
+							"settings.notifications.chatLinks.hints.slackLinkRequired",
+							"Generate a short-lived link code and run it in Slack to connect your account.",
+						);
+					case "teams":
+						return t(
+							"settings.notifications.chatLinks.hints.teamsLinkRequired",
+							"Generate a short-lived link code and send it in a 1:1 chat with your organization's Teams app.",
+						);
+					case "discord":
+						return t(
+							"settings.notifications.chatLinks.hints.discordLinkRequired",
+							"Generate a short-lived link code and run `/link` with your organization's Discord bot.",
+						);
+				}
+				break;
 			case "start_bot_private_chat":
 				return t(
 					"settings.notifications.chatLinks.hints.startPrivateChat",
 					"Open a direct message with the bot so Z8 can deliver private notifications.",
+				);
+			case "discord_share_server_with_bot":
+				return t(
+					"settings.notifications.chatLinks.hints.discordShareServer",
+					"Z8 could not open a Discord DM because you do not share a server with this bot. Join a shared server with the bot, enable Direct Messages for that server, and click Verify DM delivery.",
+				);
+			case "discord_enable_server_dms":
+				return t(
+					"settings.notifications.chatLinks.hints.discordEnableDms",
+					"Discord privacy settings blocked direct messages from this bot (error 50007). Open your Discord server Privacy Settings, enable Direct Messages, ensure the bot is not blocked, and click Verify DM delivery.",
 				);
 			case "installation_remediation":
 				return t(
@@ -265,17 +312,136 @@ export function ChatConnectionsCard({
 		}
 	};
 
+	const renderCodeInstructions = (
+		provider: ChatInstallationProvider,
+		purpose: ChatLinkProofPurpose,
+	) => {
+		if (purpose === "candidate_enrollment") {
+			switch (provider) {
+				case "telegram":
+					return t(
+						"settings.notifications.chatLinks.replacementTelegramInstructions",
+						"Open the replacement bot in Telegram and send this one-time command:",
+					);
+				case "slack":
+					return t(
+						"settings.notifications.chatLinks.replacementSlackInstructions",
+						"Send this one-time message in a direct message to your organization's replacement Slack app:",
+					);
+				case "teams":
+					return t(
+						"settings.notifications.chatLinks.replacementTeamsInstructions",
+						"Send this one-time message in a 1:1 chat with your organization's replacement Teams app:",
+					);
+				case "discord":
+					return t(
+						"settings.notifications.chatLinks.replacementDiscordInstructions",
+						"Run this one-time slash command with your organization's replacement Discord bot (Z8 will then verify DM delivery):",
+					);
+			}
+		}
+
+		switch (provider) {
+			case "telegram":
+				return t(
+					"settings.notifications.chatLinks.telegramInstructions",
+					"Send this one-time command in a private chat with your organization's Telegram bot:",
+				);
+			case "slack":
+				return t(
+					"settings.notifications.chatLinks.slackInstructions",
+					"Run this one-time command in Slack (or DM `link <code>` to the bot):",
+				);
+			case "teams":
+				return t(
+					"settings.notifications.chatLinks.teamsInstructions",
+					"Send this one-time message in a 1:1 chat with the Z8 app in Microsoft Teams:",
+				);
+			case "discord":
+				return t(
+					"settings.notifications.chatLinks.discordInstructions",
+					"Run this one-time slash command with the Discord bot (Z8 will then verify direct message delivery):",
+				);
+		}
+	};
+
 	const handleCopyCommand = async (command: string) => {
 		try {
 			await navigator.clipboard.writeText(command);
-			setCopied(true);
+			setCopiedCommand(command);
 			toast.success(
 				t("settings.notifications.chatLinks.copiedCommand", "Link command copied to clipboard"),
 			);
-			setTimeout(() => setCopied(false), 2000);
+			setTimeout(() => {
+				setCopiedCommand((current) => (current === command ? null : current));
+			}, 2000);
 		} catch {
 			toast.error(t("settings.notifications.chatLinks.copyFailed", "Couldn't copy link command"));
 		}
+	};
+
+	const renderCodeBox = (params: {
+		provider: ChatInstallationProvider;
+		purpose: ChatLinkProofPurpose;
+		generated: GeneratedMemberLinkCode;
+		fallbackBotUsername: string | null;
+	}) => {
+		const command = formatLinkCommand(params.provider, params.purpose, params.generated.code);
+		const telegramBotUsername =
+			params.provider === "telegram"
+				? (params.generated.botUsername ?? params.fallbackBotUsername)
+				: null;
+		const isCopied = copiedCommand === command;
+
+		return (
+			<div className="space-y-2.5 rounded-md border bg-background p-3">
+				<p className="text-xs text-muted-foreground">
+					{renderCodeInstructions(params.provider, params.purpose)}
+				</p>
+				<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+					<code className="break-all rounded bg-muted px-2.5 py-1.5 font-mono text-sm font-medium">
+						{command}
+					</code>
+					<div className="flex flex-wrap items-center gap-2">
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							onClick={() => void handleCopyCommand(command)}
+						>
+							{isCopied ? (
+								<IconCheck className="mr-1.5 size-4" aria-hidden="true" />
+							) : (
+								<IconCopy className="mr-1.5 size-4" aria-hidden="true" />
+							)}
+							{t("settings.notifications.chatLinks.copyCommand", "Copy")}
+						</Button>
+						{telegramBotUsername && (
+							<Button variant="outline" size="sm" asChild>
+								<a
+									href={`https://t.me/${telegramBotUsername.replace(/^@/, "")}`}
+									target="_blank"
+									rel="noopener noreferrer"
+								>
+									<IconExternalLink className="mr-1.5 size-4" aria-hidden="true" />
+									{t("settings.notifications.chatLinks.openTelegramBot", "Open @{botUsername}", {
+										botUsername: telegramBotUsername.replace(/^@/, ""),
+									})}
+								</a>
+							</Button>
+						)}
+						<Button type="button" variant="ghost" size="sm" onClick={onRetry} disabled={isRetrying}>
+							<IconRefresh
+								className={isRetrying ? "mr-1.5 size-4 motion-safe:animate-spin" : "mr-1.5 size-4"}
+								aria-hidden="true"
+							/>
+							{t("settings.notifications.chatLinks.checkStatus", "Check status")}
+						</Button>
+					</div>
+				</div>
+				<LinkCodeExpiry expiresAt={params.generated.expiresAt} />
+			</div>
+		);
 	};
 
 	return (
@@ -305,15 +471,44 @@ export function ChatConnectionsCard({
 							: channel.externalUsername
 						: channel.externalDisplayName;
 					const hintText = renderHint(channel.provider, channel.recoveryHint);
+					const isDiscordDmBlocked =
+						channel.provider === "discord" &&
+						(channel.recoveryHint === "discord_enable_server_dms" ||
+							channel.recoveryHint === "discord_share_server_with_bot");
 					const isUnlinking = unlinkingProvider === channel.provider;
-					const showTelegramCode =
-						channel.provider === "telegram" &&
-						channel.status !== "connected" &&
-						generatedTelegramCode !== null;
-					const telegramCommand = generatedTelegramCode
-						? `/link ${generatedTelegramCode.code}`
+					const liveCodeKey = chatLinkCodeKey(
+						channel.provider,
+						"member_link",
+						channel.installationId,
+					);
+					const liveCode =
+						generatedCodes[liveCodeKey] ??
+						generatedCodes[chatLinkCodeKey(channel.provider, "member_link", null)] ??
+						null;
+					const isGeneratingLiveCode =
+						generatingCodeKey === liveCodeKey ||
+						generatingCodeKey === chatLinkCodeKey(channel.provider, "member_link", null);
+					const showLiveCode = channel.status !== "connected" && liveCode !== null;
+					const isRecheckingLiveDiscord =
+						Boolean(channel.installationId) &&
+						recheckingDiscordInstallationId === channel.installationId;
+
+					const candidate = channel.candidateEnrollment ?? null;
+					const candidateCodeKey = candidate
+						? chatLinkCodeKey(channel.provider, "candidate_enrollment", candidate.installationId)
 						: null;
-					const telegramBotUsername = generatedTelegramCode?.botUsername ?? channel.botUsername;
+					const candidateCode = candidateCodeKey
+						? (generatedCodes[candidateCodeKey] ?? null)
+						: null;
+					const isGeneratingCandidateCode =
+						candidateCodeKey !== null && generatingCodeKey === candidateCodeKey;
+					const isRecheckingCandidateDiscord =
+						candidate !== null && recheckingDiscordInstallationId === candidate.installationId;
+					const candidateDiscordDmBlocked =
+						channel.provider === "discord" &&
+						candidate !== null &&
+						(candidate.recoveryHint === "discord_enable_server_dms" ||
+							candidate.recoveryHint === "discord_share_server_with_bot");
 
 					return (
 						<div key={channel.provider} className="space-y-3 rounded-lg border bg-muted/30 p-3">
@@ -329,19 +524,46 @@ export function ChatConnectionsCard({
 											{channel.installationLabel}
 										</p>
 									)}
-									{channel.status === "connected" && linkedIdentity && (
+									{linkedIdentity && (channel.status === "connected" || isDiscordDmBlocked) && (
 										<p className="break-all text-xs text-foreground">
 											{t("settings.notifications.chatLinks.linkedAs", "Linked as {identity}", {
 												identity: linkedIdentity,
 											})}
 										</p>
 									)}
-									{hintText && <p className="text-xs text-muted-foreground">{hintText}</p>}
+									{hintText && !isDiscordDmBlocked && (
+										<p className="text-xs text-muted-foreground">{hintText}</p>
+									)}
 								</div>
 
 								<div className="flex shrink-0 flex-wrap items-center gap-2">
+									{channel.provider === "discord" &&
+										channel.canRecheckDm &&
+										isDiscordDmBlocked &&
+										channel.installationId &&
+										onRecheckDiscordDm && (
+											<Button
+												type="button"
+												variant="outline"
+												size="sm"
+												disabled={isRecheckingLiveDiscord}
+												onClick={() => onRecheckDiscordDm(channel.installationId!)}
+											>
+												{isRecheckingLiveDiscord ? (
+													<IconLoader2
+														className="mr-1.5 size-4 motion-safe:animate-spin"
+														aria-hidden="true"
+													/>
+												) : (
+													<IconRefresh className="mr-1.5 size-4" aria-hidden="true" />
+												)}
+												{t("settings.notifications.chatLinks.verifyDmButton", "Verify DM delivery")}
+											</Button>
+										)}
+
 									{channel.canUnlink && (
 										<Button
+											type="button"
 											variant="outline"
 											size="sm"
 											disabled={isUnlinking}
@@ -366,23 +588,28 @@ export function ChatConnectionsCard({
 										</Button>
 									)}
 
-									{channel.provider === "telegram" &&
-										channel.canGenerateLinkCode &&
-										channel.status !== "connected" && (
-											<Button
-												size="sm"
-												disabled={isGeneratingTelegramCode}
-												onClick={onGenerateTelegramCode}
-											>
-												{isGeneratingTelegramCode && (
-													<IconLoader2
-														className="mr-1.5 size-4 motion-safe:animate-spin"
-														aria-hidden="true"
-													/>
-												)}
-												{t("settings.notifications.chatLinks.generateCode", "Generate link code")}
-											</Button>
-										)}
+									{channel.canGenerateLinkCode && channel.status !== "connected" && (
+										<Button
+											type="button"
+											size="sm"
+											disabled={isGeneratingLiveCode}
+											onClick={() =>
+												onGenerateLinkCode({
+													provider: channel.provider,
+													purpose: "member_link",
+													installationId: channel.installationId ?? undefined,
+												})
+											}
+										>
+											{isGeneratingLiveCode && (
+												<IconLoader2
+													className="mr-1.5 size-4 motion-safe:animate-spin"
+													aria-hidden="true"
+												/>
+											)}
+											{t("settings.notifications.chatLinks.generateCode", "Generate link code")}
+										</Button>
+									)}
 
 									{channel.status === "could_not_verify" && (
 										<Button variant="outline" size="sm" onClick={onRetry} disabled={isRetrying}>
@@ -398,90 +625,42 @@ export function ChatConnectionsCard({
 								</div>
 							</div>
 
-							{showTelegramCode && generatedTelegramCode && telegramCommand && (
-								<div className="space-y-2.5 rounded-md border bg-background p-3">
-									<p className="text-xs text-muted-foreground">
-										{t(
-											"settings.notifications.chatLinks.telegramInstructions",
-											"Send this one-time command in a private chat with your organization's Telegram bot:",
-										)}
-									</p>
-									<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-										<code className="break-all rounded bg-muted px-2.5 py-1.5 font-mono text-sm font-medium">
-											{telegramCommand}
-										</code>
-										<div className="flex flex-wrap items-center gap-2">
-											<Button
-												type="button"
-												variant="outline"
-												size="sm"
-												onClick={() => void handleCopyCommand(telegramCommand)}
-											>
-												{copied ? (
-													<IconCheck className="mr-1.5 size-4" aria-hidden="true" />
-												) : (
-													<IconCopy className="mr-1.5 size-4" aria-hidden="true" />
-												)}
-												{t("settings.notifications.chatLinks.copyCommand", "Copy")}
-											</Button>
-											{telegramBotUsername && (
-												<Button variant="outline" size="sm" asChild>
-													<a
-														href={`https://t.me/${telegramBotUsername.replace(/^@/, "")}`}
-														target="_blank"
-														rel="noopener noreferrer"
-													>
-														<IconExternalLink className="mr-1.5 size-4" aria-hidden="true" />
-														{t(
-															"settings.notifications.chatLinks.openTelegramBot",
-															"Open @{botUsername}",
-															{
-																botUsername: telegramBotUsername.replace(/^@/, ""),
-															},
-														)}
-													</a>
-												</Button>
-											)}
-											<Button
-												type="button"
-												variant="ghost"
-												size="sm"
-												onClick={onRetry}
-												disabled={isRetrying}
-											>
-												<IconRefresh
-													className={
-														isRetrying ? "mr-1.5 size-4 motion-safe:animate-spin" : "mr-1.5 size-4"
-													}
-													aria-hidden="true"
-												/>
-												{t("settings.notifications.chatLinks.checkStatus", "Check status")}
-											</Button>
-										</div>
-									</div>
-									<TelegramCodeExpiry expiresAt={generatedTelegramCode.expiresAt} />
+							{isDiscordDmBlocked && hintText && (
+								<div
+									role="alert"
+									className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 p-2.5 text-xs"
+								>
+									<IconAlertTriangle
+										className="mt-0.5 size-4 shrink-0 text-warning"
+										aria-hidden="true"
+									/>
+									<span>{hintText}</span>
 								</div>
 							)}
 
-							{channel.provider === "telegram" && channel.candidateEnrollment && (
+							{showLiveCode &&
+								liveCode &&
+								renderCodeBox({
+									provider: channel.provider,
+									purpose: "member_link",
+									generated: liveCode,
+									fallbackBotUsername: channel.botUsername,
+								})}
+
+							{candidate && (
 								<div className="space-y-2.5 rounded-md border border-dashed bg-background p-3">
 									<div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
 										<div className="min-w-0 space-y-1">
 											<div className="flex flex-wrap items-center gap-2">
 												<span className="text-xs font-medium">
 													{t(
-														"settings.notifications.chatLinks.replacementTelegramTitle",
-														"Replacement Telegram bot staged",
+														"settings.notifications.chatLinks.replacementChannelTitle",
+														"Replacement {provider} connection staged",
+														{ provider: providerLabel },
 													)}
 												</span>
-												<Badge
-													variant={
-														channel.candidateEnrollment.status === "enrolled"
-															? "secondary"
-															: "outline"
-													}
-												>
-													{channel.candidateEnrollment.status === "enrolled"
+												<Badge variant={candidate.status === "enrolled" ? "secondary" : "outline"}>
+													{candidate.status === "enrolled"
 														? t("settings.notifications.chatLinks.replacementEnrolled", "Enrolled")
 														: t(
 																"settings.notifications.chatLinks.status.actionNeeded",
@@ -489,39 +668,66 @@ export function ChatConnectionsCard({
 															)}
 												</Badge>
 											</div>
-											{channel.candidateEnrollment.installationLabel && (
+											{candidate.installationLabel && (
 												<p className="truncate text-xs text-muted-foreground">
-													{channel.candidateEnrollment.installationLabel}
+													{candidate.installationLabel}
 												</p>
 											)}
 											<p className="text-xs text-muted-foreground">
-												{channel.candidateEnrollment.status === "enrolled"
+												{candidate.status === "enrolled"
 													? t(
-															"settings.notifications.chatLinks.replacementTelegramEnrolledHint",
-															"You are enrolled for the replacement bot. Your current live Telegram link stays active until your admin completes the switch.",
+															"settings.notifications.chatLinks.replacementChannelEnrolledHint",
+															"You are enrolled for the replacement connection. Your current live link stays active until your admin completes the switch.",
 														)
 													: t(
-															"settings.notifications.chatLinks.replacementTelegramHint",
-															"Start and link the replacement Telegram bot ahead of the switch. Your current Telegram notifications stay uninterrupted until the switch.",
+															"settings.notifications.chatLinks.replacementChannelHint",
+															"Link the staged replacement ahead of the switch. Your current notifications stay uninterrupted until your admin switches.",
 														)}
 											</p>
 										</div>
 
-										{channel.candidateEnrollment.canGenerateLinkCode &&
-											channel.candidateEnrollment.status !== "enrolled" &&
-											onGenerateTelegramCandidateCode && (
+										<div className="flex shrink-0 flex-wrap items-center gap-2">
+											{channel.provider === "discord" &&
+												candidate.canRecheckDm &&
+												candidateDiscordDmBlocked &&
+												onRecheckDiscordDm && (
+													<Button
+														type="button"
+														variant="outline"
+														size="sm"
+														disabled={isRecheckingCandidateDiscord}
+														onClick={() => onRecheckDiscordDm(candidate.installationId)}
+													>
+														{isRecheckingCandidateDiscord ? (
+															<IconLoader2
+																className="mr-1.5 size-4 motion-safe:animate-spin"
+																aria-hidden="true"
+															/>
+														) : (
+															<IconRefresh className="mr-1.5 size-4" aria-hidden="true" />
+														)}
+														{t(
+															"settings.notifications.chatLinks.verifyDmButton",
+															"Verify DM delivery",
+														)}
+													</Button>
+												)}
+
+											{candidate.canGenerateLinkCode && candidate.status !== "enrolled" && (
 												<Button
 													type="button"
 													variant="outline"
 													size="sm"
-													disabled={isGeneratingTelegramCandidateCode}
+													disabled={isGeneratingCandidateCode}
 													onClick={() =>
-														onGenerateTelegramCandidateCode(
-															channel.candidateEnrollment!.installationId,
-														)
+														onGenerateLinkCode({
+															provider: channel.provider,
+															purpose: "candidate_enrollment",
+															installationId: candidate.installationId,
+														})
 													}
 												>
-													{isGeneratingTelegramCandidateCode && (
+													{isGeneratingCandidateCode && (
 														<IconLoader2
 															className="mr-1.5 size-4 motion-safe:animate-spin"
 															aria-hidden="true"
@@ -533,90 +739,31 @@ export function ChatConnectionsCard({
 													)}
 												</Button>
 											)}
+										</div>
 									</div>
 
-									{generatedTelegramCandidateCode &&
-										generatedTelegramCandidateCode.installationId ===
-											channel.candidateEnrollment.installationId &&
-										channel.candidateEnrollment.status !== "enrolled" && (
-											<div className="space-y-2 rounded-md border bg-muted/40 p-2.5">
-												<p className="text-xs text-muted-foreground">
-													{t(
-														"settings.notifications.chatLinks.replacementTelegramInstructions",
-														"Open the replacement bot in Telegram and send this one-time command:",
-													)}
-												</p>
-												<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-													<code className="break-all rounded bg-background px-2.5 py-1.5 font-mono text-sm font-medium">
-														{`/link ${generatedTelegramCandidateCode.code}`}
-													</code>
-													<div className="flex flex-wrap items-center gap-2">
-														<Button
-															type="button"
-															variant="outline"
-															size="sm"
-															onClick={() =>
-																void handleCopyCommand(
-																	`/link ${generatedTelegramCandidateCode.code}`,
-																)
-															}
-														>
-															{copied ? (
-																<IconCheck className="mr-1.5 size-4" aria-hidden="true" />
-															) : (
-																<IconCopy className="mr-1.5 size-4" aria-hidden="true" />
-															)}
-															{t("settings.notifications.chatLinks.copyCommand", "Copy")}
-														</Button>
-														{(generatedTelegramCandidateCode.botUsername ??
-															channel.candidateEnrollment.botUsername) && (
-															<Button variant="outline" size="sm" asChild>
-																<a
-																	href={`https://t.me/${(
-																		generatedTelegramCandidateCode.botUsername ??
-																		channel.candidateEnrollment.botUsername ??
-																		""
-																	).replace(/^@/, "")}`}
-																	target="_blank"
-																	rel="noopener noreferrer"
-																>
-																	<IconExternalLink className="mr-1.5 size-4" aria-hidden="true" />
-																	{t(
-																		"settings.notifications.chatLinks.openTelegramBot",
-																		"Open @{botUsername}",
-																		{
-																			botUsername: (
-																				generatedTelegramCandidateCode.botUsername ??
-																				channel.candidateEnrollment.botUsername ??
-																				""
-																			).replace(/^@/, ""),
-																		},
-																	)}
-																</a>
-															</Button>
-														)}
-														<Button
-															type="button"
-															variant="ghost"
-															size="sm"
-															onClick={onRetry}
-															disabled={isRetrying}
-														>
-															<IconRefresh
-																className={
-																	isRetrying
-																		? "mr-1.5 size-4 motion-safe:animate-spin"
-																		: "mr-1.5 size-4"
-																}
-																aria-hidden="true"
-															/>
-															{t("settings.notifications.chatLinks.checkStatus", "Check status")}
-														</Button>
-													</div>
-												</div>
-												<TelegramCodeExpiry expiresAt={generatedTelegramCandidateCode.expiresAt} />
-											</div>
-										)}
+									{candidateDiscordDmBlocked && candidate.recoveryHint && (
+										<div
+											role="alert"
+											className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 p-2.5 text-xs"
+										>
+											<IconAlertTriangle
+												className="mt-0.5 size-4 shrink-0 text-warning"
+												aria-hidden="true"
+											/>
+											<span>{renderHint(channel.provider, candidate.recoveryHint)}</span>
+										</div>
+									)}
+
+									{candidateCode &&
+										candidateCode.installationId === candidate.installationId &&
+										candidate.status !== "enrolled" &&
+										renderCodeBox({
+											provider: channel.provider,
+											purpose: "candidate_enrollment",
+											generated: candidateCode,
+											fallbackBotUsername: candidate.botUsername,
+										})}
 								</div>
 							)}
 						</div>

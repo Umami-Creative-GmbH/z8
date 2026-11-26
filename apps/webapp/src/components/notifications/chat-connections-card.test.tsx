@@ -3,6 +3,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ChatConnectionsCard } from "@/components/notifications/chat-connections-card";
+import { chatLinkCodeKey } from "@/hooks/use-member-chat-links";
 import type { MemberChatChannelLinkView } from "@/lib/chat-installations/member-links";
 
 vi.mock("@tolgee/react", () => ({
@@ -22,9 +23,11 @@ const baseProps = {
 	error: null as Error | null,
 	isRetrying: false,
 	onRetry: vi.fn(),
-	generatedTelegramCode: null,
-	isGeneratingTelegramCode: false,
-	onGenerateTelegramCode: vi.fn(),
+	generatedCodes: {},
+	generatingCodeKey: null,
+	onGenerateLinkCode: vi.fn(),
+	recheckingDiscordInstallationId: null,
+	onRecheckDiscordDm: vi.fn(),
 	unlinkingProvider: null,
 	onUnlink: vi.fn(),
 };
@@ -61,7 +64,7 @@ describe("ChatConnectionsCard", () => {
 				botUsername: null,
 				externalUsername: null,
 				externalDisplayName: null,
-				canGenerateLinkCode: false,
+				canGenerateLinkCode: true,
 				canUnlink: false,
 				recoveryHint: "link_required",
 			},
@@ -107,8 +110,9 @@ describe("ChatConnectionsCard", () => {
 		expect(onUnlink).toHaveBeenCalledWith("telegram", "inst-tg");
 	});
 
-	it("supports generating and displaying a short-lived Telegram link code with expiry", () => {
-		const onGenerateTelegramCode = vi.fn();
+	it("supports generating and displaying short-lived link codes across Telegram, Slack, Teams, and Discord", () => {
+		const onGenerateLinkCode = vi.fn();
+		const onRecheckDiscordDm = vi.fn();
 		const channels: MemberChatChannelLinkView[] = [
 			{
 				provider: "telegram",
@@ -123,34 +127,112 @@ describe("ChatConnectionsCard", () => {
 				canUnlink: false,
 				recoveryHint: "link_required",
 			},
+			{
+				provider: "slack",
+				available: true,
+				status: "action_needed",
+				installationId: "inst-slack",
+				installationLabel: "Acme Slack",
+				botUsername: null,
+				externalUsername: null,
+				externalDisplayName: null,
+				canGenerateLinkCode: true,
+				canUnlink: false,
+				recoveryHint: "link_required",
+			},
+			{
+				provider: "teams",
+				available: true,
+				status: "action_needed",
+				installationId: "inst-teams",
+				installationLabel: "Acme Teams",
+				botUsername: null,
+				externalUsername: null,
+				externalDisplayName: null,
+				canGenerateLinkCode: true,
+				canUnlink: false,
+				recoveryHint: "link_required",
+			},
+			{
+				provider: "discord",
+				available: true,
+				status: "action_needed",
+				installationId: "inst-discord",
+				installationLabel: "Acme Discord",
+				botUsername: null,
+				externalUsername: "alice#1234",
+				externalDisplayName: "Alice",
+				canGenerateLinkCode: true,
+				canUnlink: true,
+				recoveryHint: "discord_enable_server_dms",
+				reachabilityStatus: "action_needed",
+				reachabilityReason: "discord_dm_blocked_50007",
+				canRecheckDm: true,
+			},
 		];
 
+		const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 		const { rerender } = render(
 			<ChatConnectionsCard
 				{...baseProps}
 				channels={channels}
-				onGenerateTelegramCode={onGenerateTelegramCode}
+				onGenerateLinkCode={onGenerateLinkCode}
+				onRecheckDiscordDm={onRecheckDiscordDm}
 			/>,
 		);
 
-		fireEvent.click(screen.getByRole("button", { name: "Generate link code" }));
-		expect(onGenerateTelegramCode).toHaveBeenCalledOnce();
+		const generateButtons = screen.getAllByRole("button", { name: "Generate link code" });
+		expect(generateButtons).toHaveLength(4);
+		fireEvent.click(generateButtons[0]);
+		expect(onGenerateLinkCode).toHaveBeenCalledWith({
+			provider: "telegram",
+			purpose: "member_link",
+			installationId: "inst-tg",
+		});
+
+		fireEvent.click(screen.getByRole("button", { name: "Verify DM delivery" }));
+		expect(onRecheckDiscordDm).toHaveBeenCalledWith("inst-discord");
+		expect(screen.getByRole("alert").textContent).toContain("50007");
 
 		rerender(
 			<ChatConnectionsCard
 				{...baseProps}
 				channels={channels}
-				onGenerateTelegramCode={onGenerateTelegramCode}
-				generatedTelegramCode={{
-					code: "ABCD-EFGH-2345",
-					expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
-					installationId: "inst-tg",
-					botUsername: "z8_acme_bot",
+				onGenerateLinkCode={onGenerateLinkCode}
+				onRecheckDiscordDm={onRecheckDiscordDm}
+				generatedCodes={{
+					[chatLinkCodeKey("telegram", "member_link", "inst-tg")]: {
+						code: "ABCD-EFGH-2345",
+						expiresAt,
+						installationId: "inst-tg",
+						botUsername: "z8_acme_bot",
+					},
+					[chatLinkCodeKey("slack", "member_link", "inst-slack")]: {
+						code: "SLCK-1234-5678",
+						expiresAt,
+						installationId: "inst-slack",
+						botUsername: null,
+					},
+					[chatLinkCodeKey("teams", "member_link", "inst-teams")]: {
+						code: "TEAM-1234-5678",
+						expiresAt,
+						installationId: "inst-teams",
+						botUsername: null,
+					},
+					[chatLinkCodeKey("discord", "member_link", "inst-discord")]: {
+						code: "DISC-1234-5678",
+						expiresAt,
+						installationId: "inst-discord",
+						botUsername: null,
+					},
 				}}
 			/>,
 		);
 
 		expect(screen.getByText("/link ABCD-EFGH-2345")).toBeTruthy();
+		expect(screen.getByText("/z8 link SLCK-1234-5678")).toBeTruthy();
+		expect(screen.getByText("link TEAM-1234-5678")).toBeTruthy();
+		expect(screen.getByText("/link code:DISC-1234-5678")).toBeTruthy();
 		expect(screen.getByRole("link", { name: /Open @z8_acme_bot/i }).getAttribute("href")).toBe(
 			"https://t.me/z8_acme_bot",
 		);

@@ -605,7 +605,7 @@ async function handleMessage(context: TurnContext, recipient: TurnRecipient): Pr
 				await context.sendActivity(
 					t(
 						"bot.static.notLinkedTeams",
-						"I couldn't find your Z8 account. Make sure your Teams email matches your Z8 account email.",
+						"Your Microsoft Teams account is not linked to Z8 yet. Open Settings → Notifications in Z8 to generate a link code, then send 'link <CODE>' here.",
 					),
 				);
 			} else if (userResult.status === "no_employee") {

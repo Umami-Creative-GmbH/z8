@@ -17,6 +17,7 @@ import {
 	IconShieldOff,
 	IconTerminal2,
 } from "@tabler/icons-react";
+import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useRouter } from "next/navigation";
@@ -44,6 +45,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TFormControl, TFormItem, TFormLabel } from "@/components/ui/tanstack-form";
 import type {
 	DiscordVerificationStepStatus,
 	DiscordVerificationStepView,
@@ -294,14 +296,10 @@ export function DiscordLifecyclePanel({
 	const [announcement, setAnnouncement] = useState("");
 	const [copiedUrl, setCopiedUrl] = useState(false);
 
-	// Candidate credential form state (write-only)
-	const [botToken, setBotToken] = useState("");
-	const [applicationId, setApplicationId] = useState("");
-	const [publicKey, setPublicKey] = useState("");
+	// Candidate credential form error state (write-only)
 	const [credError, setCredError] = useState<string | null>(null);
 
-	// Private DM test form state
-	const [discordUserId, setDiscordUserId] = useState("");
+	// Private DM test error state
 	const [dmError, setDmError] = useState<string | null>(null);
 
 	// Switch impact state
@@ -309,8 +307,7 @@ export function DiscordLifecyclePanel({
 	const [impactChangedNotice, setImpactChangedNotice] = useState<string | null>(null);
 	const [switchError, setSwitchError] = useState<string | null>(null);
 
-	// Rotation form state (write-only)
-	const [rotateToken, setRotateToken] = useState("");
+	// Rotation form error state (write-only)
 	const [rotateError, setRotateError] = useState<string | null>(null);
 
 	const revokeDialog = useConfirmedAction<{ id: string; label: string }>();
@@ -368,7 +365,7 @@ export function DiscordLifecyclePanel({
 		onSuccess: (res) => {
 			if (res.success) {
 				setState(res.data.lifecycle);
-				setBotToken("");
+				credentialsForm.setFieldValue("botToken", "");
 				setCredError(null);
 				const msg = res.data.commandsRegistered
 					? t(
@@ -500,7 +497,7 @@ export function DiscordLifecyclePanel({
 		onSuccess: (res) => {
 			if (res.success) {
 				setState(res.data.lifecycle);
-				setRotateToken("");
+				rotateForm.reset();
 				setRotateError(null);
 				const msg = t(
 					"settings.discordLifecycle.rotatedAnnouncement",
@@ -577,14 +574,56 @@ export function DiscordLifecyclePanel({
 		recovery?.restoreCandidatePreview?.candidateInstallation?.id === candidate.installationId,
 	);
 
+	const credentialsForm = useForm({
+		defaultValues: {
+			botToken: "",
+			applicationId: "",
+			publicKey: "",
+		},
+		onSubmit: async ({ value }) => {
+			if (!candidate) return;
+			setCredError(null);
+			saveCredentialsMutation.mutate({
+				installationId: candidate.installationId,
+				botToken: value.botToken,
+				applicationId: value.applicationId,
+				publicKey: value.publicKey,
+			});
+		},
+	});
+
+	const privateDmTestForm = useForm({
+		defaultValues: {
+			discordUserId: "",
+		},
+		onSubmit: async ({ value }) => {
+			if (!candidate) return;
+			setDmError(null);
+			privateTestMutation.mutate({
+				installationId: candidate.installationId,
+				discordUserId: value.discordUserId,
+			});
+		},
+	});
+
+	const rotateForm = useForm({
+		defaultValues: {
+			botToken: "",
+		},
+		onSubmit: async ({ value }) => {
+			const activeId = recovery?.activeInstallation?.id;
+			if (!activeId) return;
+			setRotateError(null);
+			rotateMutation.mutate({
+				installationId: activeId,
+				botToken: value.botToken,
+			});
+		},
+	});
+
 	const endpointUrlId = `${idPrefix}-endpoint-url`;
-	const botTokenId = `${idPrefix}-bot-token`;
-	const appIdFieldId = `${idPrefix}-app-id`;
-	const publicKeyId = `${idPrefix}-public-key`;
-	const dmUserFieldId = `${idPrefix}-dm-user-id`;
 	const ackCheckboxId = `${idPrefix}-ack-unready`;
 	const summaryHeadingId = `${idPrefix}-impact-summary`;
-	const rotateTokenId = `${idPrefix}-rotate-token`;
 
 	const handleCopyEndpoint = async (url: string) => {
 		try {
@@ -807,13 +846,8 @@ export function DiscordLifecyclePanel({
 							className="space-y-3 rounded-lg border p-3"
 							onSubmit={(event) => {
 								event.preventDefault();
-								setCredError(null);
-								saveCredentialsMutation.mutate({
-									installationId: candidate.installationId,
-									botToken,
-									applicationId,
-									publicKey,
-								});
+								event.stopPropagation();
+								void credentialsForm.handleSubmit();
 							}}
 						>
 							<p className="text-sm font-medium">
@@ -822,51 +856,69 @@ export function DiscordLifecyclePanel({
 									"Save & verify candidate bot credentials",
 								)}
 							</p>
-							<div className="space-y-2">
-								<Label htmlFor={botTokenId}>
-									{t("settings.discordLifecycle.botTokenLabel", "Bot Token (write-only)")}
-								</Label>
-								<Input
-									id={botTokenId}
-									type="password"
-									value={botToken}
-									onChange={(e) => setBotToken(e.target.value)}
-									autoComplete="off"
-									spellCheck={false}
-									disabled={saveCredentialsMutation.isPending}
-									required
-								/>
-							</div>
+							<credentialsForm.Field name="botToken">
+								{(field) => (
+									<TFormItem>
+										<TFormLabel>
+											{t("settings.discordLifecycle.botTokenLabel", "Bot Token (write-only)")}
+										</TFormLabel>
+										<TFormControl>
+											<Input
+												type="password"
+												value={field.state.value}
+												onBlur={field.handleBlur}
+												onChange={(e) => field.handleChange(e.target.value)}
+												autoComplete="off"
+												spellCheck={false}
+												disabled={saveCredentialsMutation.isPending}
+												required
+											/>
+										</TFormControl>
+									</TFormItem>
+								)}
+							</credentialsForm.Field>
 							<div className="grid gap-3 sm:grid-cols-2">
-								<div className="space-y-2">
-									<Label htmlFor={appIdFieldId}>
-										{t("settings.discordLifecycle.applicationIdLabel", "Application ID")}
-									</Label>
-									<Input
-										id={appIdFieldId}
-										inputMode="numeric"
-										value={applicationId}
-										onChange={(e) => setApplicationId(e.target.value)}
-										autoComplete="off"
-										spellCheck={false}
-										disabled={saveCredentialsMutation.isPending}
-										required
-									/>
-								</div>
-								<div className="space-y-2">
-									<Label htmlFor={publicKeyId}>
-										{t("settings.discordLifecycle.publicKeyLabel", "Ed25519 Public Key")}
-									</Label>
-									<Input
-										id={publicKeyId}
-										value={publicKey}
-										onChange={(e) => setPublicKey(e.target.value)}
-										autoComplete="off"
-										spellCheck={false}
-										disabled={saveCredentialsMutation.isPending}
-										required
-									/>
-								</div>
+								<credentialsForm.Field name="applicationId">
+									{(field) => (
+										<TFormItem>
+											<TFormLabel>
+												{t("settings.discordLifecycle.applicationIdLabel", "Application ID")}
+											</TFormLabel>
+											<TFormControl>
+												<Input
+													inputMode="numeric"
+													value={field.state.value}
+													onBlur={field.handleBlur}
+													onChange={(e) => field.handleChange(e.target.value)}
+													autoComplete="off"
+													spellCheck={false}
+													disabled={saveCredentialsMutation.isPending}
+													required
+												/>
+											</TFormControl>
+										</TFormItem>
+									)}
+								</credentialsForm.Field>
+								<credentialsForm.Field name="publicKey">
+									{(field) => (
+										<TFormItem>
+											<TFormLabel>
+												{t("settings.discordLifecycle.publicKeyLabel", "Ed25519 Public Key")}
+											</TFormLabel>
+											<TFormControl>
+												<Input
+													value={field.state.value}
+													onBlur={field.handleBlur}
+													onChange={(e) => field.handleChange(e.target.value)}
+													autoComplete="off"
+													spellCheck={false}
+													disabled={saveCredentialsMutation.isPending}
+													required
+												/>
+											</TFormControl>
+										</TFormItem>
+									)}
+								</credentialsForm.Field>
 							</div>
 							{credError ? (
 								<p role="alert" className="text-xs text-destructive">
@@ -892,54 +944,59 @@ export function DiscordLifecyclePanel({
 								className="space-y-3 rounded-lg border p-3"
 								onSubmit={(event) => {
 									event.preventDefault();
-									setDmError(null);
-									privateTestMutation.mutate({
-										installationId: candidate.installationId,
-										discordUserId,
-									});
+									event.stopPropagation();
+									void privateDmTestForm.handleSubmit();
 								}}
 							>
-								<div className="space-y-1">
-									<Label htmlFor={dmUserFieldId}>
-										{t(
-											"settings.discordLifecycle.dmTestLabel",
-											"Test private DM delivery (Discord User ID)",
-										)}
-									</Label>
-									<p className="text-xs text-muted-foreground">
-										{t(
-											"settings.discordLifecycle.dmTestHelp",
-											"Enter your numeric Discord User ID. If Discord returns error 50007, ensure you share a server with the bot and enable server Direct Messages.",
-										)}
-									</p>
-								</div>
-								<div className="flex flex-col gap-2 sm:flex-row">
-									<Input
-										id={dmUserFieldId}
-										inputMode="numeric"
-										placeholder="123456789012345678"
-										value={discordUserId}
-										onChange={(e) => setDiscordUserId(e.target.value)}
-										disabled={privateTestMutation.isPending}
-										required
-									/>
-									<Button
-										type="submit"
-										size="sm"
-										className="shrink-0"
-										disabled={privateTestMutation.isPending}
-									>
-										{privateTestMutation.isPending ? (
-											<IconLoader2
-												className="mr-1.5 size-4 motion-safe:animate-spin"
-												aria-hidden="true"
-											/>
-										) : (
-											<IconSend className="mr-1.5 size-4" aria-hidden="true" />
-										)}
-										{t("settings.discordLifecycle.sendTestDmButton", "Send test DM")}
-									</Button>
-								</div>
+								<privateDmTestForm.Field name="discordUserId">
+									{(field) => (
+										<TFormItem className="space-y-2">
+											<div className="space-y-1">
+												<TFormLabel>
+													{t(
+														"settings.discordLifecycle.dmTestLabel",
+														"Test private DM delivery (Discord User ID)",
+													)}
+												</TFormLabel>
+												<p className="text-xs text-muted-foreground">
+													{t(
+														"settings.discordLifecycle.dmTestHelp",
+														"Enter your numeric Discord User ID. If Discord returns error 50007, ensure you share a server with the bot and enable server Direct Messages.",
+													)}
+												</p>
+											</div>
+											<div className="flex flex-col gap-2 sm:flex-row">
+												<TFormControl>
+													<Input
+														inputMode="numeric"
+														placeholder="123456789012345678"
+														value={field.state.value}
+														onBlur={field.handleBlur}
+														onChange={(e) => field.handleChange(e.target.value)}
+														disabled={privateTestMutation.isPending}
+														required
+													/>
+												</TFormControl>
+												<Button
+													type="submit"
+													size="sm"
+													className="shrink-0"
+													disabled={privateTestMutation.isPending}
+												>
+													{privateTestMutation.isPending ? (
+														<IconLoader2
+															className="mr-1.5 size-4 motion-safe:animate-spin"
+															aria-hidden="true"
+														/>
+													) : (
+														<IconSend className="mr-1.5 size-4" aria-hidden="true" />
+													)}
+													{t("settings.discordLifecycle.sendTestDmButton", "Send test DM")}
+												</Button>
+											</div>
+										</TFormItem>
+									)}
+								</privateDmTestForm.Field>
 							</form>
 						) : null}
 					</CardContent>
@@ -1150,11 +1207,8 @@ export function DiscordLifecyclePanel({
 								className="space-y-3 rounded-lg border p-3"
 								onSubmit={(event) => {
 									event.preventDefault();
-									setRotateError(null);
-									rotateMutation.mutate({
-										installationId: recovery.activeInstallation!.id,
-										botToken: rotateToken,
-									});
+									event.stopPropagation();
+									void rotateForm.handleSubmit();
 								}}
 							>
 								<div className="space-y-1">
@@ -1165,42 +1219,48 @@ export function DiscordLifecyclePanel({
 										{recovery.rotationGuidance.interruptionDetails}
 									</p>
 								</div>
-								<div className="space-y-2">
-									<Label htmlFor={rotateTokenId}>
-										{t(
-											"settings.discordLifecycle.rotateTokenLabel",
-											"New Bot Token (same application)",
-										)}
-									</Label>
-									<div className="flex flex-col gap-2 sm:flex-row">
-										<Input
-											id={rotateTokenId}
-											type="password"
-											value={rotateToken}
-											onChange={(e) => setRotateToken(e.target.value)}
-											autoComplete="off"
-											spellCheck={false}
-											disabled={rotateMutation.isPending}
-											required
-										/>
-										<Button
-											type="submit"
-											size="sm"
-											className="shrink-0"
-											disabled={rotateMutation.isPending}
-										>
-											{rotateMutation.isPending ? (
-												<IconLoader2
-													className="mr-1.5 size-4 motion-safe:animate-spin"
-													aria-hidden="true"
-												/>
-											) : (
-												<IconKey className="mr-1.5 size-4" aria-hidden="true" />
-											)}
-											{t("settings.discordLifecycle.rotateButton", "Rotate token")}
-										</Button>
-									</div>
-								</div>
+								<rotateForm.Field name="botToken">
+									{(field) => (
+										<TFormItem>
+											<TFormLabel>
+												{t(
+													"settings.discordLifecycle.rotateTokenLabel",
+													"New Bot Token (same application)",
+												)}
+											</TFormLabel>
+											<div className="flex flex-col gap-2 sm:flex-row">
+												<TFormControl>
+													<Input
+														type="password"
+														value={field.state.value}
+														onBlur={field.handleBlur}
+														onChange={(e) => field.handleChange(e.target.value)}
+														autoComplete="off"
+														spellCheck={false}
+														disabled={rotateMutation.isPending}
+														required
+													/>
+												</TFormControl>
+												<Button
+													type="submit"
+													size="sm"
+													className="shrink-0"
+													disabled={rotateMutation.isPending}
+												>
+													{rotateMutation.isPending ? (
+														<IconLoader2
+															className="mr-1.5 size-4 motion-safe:animate-spin"
+															aria-hidden="true"
+														/>
+													) : (
+														<IconKey className="mr-1.5 size-4" aria-hidden="true" />
+													)}
+													{t("settings.discordLifecycle.rotateButton", "Rotate token")}
+												</Button>
+											</div>
+										</TFormItem>
+									)}
+								</rotateForm.Field>
 								{rotateError ? (
 									<p role="alert" className="text-xs text-destructive">
 										{rotateError}
