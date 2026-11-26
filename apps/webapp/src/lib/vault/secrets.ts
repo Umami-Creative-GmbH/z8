@@ -6,12 +6,19 @@
  */
 
 import { env } from "@/env";
+import { SecretNotFoundError, type SecretStoreProviderKind } from "./errors";
 import { scalewaySecretProvider } from "./scaleway-provider";
 import type { OrganizationSecretProvider } from "./types";
 import { vaultSecretProvider } from "./vault-provider";
 
+export function getActiveSecretStoreProvider(): SecretStoreProviderKind {
+	return env.SECRET_STORE_PROVIDER === "scaleway" ? "scaleway" : "vault";
+}
+
 function getSecretProvider(): OrganizationSecretProvider {
-	return env.SECRET_STORE_PROVIDER === "scaleway" ? scalewaySecretProvider : vaultSecretProvider;
+	return getActiveSecretStoreProvider() === "scaleway"
+		? scalewaySecretProvider
+		: vaultSecretProvider;
 }
 
 /**
@@ -38,6 +45,21 @@ export async function storeOrgSecret(
  */
 export async function getOrgSecret(organizationId: string, key: string): Promise<string | null> {
 	return getSecretProvider().getOrgSecret(organizationId, key);
+}
+
+/**
+ * Retrieve a required secret for an organization, distinguishing confirmed missing
+ * (`SecretNotFoundError`) from secret-store outages (`SecretStoreUnavailableError`).
+ */
+export async function getRequiredOrgSecret(organizationId: string, key: string): Promise<string> {
+	const value = await getOrgSecret(organizationId, key);
+	if (value === null) {
+		throw new SecretNotFoundError(`Organization secret not found: ${key}`, {
+			provider: getActiveSecretStoreProvider(),
+			key,
+		});
+	}
+	return value;
 }
 
 /**

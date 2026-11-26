@@ -35,6 +35,18 @@ export {
 	backfillOrganizationChatInstallations,
 } from "./backfill";
 export {
+	buildCredentialRevisionPrefix,
+	type CleanupCredentialRevisionResult,
+	type CredentialRevisionRecord,
+	type CredentialRevisionRepository,
+	type CredentialRevisionRuntimeDeps,
+	cleanupUnreferencedCredentialRevision,
+	type ReadCredentialRevisionResult,
+	readInstallationCredentialRevision,
+	type StoreCredentialRevisionInput,
+	storeInstallationCredentialRevision,
+} from "./credential-revisions";
+export {
 	checkSwitchEligibility,
 	getOrganizationChatInstallationsInventory,
 	getProviderChatInstallationInventory,
@@ -65,4 +77,35 @@ export {
 	resolveSwitchedActiveChatInstallation,
 	type SwitchedActiveChatInstallation,
 } from "./runtime-target";
+export {
+	handleSlackCandidateCommandRequest,
+	handleSlackCandidateEventRequest,
+	handleSlackCandidateInteractionRequest,
+	type SlackCandidateHttpRequestInput,
+	type SlackCandidateHttpResponse,
+} from "./slack-candidate-routes";
+export {
+	buildSlackCandidateSetupView,
+	type ConfigureSlackCredentialsResult,
+	computeSlackCandidateSetupStatus,
+	configureSlackCandidateCredentials,
+	type GeneratedSlackAppManifest,
+	generateSlackAppManifest,
+	getSlackCandidateSetupView,
+	prepareSlackCandidateInstallation,
+	type SendSlackCandidateTestResult,
+	type SendSlackPrivateDmResult,
+	SLACK_BOT_TOKEN_PREFIX,
+	SLACK_VERIFICATION_FRESHNESS_MS,
+	type SlackAppManifestDocument,
+	type SlackCandidateCallbackUrls,
+	type SlackCandidateInstallationRecord,
+	type SlackCandidateSetupView,
+	type SlackSetupAuditEvent,
+	type SlackSetupRepository,
+	type SlackSetupRuntimeDeps,
+	type SlackVerificationStepStatus,
+	type SlackVerificationStepView,
+	sendSlackCandidateTestMessage,
+} from "./slack-setup";
 export * from "./types";

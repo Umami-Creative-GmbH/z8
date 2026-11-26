@@ -3,6 +3,10 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { teamsApprovalCard } from "@/db/schema";
 import { env } from "@/env";
+import {
+	checkInboundApprovalCardInstallationEligibility,
+	resolveLegacyCardInstallationId,
+} from "@/lib/approvals/delivery/installation-origin";
 import { kickApprovalDelivery } from "@/lib/approvals/delivery/kick";
 import {
 	type ApprovalDeliveryMessageRecord,
@@ -223,6 +227,32 @@ export async function handleBoundApprovalInvoke(
 	}
 	let result: BoundBotApprovalResult = { status: "review_required" };
 	if (invoke.kind === "action" && user.organizationId === tenant.organizationId) {
+		const activity = context.activity;
+		const conversationId = activity.conversation?.id;
+		const cardActivityId = activity.replyToId;
+		const tenantId = teamsActivityTenant(activity);
+		const receiverScope = tenantId ? teamsReceiverScope(env.MICROSOFT_APP_ID, tenantId) : null;
+		const deliveredBeforeDecision =
+			conversationId && cardActivityId && receiverScope
+				? await findApprovalDeliveryMessageByRemoteIdentity({
+						organizationId: tenant.organizationId,
+						provider: "teams",
+						receiverScope,
+						destinationId: conversationId,
+						remoteMessageId: cardActivityId,
+					})
+				: null;
+		const eligibility = await checkInboundApprovalCardInstallationEligibility({
+			organizationId: tenant.organizationId,
+			provider: "teams",
+			incomingInstallationId: tenant.installationId ?? null,
+			incomingReceiverScope: receiverScope,
+			messageInstallationId: deliveredBeforeDecision?.installationId ?? null,
+			messageReceiverScope: deliveredBeforeDecision?.receiverScope ?? null,
+		});
+		if (!eligibility.allowed) {
+			return reviewRequiredMessage(recipient);
+		}
 		try {
 			const { attemptBoundBotApproval } = await import("@/lib/bot-platform/approval-decision");
 			result = await attemptBoundBotApproval({
@@ -404,7 +434,12 @@ export async function sendApprovalCardToManager(
 				? teamsActionableActivity(notice)
 				: teamsNoticeActivity(notice),
 		);
-		if (activityId)
+		if (activityId) {
+			const installationId = await resolveLegacyCardInstallationId({
+				organizationId,
+				provider: "teams",
+				tenantId: conversation.conversation.tenantId ?? null,
+			});
 			await db.insert(teamsApprovalCard).values({
 				approvalRequestId: approvalId,
 				organizationId,
@@ -412,8 +447,10 @@ export async function sendApprovalCardToManager(
 				teamsConversationId: conversation.conversation.id,
 				teamsActivityId: activityId,
 				teamsMessageId: activityId,
+				installationId,
 				status: "sent",
 			});
+		}
 	} catch (error) {
 		logger.error({ error, approvalId }, "Failed to send Teams approval notice");
 	}

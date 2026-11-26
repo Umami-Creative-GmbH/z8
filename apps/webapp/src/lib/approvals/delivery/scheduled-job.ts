@@ -3,6 +3,7 @@ import {
 	type EscalationReplacementDeliverySummary,
 	processEscalationReplacementDeliveries,
 } from "../escalation/replacement-delivery";
+import { closeExpiredUncertainApprovalDeliveries } from "./installation-origin";
 import {
 	type ApprovalDeliveryRunSummary,
 	DEFAULT_APPROVAL_DELIVERY_BATCH_LIMIT,
@@ -38,6 +39,7 @@ export async function runApprovalDeliveryJob(input?: {
 		try {
 			organizations.push(await processApprovalDeliveries({ organizationId, limit }));
 			replacements.push(await processEscalationReplacementDeliveries({ organizationId, limit }));
+			await closeExpiredUncertainApprovalDeliveries({ organizationId });
 		} catch (error) {
 			failedOrganizations.push(organizationId);
 			logger.error({ error, organizationId }, "Approval delivery run failed");
