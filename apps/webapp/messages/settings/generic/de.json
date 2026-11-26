@@ -2889,6 +2889,38 @@
     "notifications": {
       "approvals": "Genehmigungsbenachrichtigungen",
       "approvalsDescription": "Genehmigungsanfragen und Status-Updates zu Genehmigungen senden.",
+      "chatLinks": {
+        "checkStatus": "Status prüfen",
+        "codeExpired": "Code abgelaufen. Erstellen Sie einen neuen Code.",
+        "copiedCommand": "Verknüpfungsbefehl in die Zwischenablage kopiert",
+        "copyCommand": "Kopieren",
+        "copyFailed": "Verknüpfungsbefehl konnte nicht kopiert werden",
+        "description": "Verwalten Sie, wie Ihr Konto mit den Chat-Kanälen Ihrer Organisation verknüpft ist.",
+        "expiresInMinutes": "Läuft in {minutes} Min. ab",
+        "generateCode": "Verknüpfungscode erstellen",
+        "generateFailed": "Verknüpfungscode konnte nicht erstellt werden",
+        "hints": {
+          "linkRequired": "Verknüpfen Sie Ihr Konto in dieser Chat-App, um Benachrichtigungen zu erhalten und Befehle zu nutzen.",
+          "remediation": "Die Verbindung Ihrer Organisation erfordert die Prüfung durch einen Administrator, bevor der Status überprüft werden kann.",
+          "startPrivateChat": "Öffnen Sie eine Direktnachricht mit dem Bot, damit Z8 private Benachrichtigungen zustellen kann.",
+          "telegramLinkRequired": "Erstellen Sie einen kurzlebigen Verknüpfungscode und senden Sie ihn an den Telegram-Bot Ihrer Organisation.",
+          "verificationError": "Der Verbindungsstatus konnte nicht überprüft werden. Versuchen Sie es erneut."
+        },
+        "linkedAs": "Verknüpft als {identity}",
+        "loadFailed": "Ihre Chat-Verbindungen konnten derzeit nicht überprüft werden. Ihre Benachrichtigungseinstellungen unten bleiben verfügbar.",
+        "openTelegramBot": "@{botUsername} öffnen",
+        "status": {
+          "actionNeeded": "Aktion erforderlich",
+          "connected": "Verbunden",
+          "couldNotVerify": "Überprüfung fehlgeschlagen"
+        },
+        "telegramInstructions": "Senden Sie diesen Einmal-Befehl in einem privaten Chat an den Telegram-Bot Ihrer Organisation:",
+        "title": "Chat-Verbindungen",
+        "unlink": "Verknüpfung aufheben",
+        "unlinkAria": "{provider}-Verknüpfung aufheben",
+        "unlinkedToast": "Chat-Konto getrennt",
+        "unlinkFailed": "Chat-Konto konnte nicht getrennt werden"
+      },
       "commands": "Befehle",
       "commandsDescription": "Unterstützte Arbeitsplatzbefehle über diesen Kanal erlauben.",
       "connectBeforeChanging": "Verbinden oder konfigurieren Sie diese Integration, bevor Sie Benachrichtigungseinstellungen ändern.",

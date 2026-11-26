@@ -519,6 +519,10 @@ export const queryKeys = {
 			organizationId
 				? (["notifications", "preferences", organizationId] as const)
 				: (["notifications", "preferences"] as const),
+		chatLinks: (userId?: string | null, organizationId?: string | null) =>
+			organizationId
+				? (["notifications", "chat-links", userId ?? null, organizationId] as const)
+				: (["notifications", "chat-links"] as const),
 		pushBootstrap: () => ["notifications", "push", "bootstrap"] as const,
 	},
 

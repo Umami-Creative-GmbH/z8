@@ -5,6 +5,10 @@ import { db } from "@/db";
 import { notificationPreference } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import {
+	buildAvailableNotificationChannels,
+	getOrganizationChatChannelAvailability,
+} from "@/lib/chat-installations/member-links";
+import {
 	isChannelEnabledByDefault,
 	NOTIFICATION_CHANNELS,
 	NOTIFICATION_TYPES,
@@ -12,7 +16,6 @@ import {
 	type NotificationType,
 	type UserPreferencesResponse,
 } from "@/lib/notifications/types";
-import { isTelegramEnabledForOrganization } from "@/lib/telegram";
 
 /**
  * GET /api/notifications/preferences
@@ -34,25 +37,14 @@ export async function GET() {
 			.from(notificationPreference)
 			.where(eq(notificationPreference.userId, session.user.id));
 
-		const isTelegramAvailable = organizationId
-			? await isTelegramEnabledForOrganization(organizationId)
-			: false;
-
-		const availableChannels: Record<NotificationChannel, boolean> = {
-			in_app: true,
-			push: true,
-			email: true,
-			teams: false,
-			telegram: isTelegramAvailable,
-			discord: false,
-			slack: false,
-		};
+		const chatAvailability = await getOrganizationChatChannelAvailability(organizationId ?? null);
+		const availableChannels = buildAvailableNotificationChannels(chatAvailability);
 
 		// Build preference matrix (all types x all channels, at each type's defaults)
-		const matrix: Record<
+		const matrix: Record<NotificationType, Record<NotificationChannel, boolean>> = {} as Record<
 			NotificationType,
 			Record<NotificationChannel, boolean>
-		> = {} as Record<NotificationType, Record<NotificationChannel, boolean>>;
+		>;
 
 		for (const type of NOTIFICATION_TYPES) {
 			matrix[type] = {} as Record<NotificationChannel, boolean>;
@@ -77,10 +69,7 @@ export async function GET() {
 		return NextResponse.json(response);
 	} catch (error) {
 		console.error("Error fetching notification preferences:", error);
-		return NextResponse.json(
-			{ error: "Internal server error" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 	}
 }
 
@@ -107,19 +96,13 @@ export async function PUT(request: NextRequest) {
 
 		// Validate inputs
 		if (!NOTIFICATION_TYPES.includes(notificationType)) {
-			return NextResponse.json(
-				{ error: "Invalid notification type" },
-				{ status: 400 },
-			);
+			return NextResponse.json({ error: "Invalid notification type" }, { status: 400 });
 		}
 		if (!NOTIFICATION_CHANNELS.includes(channel)) {
 			return NextResponse.json({ error: "Invalid channel" }, { status: 400 });
 		}
 		if (typeof enabled !== "boolean") {
-			return NextResponse.json(
-				{ error: "Invalid enabled value" },
-				{ status: 400 },
-			);
+			return NextResponse.json({ error: "Invalid enabled value" }, { status: 400 });
 		}
 
 		// Upsert the preference (user-level, not org-specific)
@@ -150,10 +133,7 @@ export async function PUT(request: NextRequest) {
 		return NextResponse.json({ success: true });
 	} catch (error) {
 		console.error("Error updating notification preference:", error);
-		return NextResponse.json(
-			{ error: "Internal server error" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 	}
 }
 
@@ -179,27 +159,18 @@ export async function POST(request: NextRequest) {
 		}
 		const body = await request.json();
 		if (typeof body !== "object" || body === null) {
-			return NextResponse.json(
-				{ error: "Invalid preferences array" },
-				{ status: 400 },
-			);
+			return NextResponse.json({ error: "Invalid preferences array" }, { status: 400 });
 		}
 		const { preferences: updates } = body;
 
 		if (!Array.isArray(updates)) {
-			return NextResponse.json(
-				{ error: "Invalid preferences array" },
-				{ status: 400 },
-			);
+			return NextResponse.json({ error: "Invalid preferences array" }, { status: 400 });
 		}
 
 		// Validate all updates first
 		for (const update of updates) {
 			if (typeof update !== "object" || update === null) {
-				return NextResponse.json(
-					{ error: "Invalid preference update" },
-					{ status: 400 },
-				);
+				return NextResponse.json({ error: "Invalid preference update" }, { status: 400 });
 			}
 			if (!NOTIFICATION_TYPES.includes(update.notificationType)) {
 				return NextResponse.json(
@@ -208,25 +179,16 @@ export async function POST(request: NextRequest) {
 				);
 			}
 			if (!NOTIFICATION_CHANNELS.includes(update.channel)) {
-				return NextResponse.json(
-					{ error: `Invalid channel: ${update.channel}` },
-					{ status: 400 },
-				);
+				return NextResponse.json({ error: `Invalid channel: ${update.channel}` }, { status: 400 });
 			}
 			if (typeof update.enabled !== "boolean") {
-				return NextResponse.json(
-					{ error: "Invalid enabled value" },
-					{ status: 400 },
-				);
+				return NextResponse.json({ error: "Invalid enabled value" }, { status: 400 });
 			}
 		}
 
 		const deduplicatedUpdates = new Map();
 		for (const update of updates) {
-			deduplicatedUpdates.set(
-				`${update.notificationType}:${update.channel}`,
-				update,
-			);
+			deduplicatedUpdates.set(`${update.notificationType}:${update.channel}`, update);
 		}
 
 		if (deduplicatedUpdates.size > 0) {
@@ -256,9 +218,6 @@ export async function POST(request: NextRequest) {
 		return NextResponse.json({ success: true, updated: updates.length });
 	} catch (error) {
 		console.error("Error bulk updating notification preferences:", error);
-		return NextResponse.json(
-			{ error: "Internal server error" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 	}
 }

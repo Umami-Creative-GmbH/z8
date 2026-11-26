@@ -2383,6 +2383,13 @@
       "breakpoints": true
     },
     {
+      "idx": 341,
+      "version": "7",
+      "when": 1814198400000,
+      "tag": "0341_chat_installation_link_proof",
+      "breakpoints": true
+    },
+    {
       "idx": 342,
       "version": "7",
       "when": 1814284800000,
