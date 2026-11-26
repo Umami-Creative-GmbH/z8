@@ -2889,6 +2889,38 @@
     "notifications": {
       "approvals": "Approval notifications",
       "approvalsDescription": "Send approval requests and approval status updates.",
+      "chatLinks": {
+        "checkStatus": "Check status",
+        "codeExpired": "Code expired. Generate a new code.",
+        "copiedCommand": "Link command copied to clipboard",
+        "copyCommand": "Copy",
+        "copyFailed": "Couldn't copy link command",
+        "description": "Manage how your account is linked to your organization's chat channels.",
+        "expiresInMinutes": "Expires in {minutes} min",
+        "generateCode": "Generate link code",
+        "generateFailed": "Failed to generate link code",
+        "hints": {
+          "linkRequired": "Link your account in this chat app to receive notifications and use commands.",
+          "remediation": "Your organization's connection needs attention from an administrator before status can be verified.",
+          "startPrivateChat": "Open a direct message with the bot so Z8 can deliver private notifications.",
+          "telegramLinkRequired": "Generate a short-lived link code and send it to your organization's Telegram bot.",
+          "verificationError": "Connection status could not be verified. Try checking again."
+        },
+        "linkedAs": "Linked as {identity}",
+        "loadFailed": "We couldn't verify your chat connections right now. Your notification preferences below remain available.",
+        "openTelegramBot": "Open @{botUsername}",
+        "status": {
+          "actionNeeded": "Action needed",
+          "connected": "Connected",
+          "couldNotVerify": "Couldn't verify"
+        },
+        "telegramInstructions": "Send this one-time command in a private chat with your organization's Telegram bot:",
+        "title": "Chat connections",
+        "unlink": "Unlink",
+        "unlinkAria": "Unlink {provider}",
+        "unlinkedToast": "Chat account unlinked",
+        "unlinkFailed": "Failed to unlink chat account"
+      },
       "commands": "Commands",
       "commandsDescription": "Allow supported workplace commands from this channel.",
       "connectBeforeChanging": "Connect or configure this integration before changing notification settings.",

@@ -192,6 +192,7 @@
       },
       "help": {
         "footer": "You can also receive approval requests and daily digests directly in {platform}.",
+        "manageLinks": "Manage your chat links and notification preferences in Z8 under Settings → Notifications.",
         "title": "Z8 Bot Commands"
       },
       "language": {
@@ -263,8 +264,10 @@
       "linkAlreadyLinked": "This Telegram account is already linked to a Z8 account in this organization.",
       "linkAlreadyLinkedDiscord": "This Discord account is already linked to a Z8 account in this organization.",
       "linkAlreadyLinkedSlack": "This Slack account is already linked to a Z8 account in this workspace.",
-      "linkExpired": "This link code has expired. Please generate a new one from your Z8 settings.",
+      "linkExpired": "This link code has expired. Please generate a new one in Z8 under Settings → Notifications.",
+      "linkIneligible": "Your Z8 account is not eligible to link in this organization. Please contact your administrator.",
       "linkInvalid": "Invalid link code. Please check your code and try again.",
+      "linkRateLimited": "Too many link attempts. Please wait a few minutes and generate a new code in Settings → Notifications.",
       "linkSuccess": "Your Telegram account has been linked to Z8! Type /help to see available commands.",
       "linkSuccessDiscord": "Your Discord account has been linked to Z8! You can now use slash commands like `/clockedin` and `/pending`.",
       "linkSuccessSlack": "Your Slack account has been linked to Z8! Use `/z8 help` to see available commands.",
@@ -274,10 +277,10 @@
       "mentionHelp": "Hi! I'm the Z8 bot. Type \"help\" to see available commands.",
       "noEmployee": "Your account exists but you don't have an employee record in Z8.",
       "noOrg": "Unable to identify your organization. Please contact support.",
-      "notLinked": "Your Telegram account is not linked to Z8. Go to Settings > Integrations > Telegram in your Z8 dashboard to generate a link code, then send: /link YOUR_CODE",
-      "notLinkedDiscord": "Your Discord account is not linked to Z8. Go to Settings > Integrations > Discord in your Z8 dashboard to generate a link code, then use `/link` here.",
-      "notLinkedSlack": "Your Slack account is not linked to Z8. Go to Settings > Integrations > Slack in your Z8 dashboard to generate a link code, then use: /z8 link YOUR_CODE",
-      "notLinkedSlackDm": "Your Slack account is not linked to Z8. Go to Settings > Integrations > Slack in your Z8 dashboard to generate a link code, then send: link YOUR_CODE",
+      "notLinked": "Your Telegram account is not linked to Z8. Go to Settings → Notifications in your Z8 dashboard to generate a link code, then send: /link YOUR_CODE",
+      "notLinkedDiscord": "Your Discord account is not linked to Z8. Go to Settings → Notifications in your Z8 dashboard to generate a link code, then use `/link` here.",
+      "notLinkedSlack": "Your Slack account is not linked to Z8. Go to Settings → Notifications in your Z8 dashboard to generate a link code, then use: /z8 link YOUR_CODE",
+      "notLinkedSlackDm": "Your Slack account is not linked to Z8. Go to Settings → Notifications in your Z8 dashboard to generate a link code, then send: link YOUR_CODE",
       "notLinkedTeams": "I couldn't find your Z8 account. Make sure your Teams email matches your Z8 account email.",
       "noUser": "Unable to identify your user account.",
       "replyUndelivered": "Your command was processed, but its reply could not be shown. Check your status before repeating it.",
@@ -290,8 +293,8 @@
       "unconfigured": "Your organization's Z8 integration is being set up. Please wait for your admin to complete configuration.",
       "unknownCommand": "Unknown command: {command}nnType \"help\" to see available commands.",
       "unknownCommandSlack": "Unknown command. Use `/z8 help` to see available commands.",
-      "welcome": "Welcome to Z8! To connect your account, go to Settings > Integrations > Telegram in your Z8 dashboard and generate a link code. Then send: /link YOUR_CODE",
-      "welcomeSlack": "Welcome to Z8! To connect your account, go to Settings > Integrations > Slack in your Z8 dashboard and generate a link code. Then use: /z8 link YOUR_CODE",
+      "welcome": "Welcome to Z8! To connect your account, go to Settings → Notifications in your Z8 dashboard and generate a link code. Then send: /link YOUR_CODE",
+      "welcomeSlack": "Welcome to Z8! To connect your account, go to Settings → Notifications in your Z8 dashboard and generate a link code. Then use: /z8 link YOUR_CODE",
       "welcomeTeams": "Welcome to Z8! Type \"help\" to see available commands."
     },
     "vehicleUse": {

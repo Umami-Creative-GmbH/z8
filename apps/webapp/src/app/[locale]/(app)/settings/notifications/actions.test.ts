@@ -7,10 +7,7 @@ const mocks = vi.hoisted(() => ({
 	insertValues: vi.fn(),
 	updateWhere: vi.fn(),
 	selectWhere: vi.fn(),
-	isTelegramEnabledForOrganization: vi.fn(),
-	isTeamsEnabledForOrganization: vi.fn(),
-	isDiscordEnabledForOrganization: vi.fn(),
-	isSlackEnabledForOrganization: vi.fn(),
+	getOrganizationChatChannelAvailability: vi.fn(),
 }));
 
 vi.mock("@/lib/effect/runtime", async () => {
@@ -28,18 +25,13 @@ vi.mock("@/lib/effect/runtime", async () => {
 	);
 });
 
-vi.mock("@/lib/telegram", () => ({
-	isTelegramEnabledForOrganization: mocks.isTelegramEnabledForOrganization,
-}));
-vi.mock("@/lib/teams", () => ({
-	isTeamsEnabledForOrganization: mocks.isTeamsEnabledForOrganization,
-}));
-vi.mock("@/lib/discord", () => ({
-	isDiscordEnabledForOrganization: mocks.isDiscordEnabledForOrganization,
-}));
-vi.mock("@/lib/slack", () => ({
-	isSlackEnabledForOrganization: mocks.isSlackEnabledForOrganization,
-}));
+vi.mock("@/lib/chat-installations/member-links", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@/lib/chat-installations/member-links")>();
+	return {
+		...actual,
+		getOrganizationChatChannelAvailability: mocks.getOrganizationChatChannelAvailability,
+	};
+});
 
 const {
 	bulkUpdateNotificationPreferences,
@@ -53,7 +45,12 @@ const orgMember: StubCaller = {
 	membershipRole: "member",
 	employee: { id: "employee-1", role: "employee", former: false },
 };
-/** One level below org member: no settings access at all. */
+const noOrgUser: StubCaller = {
+	userId: "user-1",
+	activeOrganizationId: null,
+	membershipRole: null,
+	employee: null,
+};
 const pendingMember: StubCaller = { ...orgMember, membershipRole: null };
 const formerEmployee: StubCaller = {
 	...orgMember,
@@ -66,19 +63,17 @@ const preference = {
 	enabled: false,
 } as const;
 
-function setAllChannels(enabled: boolean) {
-	mocks.isTelegramEnabledForOrganization.mockResolvedValue(enabled);
-	mocks.isTeamsEnabledForOrganization.mockResolvedValue(enabled);
-	mocks.isDiscordEnabledForOrganization.mockResolvedValue(enabled);
-	mocks.isSlackEnabledForOrganization.mockResolvedValue(enabled);
-}
-
 beforeEach(() => {
 	vi.clearAllMocks();
 	mocks.caller = orgMember;
 	mocks.findFirst.mockResolvedValue(null);
 	mocks.selectWhere.mockResolvedValue([]);
-	setAllChannels(false);
+	mocks.getOrganizationChatChannelAvailability.mockResolvedValue({
+		teams: false,
+		telegram: false,
+		discord: false,
+		slack: false,
+	});
 });
 
 describe("getNotificationPreferences", () => {
@@ -99,10 +94,16 @@ describe("getNotificationPreferences", () => {
 				},
 			},
 		});
+		expect(mocks.getOrganizationChatChannelAvailability).toHaveBeenCalledWith("org-1");
 	});
 
-	it("marks the active organization's configured channels as available", async () => {
-		setAllChannels(true);
+	it("marks the active organization's configured channels as available via shared availability reader", async () => {
+		mocks.getOrganizationChatChannelAvailability.mockResolvedValue({
+			teams: true,
+			telegram: true,
+			discord: true,
+			slack: true,
+		});
 
 		const result = await getNotificationPreferences();
 
@@ -110,24 +111,92 @@ describe("getNotificationPreferences", () => {
 			success: true,
 			data: { availableChannels: { teams: true, telegram: true, discord: true, slack: true } },
 		});
-		expect(mocks.isTelegramEnabledForOrganization).toHaveBeenCalledWith("org-1");
+		expect(mocks.getOrganizationChatChannelAvailability).toHaveBeenCalledWith("org-1");
+	});
+
+	it("preserves account-wide preferences when active organization context is absent", async () => {
+		mocks.caller = noOrgUser;
+		mocks.selectWhere.mockResolvedValue([
+			{
+				id: "pref-1",
+				userId: "user-1",
+				notificationType: "approval_request_submitted",
+				channel: "email",
+				enabled: false,
+			},
+		]);
+
+		const result = await getNotificationPreferences();
+
+		expect(result).toMatchObject({
+			success: true,
+			data: {
+				availableChannels: {
+					in_app: true,
+					push: true,
+					email: true,
+					teams: false,
+					telegram: false,
+					discord: false,
+					slack: false,
+				},
+			},
+		});
+		if (result.success) {
+			expect(result.data.matrix.approval_request_submitted.email).toBe(false);
+		}
+		expect(mocks.getOrganizationChatChannelAvailability).toHaveBeenCalledWith(null);
 	});
 
 	it.each([
 		["a pending membership", pendingMember],
 		["a former employee", formerEmployee],
-	])("refuses %s", async (_name, caller) => {
-		mocks.caller = caller;
+	])(
+		"preserves account-wide preferences for %s while keeping org channels unavailable",
+		async (_name, caller) => {
+			mocks.caller = caller;
+
+			const result = await getNotificationPreferences();
+
+			expect(result).toMatchObject({
+				success: true,
+				data: {
+					availableChannels: {
+						in_app: true,
+						push: true,
+						email: true,
+						teams: false,
+						telegram: false,
+						discord: false,
+						slack: false,
+					},
+				},
+			});
+			expect(mocks.getOrganizationChatChannelAvailability).toHaveBeenCalledWith(null);
+		},
+	);
+
+	it("refuses signed-out callers", async () => {
+		mocks.caller = null;
 
 		const result = await getNotificationPreferences();
 
-		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
+		expect(result).toMatchObject({ success: false, code: "AuthenticationError" });
 		expect(mocks.selectWhere).not.toHaveBeenCalled();
 	});
 });
 
 describe("updateNotificationPreference", () => {
 	it("stores the signed-in user's preference", async () => {
+		const result = await updateNotificationPreference(preference);
+
+		expect(result).toEqual({ success: true, data: undefined });
+		expect(mocks.insertValues).toHaveBeenCalledWith({ userId: "user-1", ...preference });
+	});
+
+	it("preserves account preference edits when organization context is absent", async () => {
+		mocks.caller = noOrgUser;
+
 		const result = await updateNotificationPreference(preference);
 
 		expect(result).toEqual({ success: true, data: undefined });
@@ -141,12 +210,12 @@ describe("updateNotificationPreference", () => {
 		expect(mocks.insertValues).not.toHaveBeenCalled();
 	});
 
-	it("refuses a pending membership", async () => {
-		mocks.caller = pendingMember;
+	it("refuses signed-out callers", async () => {
+		mocks.caller = null;
 
 		const result = await updateNotificationPreference(preference);
 
-		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
+		expect(result).toMatchObject({ success: false, code: "AuthenticationError" });
 		expect(mocks.insertValues).not.toHaveBeenCalled();
 	});
 });
@@ -165,6 +234,15 @@ describe("bulkUpdateNotificationPreferences", () => {
 		expect(mocks.insertValues).toHaveBeenCalledTimes(1);
 	});
 
+	it("preserves bulk preference edits when organization context is absent", async () => {
+		mocks.caller = noOrgUser;
+
+		const result = await bulkUpdateNotificationPreferences([preference]);
+
+		expect(result).toEqual({ success: true, data: { updated: 1 } });
+		expect(mocks.insertValues).toHaveBeenCalledTimes(1);
+	});
+
 	it("rejects an unknown channel before writing anything", async () => {
 		const result = await bulkUpdateNotificationPreferences([
 			preference,
@@ -172,15 +250,6 @@ describe("bulkUpdateNotificationPreferences", () => {
 		]);
 
 		expect(result).toMatchObject({ success: false, code: "ValidationError" });
-		expect(mocks.insertValues).not.toHaveBeenCalled();
-	});
-
-	it("refuses a pending membership", async () => {
-		mocks.caller = pendingMember;
-
-		const result = await bulkUpdateNotificationPreferences([preference]);
-
-		expect(result).toMatchObject({ success: false, code: "AuthorizationError" });
 		expect(mocks.insertValues).not.toHaveBeenCalled();
 	});
 });

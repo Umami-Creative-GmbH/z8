@@ -38,6 +38,8 @@ export * from "./calendar-sync";
 export * from "./change-policy";
 // Organization-owned chat installations foundation (#2037 / #2040)
 export * from "./chat-installations";
+// Installation-scoped chat link proofs & member links (#2037 / #2042)
+export * from "./chat-installation-link-proof";
 // Clocking reminders (#760)
 export * from "./clocking-reminder";
 // Clockodo import (user mapping)

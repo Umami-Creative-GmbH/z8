@@ -88,7 +88,7 @@ async function handleMessage(
 			text: escapeMarkdownV2(
 				t(
 					"bot.static.welcome",
-					"Welcome to Z8! To connect your account, go to Settings > Integrations > Telegram in your Z8 dashboard and generate a link code. Then send: /link YOUR_CODE",
+					"Welcome to Z8! To connect your account, go to Settings → Notifications in your Z8 dashboard and generate a link code. Then send: /link YOUR_CODE",
 				),
 			),
 			parse_mode: "MarkdownV2",
@@ -119,7 +119,7 @@ async function handleMessage(
 			text: escapeMarkdownV2(
 				t(
 					"bot.static.notLinked",
-					"Your Telegram account is not linked to Z8. Go to Settings > Integrations > Telegram in your Z8 dashboard to generate a link code, then send: /link YOUR_CODE",
+					"Your Telegram account is not linked to Z8. Go to Settings → Notifications in your Z8 dashboard to generate a link code, then send: /link YOUR_CODE",
 				),
 			),
 			parse_mode: "MarkdownV2",
@@ -444,6 +444,7 @@ async function handleLinkCommand(
 		bot.organizationId,
 		telegramUsername,
 		displayName,
+		{ botToken: bot.botToken, chatId },
 	);
 	const { t } = await getReplyTranslate({
 		userId: result.status === "success" ? result.userId : null,
@@ -482,7 +483,7 @@ async function handleLinkCommand(
 				text: escapeMarkdownV2(
 					t(
 						"bot.static.linkExpired",
-						"This link code has expired. Please generate a new one from your Z8 settings.",
+						"This link code has expired. Please generate a new one in Z8 under Settings → Notifications.",
 					),
 				),
 				parse_mode: "MarkdownV2",
@@ -496,6 +497,32 @@ async function handleLinkCommand(
 					t(
 						"bot.static.linkAlreadyLinked",
 						"This Telegram account is already linked to a Z8 account in this organization.",
+					),
+				),
+				parse_mode: "MarkdownV2",
+			});
+			break;
+
+		case "rate_limited":
+			await sendMessage(bot.botToken, {
+				chat_id: chatId,
+				text: escapeMarkdownV2(
+					t(
+						"bot.static.linkRateLimited",
+						"Too many link attempts. Please wait a few minutes and generate a new code in Settings → Notifications.",
+					),
+				),
+				parse_mode: "MarkdownV2",
+			});
+			break;
+
+		case "ineligible":
+			await sendMessage(bot.botToken, {
+				chat_id: chatId,
+				text: escapeMarkdownV2(
+					t(
+						"bot.static.linkIneligible",
+						"Your Z8 account is not eligible to link in this organization. Please contact your administrator.",
 					),
 				),
 				parse_mode: "MarkdownV2",

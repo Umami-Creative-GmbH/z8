@@ -7,7 +7,12 @@
 
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { employee, telegramLinkCode, telegramUserMapping } from "@/db/schema";
+import { telegramLinkCode, telegramUserMapping } from "@/db/schema";
+import {
+	redeemChatLinkProof,
+	resolveTelegramInstallationForBot,
+	unlinkMemberChatLink,
+} from "@/lib/chat-installations/member-links";
 import { resolveCommandActorEmployee } from "@/lib/integrations/resolve-command-actor";
 import { createLogger } from "@/lib/logger";
 import type { ResolvedTelegramUser } from "./types";
@@ -40,10 +45,7 @@ export async function resolveTelegramUser(
 	});
 
 	if (mapping) {
-		const emp = await resolveCommandActorEmployee(
-			mapping.userId,
-			mapping.organizationId,
-		);
+		const emp = await resolveCommandActorEmployee(mapping.userId, mapping.organizationId);
 		if (!emp) return { status: "not_linked", telegramUserId };
 
 		// Update last seen and username if changed
@@ -109,17 +111,15 @@ export async function generateLinkCode(
 		status: "pending",
 	});
 
-	logger.info(
-		{ userId, organizationId, codeLength: code.length },
-		"Link code generated",
-	);
+	logger.info({ userId, organizationId, codeLength: code.length }, "Link code generated");
 
 	return { code, expiresAt };
 }
 
 /**
  * Claim a link code (called when user sends /link CODE to the bot).
- * Returns the Z8 user info if successful.
+ * Verifies installation-bound digest proofs first, falling back to unexpired
+ * legacy codes for backward compatibility while checking current member eligibility.
  */
 export async function claimLinkCode(
 	code: string,
@@ -127,16 +127,67 @@ export async function claimLinkCode(
 	organizationId: string,
 	telegramUsername?: string,
 	telegramDisplayName?: string,
+	options?: {
+		botToken?: string;
+		installationId?: string;
+		chatId?: string;
+	},
 ): Promise<
 	| { status: "success"; userId: string; employeeId: string }
 	| { status: "invalid_code" }
 	| { status: "expired" }
 	| { status: "already_linked" }
+	| { status: "rate_limited" }
+	| { status: "ineligible" }
 > {
-	// Find the link code
+	// 1. Try installation-bound digest proof redemption first.
+	const installation = await resolveTelegramInstallationForBot({
+		organizationId,
+		botToken: options?.botToken,
+		installationId: options?.installationId,
+	});
+
+	if (installation) {
+		const proofResult = await redeemChatLinkProof({
+			organizationId,
+			installationId: installation.id,
+			purpose: "member_link",
+			code,
+			externalUserId: telegramUserId,
+			externalUsername: telegramUsername ?? null,
+			externalDisplayName: telegramDisplayName ?? null,
+			externalConversationId: options?.chatId ?? null,
+			conversationType: "private",
+		});
+
+		switch (proofResult.status) {
+			case "success":
+				return {
+					status: "success",
+					userId: proofResult.userId,
+					employeeId: proofResult.employeeId,
+				};
+			case "expired":
+				return { status: "expired" };
+			case "already_used":
+				return { status: "invalid_code" };
+			case "already_linked":
+				return { status: "already_linked" };
+			case "rate_limited":
+				return { status: "rate_limited" };
+			case "ineligible":
+				return { status: "ineligible" };
+			case "invalid_code":
+			case "installation_unavailable":
+				// Fall through to legacy unexpired code compatibility check below.
+				break;
+		}
+	}
+
+	// 2. Backward-compatible fallback for unexpired legacy 6-char codes in telegram_link_code.
 	const linkCode = await db.query.telegramLinkCode.findFirst({
 		where: and(
-			eq(telegramLinkCode.code, code.toUpperCase()),
+			eq(telegramLinkCode.code, code.trim().toUpperCase()),
 			eq(telegramLinkCode.organizationId, organizationId),
 		),
 	});
@@ -169,21 +220,14 @@ export async function claimLinkCode(
 		),
 	});
 
-	if (existingMapping) {
+	if (existingMapping && existingMapping.userId !== linkCode.userId) {
 		return { status: "already_linked" };
 	}
 
-	// Get employee ID
-	const emp = await db.query.employee.findFirst({
-		where: and(
-			eq(employee.userId, linkCode.userId),
-			eq(employee.organizationId, organizationId),
-		),
-		columns: { id: true },
-	});
-
+	// Verify current active membership and non-former employee eligibility.
+	const emp = await resolveCommandActorEmployee(linkCode.userId, organizationId);
 	if (!emp) {
-		return { status: "invalid_code" }; // User has no employee record
+		return { status: "ineligible" };
 	}
 
 	// Create the user mapping
@@ -208,31 +252,23 @@ export async function claimLinkCode(
 
 	logger.info(
 		{ userId: linkCode.userId, telegramUserId, organizationId },
-		"Telegram account linked via code",
+		"Telegram account linked via legacy code",
 	);
 
 	return { status: "success", userId: linkCode.userId, employeeId: emp.id };
 }
 
 /**
- * Unlink a Telegram account
+ * Unlink a Telegram account for a single organization.
  */
-export async function unlinkTelegramUser(
-	userId: string,
-	organizationId: string,
-): Promise<boolean> {
-	const result = await db
-		.update(telegramUserMapping)
-		.set({ isActive: false })
-		.where(
-			and(
-				eq(telegramUserMapping.userId, userId),
-				eq(telegramUserMapping.organizationId, organizationId),
-			),
-		)
-		.returning({ id: telegramUserMapping.id });
+export async function unlinkTelegramUser(userId: string, organizationId: string): Promise<boolean> {
+	const result = await unlinkMemberChatLink({
+		userId,
+		organizationId,
+		provider: "telegram",
+	});
 
-	return result.length > 0;
+	return result.unlinked;
 }
 
 function generateRandomCode(length: number): string {
