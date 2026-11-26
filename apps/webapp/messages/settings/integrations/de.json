@@ -343,6 +343,101 @@
       }
     },
     "slack": {
+      "orgOwned": {
+        "badge": {
+          "candidate": "Kandidaten-Einrichtung",
+          "ready": "Bereit für Wechselprüfung"
+        },
+        "copiedAnnouncement": "{label} kopiert.",
+        "copyFailed": "Automatisches Kopieren fehlgeschlagen. Markieren Sie den Text und kopieren Sie ihn manuell.",
+        "credentials": {
+          "botToken": "Bot User OAuth Token",
+          "botTokenHelp": "Nach der Installation Ihrer Slack-App unter „OAuth & Permissions“ zu finden.",
+          "description": "Zugangsdaten werden in einer unveränderlichen organisationsbezogenen Revision gespeichert und nach dem Speichern nie wieder angezeigt.",
+          "heading": "2. Zugangsdaten eingeben (nur schreibend)",
+          "saveButton": "Prüfen & Zugangsdaten speichern",
+          "signingSecret": "Signing Secret",
+          "signingSecretHelp": "In Slack unter „Basic Information → App Credentials“ zu finden.",
+          "storedBadge": "Gespeichert (Revision v{revision})",
+          "updateButton": "Prüfen & neue Zugangsdaten-Revision speichern"
+        },
+        "credentialsSavedAnnouncement": "Slack-Bot-Identität bestätigt und Zugangsdaten in Revision {revision} gespeichert.",
+        "description": "Erstellen und prüfen Sie eine eigene Slack-App Ihrer Organisation, ohne die laufende Slack-Zustellung zu unterbrechen. Der Wechsel erfolgt erst nach erfolgreicher Prüfung.",
+        "emptyPrompt": "Erstellen Sie ein dediziertes Slack-App-Manifest mit organisationsbezogenen Prüf-URLs. Ihre bestehende Slack-Verbindung liefert während der gesamten Einrichtung weiter aus.",
+        "errors": {
+          "appClaimed": "Diese Slack-App ist bereits von einer anderen Z8-Organisation beansprucht.",
+          "candidateNotFound": "Kandidaten-Slack-Einrichtung nicht gefunden. Laden Sie die Seite neu und bereiten Sie die App erneut vor.",
+          "credentialsMissing": "Gespeicherte Zugangsdaten wurden nicht gefunden. Geben Sie Bot-Token und Signing Secret erneut ein und prüfen Sie sie.",
+          "credentialsNotConfigured": "Speichern und prüfen Sie zuerst Ihre Slack-Zugangsdaten, bevor Sie eine Testnachricht senden.",
+          "identityMismatch": "Slack hat unvollständige oder widersprüchliche App- und Bot-Metadaten zurückgegeben. Prüfen Sie die Zugangsdaten und versuchen Sie es erneut.",
+          "invalidBotToken": "Slack hat das Bot-Token abgelehnt. Prüfen Sie Ihr Bot User OAuth Token und versuchen Sie es erneut.",
+          "invalidBotTokenFormat": "Das Bot-Token muss mit xoxb- beginnen.",
+          "invalidSigningSecretFormat": "Das Signing Secret muss mindestens 16 Zeichen ohne Leerzeichen enthalten.",
+          "invalidSlackUserId": "Geben Sie eine gültige Slack-Mitglieder-ID ein (z. B. U01234567).",
+          "missingScope": "Dem Bot-Token fehlen erforderliche Slack-Berechtigungen (einschließlich users:read). Installieren Sie die App erneut über das generierte Manifest.",
+          "prepareFailed": "Organisationseigene Slack-App konnte nicht vorbereitet werden.",
+          "privateTestFailed": "Die synthetische private Testnachricht konnte nicht gesendet werden.",
+          "refreshFailed": "Der Slack-Prüfstatus konnte nicht aktualisiert werden.",
+          "saveCredentialsFailed": "Slack-Zugangsdaten konnten nicht geprüft und gespeichert werden.",
+          "workspaceClaimed": "Dieser Slack-Workspace ist bereits mit einer anderen Z8-Organisation verbunden."
+        },
+        "manifestDownloaded": "Slack-App-Manifest heruntergeladen.",
+        "prepare": {
+          "commandsUrl": "Slash-Command-URL",
+          "copyManifest": "Manifest kopieren",
+          "copyUrl": "Kopieren",
+          "downloadManifest": "Herunterladen",
+          "eventsUrl": "Event-Subscriptions-URL",
+          "heading": "1. Slack-App vorbereiten",
+          "instructions": "Wählen Sie unter Slack API (api.slack.com/apps) „Create New App → From an app manifest“, fügen Sie dieses Manifest ein und installieren Sie die App in Ihrem Workspace.",
+          "interactionsUrl": "Interactivity-Request-URL",
+          "manifestLabel": "Slack-App-Manifest"
+        },
+        "prepareButton": "Slack-App-Manifest generieren",
+        "preparedAnnouncement": "Manifest für organisationseigene Slack-App generiert.",
+        "privateTestSentAnnouncement": "Synthetische private Testnachricht an Slack gesendet.",
+        "readyAnnouncement": "Slack-App-Prüfung abgeschlossen. Bereit für die Wechselprüfung.",
+        "readyBanner": "Ihre organisationseigene Slack-App hat Identitätsprüfung, signiertes Eingangsereignis und private Testzustellung bestanden. Der laufende Slack-Verkehr bleibt bis zur bestätigten Umstellung auf Ihrer bestehenden Verbindung.",
+        "refreshedAnnouncement": "Slack-Prüfstatus aktualisiert.",
+        "status": {
+          "expired": "Abgelaufen",
+          "failed": "Handlung erforderlich",
+          "passed": "Bestanden",
+          "pending": "Ausstehend"
+        },
+        "stepExpiredAt": "Zuletzt geprüft am {timestamp}. Der Nachweis ist abgelaufen und muss erneuert werden.",
+        "stepFailureCode": "Letzte Prüfung fehlgeschlagen ({code}). Beheben Sie den Schritt und versuchen Sie es erneut.",
+        "steps": {
+          "identity": {
+            "description": "Über Slack-Bot-Metadaten (auth.test und bots.info) bestätigt und an Ihre Organisation gebunden.",
+            "title": "App- & Workspace-Identität"
+          },
+          "privateTest": {
+            "description": "Senden Sie eine private Prüf-Direktnachricht an Ihre Slack-Mitglieder-ID (im Slack-Profil → Mitglieder-ID kopieren).",
+            "title": "Synthetische private Testnachricht"
+          },
+          "signedEvent": {
+            "description": "Aktivieren Sie nach dem Speichern der Zugangsdaten Event Subscriptions in Slack, senden Sie Ihrer Kandidaten-App eine Direktnachricht oder @Erwähnung und aktualisieren Sie den Status.",
+            "retry": "Signiertes Ereignis erneut prüfen",
+            "title": "Aktuelles signiertes App- und Workspace-Ereignis"
+          }
+        },
+        "stepVerifiedAt": "Geprüft: {timestamp}",
+        "test": {
+          "description": "Kandidatentests führen niemals Produktivbefehle, Genehmigungsaktionen oder Live-Benachrichtigungen aus.",
+          "heading": "3. Kandidaten-App testen & prüfen",
+          "refreshStatus": "Status aktualisieren",
+          "retryPrivateTest": "Privaten Test wiederholen",
+          "sendPrivateTest": "Test-DM senden",
+          "slackUserIdLabel": "Ihre Slack-Mitglieder-ID"
+        },
+        "title": "Organisationseigene Slack-App vorbereiten & testen",
+        "validation": {
+          "botTokenRequired": "Bot User OAuth Token ist erforderlich.",
+          "signingSecretRequired": "Signing Secret ist erforderlich.",
+          "slackUserIdRequired": "Slack-Mitglieder-ID ist erforderlich."
+        }
+      },
       "title": "Slack"
     },
     "teamsNotifications": {

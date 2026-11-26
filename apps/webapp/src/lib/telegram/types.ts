@@ -104,6 +104,8 @@ export interface TelegramApiResponse<T = unknown> {
 
 export interface ResolvedTelegramBot {
 	organizationId: string;
+	/** Originating or active chat_installation.id when resolved via installations (#2043). */
+	installationId?: string | null;
 	botToken: string;
 	botUsername: string | null;
 	webhookSecret: string;

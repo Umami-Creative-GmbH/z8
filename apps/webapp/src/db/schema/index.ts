@@ -40,6 +40,8 @@ export * from "./change-policy";
 export * from "./chat-installations";
 // Installation-scoped chat link proofs & member links (#2037 / #2042)
 export * from "./chat-installation-link-proof";
+// Durable chat notification dispatch ledger (#2037 / #2044)
+export * from "./chat-notification-dispatch";
 // Clocking reminders (#760)
 export * from "./clocking-reminder";
 // Clockodo import (user mapping)

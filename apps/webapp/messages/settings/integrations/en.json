@@ -343,6 +343,101 @@
       }
     },
     "slack": {
+      "orgOwned": {
+        "badge": {
+          "candidate": "Candidate setup",
+          "ready": "Ready to review switch"
+        },
+        "copiedAnnouncement": "{label} copied.",
+        "copyFailed": "Could not copy automatically. Select the text and copy it manually.",
+        "credentials": {
+          "botToken": "Bot User OAuth Token",
+          "botTokenHelp": "Found under OAuth & Permissions after installing your Slack app.",
+          "description": "Credentials are stored in an immutable organization-scoped revision and are never displayed again after saving.",
+          "heading": "2. Enter credentials (write-only)",
+          "saveButton": "Verify & save credentials",
+          "signingSecret": "Signing Secret",
+          "signingSecretHelp": "Found under Basic Information → App Credentials in Slack.",
+          "storedBadge": "Stored (revision v{revision})",
+          "updateButton": "Verify & save new credential revision"
+        },
+        "credentialsSavedAnnouncement": "Slack bot identity verified and credentials stored in revision {revision}.",
+        "description": "Create and verify your organization's own Slack app without interrupting live Slack delivery. Switching happens separately after verification passes.",
+        "emptyPrompt": "Generate a dedicated Slack app manifest with organization-scoped verification URLs. Your current Slack connection continues delivering throughout setup.",
+        "errors": {
+          "appClaimed": "This Slack app is already claimed by another Z8 organization.",
+          "candidateNotFound": "Candidate Slack setup was not found. Reload and prepare the app again.",
+          "credentialsMissing": "Stored credentials could not be found. Re-enter and verify your bot token and signing secret.",
+          "credentialsNotConfigured": "Save and verify your Slack credentials before sending a test message.",
+          "identityMismatch": "Slack returned incomplete or inconsistent app and bot metadata. Verify the app credentials and try again.",
+          "invalidBotToken": "Slack rejected the bot token. Check your Bot User OAuth Token and try again.",
+          "invalidBotTokenFormat": "Bot token must start with xoxb-.",
+          "invalidSigningSecretFormat": "Signing secret must be at least 16 characters with no spaces.",
+          "invalidSlackUserId": "Enter a valid Slack member ID (for example, U01234567).",
+          "missingScope": "The bot token is missing required Slack scopes (including users:read). Reinstall the app from the generated manifest.",
+          "prepareFailed": "Could not prepare organization-owned Slack app.",
+          "privateTestFailed": "Could not send the synthetic private test message.",
+          "refreshFailed": "Could not refresh Slack verification status.",
+          "saveCredentialsFailed": "Failed to verify and save Slack credentials.",
+          "workspaceClaimed": "This Slack workspace is already connected to another Z8 organization."
+        },
+        "manifestDownloaded": "Slack app manifest downloaded.",
+        "prepare": {
+          "commandsUrl": "Slash Command URL",
+          "copyManifest": "Copy manifest",
+          "copyUrl": "Copy",
+          "downloadManifest": "Download",
+          "eventsUrl": "Event Subscriptions URL",
+          "heading": "1. Prepare your Slack app",
+          "instructions": "In Slack API (api.slack.com/apps), choose Create New App → From an app manifest, paste this manifest, and install the app to your workspace.",
+          "interactionsUrl": "Interactivity Request URL",
+          "manifestLabel": "Slack app manifest"
+        },
+        "prepareButton": "Generate Slack app manifest",
+        "preparedAnnouncement": "Organization-owned Slack app manifest generated.",
+        "privateTestSentAnnouncement": "Synthetic private test message sent to Slack.",
+        "readyAnnouncement": "Slack app verification complete. Ready for switch review.",
+        "readyBanner": "Your organization-owned Slack app passed identity, signed inbound event, and private test delivery checks. Existing Slack traffic remains on your current connection until you review and confirm a switch.",
+        "refreshedAnnouncement": "Slack verification status refreshed.",
+        "status": {
+          "expired": "Expired",
+          "failed": "Action needed",
+          "passed": "Passed",
+          "pending": "Pending"
+        },
+        "stepExpiredAt": "Previously verified at {timestamp}. Proof has expired and must be refreshed.",
+        "stepFailureCode": "Last verification check failed ({code}). Fix the step and retry.",
+        "steps": {
+          "identity": {
+            "description": "Confirmed from Slack bot metadata (auth.test and bots.info) and bound to your organization.",
+            "title": "App & workspace identity"
+          },
+          "privateTest": {
+            "description": "Send a private verification DM to your Slack member ID (found in Slack profile → Copy member ID).",
+            "title": "Synthetic private test message"
+          },
+          "signedEvent": {
+            "description": "After saving credentials, enable Event Subscriptions in Slack and send a direct message or @mention to your candidate app, then refresh status.",
+            "retry": "Recheck signed event",
+            "title": "Fresh signed app-and-workspace event"
+          }
+        },
+        "stepVerifiedAt": "Verified: {timestamp}",
+        "test": {
+          "description": "Candidate testing never executes production commands, approval actions, or live notifications.",
+          "heading": "3. Test & verify candidate app",
+          "refreshStatus": "Refresh status",
+          "retryPrivateTest": "Retry private test",
+          "sendPrivateTest": "Send test DM",
+          "slackUserIdLabel": "Your Slack Member ID"
+        },
+        "title": "Prepare & test organization-owned Slack app",
+        "validation": {
+          "botTokenRequired": "Bot User OAuth Token is required.",
+          "signingSecretRequired": "Signing Secret is required.",
+          "slackUserIdRequired": "Slack member ID is required."
+        }
+      },
       "title": "Slack"
     },
     "teamsNotifications": {

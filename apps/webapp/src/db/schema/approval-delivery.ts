@@ -4,6 +4,7 @@ import {
 	foreignKey,
 	index,
 	integer,
+	jsonb,
 	pgTable,
 	primaryKey,
 	text,
@@ -16,6 +17,7 @@ import { organization, user } from "../auth-schema";
 import { approvalEscalationTransfer } from "./approval-escalation";
 import { approvalReviewBinding } from "./approval-evidence";
 import { approvalOutbox, approvalStageAssignment, approvalWorkflow } from "./approval-workflow";
+import { chatInstallation, chatInstallationCredentialRevision } from "./chat-installations";
 import { approvalWorkflowTypeEnum } from "./enums";
 import { employee } from "./organization";
 import { currentTimestamp } from "./timestamp";
@@ -46,6 +48,36 @@ export type ApprovalDeliveryStatus = (typeof APPROVAL_DELIVERY_STATUSES)[number]
 
 export const APPROVAL_DELIVERY_MESSAGE_STATES = ["current", "retired", "gone"] as const;
 export type ApprovalDeliveryMessageState = (typeof APPROVAL_DELIVERY_MESSAGE_STATES)[number];
+
+export const APPROVAL_DISPATCH_ATTEMPT_STATES = [
+	"none",
+	"intent_recorded",
+	"confirmed_unsent",
+	"sent",
+	"uncertain_across_switch",
+	"closed_unknown",
+] as const;
+export type ApprovalDispatchAttemptState = (typeof APPROVAL_DISPATCH_ATTEMPT_STATES)[number];
+
+/**
+ * Redacted operational context persisted when an approval delivery attempt
+ * cannot be confirmed across an installation switch (#2043). Never stores
+ * tokens, secrets, or personal message content.
+ */
+export interface ApprovalDeliveryReconciliationContext {
+	reason: "lease_expired_across_switch" | "ambiguous_outcome_across_switch";
+	provider: ApprovalDeliveryProvider;
+	effect: ApprovalDeliveryEffect;
+	attemptedInstallationId: string;
+	attemptedCredentialRevisionId: string | null;
+	activeInstallationId: string | null;
+	dispatchIntentAt: string | null;
+	detectedAt: string;
+	failureReason?: string | null;
+	attemptCount: number;
+	fallback: "z8_inbox";
+	closedUnknownAt?: string;
+}
 
 /**
  * Which approval authority owns the delivered lifecycle (#296). A canonical
@@ -142,6 +174,15 @@ export const approvalDeliveryMessage = pgTable(
 		receiverScope: text("receiver_scope").notNull(),
 		destinationId: text("destination_id").notNull(),
 		remoteMessageId: text("remote_message_id").notNull(),
+		/** Originating chat installation (#2043). Null for historical rows before #2043. */
+		installationId: uuid("installation_id").references(() => chatInstallation.id, {
+			onDelete: "set null",
+		}),
+		/** Credential revision used to dispatch this card (#2043). */
+		credentialRevisionId: uuid("credential_revision_id").references(
+			() => chatInstallationCredentialRevision.id,
+			{ onDelete: "set null" },
+		),
 		bindingId: uuid("binding_id"),
 		originWorkId: uuid("origin_work_id"),
 		controls: text("controls").$type<"actionable" | "none">().notNull(),
@@ -173,7 +214,15 @@ export const approvalDeliveryMessage = pgTable(
 		index("approvalDeliveryMessage_org_acting_for_idx")
 			.on(table.organizationId, table.actingForEmployeeId, table.recipientEmployeeId)
 			.where(sql`${table.actingForEmployeeId} IS NOT NULL AND ${table.state} = 'current'`),
-		check("approval_delivery_message_provider_check", sql`${table.provider} IN ('telegram', 'teams', 'slack', 'discord')`),
+		index("approvalDeliveryMessage_org_installation_state_idx").on(
+			table.organizationId,
+			table.installationId,
+			table.state,
+		),
+		check(
+			"approval_delivery_message_provider_check",
+			sql`${table.provider} IN ('telegram', 'teams', 'slack', 'discord')`,
+		),
 		check("approval_delivery_message_lifecycle_check", lifecycleCheck(table)),
 		check(
 			"approval_delivery_message_legacy_cycle_check",
@@ -266,6 +315,26 @@ export const approvalDeliveryWork = pgTable(
 		lastOutcome: text("last_outcome"),
 		lastAttemptAt: timestamp("last_attempt_at", { withTimezone: true }),
 		processedAt: timestamp("processed_at", { withTimezone: true }),
+		/** Target or originating chat installation recorded before provider dispatch (#2043). */
+		installationId: uuid("installation_id").references(() => chatInstallation.id, {
+			onDelete: "set null",
+		}),
+		/** Credential revision selected before provider dispatch (#2043). */
+		credentialRevisionId: uuid("credential_revision_id").references(
+			() => chatInstallationCredentialRevision.id,
+			{ onDelete: "set null" },
+		),
+		/** Timestamp recorded immediately prior to provider dispatch (#2043). */
+		dispatchIntentAt: timestamp("dispatch_intent_at", { withTimezone: true }),
+		/** Durable dispatch state across installation switches (#2043). */
+		dispatchAttemptState: text("dispatch_attempt_state").$type<ApprovalDispatchAttemptState>(),
+		/** When an uncertain attempt across a switch entered operator reconciliation (#2043). */
+		reconciliationRequiredAt: timestamp("reconciliation_required_at", { withTimezone: true }),
+		/** Redacted diagnostic context for operator reconciliation (#2043). */
+		reconciliationContext:
+			jsonb("reconciliation_context").$type<ApprovalDeliveryReconciliationContext>(),
+		/** When an unresolved uncertain attempt closed as explicit unknown after 7 days (#2043). */
+		unknownClosedAt: timestamp("unknown_closed_at", { withTimezone: true }),
 		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 		updatedAt: timestamp("updated_at", { withTimezone: true })
 			.defaultNow()
@@ -292,6 +361,18 @@ export const approvalDeliveryWork = pgTable(
 		index("approvalDeliveryWork_due_idx")
 			.on(table.organizationId, table.availableAt)
 			.where(sql`status IN ('pending', 'processing')`),
+		index("approvalDeliveryWork_org_installation_status_idx").on(
+			table.organizationId,
+			table.installationId,
+			table.status,
+		),
+		index("approvalDeliveryWork_org_reconciliation_idx")
+			.on(table.organizationId, table.dispatchAttemptState, table.reconciliationRequiredAt)
+			.where(sql`${table.dispatchAttemptState} = 'uncertain_across_switch'`),
+		check(
+			"approval_delivery_work_dispatch_attempt_state_check",
+			sql`${table.dispatchAttemptState} IS NULL OR ${table.dispatchAttemptState} IN ('none', 'intent_recorded', 'confirmed_unsent', 'sent', 'uncertain_across_switch', 'closed_unknown')`,
+		),
 		check(
 			"approval_delivery_work_provider_check",
 			sql`${table.provider} IN ('telegram', 'teams', 'slack', 'discord')`,

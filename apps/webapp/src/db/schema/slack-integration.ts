@@ -11,6 +11,7 @@ import {
 import { currentTimestamp } from "./timestamp";
 import { organization, user } from "../auth-schema";
 import { approvalRequest } from "./approval";
+import { chatInstallation } from "./chat-installations";
 import { employee } from "./organization";
 
 // ============================================
@@ -261,6 +262,11 @@ export const slackApprovalMessage = pgTable(
 		channelId: text("channel_id").notNull(),
 		messageTs: text("message_ts").notNull(), // Slack uses timestamp as message ID
 
+		// Originating chat installation (#2043)
+		installationId: uuid("installation_id").references(() => chatInstallation.id, {
+			onDelete: "set null",
+		}),
+
 		// Recipient
 		recipientUserId: text("recipient_user_id")
 			.notNull()
@@ -280,6 +286,10 @@ export const slackApprovalMessage = pgTable(
 		index("slackApprovalMessage_approvalRequestId_idx").on(table.approvalRequestId),
 		index("slackApprovalMessage_recipientUserId_idx").on(table.recipientUserId),
 		index("slackApprovalMessage_status_idx").on(table.status),
+		index("slackApprovalMessage_org_installation_idx").on(
+			table.organizationId,
+			table.installationId,
+		),
 		uniqueIndex("slackApprovalMessage_approvalRequest_unique_idx").on(table.approvalRequestId),
 	],
 );

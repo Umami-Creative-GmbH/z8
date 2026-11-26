@@ -7,6 +7,13 @@
 import { and, count, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { notification, notificationPreference } from "@/db/schema";
+import {
+	DurableDispatchConfirmedUnsentError,
+	extractRedactedErrorDiagnostics,
+	isConfirmedUnsentError,
+	isUncertainDispatchError,
+} from "@/lib/chat-installations/durable-dispatch";
+import type { ChatDispatchTargetHint } from "@/lib/chat-installations/runtime-target";
 import { publishEventAsync } from "@/lib/events";
 import { createLogger } from "@/lib/logger";
 import { isDiscordAvailable, sendDiscordNotification } from "./discord-channel";
@@ -16,18 +23,11 @@ import {
 	type NotificationRecipients,
 	resolveNotificationRecipients,
 } from "./kiosk-only-recipients";
-import {
-	isPushAvailable,
-	type PushPayload,
-	sendPushToUser,
-} from "./push-service";
+import { isPushAvailable, type PushPayload, sendPushToUser } from "./push-service";
 import { withoutRecipientOnlyMetadata } from "./recipient-only-metadata";
 import { isSlackAvailable, sendSlackNotification } from "./slack-channel";
 import { isTeamsAvailable, sendTeamsNotification } from "./teams-channel";
-import {
-	isTelegramAvailable,
-	sendTelegramNotification,
-} from "./telegram-channel";
+import { isTelegramAvailable, sendTelegramNotification } from "./telegram-channel";
 import type {
 	CreateNotificationParams,
 	Notification,
@@ -82,10 +82,7 @@ export function getTimeAgo(date: Date): string {
 	return `${months} month${months === 1 ? "" : "s"} ago`;
 }
 
-export type NotificationChannelPreferences = Record<
-	NotificationChannel,
-	boolean
->;
+export type NotificationChannelPreferences = Record<NotificationChannel, boolean>;
 
 /** Use transport owners' organization availability checks before staging optional delivery. */
 export async function loadNotificationChannelAvailability(
@@ -94,26 +91,11 @@ export async function loadNotificationChannelAvailability(
 ): Promise<NotificationChannelPreferences> {
 	const { getTransportName } = await import("@/lib/email/email-service");
 	const [emailTransport, teams, telegram, discord, slack] = await Promise.all([
-		getTransportName(
-			organizationId,
-			options.durable ? { throwOnError: true } : undefined,
-		),
-		isTeamsAvailable(
-			organizationId,
-			options.durable ? { throwOnError: true } : undefined,
-		),
-		isTelegramAvailable(
-			organizationId,
-			options.durable ? { throwOnError: true } : undefined,
-		),
-		isDiscordAvailable(
-			organizationId,
-			options.durable ? { throwOnError: true } : undefined,
-		),
-		isSlackAvailable(
-			organizationId,
-			options.durable ? { throwOnError: true } : undefined,
-		),
+		getTransportName(organizationId, options.durable ? { throwOnError: true } : undefined),
+		isTeamsAvailable(organizationId, options.durable ? { throwOnError: true } : undefined),
+		isTelegramAvailable(organizationId, options.durable ? { throwOnError: true } : undefined),
+		isDiscordAvailable(organizationId, options.durable ? { throwOnError: true } : undefined),
+		isSlackAvailable(organizationId, options.durable ? { throwOnError: true } : undefined),
 	]);
 	return {
 		in_app: true,
@@ -139,9 +121,7 @@ export async function loadNotificationChannelPreferences(
 	});
 	const enabled = (channel: NotificationChannel) => {
 		const preference = preferences.find((p) => p.channel === channel);
-		return preference
-			? preference.enabled
-			: isChannelEnabledByDefault(type, channel);
+		return preference ? preference.enabled : isChannelEnabledByDefault(type, channel);
 	};
 	return {
 		in_app: hasMandatoryInbox(type) || enabled("in_app"),
@@ -187,15 +167,10 @@ export async function insertInAppNotification(
 				})
 				.returning()
 		: await insert.returning();
-	return inserted
-		? { kind: "created", notification: inserted }
-		: { kind: "duplicate" };
+	return inserted ? { kind: "created", notification: inserted } : { kind: "duplicate" };
 }
 
-export type ExternalNotificationChannel = Exclude<
-	NotificationChannel,
-	"in_app"
->;
+export type ExternalNotificationChannel = Exclude<NotificationChannel, "in_app">;
 
 /**
  * Awaited delivery through one external transport. `unavailable` means the
@@ -203,11 +178,32 @@ export type ExternalNotificationChannel = Exclude<
  * distinct from a transport failure (thrown) and from preference suppression
  * (decided by the caller before delivery).
  */
+async function checkDurableChatAvailability(
+	check: () => Promise<boolean>,
+	channel: "teams" | "telegram" | "discord" | "slack",
+	durable: boolean,
+): Promise<boolean> {
+	try {
+		return await check();
+	} catch (error) {
+		if (!durable) throw error;
+		if (isConfirmedUnsentError(error) || isUncertainDispatchError(error)) {
+			throw error;
+		}
+		const message = error instanceof Error ? error.message : `${channel}_availability_failed`;
+		throw new DurableDispatchConfirmedUnsentError(
+			message,
+			extractRedactedErrorDiagnostics(error, `${channel}_availability_lookup_failed`),
+			error,
+		);
+	}
+}
+
 export async function deliverNotificationToChannel(
 	channel: ExternalNotificationChannel,
 	params: CreateNotificationParams,
 	notificationId: string | null,
-	options: { durable?: boolean } = {},
+	options: { durable?: boolean; dispatchTarget?: ChatDispatchTargetHint } = {},
 ): Promise<"sent" | "unavailable"> {
 	let botActionUrl = params.actionUrl;
 	if (
@@ -233,6 +229,14 @@ export async function deliverNotificationToChannel(
 		actionUrl: botActionUrl,
 		metadata: params.metadata,
 	};
+	const chatSendOptions = options.durable
+		? {
+				durable: true as const,
+				...(options.dispatchTarget ? { dispatchTarget: options.dispatchTarget } : {}),
+			}
+		: options.dispatchTarget
+			? { dispatchTarget: options.dispatchTarget }
+			: undefined;
 	switch (channel) {
 		case "push": {
 			if (!isPushAvailable()) return "unavailable";
@@ -257,8 +261,7 @@ export async function deliverNotificationToChannel(
 					...(options.durable ? { throwOnError: true } : {}),
 				},
 			);
-			if (options.durable && result.failed > 0)
-				throw new Error("push_delivery_failed");
+			if (options.durable && result.failed > 0) throw new Error("push_delivery_failed");
 			if (options.durable && result.sent === 0) return "unavailable";
 			return "sent";
 		}
@@ -280,71 +283,91 @@ export async function deliverNotificationToChannel(
 		}
 		case "teams":
 			if (
-				!(await isTeamsAvailable(
-					params.organizationId,
-					options.durable ? { throwOnError: true } : undefined,
+				!(await checkDurableChatAvailability(
+					() =>
+						isTeamsAvailable(
+							params.organizationId,
+							options.durable ? { throwOnError: true } : undefined,
+						),
+					"teams",
+					Boolean(options.durable),
 				))
 			)
 				return "unavailable";
 			if (options.durable) {
-				if (
-					(await sendTeamsNotification(botChannelPayload, {
-						durable: true,
-					})) === "unavailable"
-				)
+				if ((await sendTeamsNotification(botChannelPayload, chatSendOptions)) === "unavailable")
 					return "unavailable";
-			} else await sendTeamsNotification(botChannelPayload);
+			} else if (chatSendOptions) {
+				await sendTeamsNotification(botChannelPayload, chatSendOptions);
+			} else {
+				await sendTeamsNotification(botChannelPayload);
+			}
 			return "sent";
 		case "telegram":
 			if (
-				!(await isTelegramAvailable(
-					params.organizationId,
-					options.durable ? { throwOnError: true } : undefined,
+				!(await checkDurableChatAvailability(
+					() =>
+						isTelegramAvailable(
+							params.organizationId,
+							options.durable ? { throwOnError: true } : undefined,
+						),
+					"telegram",
+					Boolean(options.durable),
 				))
 			)
 				return "unavailable";
 			if (options.durable) {
-				if (
-					(await sendTelegramNotification(botChannelPayload, {
-						durable: true,
-					})) === "unavailable"
-				)
+				if ((await sendTelegramNotification(botChannelPayload, chatSendOptions)) === "unavailable")
 					return "unavailable";
-			} else await sendTelegramNotification(botChannelPayload);
+			} else if (chatSendOptions) {
+				await sendTelegramNotification(botChannelPayload, chatSendOptions);
+			} else {
+				await sendTelegramNotification(botChannelPayload);
+			}
 			return "sent";
 		case "discord":
 			if (
-				!(await isDiscordAvailable(
-					params.organizationId,
-					options.durable ? { throwOnError: true } : undefined,
+				!(await checkDurableChatAvailability(
+					() =>
+						isDiscordAvailable(
+							params.organizationId,
+							options.durable ? { throwOnError: true } : undefined,
+						),
+					"discord",
+					Boolean(options.durable),
 				))
 			)
 				return "unavailable";
 			if (options.durable) {
-				if (
-					(await sendDiscordNotification(botChannelPayload, {
-						durable: true,
-					})) === "unavailable"
-				)
+				if ((await sendDiscordNotification(botChannelPayload, chatSendOptions)) === "unavailable")
 					return "unavailable";
-			} else await sendDiscordNotification(botChannelPayload);
+			} else if (chatSendOptions) {
+				await sendDiscordNotification(botChannelPayload, chatSendOptions);
+			} else {
+				await sendDiscordNotification(botChannelPayload);
+			}
 			return "sent";
 		case "slack":
 			if (
-				!(await isSlackAvailable(
-					params.organizationId,
-					options.durable ? { throwOnError: true } : undefined,
+				!(await checkDurableChatAvailability(
+					() =>
+						isSlackAvailable(
+							params.organizationId,
+							options.durable ? { throwOnError: true } : undefined,
+						),
+					"slack",
+					Boolean(options.durable),
 				))
 			)
 				return "unavailable";
 			if (options.durable) {
-				if (
-					(await sendSlackNotification(botChannelPayload, {
-						durable: true,
-					})) === "unavailable"
-				)
+				if ((await sendSlackNotification(botChannelPayload, chatSendOptions)) === "unavailable")
 					return "unavailable";
-			} else await sendSlackNotification(botChannelPayload);
+			} else if (chatSendOptions) {
+				await sendSlackNotification(botChannelPayload, chatSendOptions);
+			} else {
+				await sendSlackNotification(botChannelPayload);
+			}
 			return "sent";
 	}
 }
@@ -368,20 +391,14 @@ export async function createNotification(
 		// An unreadable recipient keeps the notification addressed as it was.
 		const recipients = await resolveNotificationRecipients(db, params).catch(
 			(error): NotificationRecipients => {
-				logger.warn(
-					{ error, userId: params.userId },
-					"Could not resolve notification recipients",
-				);
+				logger.warn({ error, userId: params.userId }, "Could not resolve notification recipients");
 				return { kind: "self" };
 			},
 		);
 		if (recipients.kind === "forwarded") {
 			return forwardNotification(params, recipients, options);
 		}
-		const channels = await loadNotificationChannelPreferences(
-			params.userId,
-			params.type,
-		);
+		const channels = await loadNotificationChannelPreferences(params.userId, params.type);
 		const inAppEnabled = channels.in_app;
 		const pushEnabled = channels.push;
 		const emailEnabled = channels.email;
@@ -465,25 +482,14 @@ export async function createNotification(
 		}
 
 		// Check bot platform availability in parallel (async-parallel rule)
-		const [
-			teamsAvailable,
-			telegramAvailable,
-			discordAvailable,
-			slackAvailable,
-		] = await Promise.all([
-			teamsEnabled
-				? isTeamsAvailable(params.organizationId)
-				: Promise.resolve(false),
-			telegramEnabled
-				? isTelegramAvailable(params.organizationId)
-				: Promise.resolve(false),
-			discordEnabled
-				? isDiscordAvailable(params.organizationId)
-				: Promise.resolve(false),
-			slackEnabled
-				? isSlackAvailable(params.organizationId)
-				: Promise.resolve(false),
-		]);
+		const [teamsAvailable, telegramAvailable, discordAvailable, slackAvailable] = await Promise.all(
+			[
+				teamsEnabled ? isTeamsAvailable(params.organizationId) : Promise.resolve(false),
+				telegramEnabled ? isTelegramAvailable(params.organizationId) : Promise.resolve(false),
+				discordEnabled ? isDiscordAvailable(params.organizationId) : Promise.resolve(false),
+				slackEnabled ? isSlackAvailable(params.organizationId) : Promise.resolve(false),
+			],
+		);
 
 		const botChannelPayload = {
 			userId: params.userId,
@@ -608,10 +614,7 @@ export async function createNotificationForManager(
 		});
 
 		if (!manager) {
-			logger.warn(
-				{ managerId: params.managerId },
-				"Manager not found for notification",
-			);
+			logger.warn({ managerId: params.managerId }, "Manager not found for notification");
 			return null;
 		}
 
@@ -670,16 +673,13 @@ export async function getUserNotifications(
 			.where(and(...conditions));
 
 		const hasMore = notifications.length > limit;
-		const resultNotifications = hasMore
-			? notifications.slice(0, limit)
-			: notifications;
+		const resultNotifications = hasMore ? notifications.slice(0, limit) : notifications;
 
 		// Add timeAgo to each notification
-		const notificationsWithMeta: NotificationWithMeta[] =
-			resultNotifications.map((n) => ({
-				...n,
-				timeAgo: getTimeAgo(n.createdAt),
-			}));
+		const notificationsWithMeta: NotificationWithMeta[] = resultNotifications.map((n) => ({
+			...n,
+			timeAgo: getTimeAgo(n.createdAt),
+		}));
 
 		return {
 			notifications: notificationsWithMeta,
@@ -695,10 +695,7 @@ export async function getUserNotifications(
 /**
  * Get unread notification count for a user
  */
-export async function getUnreadCount(
-	userId: string,
-	organizationId: string,
-): Promise<number> {
+export async function getUnreadCount(userId: string, organizationId: string): Promise<number> {
 	try {
 		const [result] = await db
 			.select({ count: count() })
@@ -748,10 +745,7 @@ export async function markAsRead(
 
 		return updated || null;
 	} catch (error) {
-		logger.error(
-			{ error, notificationId, userId },
-			"Failed to mark notification as read",
-		);
+		logger.error({ error, notificationId, userId }, "Failed to mark notification as read");
 		return null;
 	}
 }
@@ -759,10 +753,7 @@ export async function markAsRead(
 /**
  * Mark all notifications as read for a user
  */
-export async function markAllAsRead(
-	userId: string,
-	organizationId: string,
-): Promise<number> {
+export async function markAllAsRead(userId: string, organizationId: string): Promise<number> {
 	try {
 		const result = await db
 			.update(notification)
@@ -816,10 +807,7 @@ export async function deleteNotification(
 
 		return deleted;
 	} catch (error) {
-		logger.error(
-			{ error, notificationId, userId },
-			"Failed to delete notification",
-		);
+		logger.error({ error, notificationId, userId }, "Failed to delete notification");
 		return false;
 	}
 }
@@ -834,12 +822,7 @@ export async function deleteAllNotifications(
 	try {
 		const result = await db
 			.delete(notification)
-			.where(
-				and(
-					eq(notification.userId, userId),
-					eq(notification.organizationId, organizationId),
-				),
-			)
+			.where(and(eq(notification.userId, userId), eq(notification.organizationId, organizationId)))
 			.returning({ id: notification.id });
 
 		const deletedCount = result.length;
@@ -855,9 +838,7 @@ export async function deleteAllNotifications(
 /**
  * Delete old notifications (cleanup job)
  */
-export async function deleteOldNotifications(
-	olderThanDays: number = 90,
-): Promise<number> {
+export async function deleteOldNotifications(olderThanDays: number = 90): Promise<number> {
 	try {
 		const cutoffDate = new Date();
 		cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
@@ -868,17 +849,11 @@ export async function deleteOldNotifications(
 			.returning({ id: notification.id });
 
 		const deletedCount = result.length;
-		logger.info(
-			{ deletedCount, olderThanDays },
-			"Old notifications cleaned up",
-		);
+		logger.info({ deletedCount, olderThanDays }, "Old notifications cleaned up");
 
 		return deletedCount;
 	} catch (error) {
-		logger.error(
-			{ error, olderThanDays },
-			"Failed to delete old notifications",
-		);
+		logger.error({ error, olderThanDays }, "Failed to delete old notifications");
 		return 0;
 	}
 }
@@ -901,9 +876,7 @@ export async function isChannelEnabled(
 			),
 		});
 
-		return preference
-			? preference.enabled
-			: isChannelEnabledByDefault(notificationType, channel);
+		return preference ? preference.enabled : isChannelEnabledByDefault(notificationType, channel);
 	} catch (error) {
 		logger.error(
 			{ error, userId, notificationType, channel },

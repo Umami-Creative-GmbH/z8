@@ -101,6 +101,19 @@ vi.mock("@/lib/jobs/deputy-cover-summaries", () => {
 	deputyCoverSummaries.imported();
 	return { runDeputyCoverSummariesJob: deputyCoverSummaries.run };
 });
+const durableChatDispatchMaintenance = vi.hoisted(() => ({
+	imported: vi.fn(),
+	run: vi.fn(async () => ({
+		closedCount: 2,
+		closedAttemptIds: ["att-1", "att-2"],
+		cutoffAt: "2026-11-19T00:00:00.000Z",
+		ranAt: "2026-11-26T00:00:00.000Z",
+	})),
+}));
+vi.mock("@/lib/jobs/durable-chat-dispatch-maintenance", () => {
+	durableChatDispatchMaintenance.imported();
+	return { runDurableChatDispatchMaintenance: durableChatDispatchMaintenance.run };
+});
 const {
 	calculateTelemetryMetrics,
 	getOrCreateTelemetryIdentity,
@@ -176,8 +189,7 @@ describe("CRON_JOBS execution cleanup", () => {
 	it("registers the daily execution cleanup cron with tracking metadata", () => {
 		expect(CRON_JOBS["cron:execution-cleanup"]).toMatchObject({
 			schedule: "30 2 * * *",
-			description:
-				"Delete cron execution records past the configured retention period",
+			description: "Delete cron execution records past the configured retention period",
 			defaultJobOptions: { attempts: 2, priority: 9 },
 		});
 	});
@@ -299,13 +311,10 @@ describe("CRON_JOBS telemetry", () => {
 
 		expect(getOrCreateTelemetryIdentity).toHaveBeenCalledExactlyOnceWith();
 		expect(calculateTelemetryMetrics).toHaveBeenCalledExactlyOnceWith();
-		expect(
-			getOrCreateTelemetryIdentity.mock.invocationCallOrder[0],
-		).toBeLessThan(calculateTelemetryMetrics.mock.invocationCallOrder[0] ?? 0);
-		expect(sendTelemetryReport).toHaveBeenCalledExactlyOnceWith(
-			deploymentId,
-			metrics,
+		expect(getOrCreateTelemetryIdentity.mock.invocationCallOrder[0]).toBeLessThan(
+			calculateTelemetryMetrics.mock.invocationCallOrder[0] ?? 0,
 		);
+		expect(sendTelemetryReport).toHaveBeenCalledExactlyOnceWith(deploymentId, metrics);
 		expect(result).toEqual({ success: true, message: "Telemetry sent" });
 	});
 
@@ -322,10 +331,7 @@ describe("CRON_JOBS telemetry", () => {
 
 		expect(getOrCreateTelemetryIdentity).toHaveBeenCalledExactlyOnceWith();
 		expect(calculateTelemetryMetrics).toHaveBeenCalledExactlyOnceWith();
-		expect(sendTelemetryReport).toHaveBeenCalledExactlyOnceWith(
-			deploymentId,
-			metrics,
-		);
+		expect(sendTelemetryReport).toHaveBeenCalledExactlyOnceWith(deploymentId, metrics);
 		expect(CRON_JOBS["cron:telemetry"].defaultJobOptions).toEqual({
 			attempts: 1,
 			priority: 9,
@@ -392,7 +398,14 @@ describe("personal data export sweep cron", () => {
 			await CRON_JOBS["cron:personal-data-export-sweep"].processor({
 				triggeredAt: "2026-10-13T09:15:00Z",
 			}),
-		).toEqual({ expired: 2, timedOut: 0, filesDeleted: 2, filesFailed: 0, filesDropped: 0, outstanding: 0 });
+		).toEqual({
+			expired: 2,
+			timedOut: 0,
+			filesDeleted: 2,
+			filesFailed: 0,
+			filesDropped: 0,
+			outstanding: 0,
+		});
 		expect(personalDataExports.sweep).toHaveBeenCalledOnce();
 	});
 });
@@ -461,9 +474,7 @@ describe("document request reminders cron (#1406)", () => {
 describe("document request retention cron (#1408)", () => {
 	it("loads the deletion job lazily, runs hourly and is a high-risk schedule because it deletes data", async () => {
 		expect(documentRequestRetention.imported).not.toHaveBeenCalled();
-		expect(CRON_JOBS["cron:personnel-file-document-request-retention"].schedule).toBe(
-			"15 * * * *",
-		);
+		expect(CRON_JOBS["cron:personnel-file-document-request-retention"].schedule).toBe("15 * * * *");
 		expect(isHighRiskCronJob("cron:personnel-file-document-request-retention")).toBe(true);
 		expect(
 			await CRON_JOBS["cron:personnel-file-document-request-retention"].processor({
@@ -488,5 +499,27 @@ describe("deputy cover summaries cron (#1018)", () => {
 			failed: 0,
 		});
 		expect(deputyCoverSummaries.run).toHaveBeenCalledOnce();
+	});
+});
+
+describe("durable chat dispatch maintenance cron (#2044)", () => {
+	it("loads maintenance lazily and closes expired uncertain dispatches hourly", async () => {
+		expect(durableChatDispatchMaintenance.imported).not.toHaveBeenCalled();
+		expect(CRON_JOBS["cron:durable-chat-dispatch-maintenance"]).toMatchObject({
+			schedule: "0 * * * *",
+			defaultJobOptions: { attempts: 2, priority: 8 },
+		});
+
+		expect(
+			await CRON_JOBS["cron:durable-chat-dispatch-maintenance"].processor({
+				triggeredAt: "2026-11-26T00:00:00.000Z",
+			}),
+		).toEqual({
+			closedCount: 2,
+			closedAttemptIds: ["att-1", "att-2"],
+			cutoffAt: "2026-11-19T00:00:00.000Z",
+			ranAt: "2026-11-26T00:00:00.000Z",
+		});
+		expect(durableChatDispatchMaintenance.run).toHaveBeenCalledOnce();
 	});
 });

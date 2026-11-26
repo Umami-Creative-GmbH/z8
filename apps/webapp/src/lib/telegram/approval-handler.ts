@@ -1,6 +1,10 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { telegramApprovalMessage } from "@/db/schema";
+import {
+	checkInboundApprovalCardInstallationEligibility,
+	resolveLegacyCardInstallationId,
+} from "@/lib/approvals/delivery/installation-origin";
 import { kickApprovalDelivery } from "@/lib/approvals/delivery/kick";
 import {
 	type ApprovalDeliveryMessageRecord,
@@ -59,9 +63,7 @@ export async function handleApprovalCallback(
 	try {
 		// The attempt below records its outcome whether or not a card is edited afterwards.
 		// react-doctor-disable-next-line react-doctor/async-defer-await
-		const { attemptBotApproval } = await import(
-			"@/lib/bot-platform/approval-decision"
-		);
+		const { attemptBotApproval } = await import("@/lib/bot-platform/approval-decision");
 		const result = await attemptBotApproval({
 			approvalId: data.id,
 			actorEmployeeId: user.user.employeeId,
@@ -85,8 +87,7 @@ export async function handleApprovalCallback(
 		if (adopted && adopted.recipientUserId === user.user.userId) {
 			return (await reassignedAcknowledgment(adopted, bot, user.user.userId)) ?? undefined;
 		}
-		if (result.status !== "review_required" && result.status !== "historical")
-			return undefined;
+		if (result.status !== "review_required" && result.status !== "historical") return undefined;
 		const tracked = await db.query.telegramApprovalMessage.findFirst({
 			where: and(
 				eq(telegramApprovalMessage.organizationId, bot.organizationId),
@@ -109,10 +110,7 @@ export async function handleApprovalCallback(
 			...telegramApprovalNotice(notice),
 		});
 	} catch (error) {
-		logger.error(
-			{ error, approvalId: data.id },
-			"Failed to review Telegram approval card",
-		);
+		logger.error({ error, approvalId: data.id }, "Failed to review Telegram approval card");
 	}
 	return undefined;
 }
@@ -204,11 +202,48 @@ export async function handleBoundApprovalCallback(
 ): Promise<string | undefined> {
 	const user = await resolveTelegramUser(String(query.from.id), bot.organizationId);
 	if (user.status !== "found") return undefined;
+	const receiverScope = telegramReceiverScope(bot.botToken);
+	const deliveredBeforeDecision =
+		query.message && receiverScope
+			? await findApprovalDeliveryMessageByRemoteIdentity({
+					organizationId: bot.organizationId,
+					provider: "telegram",
+					receiverScope,
+					destinationId: String(query.message.chat.id),
+					remoteMessageId: String(query.message.message_id),
+				})
+			: null;
+	const eligibility = await checkInboundApprovalCardInstallationEligibility({
+		organizationId: bot.organizationId,
+		provider: "telegram",
+		incomingInstallationId: bot.installationId ?? null,
+		incomingReceiverScope: receiverScope,
+		messageInstallationId: deliveredBeforeDecision?.installationId ?? null,
+		messageReceiverScope: deliveredBeforeDecision?.receiverScope ?? null,
+	});
+	if (!eligibility.allowed) {
+		try {
+			const reference = deliveredBeforeDecision
+				? approvalDeliveryMessageReviewReference(deliveredBeforeDecision)
+				: null;
+			if (!reference) return undefined;
+			const notice = await boundDecisionNotice(
+				{ status: "review_required" },
+				{ userId: user.user.userId, organizationId: bot.organizationId },
+				reference,
+			);
+			return notice?.title;
+		} catch (error) {
+			logger.error(
+				{ error, bindingId: callback.bindingId, reason: eligibility.reason },
+				"Failed to build review notice for ineligible Telegram installation",
+			);
+			return undefined;
+		}
+	}
 	let result: BoundBotApprovalResult;
 	try {
-		const { attemptBoundBotApproval } = await import(
-			"@/lib/bot-platform/approval-decision"
-		);
+		const { attemptBoundBotApproval } = await import("@/lib/bot-platform/approval-decision");
 		result = await attemptBoundBotApproval({
 			organizationId: bot.organizationId,
 			actorEmployeeId: user.user.employeeId,
@@ -229,16 +264,7 @@ export async function handleBoundApprovalCallback(
 	}
 	try {
 		if (!query.message) return undefined;
-		const receiverScope = telegramReceiverScope(bot.botToken);
-		const delivered = receiverScope
-			? await findApprovalDeliveryMessageByRemoteIdentity({
-					organizationId: bot.organizationId,
-					provider: "telegram",
-					receiverScope,
-					destinationId: String(query.message.chat.id),
-					remoteMessageId: String(query.message.message_id),
-				})
-			: null;
+		const delivered = deliveredBeforeDecision;
 		if (delivered && delivered.recipientUserId === user.user.userId) {
 			return await updateDeliveredBoundCard(result, delivered, bot, user.user.userId);
 		}
@@ -342,10 +368,7 @@ export async function sendApprovalMessageToManager(
 			fits: fitsTelegramMessage,
 		});
 		if (notice.status === "undisclosable") return;
-		const chatId = await getChatIdForUser(
-			notice.recipientUserId,
-			organizationId,
-		);
+		const chatId = await getChatIdForUser(notice.recipientUserId, organizationId);
 		if (!chatId) return;
 		const sent = await sendMessage(botToken, {
 			chat_id: chatId,
@@ -353,21 +376,22 @@ export async function sendApprovalMessageToManager(
 				? telegramActionableCard(notice)
 				: telegramApprovalNotice(notice)),
 		});
-		if (sent)
-			await db
-				.insert(telegramApprovalMessage)
-				.values({
-					approvalRequestId: approvalId,
-					organizationId,
-					recipientUserId: notice.recipientUserId,
-					chatId,
-					messageId: String(sent.message_id),
-					status: "sent",
-				});
+		if (sent) {
+			const installationId = await resolveLegacyCardInstallationId({
+				organizationId,
+				provider: "telegram",
+			});
+			await db.insert(telegramApprovalMessage).values({
+				approvalRequestId: approvalId,
+				organizationId,
+				recipientUserId: notice.recipientUserId,
+				chatId,
+				messageId: String(sent.message_id),
+				installationId,
+				status: "sent",
+			});
+		}
 	} catch (error) {
-		logger.error(
-			{ error, approvalId },
-			"Failed to send Telegram approval notice",
-		);
+		logger.error({ error, approvalId }, "Failed to send Telegram approval notice");
 	}
 }
