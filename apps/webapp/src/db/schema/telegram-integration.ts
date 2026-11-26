@@ -13,6 +13,7 @@ import {
 import { currentTimestamp } from "./timestamp";
 import { organization, user } from "../auth-schema";
 import { approvalRequest } from "./approval";
+import { chatInstallation } from "./chat-installations";
 import { employee } from "./organization";
 
 // ============================================
@@ -280,6 +281,11 @@ export const telegramApprovalMessage = pgTable(
 		chatId: text("chat_id").notNull(),
 		messageId: text("message_id").notNull(), // Telegram message ID
 
+		// Originating chat installation (#2043)
+		installationId: uuid("installation_id").references(() => chatInstallation.id, {
+			onDelete: "set null",
+		}),
+
 		// Recipient
 		recipientUserId: text("recipient_user_id")
 			.notNull()
@@ -299,6 +305,10 @@ export const telegramApprovalMessage = pgTable(
 		index("telegramApprovalMessage_approvalRequestId_idx").on(table.approvalRequestId),
 		index("telegramApprovalMessage_recipientUserId_idx").on(table.recipientUserId),
 		index("telegramApprovalMessage_status_idx").on(table.status),
+		index("telegramApprovalMessage_org_installation_idx").on(
+			table.organizationId,
+			table.installationId,
+		),
 		uniqueIndex("telegramApprovalMessage_approvalRequest_unique_idx").on(table.approvalRequestId),
 	],
 );

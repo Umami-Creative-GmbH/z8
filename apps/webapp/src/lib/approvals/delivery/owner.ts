@@ -23,6 +23,15 @@ import {
 import { findLegacyDecisionEvidenceByRequest, listDecisionEvidence } from "../evidence/store";
 import { nextApprovalDeliveryAttempt } from "./schedule";
 import {
+	type ActiveApprovalDeliveryInstallationResolution,
+	buildRedactedReconciliationContext,
+	type ChatInstallationOriginRecord,
+	loadOrganizationInstallationById,
+	resolveActiveApprovalDeliveryInstallation,
+	resolveCardOriginInstallation,
+	shouldQuarantineAcrossSwitch,
+} from "./installation-origin";
+import {
 	type ApprovalDeliveryExecutor,
 	type ApprovalDeliveryMessageRecord,
 	type ClaimedApprovalDeliveryWork,
@@ -35,8 +44,9 @@ import {
 	loadApprovalDeliveryMessage,
 	loadLegacyDeliveryState,
 	planDeputyCardRetirements,
+	quarantineApprovalDeliveryWorkAcrossSwitch,
+	recordApprovalDeliveryDispatchIntent,
 	recordDeliveredApprovalMessage,
-	renewApprovalDeliveryLease,
 	retireApprovalDeliveryMessage,
 	retireDeputyCardMessage,
 	scheduleApprovalMessageRefreshes,
@@ -62,6 +72,10 @@ export type ApprovalInitialSendResult =
 			remoteMessageId: string;
 			bindingId: string | null;
 			controls: "actionable" | "none";
+			/** Originating chat installation used for the send (#2043). */
+			installationId?: string | null;
+			/** Credential revision used for the send (#2043). */
+			credentialRevisionId?: string | null;
 	  }
 	| { kind: "suppressed"; reason: string }
 	| ApprovalDeliveryFailure;
@@ -102,11 +116,15 @@ export interface ApprovalDeliveryAdapter {
 		actingForEmployeeId?: string | null;
 		/** `replacement`: the card of an escalation's replacement assignment (#300). */
 		purpose: Exclude<ApprovalDeliveryEffect, "refresh">;
+		/** Target active installation resolved by the delivery owner (#2043). */
+		targetInstallation?: ChatInstallationOriginRecord | null;
 	}): Promise<ApprovalInitialSendResult>;
 	refresh(input: {
 		organizationId: string;
 		message: ApprovalDeliveryMessageRecord;
 		notice: ApprovalNotice;
+		/** Originating installation resolved for this card (#2043). */
+		originInstallation?: ChatInstallationOriginRecord | null;
 	}): Promise<ApprovalRefreshResult>;
 	/**
 	 * The cards the provider's old notification path sent for one legacy
@@ -258,6 +276,13 @@ async function finishWithAttention(
 	input: {
 		status: "awaiting_repair" | "exhausted" | "failed";
 		outcome: string;
+		dispatchAttemptState?:
+			| "confirmed_unsent"
+			| "intent_recorded"
+			| "none"
+			| "sent"
+			| "uncertain_across_switch"
+			| "closed_unknown";
 		attention: EscalationAttentionInput;
 	},
 ): Promise<boolean> {
@@ -266,6 +291,9 @@ async function finishWithAttention(
 			work,
 			status: input.status,
 			outcome: input.outcome,
+			...(input.dispatchAttemptState !== undefined
+				? { dispatchAttemptState: input.dispatchAttemptState }
+				: {}),
 		});
 		// Only the lease holder records the condition it observed.
 		if (finished) await raiseEscalationAttention(transaction, input.attention);
@@ -294,7 +322,73 @@ export type ApprovalDeliveryOutcome =
 	| "failed"
 	| "suppressed"
 	| "cancelled"
-	| "lease_lost";
+	| "lease_lost"
+	| "uncertain_across_switch";
+
+function resolvedActiveInstallationId(
+	resolution: ActiveApprovalDeliveryInstallationResolution,
+): string | null {
+	if (resolution.kind === "active" || resolution.kind === "legacy") {
+		return resolution.installation.id;
+	}
+	return null;
+}
+
+async function maybeQuarantineWorkAcrossSwitch(input: {
+	work: ClaimedApprovalDeliveryWork;
+	activeResolution?: ActiveApprovalDeliveryInstallationResolution;
+	now: Instant;
+	reason: "lease_expired_across_switch" | "ambiguous_outcome_across_switch";
+	failureReason?: string | null;
+}): Promise<ApprovalDeliveryOutcome | null> {
+	const { work, now } = input;
+	if (work.effect === "refresh") return null;
+	if (work.dispatchAttemptState !== "intent_recorded" || !work.installationId) {
+		return null;
+	}
+	const activeResolution =
+		input.activeResolution ??
+		(await resolveActiveApprovalDeliveryInstallation(work.organizationId, work.provider));
+	const activeInstallationId = resolvedActiveInstallationId(activeResolution);
+	const attemptedInstallation = await loadOrganizationInstallationById(
+		work.organizationId,
+		work.installationId,
+	);
+	const shouldQuarantine = shouldQuarantineAcrossSwitch({
+		dispatchAttemptState: work.dispatchAttemptState,
+		attemptedInstallationId: work.installationId,
+		attemptedInstallationStatus: attemptedInstallation?.status ?? null,
+		activeInstallationId,
+	});
+	if (!shouldQuarantine) return null;
+
+	const context = buildRedactedReconciliationContext({
+		reason: input.reason,
+		provider: work.provider,
+		effect: work.effect,
+		attemptedInstallationId: work.installationId,
+		attemptedCredentialRevisionId: work.credentialRevisionId,
+		activeInstallationId,
+		dispatchIntentAt: work.dispatchIntentAt,
+		detectedAt: now,
+		failureReason: input.failureReason ?? null,
+		attemptCount: work.attemptCount,
+	});
+	logger.error(
+		{
+			organizationId: work.organizationId,
+			workId: work.id,
+			...context,
+		},
+		"Approval delivery attempt outcome uncertain across installation switch; quarantined for operator reconciliation",
+	);
+	const quarantined = await quarantineApprovalDeliveryWorkAcrossSwitch(db, {
+		work,
+		context,
+		now,
+	});
+	return quarantined ? "uncertain_across_switch" : "lease_lost";
+}
 
 async function handleFailure(
 	work: ClaimedApprovalDeliveryWork,
@@ -302,8 +396,24 @@ async function handleFailure(
 	approvalRequestId: string | null,
 	now: Instant,
 ): Promise<ApprovalDeliveryOutcome> {
+	if (failure.outcome === "ambiguous") {
+		const quarantined = await maybeQuarantineWorkAcrossSwitch({
+			work,
+			now,
+			reason: "ambiguous_outcome_across_switch",
+			failureReason: failure.reason,
+		});
+		if (quarantined) return quarantined;
+	}
 	const outcome = `${failure.outcome}:${failure.reason}`;
 	const evidence = { outcome: failure.outcome, reason: failure.reason };
+	// Ambiguous failures may have been accepted by the provider; keep
+	// `intent_recorded` so a subsequent switch quarantines instead of resending.
+	// Explicit rejections or pre-send errors are confirmed unsent and may reroute.
+	const dispatchAttemptState =
+		failure.outcome === "ambiguous"
+			? (work.dispatchAttemptState ?? "intent_recorded")
+			: "confirmed_unsent";
 	switch (failure.outcome) {
 		case "retryable":
 		case "ambiguous": {
@@ -318,12 +428,14 @@ async function handleFailure(
 					outcome,
 					availableAt: next.availableAt,
 					retryCount: next.retryCount,
+					dispatchAttemptState,
 				});
 				return finished ? "retry_scheduled" : "lease_lost";
 			}
 			const finished = await finishWithAttention(work, {
 				status: "exhausted",
 				outcome,
+				dispatchAttemptState,
 				attention: attentionCondition(
 					work,
 					"delivery_exhausted",
@@ -340,6 +452,7 @@ async function handleFailure(
 			const finished = await finishWithAttention(work, {
 				status: "awaiting_repair",
 				outcome,
+				dispatchAttemptState,
 				attention: attentionCondition(
 					work,
 					"delivery_unavailable",
@@ -355,6 +468,7 @@ async function handleFailure(
 			const finished = await finishWithAttention(work, {
 				status: "failed",
 				outcome,
+				dispatchAttemptState,
 				attention: attentionCondition(
 					work,
 					"delivery_exhausted",
@@ -373,8 +487,14 @@ async function finishSimply(
 	work: ClaimedApprovalDeliveryWork,
 	status: "delivered" | "suppressed" | "cancelled",
 	outcome: string,
+	dispatchAttemptState?: "confirmed_unsent" | "sent",
 ): Promise<ApprovalDeliveryOutcome> {
-	const finished = await finishApprovalDeliveryWork(db, { work, status, outcome });
+	const finished = await finishApprovalDeliveryWork(db, {
+		work,
+		status,
+		outcome,
+		...(dispatchAttemptState ? { dispatchAttemptState } : {}),
+	});
 	return finished ? status : "lease_lost";
 }
 
@@ -406,6 +526,17 @@ async function processInitial(
 	clock: () => Instant,
 ): Promise<ApprovalDeliveryOutcome> {
 	let now = clock();
+	// If a prior worker recorded dispatch intent and crashed or left an
+	// ambiguous outcome, and the active installation switched in the meantime,
+	// quarantine immediately so neither installation receives a duplicate card.
+	if (work.dispatchAttemptState === "intent_recorded" && work.installationId) {
+		const quarantined = await maybeQuarantineWorkAcrossSwitch({
+			work,
+			now,
+			reason: "lease_expired_across_switch",
+		});
+		if (quarantined) return quarantined;
+	}
 	if (!(await escalationAuthorityHolds(work))) {
 		return finishSimply(work, "cancelled", "authority_changed");
 	}
@@ -473,11 +604,41 @@ async function processInitial(
 		"approval_request_submitted",
 	);
 	if (!preferences[work.provider]) {
-		return finishSimply(work, "suppressed", "preference_disabled");
+		return finishSimply(work, "suppressed", "preference_disabled", "confirmed_unsent");
 	}
-	// Attempt time, and proof the lease still holds right before sending.
+	const activeResolution = await resolveActiveApprovalDeliveryInstallation(
+		work.organizationId,
+		work.provider,
+	);
+	if (activeResolution.kind === "none") {
+		return handleFailure(
+			work,
+			{ kind: "failed", outcome: "unavailable", reason: "installation_unavailable" },
+			state.approvalRequestId,
+			now,
+		);
+	}
+	const targetInstallation =
+		activeResolution.kind === "active" || activeResolution.kind === "legacy"
+			? activeResolution.installation
+			: null;
+	// Attempt time, lease renewal, and durable pre-dispatch intent persistence
+	// right before calling the provider adapter (#2043).
 	now = clock();
-	if (!(await renewApprovalDeliveryLease({ work, now }))) return "lease_lost";
+	if (
+		!(await recordApprovalDeliveryDispatchIntent({
+			work,
+			installationId: targetInstallation?.id ?? null,
+			credentialRevisionId: targetInstallation?.activeCredentialRevisionId ?? null,
+			now,
+		}))
+	) {
+		return "lease_lost";
+	}
+	work.installationId = targetInstallation?.id ?? null;
+	work.credentialRevisionId = targetInstallation?.activeCredentialRevisionId ?? null;
+	work.dispatchIntentAt = now;
+	work.dispatchAttemptState = "intent_recorded";
 	const sent = await adapter.sendInitial({
 		organizationId: work.organizationId,
 		approvalRequestId: state.approvalRequestId,
@@ -486,11 +647,17 @@ async function processInitial(
 		recipientUserId: recipient.userId,
 		...(work.actingForEmployeeId ? { actingForEmployeeId: work.actingForEmployeeId } : {}),
 		purpose: work.effect === "replacement" ? "replacement" : "initial",
+		targetInstallation,
 	});
-	if (sent.kind === "suppressed") return finishSimply(work, "suppressed", sent.reason);
+	if (sent.kind === "suppressed") {
+		return finishSimply(work, "suppressed", sent.reason, "confirmed_unsent");
+	}
 	if (sent.kind === "failed") {
 		return handleFailure(work, sent, state.approvalRequestId, now);
 	}
+	const deliveredInstallationId = sent.installationId ?? targetInstallation?.id ?? null;
+	const deliveredCredentialRevisionId =
+		sent.credentialRevisionId ?? targetInstallation?.activeCredentialRevisionId ?? null;
 	// Identity first: a late or duplicate send is tracked even if our lease
 	// was taken over, so it can still be refreshed and retired.
 	const remote = {
@@ -503,6 +670,8 @@ async function processInitial(
 		receiverScope: sent.receiverScope,
 		destinationId: sent.destinationId,
 		remoteMessageId: sent.remoteMessageId,
+		installationId: deliveredInstallationId,
+		credentialRevisionId: deliveredCredentialRevisionId,
 		bindingId: sent.bindingId,
 		originWorkId: work.id,
 		controls: sent.controls,
@@ -521,6 +690,7 @@ async function processInitial(
 			work,
 			status: "delivered",
 			outcome: recorded.kind === "purged" ? "delivered_after_purge" : "delivered",
+			dispatchAttemptState: "sent",
 		});
 		if (done) await resolveDeliveryAttention(transaction, work, now);
 		return done;
@@ -638,14 +808,66 @@ async function processRefresh(
 		{ userId: message.recipientUserId, organizationId: work.organizationId },
 		approvalDeliveryMessageReviewReference(message),
 	);
-	// Attempt time, and proof the lease still holds right before editing: at
-	// most one refresh of a message reaches the provider at a time.
+	// Attempt time, origin resolution, lease renewal, and pre-dispatch intent
+	// right before editing: refreshes ALWAYS route to the card's originating
+	// installation (even while retiring), never to a replacement installation (#2043).
 	const now = clock();
-	if (!(await renewApprovalDeliveryLease({ work, now }))) return "lease_lost";
+	const origin = await resolveCardOriginInstallation({
+		organizationId: work.organizationId,
+		provider: message.provider,
+		installationId: message.installationId,
+		receiverScope: message.receiverScope,
+		now,
+	});
+	if (
+		origin.kind === "revoked" ||
+		origin.kind === "retirement_expired" ||
+		origin.kind === "ambiguous_inbox_fallback"
+	) {
+		const goneReason =
+			origin.kind === "revoked"
+				? "installation_revoked"
+				: origin.kind === "retirement_expired"
+					? "installation_retirement_expired"
+					: "origin_ambiguous";
+		const finished = await db.transaction(async (transaction) => {
+			await retireApprovalDeliveryMessage(transaction, {
+				organizationId: work.organizationId,
+				messageId: message.id,
+				statusVersion: state.workflowVersion,
+				state: "gone",
+			});
+			const done = await finishApprovalDeliveryWork(transaction, {
+				work,
+				status: "delivered",
+				outcome: `gone:${goneReason}`,
+				dispatchAttemptState: "confirmed_unsent",
+			});
+			if (done) await resolveDeliveryAttention(transaction, work, now);
+			return done;
+		});
+		return finished ? "delivered" : "lease_lost";
+	}
+	const originInstallation = origin.kind === "serviceable" ? origin.installation : null;
+	if (
+		!(await recordApprovalDeliveryDispatchIntent({
+			work,
+			installationId: originInstallation?.id ?? null,
+			credentialRevisionId: originInstallation?.activeCredentialRevisionId ?? null,
+			now,
+		}))
+	) {
+		return "lease_lost";
+	}
+	work.installationId = originInstallation?.id ?? null;
+	work.credentialRevisionId = originInstallation?.activeCredentialRevisionId ?? null;
+	work.dispatchIntentAt = now;
+	work.dispatchAttemptState = "intent_recorded";
 	const refreshed = await adapter.refresh({
 		organizationId: work.organizationId,
 		message,
 		notice,
+		originInstallation,
 	});
 	if (refreshed.kind === "failed") {
 		return handleFailure(work, refreshed, state.approvalRequestId, now);
@@ -661,6 +883,7 @@ async function processRefresh(
 			work,
 			status: "delivered",
 			outcome: refreshed.kind === "gone" ? `gone:${refreshed.reason}` : refreshed.kind,
+			dispatchAttemptState: "sent",
 		});
 		if (done) await resolveDeliveryAttention(transaction, work, now);
 		return done;
@@ -713,11 +936,61 @@ async function retireDeputyCard(
 		approvalDeliveryMessageReviewReference(message),
 	);
 	const now = clock();
-	if (!(await renewApprovalDeliveryLease({ work, now }))) return "lease_lost";
+	const origin = await resolveCardOriginInstallation({
+		organizationId: work.organizationId,
+		provider: message.provider,
+		installationId: message.installationId,
+		receiverScope: message.receiverScope,
+		now,
+	});
+	if (
+		origin.kind === "revoked" ||
+		origin.kind === "retirement_expired" ||
+		origin.kind === "ambiguous_inbox_fallback"
+	) {
+		const goneReason =
+			origin.kind === "revoked"
+				? "installation_revoked"
+				: origin.kind === "retirement_expired"
+					? "installation_retirement_expired"
+					: "origin_ambiguous";
+		const finished = await db.transaction(async (transaction) => {
+			await retireDeputyCardMessage(transaction, {
+				organizationId: work.organizationId,
+				messageId: message.id,
+				state: "gone",
+			});
+			const done = await finishApprovalDeliveryWork(transaction, {
+				work,
+				status: "delivered",
+				outcome: `gone:${goneReason}`,
+				dispatchAttemptState: "confirmed_unsent",
+			});
+			if (done) await resolveDeliveryAttention(transaction, work, now);
+			return done;
+		});
+		return finished ? "delivered" : "lease_lost";
+	}
+	const originInstallation = origin.kind === "serviceable" ? origin.installation : null;
+	if (
+		!(await recordApprovalDeliveryDispatchIntent({
+			work,
+			installationId: originInstallation?.id ?? null,
+			credentialRevisionId: originInstallation?.activeCredentialRevisionId ?? null,
+			now,
+		}))
+	) {
+		return "lease_lost";
+	}
+	work.installationId = originInstallation?.id ?? null;
+	work.credentialRevisionId = originInstallation?.activeCredentialRevisionId ?? null;
+	work.dispatchIntentAt = now;
+	work.dispatchAttemptState = "intent_recorded";
 	const refreshed = await adapter.refresh({
 		organizationId: work.organizationId,
 		message,
 		notice,
+		originInstallation,
 	});
 	if (refreshed.kind === "failed") {
 		return handleFailure(work, refreshed, state.approvalRequestId, now);
@@ -732,6 +1005,7 @@ async function retireDeputyCard(
 			work,
 			status: "delivered",
 			outcome: refreshed.kind === "gone" ? `gone:${refreshed.reason}` : "not_covering",
+			dispatchAttemptState: "sent",
 		});
 		if (done) await resolveDeliveryAttention(transaction, work, now);
 		return done;

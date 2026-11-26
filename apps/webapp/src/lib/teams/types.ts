@@ -34,6 +34,8 @@ export interface ResolvedTenant {
 	tenantId: string;
 	tenantName: string | null;
 	organizationId: string;
+	/** Originating or active chat_installation.id when resolved via installations (#2043). */
+	installationId?: string | null;
 	setupStatus: string;
 	enableApprovals: boolean;
 	enableCommands: boolean;
