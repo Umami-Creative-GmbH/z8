@@ -609,6 +609,7 @@ async function recordAttempt(
 
 		// Hold the included work still while it becomes invoiced work: a writer
 		// that changes it waits for this transaction and then marks it.
+		// Recheck approval status once locked in case it changed after planning.
 		const workIds = plan.included.map((item) => item.work.id);
 		const locked = await tx
 			.select({
@@ -622,7 +623,11 @@ async function recordAttempt(
 			})
 			.from(workPeriod)
 			.where(
-				and(eq(workPeriod.organizationId, input.organizationId), inArray(workPeriod.id, workIds)),
+				and(
+					eq(workPeriod.organizationId, input.organizationId),
+					inArray(workPeriod.id, workIds),
+					eq(workPeriod.approvalStatus, "approved"),
+				),
 			)
 			.for("share");
 		const lockedById = new Map(locked.map((row) => [row.id, row]));
