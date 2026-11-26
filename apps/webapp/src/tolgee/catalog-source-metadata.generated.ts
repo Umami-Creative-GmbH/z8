@@ -443,6 +443,7 @@ const sourceShape0: CatalogSourceMetadata = {
 				teamsNotifications: 1,
 				teamsPrepare: 1,
 				telegram: 1,
+				telegramLifecycle: 1,
 			},
 		},
 		onboarding: {

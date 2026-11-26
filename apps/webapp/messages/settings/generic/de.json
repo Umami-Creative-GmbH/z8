@@ -2899,6 +2899,7 @@
         "expiresInMinutes": "Läuft in {minutes} Min. ab",
         "generateCode": "Verknüpfungscode erstellen",
         "generateFailed": "Verknüpfungscode konnte nicht erstellt werden",
+        "generateReplacementCode": "Ersatz-Bot verknüpfen",
         "hints": {
           "linkRequired": "Verknüpfen Sie Ihr Konto in dieser Chat-App, um Benachrichtigungen zu erhalten und Befehle zu nutzen.",
           "remediation": "Die Verbindung Ihrer Organisation erfordert die Prüfung durch einen Administrator, bevor der Status überprüft werden kann.",
@@ -2909,6 +2910,11 @@
         "linkedAs": "Verknüpft als {identity}",
         "loadFailed": "Ihre Chat-Verbindungen konnten derzeit nicht überprüft werden. Ihre Benachrichtigungseinstellungen unten bleiben verfügbar.",
         "openTelegramBot": "@{botUsername} öffnen",
+        "replacementEnrolled": "Registriert",
+        "replacementTelegramEnrolledHint": "Sie sind für den Ersatz-Bot registriert. Ihre aktuelle Telegram-Verknüpfung bleibt aktiv, bis Ihr Administrator den Wechsel abschließt.",
+        "replacementTelegramHint": "Starten und verknüpfen Sie den Ersatz-Telegram-Bot vor dem Wechsel. Ihre aktuellen Telegram-Benachrichtigungen laufen bis dahin unverändert weiter.",
+        "replacementTelegramInstructions": "Öffnen Sie den Ersatz-Bot in Telegram und senden Sie diesen Einmal-Befehl:",
+        "replacementTelegramTitle": "Ersatz-Telegram-Bot vorbereitet",
         "status": {
           "actionNeeded": "Aktion erforderlich",
           "connected": "Verbunden",

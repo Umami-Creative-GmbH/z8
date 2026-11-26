@@ -13,7 +13,8 @@ import {
 import { currentTimestamp } from "./timestamp";
 import { organization, user } from "../auth-schema";
 import { approvalRequest } from "./approval";
-import { chatInstallation } from "./chat-installations";
+import { chatInstallation, chatInstallationCredentialRevision } from "./chat-installations";
+import { chatNotificationDispatchAttempt } from "./chat-notification-dispatch";
 import { employee } from "./organization";
 
 // ============================================
@@ -188,6 +189,17 @@ export const telegramDigestDelivery = pgTable(
 		platform: text("platform").notNull(),
 		digestType: text("digest_type").notNull(),
 		logicalDate: text("logical_date").notNull(),
+		installationId: uuid("installation_id").references(() => chatInstallation.id, {
+			onDelete: "set null",
+		}),
+		credentialRevisionId: uuid("credential_revision_id").references(
+			() => chatInstallationCredentialRevision.id,
+			{ onDelete: "set null" },
+		),
+		dispatchAttemptId: uuid("dispatch_attempt_id").references(
+			() => chatNotificationDispatchAttempt.id,
+			{ onDelete: "set null" },
+		),
 		status: text("status").default("sending").notNull(),
 		attemptedAt: timestamp("attempted_at").defaultNow().notNull(),
 		sentAt: timestamp("sent_at"),
@@ -208,6 +220,11 @@ export const telegramDigestDelivery = pgTable(
 			table.logicalDate,
 		),
 		index("telegramDigestDelivery_organizationId_idx").on(table.organizationId),
+		index("telegramDigestDelivery_org_installation_idx").on(
+			table.organizationId,
+			table.installationId,
+		),
+		index("telegramDigestDelivery_dispatchAttemptId_idx").on(table.dispatchAttemptId),
 		check(
 			"telegram_digest_delivery_status_check",
 			sql`${table.status} IN ('sending', 'sent', 'failed')`,

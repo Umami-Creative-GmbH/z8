@@ -47,6 +47,10 @@ import {
 	SLACK_VERIFICATION_FRESHNESS_MS,
 	type SlackCandidateInstallationRecord,
 } from "./slack-setup";
+import {
+	computeTelegramCandidateSetupStatus,
+	type TelegramCandidateInstallationRecord,
+} from "./telegram-setup";
 import type { ChatEffectiveSettings, ChatMigrationBlocker } from "./types";
 
 const logger = createLogger("ChatInstallationSwitchLifecycle");
@@ -617,6 +621,17 @@ function evaluateCandidateReadiness(
 	if (candidate.provider === "slack") {
 		const status = computeSlackCandidateSetupStatus(
 			candidate as unknown as SlackCandidateInstallationRecord,
+			now,
+			verificationTtlMs,
+		);
+		return {
+			ready: status.readyForSwitch,
+			verificationState: status.effectiveVerificationState,
+		};
+	}
+	if (candidate.provider === "telegram") {
+		const status = computeTelegramCandidateSetupStatus(
+			candidate as unknown as TelegramCandidateInstallationRecord,
 			now,
 			verificationTtlMs,
 		);

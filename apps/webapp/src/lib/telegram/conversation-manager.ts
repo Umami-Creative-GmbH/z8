@@ -8,6 +8,7 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { telegramConversation } from "@/db/schema";
+import { upsertInstallationConversation } from "@/lib/chat-installations/inventory";
 import {
 	type ChatDispatchTargetHint,
 	listInstallationActiveConversations,
@@ -21,39 +22,57 @@ const logger = createLogger("TelegramConversationManager");
 /**
  * Save or update a conversation reference.
  * Called on every incoming message to keep chat_id current.
+ * When `options.installationId` is supplied, saves to `chat_installation_conversation`
+ * scoped strictly to that installation without overwriting legacy conversations.
  */
 export async function saveConversation(
 	chatId: string,
 	chatType: string,
 	userId: string,
 	organizationId: string,
+	options?: { installationId?: string | null; externalUserId?: string | null },
 ): Promise<void> {
 	try {
-		const existing = await db.query.telegramConversation.findFirst({
-			where: and(
-				eq(telegramConversation.userId, userId),
-				eq(telegramConversation.organizationId, organizationId),
-				eq(telegramConversation.chatType, chatType),
-			),
-		});
-
-		if (existing) {
-			await db
-				.update(telegramConversation)
-				.set({
-					chatId,
-					isActive: true,
-					lastUsedAt: new Date(),
-				})
-				.where(eq(telegramConversation.id, existing.id));
-		} else {
-			await db.insert(telegramConversation).values({
+		if (options?.installationId) {
+			const now = new Date();
+			await upsertInstallationConversation({
 				organizationId,
+				installationId: options.installationId,
 				userId,
-				chatId,
-				chatType,
-				isActive: true,
+				externalUserId: options.externalUserId ?? null,
+				externalConversationId: chatId,
+				conversationType: chatType,
+				reachabilityStatus: "reachable",
+				verifiedAt: now,
+				lastUsedAt: now,
 			});
+		} else {
+			const existing = await db.query.telegramConversation.findFirst({
+				where: and(
+					eq(telegramConversation.userId, userId),
+					eq(telegramConversation.organizationId, organizationId),
+					eq(telegramConversation.chatType, chatType),
+				),
+			});
+
+			if (existing) {
+				await db
+					.update(telegramConversation)
+					.set({
+						chatId,
+						isActive: true,
+						lastUsedAt: new Date(),
+					})
+					.where(eq(telegramConversation.id, existing.id));
+			} else {
+				await db.insert(telegramConversation).values({
+					organizationId,
+					userId,
+					chatId,
+					chatType,
+					isActive: true,
+				});
+			}
 		}
 		if (chatType === "private") {
 			// Approval cards waiting for a usable destination can be delivered now.

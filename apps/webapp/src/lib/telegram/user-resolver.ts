@@ -7,7 +7,12 @@
 
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { telegramLinkCode, telegramUserMapping } from "@/db/schema";
+import {
+	chatInstallation,
+	chatInstallationMemberLink,
+	telegramLinkCode,
+	telegramUserMapping,
+} from "@/db/schema";
 import {
 	redeemChatLinkProof,
 	resolveTelegramInstallationForBot,
@@ -28,14 +33,80 @@ export type TelegramUserResolutionResult =
 	| { status: "not_linked"; telegramUserId: string };
 
 /**
- * Resolve a Telegram user to a Z8 user within an organization
+ * Resolve a Telegram user to a Z8 user within an organization.
+ * When `options.installationId` is provided (organization-owned or retiring installation),
+ * checks installation-scoped live `chat_installation_member_link` first and falls back to
+ * legacy `telegram_user_mapping` only for legacy installations.
  */
 export async function resolveTelegramUser(
 	telegramUserId: string,
 	organizationId: string,
 	telegramUsername?: string,
+	options?: { installationId?: string | null },
 ): Promise<TelegramUserResolutionResult> {
-	// Check existing mapping
+	let allowLegacyFallback = true;
+
+	if (options?.installationId && typeof db.select === "function") {
+		const [instLink] = await db
+			.select()
+			.from(chatInstallationMemberLink)
+			.where(
+				and(
+					eq(chatInstallationMemberLink.organizationId, organizationId),
+					eq(chatInstallationMemberLink.installationId, options.installationId),
+					eq(chatInstallationMemberLink.externalUserId, telegramUserId),
+					eq(chatInstallationMemberLink.isCandidateEnrollment, false),
+					eq(chatInstallationMemberLink.isActive, true),
+				),
+			)
+			.limit(1);
+
+		if (instLink) {
+			const emp = await resolveCommandActorEmployee(instLink.userId, organizationId);
+			if (!emp) return { status: "not_linked", telegramUserId };
+
+			if (typeof db.update === "function") {
+				await db
+					.update(chatInstallationMemberLink)
+					.set({
+						lastSeenAt: new Date(),
+						...(telegramUsername ? { externalUsername: telegramUsername } : {}),
+					})
+					.where(eq(chatInstallationMemberLink.id, instLink.id));
+			}
+
+			return {
+				status: "found",
+				user: {
+					userId: instLink.userId,
+					employeeId: emp.id,
+					organizationId,
+					telegramUserId: instLink.externalUserId,
+					telegramUsername: instLink.externalUsername,
+				},
+			};
+		}
+
+		const [inst] = await db
+			.select({ legacyTable: chatInstallation.legacyTable })
+			.from(chatInstallation)
+			.where(
+				and(
+					eq(chatInstallation.id, options.installationId),
+					eq(chatInstallation.organizationId, organizationId),
+				),
+			)
+			.limit(1);
+		if (inst && inst.legacyTable !== "telegram_bot_config") {
+			allowLegacyFallback = false;
+		}
+	}
+
+	if (!allowLegacyFallback) {
+		return { status: "not_linked", telegramUserId };
+	}
+
+	// Check existing legacy mapping
 	const mapping = await db.query.telegramUserMapping.findFirst({
 		where: and(
 			eq(telegramUserMapping.telegramUserId, telegramUserId),

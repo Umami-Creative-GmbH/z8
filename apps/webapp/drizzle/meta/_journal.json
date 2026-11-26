@@ -2409,6 +2409,13 @@
       "when": 1814457600000,
       "tag": "0344_chat_installation_recovery_cleanup",
       "breakpoints": true
+    },
+    {
+      "idx": 345,
+      "version": "7",
+      "when": 1814544000000,
+      "tag": "0345_telegram_digest_installation_dispatch",
+      "breakpoints": true
     }
   ]
 }

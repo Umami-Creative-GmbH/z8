@@ -30,6 +30,8 @@ import {
 import { SlackSwitchReviewSection } from "./slack-switch-review-section";
 import { TeamsPrepareTestSection } from "./teams-prepare-test-section";
 import { getTeamsCandidateSetup } from "./teams-setup-actions";
+import { getTelegramLifecycleState } from "./telegram-lifecycle-actions";
+import { TelegramLifecycleSection } from "./telegram-lifecycle-section";
 import { TelegramPanel } from "./telegram-panel";
 
 async function ChatSettingsContent() {
@@ -46,6 +48,7 @@ async function ChatSettingsContent() {
 			teamsCandidate,
 			slackSwitchPreview,
 			slackRecovery,
+			telegramLifecycle,
 			slackCapabilities,
 			teamsCapabilities,
 			telegramCapabilities,
@@ -64,6 +67,7 @@ async function ChatSettingsContent() {
 				getTeamsCandidateSetup(),
 				getSlackSwitchImpactPreview(),
 				getSlackRecoveryState(),
+				getTelegramLifecycleState(),
 				getProviderCapabilityDisclosure({ provider: "slack" }),
 				getProviderCapabilityDisclosure({ provider: "teams" }),
 				getProviderCapabilityDisclosure({ provider: "telegram" }),
@@ -77,6 +81,7 @@ async function ChatSettingsContent() {
 	const teamsCandidateData = teamsCandidate.success ? teamsCandidate.data : null;
 	const slackSwitchPreviewData = slackSwitchPreview.success ? slackSwitchPreview.data : null;
 	const slackRecoveryData = slackRecovery.success ? slackRecovery.data : null;
+	const telegramLifecycleData = telegramLifecycle.success ? telegramLifecycle.data : null;
 
 	return (
 		<SettingsTabbedPage
@@ -180,6 +185,7 @@ async function ChatSettingsContent() {
 								channelName="Telegram"
 								disclosure={telegramCapabilities.success ? telegramCapabilities.data : null}
 							/>
+							<TelegramLifecycleSection initialState={telegramLifecycleData} />
 							<TelegramPanel />
 						</div>
 					),

@@ -110,6 +110,7 @@ async function handleMessage(
 		telegramUserId,
 		bot.organizationId,
 		telegramUsername,
+		bot.installationId ? { installationId: bot.installationId } : undefined,
 	);
 
 	if (userResult.status !== "found") {
@@ -134,7 +135,15 @@ async function handleMessage(
 	});
 
 	// Save conversation for proactive messaging
-	await saveConversation(chatId, message.chat.type, userResult.user.userId, bot.organizationId);
+	await saveConversation(
+		chatId,
+		message.chat.type,
+		userResult.user.userId,
+		bot.organizationId,
+		bot.installationId
+			? { installationId: bot.installationId, externalUserId: telegramUserId }
+			: undefined,
+	);
 
 	// Handle /language command
 	if (text === "/language" || text === "/lang") {
@@ -308,7 +317,12 @@ async function handleLanguageCallback(
 	if (!ALL_LANGUAGES.includes(newLocale)) return;
 
 	// Resolve user to get userId
-	const userResult = await resolveTelegramUser(telegramUserId, bot.organizationId);
+	const userResult = await resolveTelegramUser(
+		telegramUserId,
+		bot.organizationId,
+		undefined,
+		bot.installationId ? { installationId: bot.installationId } : undefined,
+	);
 	if (userResult.status !== "found") return;
 
 	// Persist locale
@@ -368,6 +382,7 @@ async function handleCommandCallback(
 		telegramUserId,
 		bot.organizationId,
 		query.from.username,
+		bot.installationId ? { installationId: bot.installationId } : undefined,
 	);
 
 	if (userResult.status !== "found") return;
@@ -444,7 +459,7 @@ async function handleLinkCommand(
 		bot.organizationId,
 		telegramUsername,
 		displayName,
-		{ botToken: bot.botToken, chatId },
+		{ botToken: bot.botToken, installationId: bot.installationId ?? undefined, chatId },
 	);
 	const { t } = await getReplyTranslate({
 		userId: result.status === "success" ? result.userId : null,
@@ -454,7 +469,15 @@ async function handleLinkCommand(
 	switch (result.status) {
 		case "success":
 			// Save conversation for proactive messaging
-			await saveConversation(chatId, "private", result.userId, bot.organizationId);
+			await saveConversation(
+				chatId,
+				"private",
+				result.userId,
+				bot.organizationId,
+				bot.installationId
+					? { installationId: bot.installationId, externalUserId: telegramUserId }
+					: undefined,
+			);
 			await sendMessage(bot.botToken, {
 				chat_id: chatId,
 				text: escapeMarkdownV2(

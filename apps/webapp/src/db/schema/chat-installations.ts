@@ -132,7 +132,20 @@ export interface ChatVerificationEvidence {
 	privateDeliveryChannelId?: string | null;
 	privateDeliveryExpiresAt?: string | null;
 	commandsRegisteredAt?: string | null;
-	lastFailureStep?: "credentials" | "identity" | "signed_event" | "private_test" | null;
+	commandsRevisionId?: string | null;
+	commandsRegistrationStatus?: "passed" | "failed" | "pending" | null;
+	commandsFailureCode?: string | null;
+	webhookRegisteredAt?: string | null;
+	webhookRegisteredRevisionId?: string | null;
+	webhookFailureCode?: string | null;
+	lastFailureStep?:
+		| "credentials"
+		| "identity"
+		| "signed_event"
+		| "private_test"
+		| "webhook"
+		| "commands"
+		| null;
 	lastFailureCode?: string | null;
 	lastFailureAt?: string | null;
 	enrollmentProofCount?: number;

@@ -12,17 +12,13 @@ import type {
 	TelegramEditMessageParams,
 	TelegramMessage,
 	TelegramSendMessageParams,
+	TelegramWebhookInfo,
 } from "./types";
 
 const logger = createLogger("TelegramAPI");
 
 const TELEGRAM_API_BASE = "https://api.telegram.org";
-const TELEGRAM_CHAT_TYPES = [
-	"private",
-	"group",
-	"supergroup",
-	"channel",
-] as const;
+const TELEGRAM_CHAT_TYPES = ["private", "group", "supergroup", "channel"] as const;
 
 type ResultDecoder<T> = (value: unknown) => value is T;
 
@@ -48,9 +44,7 @@ function redactToken(value: string, token: string): string {
 function getWebhookLogLabel(url: string): string {
 	try {
 		const origin = new URL(url).origin;
-		return origin === "null"
-			? "invalid webhook URL"
-			: `${origin}/api/telegram/webhook/***`;
+		return origin === "null" ? "invalid webhook URL" : `${origin}/api/telegram/webhook/***`;
 	} catch {
 		return "invalid webhook URL";
 	}
@@ -64,9 +58,7 @@ function parseJson(text: string): unknown {
 	}
 }
 
-function isTelegramFailure(
-	value: unknown,
-): value is TelegramApiResponse<never> & { ok: false } {
+function isTelegramFailure(value: unknown): value is TelegramApiResponse<never> & { ok: false } {
 	return (
 		typeof value === "object" &&
 		value !== null &&
@@ -74,8 +66,7 @@ function isTelegramFailure(
 		value.ok === false &&
 		!("result" in value) &&
 		(!("error_code" in value) ||
-			(typeof value.error_code === "number" &&
-				Number.isFinite(value.error_code))) &&
+			(typeof value.error_code === "number" && Number.isFinite(value.error_code))) &&
 		(!("description" in value) || typeof value.description === "string")
 	);
 }
@@ -100,11 +91,7 @@ function isTrue(value: unknown): value is true {
 
 function isTelegramMessage(value: unknown): value is TelegramMessage {
 	if (typeof value !== "object" || value === null) return false;
-	if (
-		!("chat" in value) ||
-		typeof value.chat !== "object" ||
-		value.chat === null
-	) {
+	if (!("chat" in value) || typeof value.chat !== "object" || value.chat === null) {
 		return false;
 	}
 	const chat = value.chat;
@@ -143,6 +130,18 @@ function isTelegramBotInfo(value: unknown): value is TelegramBotInfo {
 	);
 }
 
+function isTelegramWebhookInfo(value: unknown): value is TelegramWebhookInfo {
+	return (
+		typeof value === "object" &&
+		value !== null &&
+		"url" in value &&
+		typeof value.url === "string" &&
+		"pending_update_count" in value &&
+		typeof value.pending_update_count === "number" &&
+		Number.isFinite(value.pending_update_count)
+	);
+}
+
 function logApiFailure(
 	method: string,
 	httpStatus: number,
@@ -151,8 +150,7 @@ function logApiFailure(
 ): void {
 	// Redact token but show format for debugging (e.g. "1234***:AB***")
 	const [id, hash] = token.split(":");
-	const redacted =
-		id && hash ? `${id.slice(0, 4)}***:${hash.slice(0, 2)}***` : "***";
+	const redacted = id && hash ? `${id.slice(0, 4)}***:${hash.slice(0, 2)}***` : "***";
 	logger.error(
 		{
 			method,
@@ -219,9 +217,7 @@ async function callApi<T>(
 
 const DELIVERY_CALL_TIMEOUT_MS = 30_000;
 
-export type TelegramCallOutcome<T> =
-	| { kind: "ok"; result: T }
-	| TelegramCallFailure;
+export type TelegramCallOutcome<T> = { kind: "ok"; result: T } | TelegramCallFailure;
 
 /**
  * Call a method and report exactly what is known about the outcome. Unlike
@@ -250,8 +246,7 @@ async function callApiWithOutcome<T>(
 		text = await response.text();
 	} catch (error) {
 		const timeout =
-			error instanceof Error &&
-			(error.name === "TimeoutError" || error.name === "AbortError");
+			error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError");
 		logger.warn({ method, timeout }, "Telegram API call outcome unknown");
 		return { kind: "unknown", reason: timeout ? "timeout" : "network" };
 	}
@@ -370,10 +365,7 @@ export async function setWebhook(
 	});
 
 	if (result.ok) {
-		logger.info(
-			{ url: getWebhookLogLabel(url) },
-			"Telegram webhook registered",
-		);
+		logger.info({ url: getWebhookLogLabel(url) }, "Telegram webhook registered");
 	}
 
 	return result.ok;
@@ -407,5 +399,57 @@ export async function getMe(
 	botToken: string,
 ): Promise<{ id: number; username?: string; first_name: string } | null> {
 	const result = await callApi(botToken, "getMe", isTelegramBotInfo);
+	return result.ok ? (result.result ?? null) : null;
+}
+
+/** `getMe` with explicit outcome classification (timeout/network vs API error). */
+export function getMeWithOutcome(
+	botToken: string,
+): Promise<TelegramCallOutcome<{ id: number; username?: string; first_name: string }>> {
+	return callApiWithOutcome(botToken, "getMe", isTelegramBotInfo, {});
+}
+
+/** `setWebhook` with explicit outcome classification for installation lifecycle setup/reconciliation. */
+export async function setWebhookWithOutcome(
+	botToken: string,
+	url: string,
+	secretToken?: string,
+): Promise<TelegramCallOutcome<true>> {
+	const outcome = await callApiWithOutcome(botToken, "setWebhook", isTrue, {
+		url,
+		secret_token: secretToken,
+		allowed_updates: ["message", "callback_query"],
+	});
+	if (outcome.kind === "ok") {
+		logger.info({ url: getWebhookLogLabel(url) }, "Telegram webhook registered");
+	}
+	return outcome;
+}
+
+/** `setMyCommands` with explicit outcome classification for independently retryable command registration. */
+export function setMyCommandsWithOutcome(
+	botToken: string,
+	commands: readonly { command: string; description: string }[],
+): Promise<TelegramCallOutcome<true>> {
+	return callApiWithOutcome(botToken, "setMyCommands", isTrue, { commands });
+}
+
+/** `deleteWebhook` with explicit outcome classification for generation-fenced async cleanup. */
+export function deleteWebhookWithOutcome(botToken: string): Promise<TelegramCallOutcome<true>> {
+	return callApiWithOutcome(botToken, "deleteWebhook", isTrue, {});
+}
+
+/** `getWebhookInfo` with explicit outcome classification for uncertain endpoint reconciliation. */
+export function getWebhookInfoWithOutcome(
+	botToken: string,
+): Promise<TelegramCallOutcome<TelegramWebhookInfo>> {
+	return callApiWithOutcome(botToken, "getWebhookInfo", isTelegramWebhookInfo, {});
+}
+
+/**
+ * Inspect current webhook registration status from Telegram.
+ */
+export async function getWebhookInfo(botToken: string): Promise<TelegramWebhookInfo | null> {
+	const result = await callApi(botToken, "getWebhookInfo", isTelegramWebhookInfo);
 	return result.ok ? (result.result ?? null) : null;
 }

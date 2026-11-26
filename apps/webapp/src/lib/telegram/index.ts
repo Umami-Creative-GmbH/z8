@@ -7,23 +7,27 @@
 // API
 export {
 	deleteWebhook,
+	deleteWebhookWithOutcome,
 	editMessageText,
 	getMe,
+	getMeWithOutcome,
+	getWebhookInfo,
+	getWebhookInfoWithOutcome,
 	sendMessage,
 	setMyCommands,
+	setMyCommandsWithOutcome,
 	setWebhook,
+	setWebhookWithOutcome,
 } from "./api";
 // Approval handling
-export {
-	handleApprovalCallback,
-	sendApprovalMessageToManager,
-} from "./approval-handler";
+export { handleApprovalCallback, sendApprovalMessageToManager } from "./approval-handler";
 // Bot config
 export {
 	getAllActiveBotConfigs,
 	getBotConfigByOrganization,
 	isTelegramEnabledForOrganization,
 	resolveBotByWebhookSecret,
+	resolveLegacyTelegramWebhookBot,
 } from "./bot-config";
 // Bot handler
 export { handleTelegramUpdate } from "./bot-handler";
