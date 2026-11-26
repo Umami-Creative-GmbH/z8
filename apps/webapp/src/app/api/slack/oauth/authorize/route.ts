@@ -1,135 +1,22 @@
 /**
- * Slack OAuth2 Authorization Start
+ * Slack OAuth2 Authorization Start (RETIRED — #2045 / ADR 0003)
  *
- * POST /api/slack/oauth/authorize - Start the Slack OAuth2 install flow
+ * POST /api/slack/oauth/authorize
  *
- * Creates a state token and returns the Slack authorization URL.
- * Requires admin authentication.
+ * Deployment-managed Slack OAuth installation has been retired so legacy setup
+ * mutations cannot bypass the organization-owned chat installation lifecycle.
  */
 
-import { randomBytes } from "node:crypto";
-import { and, eq } from "drizzle-orm";
-import { headers } from "next/headers";
-import type { NextRequest } from "next/server";
 import { connection, NextResponse } from "next/server";
-import { db } from "@/db";
-import { member } from "@/db/auth-schema";
-import { slackOAuthState } from "@/db/schema";
-import { env } from "@/env";
-import { auth } from "@/lib/auth";
-import { runActiveOrganizationActionActorCheck as requireActiveOrganizationActionActor } from "@/lib/auth/organization-action-authorization";
-import { hasOrganizationRole } from "@/lib/auth/organization-role";
-import { createLogger } from "@/lib/logger";
 
-const logger = createLogger("SlackOAuthAuthorize");
-
-const SLACK_CLIENT_ID = env.SLACK_CLIENT_ID;
-const STATE_TTL_MINUTES = 15;
-
-// Scopes needed for the bot
-const SLACK_SCOPES = [
-	"chat:write",
-	"commands",
-	"im:read",
-	"im:write",
-	"im:history",
-	"users:read",
-].join(",");
-
-export async function POST(request: NextRequest) {
+export async function POST() {
 	await connection();
-
-	try {
-		const [headersList, body] = await Promise.all([headers(), request.json()]);
-		const session = await auth.api.getSession({ headers: headersList });
-		if (!session?.user) {
-			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-		}
-
-		if (!SLACK_CLIENT_ID) {
-			return NextResponse.json(
-				{ error: "Slack integration is not configured" },
-				{ status: 503 },
-			);
-		}
-		const { organizationId } = body;
-
-		if (!organizationId) {
-			return NextResponse.json(
-				{ error: "organizationId is required" },
-				{ status: 400 },
-			);
-		}
-		try {
-			await requireActiveOrganizationActionActor({
-				userId: session.user.id,
-				organizationId,
-				requiredRole: "admin",
-				message: "Only active approved admins and owners can configure Slack",
-				resource: "slackIntegration",
-				action: "create",
-			});
-		} catch {
-			return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-		}
-
-		// Verify user is an admin member of this organization
-		const [membership] = await db
-			.select()
-			.from(member)
-			.where(
-				and(
-					eq(member.userId, session.user.id),
-					eq(member.organizationId, organizationId),
-				),
-			)
-			.limit(1);
-
-		if (
-			!membership ||
-			(!hasOrganizationRole(membership.role, "admin") &&
-				!hasOrganizationRole(membership.role, "owner"))
-		) {
-			return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-		}
-
-		// Generate state token
-		const stateToken = randomBytes(32).toString("hex");
-		const expiresAt = new Date(Date.now() + STATE_TTL_MINUTES * 60 * 1000);
-
-		// Store state in DB
-		await db.insert(slackOAuthState).values({
-			stateToken,
-			organizationId,
-			userId: session.user.id,
-			expiresAt,
-			status: "pending",
-		});
-
-		// Build Slack authorization URL
-		const appUrl = env.APP_URL || "https://z8-time.app";
-		const redirectUri = `${appUrl}/api/slack/oauth/callback`;
-
-		const authUrl = new URL("https://slack.com/oauth/v2/authorize");
-		authUrl.searchParams.set("client_id", SLACK_CLIENT_ID);
-		authUrl.searchParams.set("scope", SLACK_SCOPES);
-		authUrl.searchParams.set("redirect_uri", redirectUri);
-		authUrl.searchParams.set("state", stateToken);
-
-		logger.info(
-			{ organizationId, userId: session.user.id },
-			"Slack OAuth flow started",
-		);
-
-		return NextResponse.json({
-			authUrl: authUrl.toString(),
-			state: stateToken,
-		});
-	} catch (error) {
-		logger.error({ error }, "Failed to start Slack OAuth flow");
-		return NextResponse.json(
-			{ error: "Internal server error" },
-			{ status: 500 },
-		);
-	}
+	return NextResponse.json(
+		{
+			error:
+				"Deployment-managed Slack OAuth setup has been retired. Prepare and verify an organization-owned Slack app in Settings -> Chat Integrations.",
+			code: "legacy_slack_oauth_retired",
+		},
+		{ status: 410 },
+	);
 }

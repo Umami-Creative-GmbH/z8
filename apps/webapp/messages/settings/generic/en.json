@@ -2944,8 +2944,10 @@
       "slack": {
         "connect": "Connect Slack",
         "connectFailed": "Slack connection could not be started. Try again.",
+        "connectRetired": "Deployment-managed Slack OAuth has been retired. Set up your organization-owned Slack app above.",
         "connectUnavailable": "Slack is not available on this Z8 installation.",
-        "description": "Configure Slack notifications for your organization."
+        "description": "Configure Slack notifications for your organization.",
+        "orgOwnedConnectHint": "Prepare, verify, and switch to your organization-owned Slack app using the setup workflow above."
       },
       "status": {
         "active": "Active",

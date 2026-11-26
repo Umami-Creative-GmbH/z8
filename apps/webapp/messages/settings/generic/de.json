@@ -2944,8 +2944,10 @@
       "slack": {
         "connect": "Slack verbinden",
         "connectFailed": "Die Slack-Verbindung konnte nicht gestartet werden. Versuchen Sie es erneut.",
+        "connectRetired": "Das zentral verwaltete Slack-OAuth wurde eingestellt. Richten Sie oben Ihre organisationseigene Slack-App ein.",
         "connectUnavailable": "Slack ist auf dieser Z8-Installation nicht verfügbar.",
-        "description": "Konfigurieren Sie Slack-Benachrichtigungen für Ihre Organisation."
+        "description": "Konfigurieren Sie Slack-Benachrichtigungen für Ihre Organisation.",
+        "orgOwnedConnectHint": "Bereiten Sie Ihre organisationseigene Slack-App über den Einrichtungsablauf oben vor, prüfen Sie sie und wechseln Sie dann."
       },
       "status": {
         "active": "Aktiv",

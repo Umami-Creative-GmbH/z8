@@ -5,7 +5,13 @@ import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { discordBotConfig, slackWorkspaceConfig, teamsTenantConfig } from "@/db/schema";
+import {
+	chatInstallation,
+	chatProviderSettings,
+	discordBotConfig,
+	slackWorkspaceConfig,
+	teamsTenantConfig,
+} from "@/db/schema";
 import { env } from "@/env";
 import {
 	CHAT_INSTALLATION_PROVIDERS,
@@ -148,12 +154,43 @@ export const getSlackNotificationChannelConfig = organizationAction(
 	({ organizationId }) =>
 		Effect.gen(function* () {
 			const dbService = yield* DatabaseService;
-			const config = yield* dbService.query("notificationChannels.getSlackConfig", () =>
-				dbService.db.query.slackWorkspaceConfig.findFirst({
+			return yield* dbService.query("notificationChannels.getSlackConfig", async () => {
+				const authoritative = await dbService.db.query?.chatProviderSettings?.findFirst({
+					where: and(
+						eq(chatProviderSettings.organizationId, organizationId),
+						eq(chatProviderSettings.provider, "slack"),
+						eq(chatProviderSettings.isAuthoritative, true),
+					),
+				});
+				if (authoritative) {
+					const activeInst = authoritative.activeInstallationId
+						? await dbService.db.query?.chatInstallation?.findFirst({
+								where: and(
+									eq(chatInstallation.id, authoritative.activeInstallationId),
+									eq(chatInstallation.organizationId, organizationId),
+								),
+							})
+						: undefined;
+					return mapConfig(
+						{
+							setupStatus: activeInst?.status === "active" ? "active" : "disconnected",
+							enableApprovals: authoritative.enableApprovals,
+							enableCommands: authoritative.enableCommands,
+							enableDailyDigest: authoritative.enableDailyDigest,
+							enableEscalations: authoritative.enableEscalations,
+							digestTime: authoritative.digestTime,
+							digestTimezone: authoritative.digestTimezone,
+							escalationTimeoutHours: authoritative.escalationTimeoutHours,
+						},
+						activeInst?.externalSpaceName ?? activeInst?.externalDisplayName ?? null,
+					);
+				}
+
+				const config = await dbService.db.query.slackWorkspaceConfig.findFirst({
 					where: eq(slackWorkspaceConfig.organizationId, organizationId),
-				}),
-			);
-			return mapConfig(config, config?.slackTeamName);
+				});
+				return mapConfig(config, config?.slackTeamName);
+			});
 		}),
 );
 
@@ -405,12 +442,31 @@ export const updateSlackNotificationChannelSettings = organizationAction(
 	({ organizationId, input }) =>
 		Effect.gen(function* () {
 			const dbService = yield* DatabaseService;
-			yield* dbService.query("notificationChannels.updateSlackSettings", () =>
-				dbService.db
+			yield* dbService.query("notificationChannels.updateSlackSettings", async () => {
+				const authoritative = await dbService.db.query?.chatProviderSettings?.findFirst({
+					where: and(
+						eq(chatProviderSettings.organizationId, organizationId),
+						eq(chatProviderSettings.provider, "slack"),
+						eq(chatProviderSettings.isAuthoritative, true),
+					),
+				});
+				if (authoritative) {
+					await dbService.db
+						.update(chatProviderSettings)
+						.set(input)
+						.where(
+							and(
+								eq(chatProviderSettings.id, authoritative.id),
+								eq(chatProviderSettings.organizationId, organizationId),
+							),
+						);
+					return;
+				}
+				await dbService.db
 					.update(slackWorkspaceConfig)
 					.set(input)
-					.where(eq(slackWorkspaceConfig.organizationId, organizationId)),
-			);
+					.where(eq(slackWorkspaceConfig.organizationId, organizationId));
+			});
 			revalidatePath("/settings/notification-channels");
 			return undefined;
 		}),

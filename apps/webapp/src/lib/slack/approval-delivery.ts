@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { slackUserMapping, slackWorkspaceConfig } from "@/db/schema";
+import { chatInstallationMemberLink, slackUserMapping, slackWorkspaceConfig } from "@/db/schema";
 import {
 	type ChatInstallationOriginRecord,
 	findActiveInstallationConversation,
@@ -12,6 +12,7 @@ import type {
 	ApprovalDeliveryFailure,
 } from "@/lib/approvals/delivery/owner";
 import { prepareApprovalPresentation } from "@/lib/approvals/presentation";
+import { upsertInstallationConversation } from "@/lib/chat-installations/inventory";
 import {
 	openConversationWithOutcome,
 	postMessageWithOutcome,
@@ -91,7 +92,9 @@ async function resolveSlackTokenForInstallation(
 		return { botAccessToken: fromRevision, slackTeamId: installation.externalSpaceId };
 	}
 	if (installation.legacyTable === "slack_workspace_config") {
-		const legacyBot = await getBotConfigByOrganization(organizationId);
+		const legacyBot = await getBotConfigByOrganization(organizationId, {
+			installationId: installation.id,
+		});
 		if (legacyBot) {
 			return {
 				botAccessToken: legacyBot.botAccessToken,
@@ -146,7 +149,9 @@ export const slackApprovalDeliveryAdapter: ApprovalDeliveryAdapter = {
 					return { kind: "suppressed", reason: "escalations_disabled" };
 				}
 			} else if (target.legacyTable === "slack_workspace_config") {
-				const legacy = await getBotConfigByOrganization(input.organizationId);
+				const legacy = await getBotConfigByOrganization(input.organizationId, {
+					installationId: target.id,
+				});
 				if (!legacy) return { kind: "failed", outcome: "unavailable", reason: "bot_unavailable" };
 				if (legacy.setupStatus !== "active") {
 					return { kind: "suppressed", reason: "integration_disabled" };
@@ -206,27 +211,60 @@ export const slackApprovalDeliveryAdapter: ApprovalDeliveryAdapter = {
 					input,
 				);
 			} else if (slackTeamId) {
-				const mapping = await db.query.slackUserMapping.findFirst({
-					where: and(
-						eq(slackUserMapping.userId, input.recipientUserId),
-						eq(slackUserMapping.organizationId, input.organizationId),
-						eq(slackUserMapping.slackTeamId, slackTeamId),
-						eq(slackUserMapping.isActive, true),
-					),
-					columns: { slackUserId: true },
-				});
-				if (!mapping) {
+				const [memberLink] = await db
+					.select({ externalUserId: chatInstallationMemberLink.externalUserId })
+					.from(chatInstallationMemberLink)
+					.where(
+						and(
+							eq(chatInstallationMemberLink.organizationId, input.organizationId),
+							eq(chatInstallationMemberLink.installationId, target.id),
+							eq(chatInstallationMemberLink.userId, input.recipientUserId),
+							eq(chatInstallationMemberLink.isCandidateEnrollment, false),
+							eq(chatInstallationMemberLink.isActive, true),
+						),
+					)
+					.limit(1);
+
+				let targetSlackUserId: string | null = memberLink?.externalUserId ?? null;
+				if (!targetSlackUserId) {
+					const mapping = await db.query.slackUserMapping.findFirst({
+						where: and(
+							eq(slackUserMapping.userId, input.recipientUserId),
+							eq(slackUserMapping.organizationId, input.organizationId),
+							eq(slackUserMapping.slackTeamId, slackTeamId),
+							eq(slackUserMapping.isActive, true),
+						),
+						columns: { slackUserId: true },
+					});
+					targetSlackUserId = mapping?.slackUserId ?? null;
+				}
+
+				if (!targetSlackUserId) {
 					destination = {
 						kind: "failed",
 						outcome: "destination_invalid",
 						reason: "destination_missing",
 					};
 				} else {
-					const opened = await openConversationWithOutcome(botAccessToken, mapping.slackUserId);
-					destination =
-						opened.kind === "ok"
-							? { kind: "ok", channelId: opened.result }
-							: deliveryFailure(opened, "open");
+					const opened = await openConversationWithOutcome(botAccessToken, targetSlackUserId);
+					if (opened.kind === "ok") {
+						await upsertInstallationConversation(
+							{
+								organizationId: input.organizationId,
+								installationId: target.id,
+								userId: input.recipientUserId,
+								externalUserId: targetSlackUserId,
+								externalConversationId: opened.result,
+								conversationType: "private",
+								reachabilityStatus: "reachable",
+								verifiedAt: new Date(),
+							},
+							{ db },
+						);
+						destination = { kind: "ok", channelId: opened.result };
+					} else {
+						destination = deliveryFailure(opened, "open");
+					}
 				}
 			} else {
 				destination = {

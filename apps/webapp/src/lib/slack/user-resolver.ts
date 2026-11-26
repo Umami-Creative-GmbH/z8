@@ -7,7 +7,7 @@
 
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { employee, slackLinkCode, slackUserMapping } from "@/db/schema";
+import { chatInstallationMemberLink, employee, slackLinkCode, slackUserMapping } from "@/db/schema";
 import { resolveCommandActorEmployee } from "@/lib/integrations/resolve-command-actor";
 import { createLogger } from "@/lib/logger";
 import type { ResolvedSlackUser } from "./types";
@@ -23,13 +23,62 @@ export type SlackUserResolutionResult =
 	| { status: "not_linked"; slackUserId: string };
 
 /**
- * Resolve a Slack user to a Z8 user within an organization
+ * Resolve a Slack user to a Z8 user within an organization.
+ * When `options.installationId` is provided (switched organization-owned Slack app),
+ * resolution strictly uses installation-scoped `chat_installation_member_link`.
  */
 export async function resolveSlackUser(
 	slackUserId: string,
 	slackTeamId: string,
 	slackUsername?: string,
+	options?: {
+		organizationId?: string;
+		installationId?: string | null;
+	},
 ): Promise<SlackUserResolutionResult> {
+	if (options?.installationId && options.organizationId) {
+		const [instLink] = await db
+			.select()
+			.from(chatInstallationMemberLink)
+			.where(
+				and(
+					eq(chatInstallationMemberLink.organizationId, options.organizationId),
+					eq(chatInstallationMemberLink.installationId, options.installationId),
+					eq(chatInstallationMemberLink.externalUserId, slackUserId),
+					eq(chatInstallationMemberLink.isCandidateEnrollment, false),
+					eq(chatInstallationMemberLink.isActive, true),
+				),
+			)
+			.limit(1);
+
+		if (!instLink) {
+			return { status: "not_linked", slackUserId };
+		}
+
+		const emp = await resolveCommandActorEmployee(instLink.userId, instLink.organizationId);
+		if (!emp) return { status: "not_linked", slackUserId };
+
+		await db
+			.update(chatInstallationMemberLink)
+			.set({
+				lastSeenAt: new Date(),
+				...(slackUsername ? { externalUsername: slackUsername } : {}),
+			})
+			.where(eq(chatInstallationMemberLink.id, instLink.id));
+
+		return {
+			status: "found",
+			user: {
+				userId: instLink.userId,
+				employeeId: emp.id,
+				organizationId: instLink.organizationId,
+				slackUserId: instLink.externalUserId,
+				slackTeamId,
+				slackUsername: slackUsername ?? instLink.externalUsername,
+			},
+		};
+	}
+
 	// Check existing mapping
 	const mapping = await db.query.slackUserMapping.findFirst({
 		where: and(
@@ -40,10 +89,7 @@ export async function resolveSlackUser(
 	});
 
 	if (mapping) {
-		const emp = await resolveCommandActorEmployee(
-			mapping.userId,
-			mapping.organizationId,
-		);
+		const emp = await resolveCommandActorEmployee(mapping.userId, mapping.organizationId);
 		if (!emp) return { status: "not_linked", slackUserId };
 
 		// Update last seen and username if changed
@@ -110,10 +156,7 @@ export async function generateLinkCode(
 		status: "pending",
 	});
 
-	logger.info(
-		{ userId, organizationId, codeLength: code.length },
-		"Slack link code generated",
-	);
+	logger.info({ userId, organizationId, codeLength: code.length }, "Slack link code generated");
 
 	return { code, expiresAt };
 }
@@ -176,10 +219,7 @@ export async function claimLinkCode(
 
 	// Get employee ID
 	const emp = await db.query.employee.findFirst({
-		where: and(
-			eq(employee.userId, linkCode.userId),
-			eq(employee.organizationId, organizationId),
-		),
+		where: and(eq(employee.userId, linkCode.userId), eq(employee.organizationId, organizationId)),
 		columns: { id: true },
 	});
 
@@ -215,9 +255,8 @@ export async function claimLinkCode(
 
 	try {
 		// A linked account gives approval cards waiting for a DM a destination.
-		const { rearmApprovalDeliveryForRepairedDestination } = await import(
-			"@/lib/approvals/delivery/recovery"
-		);
+		const { rearmApprovalDeliveryForRepairedDestination } =
+			await import("@/lib/approvals/delivery/recovery");
 		await rearmApprovalDeliveryForRepairedDestination({
 			organizationId,
 			userId: linkCode.userId,
@@ -236,18 +275,12 @@ export async function claimLinkCode(
 /**
  * Unlink a Slack account
  */
-export async function unlinkSlackUser(
-	userId: string,
-	organizationId: string,
-): Promise<boolean> {
+export async function unlinkSlackUser(userId: string, organizationId: string): Promise<boolean> {
 	const result = await db
 		.update(slackUserMapping)
 		.set({ isActive: false })
 		.where(
-			and(
-				eq(slackUserMapping.userId, userId),
-				eq(slackUserMapping.organizationId, organizationId),
-			),
+			and(eq(slackUserMapping.userId, userId), eq(slackUserMapping.organizationId, organizationId)),
 		)
 		.returning({ id: slackUserMapping.id });
 

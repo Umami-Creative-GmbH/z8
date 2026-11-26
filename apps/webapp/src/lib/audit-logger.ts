@@ -414,12 +414,15 @@ export enum AuditAction {
 	IMPLEMENTATION_CHECKLIST_ITEM_CONFIRMED = "implementation_checklist.item_confirmed",
 	IMPLEMENTATION_CHECKLIST_ITEM_UNCONFIRMED = "implementation_checklist.item_unconfirmed",
 
-	// Organization-owned chat installations (#2037 / #2041)
+	// Organization-owned chat installations (#2037 / #2041 / #2045)
 	CHAT_INSTALLATION_CANDIDATE_PREPARED = "chat_installation.candidate_prepared",
 	CHAT_INSTALLATION_CREDENTIALS_STORED = "chat_installation.credentials_stored",
 	CHAT_INSTALLATION_INBOUND_VERIFIED = "chat_installation.inbound_verified",
 	CHAT_INSTALLATION_TEST_MESSAGE_SENT = "chat_installation.test_message_sent",
 	CHAT_INSTALLATION_VERIFICATION_FAILED = "chat_installation.verification_failed",
+	CHAT_INSTALLATION_SWITCH_CONFIRMED = "chat_installation.switch_confirmed",
+	CHAT_INSTALLATION_RETIRED = "chat_installation.retired",
+	CHAT_INSTALLATION_LEGACY_DISCONNECTED = "chat_installation.legacy_disconnected",
 }
 
 export type ApprovalAuditDecision = TimeRecordApprovalDecision;

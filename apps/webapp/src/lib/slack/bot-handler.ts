@@ -62,7 +62,10 @@ export async function handleSlashCommand(
 	}
 
 	// Resolve user
-	const userResult = await resolveSlackUser(slackUserId, bot.slackTeamId, payload.user_name);
+	const userResult = await resolveSlackUser(slackUserId, bot.slackTeamId, payload.user_name, {
+		organizationId: bot.organizationId,
+		installationId: bot.installationId,
+	});
 
 	if (userResult.status !== "found") {
 		const { t } = await getReplyTranslate({ userId: null, organizationId: bot.organizationId });
@@ -80,7 +83,10 @@ export async function handleSlashCommand(
 	});
 
 	// Save conversation for proactive messaging
-	await saveConversation(channelId, "im", userResult.user.userId, bot.organizationId);
+	await saveConversation(channelId, "im", userResult.user.userId, bot.organizationId, {
+		installationId: bot.installationId,
+		externalUserId: slackUserId,
+	});
 
 	// Parse command
 	const parsed = parseCommand(`/${text}`);
@@ -171,7 +177,10 @@ async function handleDirectMessage(
 	}
 
 	// Resolve user
-	const userResult = await resolveSlackUser(slackUserId, bot.slackTeamId);
+	const userResult = await resolveSlackUser(slackUserId, bot.slackTeamId, undefined, {
+		organizationId: bot.organizationId,
+		installationId: bot.installationId,
+	});
 
 	if (userResult.status !== "found") {
 		const { t } = await getReplyTranslate({ userId: null, organizationId: bot.organizationId });
@@ -186,7 +195,10 @@ async function handleDirectMessage(
 	}
 
 	// Save conversation for proactive messaging
-	await saveConversation(channelId, "im", userResult.user.userId, bot.organizationId);
+	await saveConversation(channelId, "im", userResult.user.userId, bot.organizationId, {
+		installationId: bot.installationId,
+		externalUserId: slackUserId,
+	});
 
 	const { t } = await getReplyTranslate({
 		userId: userResult.user.userId,

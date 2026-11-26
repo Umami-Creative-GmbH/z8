@@ -51,6 +51,42 @@
       "title": "Kalendersynchronisierung",
       "titleTemplatePlaceholder": "Abwesend – {categoryName}"
     },
+    "capabilities": {
+      "approvalKind": {
+        "absence": "Abwesenheiten",
+        "manualTimeSubmission": "Manuelle Zeiterfassungen",
+        "policyClockOut": "Automatisches Ausstempeln",
+        "timeCorrection": "Zeitkorrekturen",
+        "travelExpense": "Reisekosten"
+      },
+      "approvalKindsHeading": "Unterstützung nach Genehmigungsart",
+      "delivery": {
+        "active": "Zustellung für diese Genehmigungsart aktiviert",
+        "inactive": "Wird im Z8-Posteingang bearbeitet, sofern die Zustellung nicht aktiviert ist"
+      },
+      "description": "Funktionsverfügbarkeit und Verhalten von Genehmigungskarten werden getrennt von der Verbindungsbereitschaft angezeigt.",
+      "escalationDeliveryOnlyNote": "Steuert nur die Kanalzustellung; die Frist wird über die Eskalationsrichtlinie verwaltet.",
+      "escalationPolicyOwnsTiming": "Die Genehmigungs-Eskalationsrichtlinie Ihrer Organisation bestimmt den Eskalationszeitpunkt ({hours} Std. Reaktionsfenster). Die {channelName}-Eskalationseinstellung steuert nur die Zustellung über diesen Kanal.",
+      "feature": {
+        "approvals": "Genehmigungen",
+        "commands": "Befehle",
+        "dailyDigest": "Tägliche Zusammenfassung",
+        "escalations": "Eskalationen",
+        "notifications": "Benachrichtigungen"
+      },
+      "featuresHeading": "Kanalfunktionen",
+      "mode": {
+        "inChatDecision": "Entscheidung im Chat",
+        "reviewInZ8": "In Z8 prüfen",
+        "unverified": "Nicht verifiziert"
+      },
+      "slackReviewNote": "Slack-Genehmigungskarten verweisen für eine authentifizierte Prüfung und Entscheidung auf Z8.",
+      "state": {
+        "disabled": "Deaktiviert",
+        "enabled": "Aktiviert"
+      },
+      "title": "{channelName}-Funktionen & Genehmigungsunterstützung"
+    },
     "chatInstallations": {
       "blockers": {
         "duplicateIdentity": {
@@ -439,6 +475,57 @@
         }
       },
       "title": "Slack"
+    },
+    "slackSwitch": {
+      "acknowledgeUnready": "Mir ist bekannt, dass {count} aktive Mitarbeiter noch ihre Verbindung oder Direktnachrichten für die neue Slack-App bestätigen müssen, und ich möchte jetzt wechseln.",
+      "completeVerificationFirst": "Schließen Sie zuerst alle oben genannten Prüfungsschritte ab, bevor Sie den Wechsel bestätigen.",
+      "confirmButton": "Wechsel zur verifizierten Slack-App bestätigen",
+      "description": "Prüfen Sie Erreichbarkeit der Mitarbeiter, offene Genehmigungskarten und laufende Benachrichtigungen, bevor Sie Ihre verifizierte organisationseigene Slack-App aktivieren.",
+      "errors": {
+        "alreadySwitched": "Diese Slack-Installation ist bereits aktiv.",
+        "candidateNotFound": "Es wurde keine Kandidaten-Slack-Installation gefunden. Bereiten Sie zuerst eine vor und prüfen Sie sie.",
+        "candidateNotReady": "Schließen Sie alle Prüfungsschritte der Slack-App vor dem Wechsel ab.",
+        "candidateVerificationExpired": "Die Prüfnachweise der Kandidaten-Slack-App sind abgelaufen. Bitte erneut verifizieren.",
+        "confirmFailed": "Slack-Installation konnte nicht gewechselt werden.",
+        "impactChanged": "Auswirkungen oder Installationsrevisionen haben sich seit Ihrer Prüfung geändert. Prüfen Sie die aktualisierte Übersicht und bestätigen Sie erneut.",
+        "migrationBlocked": "Beheben Sie zuerst die oben genannten Migrationsblocker, bevor Sie wechseln.",
+        "refreshFailed": "Auswirkungsübersicht für den Slack-Wechsel konnte nicht aktualisiert werden.",
+        "switchNotEnabled": "Der Wechsel zu einer organisationseigenen Slack-App ist für diese Organisation noch nicht freigeschaltet.",
+        "unreadyAckRequired": "Bestätigen Sie zuerst, dass einige Mitarbeiter ihre Verbindung oder Direktnachrichten noch einrichten müssen."
+      },
+      "gate": {
+        "disabled": "Wechsel gesperrt",
+        "enabled": "Wechsel freigeschaltet"
+      },
+      "gateDisabledNotice": "Der Wechsel zu einer organisationseigenen Slack-App ist für diese Organisation noch nicht freigeschaltet. Sie können die App bereits vorbereiten, prüfen und Auswirkungen ansehen; die Aktivierung wird freigeschaltet, sobald Ihre Organisation aktiviert ist.",
+      "generatedAt": "Stand: {timestamp}",
+      "metrics": {
+        "actionNeeded": "Mitarbeiter-Aktion erforderlich",
+        "actionNeededHint": "Muss in Einstellungen → Benachrichtigungen verknüpfen oder DM öffnen",
+        "carryForwardHint": "{count} Identitäten aus demselben Workspace werden übernommen; DM-Erreichbarkeit wird bei erster Nutzung geprüft",
+        "inFlightNotifications": "Laufende Benachrichtigungen",
+        "inFlightNotificationsHint": "Bleiben ohne doppeltes Senden an die ursprüngliche Installation gebunden",
+        "outstandingApprovals": "Offene Genehmigungskarten",
+        "outstandingApprovalsHint": "{refresh} Aktualisierungen ausstehend; alte Karten behalten ihre Z8-Prüflinks",
+        "unknownReachability": "Erreichbarkeit unbekannt",
+        "unknownReachabilityHint": "Verknüpfte Identität, deren DM für die neue App noch nicht geprüft wurde",
+        "verifiedReachable": "Verifiziert erreichbar",
+        "verifiedReachableHint": "Direktnachrichten mit der neuen App bestätigt"
+      },
+      "readyToConfirmHint": "Neue Slack-Benachrichtigungen, Befehle und tägliche Zusammenfassungen nutzen sofort nach dem Wechsel Ihre organisationseigene Slack-App.",
+      "refresh": "Auswirkungen aktualisieren",
+      "refreshedAnnouncement": "Auswirkungsübersicht für den Slack-Wechsel aktualisiert.",
+      "retirement": {
+        "deadline": "Frist für automatische Stilllegung: {deadline}",
+        "description": "Auslaufende Installationen aktualisieren ihre bestehenden Genehmigungskarten weiter, bis alle offenen Karten erledigt sind oder das 30-Tage-Limit erreicht ist. Ausstehende Genehmigungen bleiben jederzeit im Z8-Posteingang verfügbar.",
+        "noDeadline": "Wird stillgelegt, sobald offene Karten erledigt sind",
+        "outstandingCount": "{count} offene Karten / Aufgaben",
+        "previousApp": "Vorherige Slack-App",
+        "title": "Auslaufende Slack-Installationen"
+      },
+      "summaryHeading": "Übersicht der Wechselauswirkungen",
+      "switchedAnnouncement": "Auf Ihre organisationseigene Slack-App umgestellt. Bestehende Genehmigungskarten werden während der Auslaufphase weiter betreut.",
+      "title": "Auswirkungen prüfen & Slack-App wechseln"
     },
     "teamsNotifications": {
       "title": "Microsoft Teams"
