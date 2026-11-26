@@ -7,7 +7,7 @@
 
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { telegramBotConfig } from "@/db/schema";
+import { type ChatInstallationStatus, chatInstallation, telegramBotConfig } from "@/db/schema";
 import {
 	type ChatDispatchTargetHint,
 	listSwitchedActiveChatInstallationsForProvider,
@@ -47,6 +47,8 @@ async function hydrateSwitchedTelegramBot(
 
 	return {
 		organizationId: target.organizationId,
+		installationId: target.installationId,
+		credentialRevisionId: target.credentialRevisionId,
 		botToken,
 		botUsername: target.externalBotUsername,
 		webhookSecret: target.routeId,
@@ -55,12 +57,22 @@ async function hydrateSwitchedTelegramBot(
 	};
 }
 
+export interface ResolvedLegacyTelegramWebhookBot {
+	bot: ResolvedTelegramBot;
+	installationStatus: ChatInstallationStatus | null;
+	retirementDeadlineAt: Date | null;
+	retiredAt: Date | null;
+	revokedAt: Date | null;
+}
+
 /**
- * Resolve bot config by webhook secret (used in webhook route)
+ * Resolve legacy webhook bot alongside its `chat_installation` lifecycle record
+ * so `/api/telegram/webhook/[token]` keeps servicing eligible legacy installations
+ * (and retiring approval callbacks) while immediately refusing revoked/retired ones.
  */
-export async function resolveBotByWebhookSecret(
+export async function resolveLegacyTelegramWebhookBot(
 	webhookSecret: string,
-): Promise<ResolvedTelegramBot | null> {
+): Promise<ResolvedLegacyTelegramWebhookBot | null> {
 	const config = await db.query.telegramBotConfig.findFirst({
 		where: and(
 			eq(telegramBotConfig.webhookSecret, webhookSecret),
@@ -70,7 +82,58 @@ export async function resolveBotByWebhookSecret(
 
 	if (!config) return null;
 
-	return hydrateBot(config);
+	const hydrated = await hydrateBot(config);
+	if (!hydrated) return null;
+
+	if (typeof db.select !== "function") {
+		return {
+			bot: hydrated,
+			installationStatus: null,
+			retirementDeadlineAt: null,
+			retiredAt: null,
+			revokedAt: null,
+		};
+	}
+
+	const [inst] = await db
+		.select({
+			id: chatInstallation.id,
+			status: chatInstallation.status,
+			retirementDeadlineAt: chatInstallation.retirementDeadlineAt,
+			retiredAt: chatInstallation.retiredAt,
+			revokedAt: chatInstallation.revokedAt,
+		})
+		.from(chatInstallation)
+		.where(
+			and(
+				eq(chatInstallation.organizationId, config.organizationId),
+				eq(chatInstallation.provider, "telegram"),
+				eq(chatInstallation.legacyTable, "telegram_bot_config"),
+				eq(chatInstallation.legacyRecordId, config.id),
+			),
+		)
+		.limit(1);
+
+	return {
+		bot: {
+			...hydrated,
+			installationId: inst?.id ?? null,
+		},
+		installationStatus: inst?.status ?? null,
+		retirementDeadlineAt: inst?.retirementDeadlineAt ?? null,
+		retiredAt: inst?.retiredAt ?? null,
+		revokedAt: inst?.revokedAt ?? null,
+	};
+}
+
+/**
+ * Resolve bot config by webhook secret (used in webhook route)
+ */
+export async function resolveBotByWebhookSecret(
+	webhookSecret: string,
+): Promise<ResolvedTelegramBot | null> {
+	const resolved = await resolveLegacyTelegramWebhookBot(webhookSecret);
+	return resolved?.bot ?? null;
 }
 
 /**

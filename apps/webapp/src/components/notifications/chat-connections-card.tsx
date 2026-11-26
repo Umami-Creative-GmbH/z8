@@ -73,6 +73,9 @@ export interface ChatConnectionsCardProps {
 	generatedTelegramCode: GeneratedMemberLinkCode | null;
 	isGeneratingTelegramCode: boolean;
 	onGenerateTelegramCode: () => void;
+	generatedTelegramCandidateCode?: GeneratedMemberLinkCode | null;
+	isGeneratingTelegramCandidateCode?: boolean;
+	onGenerateTelegramCandidateCode?: (installationId: string) => void;
 	unlinkingProvider: ChatInstallationProvider | null;
 	onUnlink: (provider: ChatInstallationProvider, installationId?: string) => void;
 }
@@ -121,6 +124,9 @@ export function ChatConnectionsCard({
 	generatedTelegramCode,
 	isGeneratingTelegramCode,
 	onGenerateTelegramCode,
+	generatedTelegramCandidateCode = null,
+	isGeneratingTelegramCandidateCode = false,
+	onGenerateTelegramCandidateCode,
 	unlinkingProvider,
 	onUnlink,
 }: ChatConnectionsCardProps) {
@@ -191,7 +197,9 @@ export function ChatConnectionsCard({
 	}
 
 	const visibleChannels = channels.filter(
-		(channel) => channel.available && channel.status !== "unavailable",
+		(channel) =>
+			channel.available &&
+			(channel.status !== "unavailable" || Boolean(channel.candidateEnrollment)),
 	);
 
 	if (visibleChannels.length === 0) {
@@ -452,6 +460,163 @@ export function ChatConnectionsCard({
 										</div>
 									</div>
 									<TelegramCodeExpiry expiresAt={generatedTelegramCode.expiresAt} />
+								</div>
+							)}
+
+							{channel.provider === "telegram" && channel.candidateEnrollment && (
+								<div className="space-y-2.5 rounded-md border border-dashed bg-background p-3">
+									<div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+										<div className="min-w-0 space-y-1">
+											<div className="flex flex-wrap items-center gap-2">
+												<span className="text-xs font-medium">
+													{t(
+														"settings.notifications.chatLinks.replacementTelegramTitle",
+														"Replacement Telegram bot staged",
+													)}
+												</span>
+												<Badge
+													variant={
+														channel.candidateEnrollment.status === "enrolled"
+															? "secondary"
+															: "outline"
+													}
+												>
+													{channel.candidateEnrollment.status === "enrolled"
+														? t("settings.notifications.chatLinks.replacementEnrolled", "Enrolled")
+														: t(
+																"settings.notifications.chatLinks.status.actionNeeded",
+																"Action needed",
+															)}
+												</Badge>
+											</div>
+											{channel.candidateEnrollment.installationLabel && (
+												<p className="truncate text-xs text-muted-foreground">
+													{channel.candidateEnrollment.installationLabel}
+												</p>
+											)}
+											<p className="text-xs text-muted-foreground">
+												{channel.candidateEnrollment.status === "enrolled"
+													? t(
+															"settings.notifications.chatLinks.replacementTelegramEnrolledHint",
+															"You are enrolled for the replacement bot. Your current live Telegram link stays active until your admin completes the switch.",
+														)
+													: t(
+															"settings.notifications.chatLinks.replacementTelegramHint",
+															"Start and link the replacement Telegram bot ahead of the switch. Your current Telegram notifications stay uninterrupted until the switch.",
+														)}
+											</p>
+										</div>
+
+										{channel.candidateEnrollment.canGenerateLinkCode &&
+											channel.candidateEnrollment.status !== "enrolled" &&
+											onGenerateTelegramCandidateCode && (
+												<Button
+													type="button"
+													variant="outline"
+													size="sm"
+													disabled={isGeneratingTelegramCandidateCode}
+													onClick={() =>
+														onGenerateTelegramCandidateCode(
+															channel.candidateEnrollment!.installationId,
+														)
+													}
+												>
+													{isGeneratingTelegramCandidateCode && (
+														<IconLoader2
+															className="mr-1.5 size-4 motion-safe:animate-spin"
+															aria-hidden="true"
+														/>
+													)}
+													{t(
+														"settings.notifications.chatLinks.generateReplacementCode",
+														"Link replacement bot",
+													)}
+												</Button>
+											)}
+									</div>
+
+									{generatedTelegramCandidateCode &&
+										generatedTelegramCandidateCode.installationId ===
+											channel.candidateEnrollment.installationId &&
+										channel.candidateEnrollment.status !== "enrolled" && (
+											<div className="space-y-2 rounded-md border bg-muted/40 p-2.5">
+												<p className="text-xs text-muted-foreground">
+													{t(
+														"settings.notifications.chatLinks.replacementTelegramInstructions",
+														"Open the replacement bot in Telegram and send this one-time command:",
+													)}
+												</p>
+												<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+													<code className="break-all rounded bg-background px-2.5 py-1.5 font-mono text-sm font-medium">
+														{`/link ${generatedTelegramCandidateCode.code}`}
+													</code>
+													<div className="flex flex-wrap items-center gap-2">
+														<Button
+															type="button"
+															variant="outline"
+															size="sm"
+															onClick={() =>
+																void handleCopyCommand(
+																	`/link ${generatedTelegramCandidateCode.code}`,
+																)
+															}
+														>
+															{copied ? (
+																<IconCheck className="mr-1.5 size-4" aria-hidden="true" />
+															) : (
+																<IconCopy className="mr-1.5 size-4" aria-hidden="true" />
+															)}
+															{t("settings.notifications.chatLinks.copyCommand", "Copy")}
+														</Button>
+														{(generatedTelegramCandidateCode.botUsername ??
+															channel.candidateEnrollment.botUsername) && (
+															<Button variant="outline" size="sm" asChild>
+																<a
+																	href={`https://t.me/${(
+																		generatedTelegramCandidateCode.botUsername ??
+																		channel.candidateEnrollment.botUsername ??
+																		""
+																	).replace(/^@/, "")}`}
+																	target="_blank"
+																	rel="noopener noreferrer"
+																>
+																	<IconExternalLink className="mr-1.5 size-4" aria-hidden="true" />
+																	{t(
+																		"settings.notifications.chatLinks.openTelegramBot",
+																		"Open @{botUsername}",
+																		{
+																			botUsername: (
+																				generatedTelegramCandidateCode.botUsername ??
+																				channel.candidateEnrollment.botUsername ??
+																				""
+																			).replace(/^@/, ""),
+																		},
+																	)}
+																</a>
+															</Button>
+														)}
+														<Button
+															type="button"
+															variant="ghost"
+															size="sm"
+															onClick={onRetry}
+															disabled={isRetrying}
+														>
+															<IconRefresh
+																className={
+																	isRetrying
+																		? "mr-1.5 size-4 motion-safe:animate-spin"
+																		: "mr-1.5 size-4"
+																}
+																aria-hidden="true"
+															/>
+															{t("settings.notifications.chatLinks.checkStatus", "Check status")}
+														</Button>
+													</div>
+												</div>
+												<TelegramCodeExpiry expiresAt={generatedTelegramCandidateCode.expiresAt} />
+											</div>
+										)}
 								</div>
 							)}
 						</div>

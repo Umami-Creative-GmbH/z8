@@ -59,6 +59,16 @@ export type MemberChatLinkRecoveryHint =
 	| "installation_remediation"
 	| null;
 
+export interface MemberChatCandidateEnrollmentView {
+	installationId: string;
+	botUsername: string | null;
+	installationLabel: string | null;
+	status: "enrolled" | "action_needed";
+	externalUsername: string | null;
+	externalDisplayName: string | null;
+	canGenerateLinkCode: boolean;
+}
+
 export interface MemberChatChannelLinkView {
 	provider: ChatInstallationProvider;
 	available: boolean;
@@ -71,6 +81,7 @@ export interface MemberChatChannelLinkView {
 	canGenerateLinkCode: boolean;
 	canUnlink: boolean;
 	recoveryHint: MemberChatLinkRecoveryHint;
+	candidateEnrollment?: MemberChatCandidateEnrollmentView | null;
 }
 
 export interface MemberChatLinksSnapshot {
@@ -1400,6 +1411,7 @@ export async function getMemberChatLinks(
 	const [
 		installations,
 		memberLinks,
+		candidateLinks,
 		conversations,
 		legacyTelegram,
 		legacySlack,
@@ -1420,6 +1432,17 @@ export async function getMemberChatLinks(
 					eq(chatInstallationMemberLink.organizationId, trimmedOrgId),
 					eq(chatInstallationMemberLink.userId, input.userId),
 					eq(chatInstallationMemberLink.isCandidateEnrollment, false),
+					eq(chatInstallationMemberLink.isActive, true),
+				),
+			),
+		db
+			.select()
+			.from(chatInstallationMemberLink)
+			.where(
+				and(
+					eq(chatInstallationMemberLink.organizationId, trimmedOrgId),
+					eq(chatInstallationMemberLink.userId, input.userId),
+					eq(chatInstallationMemberLink.isCandidateEnrollment, true),
 					eq(chatInstallationMemberLink.isActive, true),
 				),
 			),
@@ -1499,6 +1522,9 @@ export async function getMemberChatLinks(
 	]);
 
 	const linkByInstallationId = new Map(memberLinks.map((row) => [row.installationId, row]));
+	const candidateLinkByInstallationId = new Map(
+		candidateLinks.map((row) => [row.installationId, row]),
+	);
 	const conversationByInstallationId = new Map(
 		conversations.map((row) => [row.installationId, row]),
 	);
@@ -1511,6 +1537,16 @@ export async function getMemberChatLinks(
 			null;
 		const remediationInst =
 			providerInstallations.find((row) => row.status === "remediation_required") ?? null;
+		const candidateInst =
+			provider === "telegram"
+				? (providerInstallations.find(
+						(row) =>
+							row.status === "candidate" &&
+							Boolean(
+								row.externalBotId || row.externalBotUsername || row.activeCredentialRevisionId,
+							),
+					) ?? null)
+				: null;
 
 		const installationLink = activeInst ? (linkByInstallationId.get(activeInst.id) ?? null) : null;
 		const installationConv = activeInst
@@ -1574,7 +1610,26 @@ export async function getMemberChatLinks(
 						: legacyTelegramBot.botDisplayName
 					: null;
 
-		const available = Boolean(activeInst) || Boolean(remediationInst) || providerVerificationFailed;
+		const candidateLink = candidateInst
+			? (candidateLinkByInstallationId.get(candidateInst.id) ?? null)
+			: null;
+		const candidateEnrollment: MemberChatCandidateEnrollmentView | null = candidateInst
+			? {
+					installationId: candidateInst.id,
+					botUsername: candidateInst.externalBotUsername,
+					installationLabel: labelForInstallation(candidateInst),
+					status: candidateLink ? "enrolled" : "action_needed",
+					externalUsername: candidateLink?.externalUsername ?? null,
+					externalDisplayName: candidateLink?.externalDisplayName ?? null,
+					canGenerateLinkCode: !providerVerificationFailed,
+				}
+			: null;
+
+		const available =
+			Boolean(activeInst) ||
+			Boolean(remediationInst) ||
+			Boolean(candidateEnrollment) ||
+			providerVerificationFailed;
 
 		return {
 			provider,
@@ -1589,6 +1644,7 @@ export async function getMemberChatLinks(
 				provider === "telegram" && Boolean(activeInst) && !providerVerificationFailed,
 			canUnlink: Boolean(activeInst) && hasLiveLink,
 			recoveryHint: derived.recoveryHint,
+			...(candidateEnrollment ? { candidateEnrollment } : {}),
 		};
 	});
 
@@ -1635,6 +1691,48 @@ export async function issueMemberTelegramLinkCode(
 			installationId: target.id,
 			userId: input.userId,
 			purpose: "member_link",
+		},
+		deps,
+	);
+}
+
+/**
+ * Issues a short-lived, digest-only `candidate_enrollment` link proof bound to the
+ * organization's staged candidate Telegram bot so employees can enroll ahead of a switch
+ * without altering their current live Telegram link or delivery.
+ */
+export async function issueMemberTelegramCandidateLinkCode(
+	input: { userId: string; organizationId: string; installationId?: string },
+	deps?: ChatLinkRuntimeDeps,
+): Promise<IssueChatLinkProofResult> {
+	const db = deps?.db ?? defaultDb;
+
+	const conditions = [
+		eq(chatInstallation.organizationId, input.organizationId),
+		eq(chatInstallation.provider, "telegram"),
+		eq(chatInstallation.status, "candidate"),
+	];
+	if (input.installationId) {
+		conditions.push(eq(chatInstallation.id, input.installationId));
+	}
+
+	const [target] = await db
+		.select()
+		.from(chatInstallation)
+		.where(and(...conditions))
+		.orderBy(asc(chatInstallation.createdAt), asc(chatInstallation.id))
+		.limit(1);
+
+	if (!target) {
+		return { status: "installation_unavailable" };
+	}
+
+	return issueChatLinkProof(
+		{
+			organizationId: input.organizationId,
+			installationId: target.id,
+			userId: input.userId,
+			purpose: "candidate_enrollment",
 		},
 		deps,
 	);

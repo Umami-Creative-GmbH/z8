@@ -132,10 +132,15 @@ export interface ChatVerificationEvidence {
 	privateDeliveryChannelId?: string | null;
 	privateDeliveryExpiresAt?: string | null;
 	commandsRegisteredAt?: string | null;
+	commandsRevisionId?: string | null;
 	commandsRegisteredRevisionId?: string | null;
-	commandsRegistrationStatus?: "pending" | "registered" | "failed" | null;
+	commandsRegistrationStatus?: "pending" | "registered" | "passed" | "failed" | null;
+	commandsFailureCode?: string | null;
 	commandsRegistrationErrorCode?: string | null;
 	commandsRegistrationAttemptedAt?: string | null;
+	webhookRegisteredAt?: string | null;
+	webhookRegisteredRevisionId?: string | null;
+	webhookFailureCode?: string | null;
 	privateDeliveryErrorCode?: string | null;
 	privateDeliveryRecoveryHint?: string | null;
 	lastFailureStep?:
@@ -144,6 +149,8 @@ export interface ChatVerificationEvidence {
 		| "signed_event"
 		| "command_registration"
 		| "private_test"
+		| "webhook"
+		| "commands"
 		| null;
 	lastFailureCode?: string | null;
 	lastFailureAt?: string | null;

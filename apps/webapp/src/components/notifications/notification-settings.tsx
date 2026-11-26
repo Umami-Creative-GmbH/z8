@@ -393,6 +393,18 @@ function useNotificationSettingsViewModel() {
 		}
 	};
 
+	const handleGenerateTelegramCandidateCode = async (installationId: string) => {
+		try {
+			await chatLinks.generateTelegramCandidateCodeAsync(installationId);
+		} catch (error) {
+			toast.error(
+				error instanceof Error
+					? error.message
+					: t("settings.notifications.chatLinks.generateFailed", "Failed to generate link code"),
+			);
+		}
+	};
+
 	const handleUnlinkChatAccount = async (
 		provider: ChatInstallationProvider,
 		installationId?: string,
@@ -703,6 +715,7 @@ function useNotificationSettingsViewModel() {
 		getChannelDescription,
 		getChannelLabel,
 		getTypeLabel,
+		handleGenerateTelegramCandidateCode,
 		handleGenerateTelegramCode,
 		handleRequestPermission,
 		handleToggle,
@@ -734,6 +747,7 @@ function NotificationSettingsView({
 		getChannelDescription,
 		getChannelLabel,
 		getTypeLabel,
+		handleGenerateTelegramCandidateCode,
 		handleGenerateTelegramCode,
 		handleRequestPermission,
 		handleToggle,
@@ -881,6 +895,11 @@ function NotificationSettingsView({
 				generatedTelegramCode={chatLinks.generatedTelegramCode}
 				isGeneratingTelegramCode={chatLinks.isGeneratingTelegramCode}
 				onGenerateTelegramCode={() => void handleGenerateTelegramCode()}
+				generatedTelegramCandidateCode={chatLinks.generatedTelegramCandidateCode}
+				isGeneratingTelegramCandidateCode={chatLinks.isGeneratingTelegramCandidateCode}
+				onGenerateTelegramCandidateCode={(installationId) =>
+					void handleGenerateTelegramCandidateCode(installationId)
+				}
 				unlinkingProvider={chatLinks.unlinkingProvider}
 				onUnlink={(provider, installationId) =>
 					void handleUnlinkChatAccount(provider, installationId)

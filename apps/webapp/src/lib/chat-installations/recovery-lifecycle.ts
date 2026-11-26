@@ -571,7 +571,23 @@ export async function isCredentialRevisionReferenced(
 			),
 		)
 		.limit(1);
-	return Boolean(openDurableDispatch);
+	if (openDurableDispatch) return true;
+
+	// Keep the installation's credential revision available while a pending provider endpoint
+	// cleanup job (e.g. Telegram deleteWebhook) still needs the bot token.
+	const [pendingEndpointCleanup] = await db
+		.select({ id: chatInstallationCleanupJob.id })
+		.from(chatInstallationCleanupJob)
+		.where(
+			and(
+				eq(chatInstallationCleanupJob.organizationId, organizationId),
+				eq(chatInstallationCleanupJob.installationId, installationId),
+				eq(chatInstallationCleanupJob.kind, "provider_endpoint_cleanup"),
+				inArray(chatInstallationCleanupJob.status, ["pending", "processing"]),
+			),
+		)
+		.limit(1);
+	return Boolean(pendingEndpointCleanup);
 }
 
 function createDrizzleRecoveryRepository(db: ChatRecoveryDb): ChatRecoveryRepository {
@@ -1651,9 +1667,21 @@ export async function processChatInstallationCleanupJobs(
 
 			let providerResult: ProviderEndpointCleanupResult;
 			try {
-				providerResult = deps?.providerEndpointCleanup
-					? await deps.providerEndpointCleanup({ installation, job })
-					: { kind: "ok" };
+				if (deps?.providerEndpointCleanup) {
+					providerResult = await deps.providerEndpointCleanup({ installation, job });
+				} else if (installation.provider === "telegram") {
+					const { cleanupTelegramInstallationWebhook } = await import("./telegram-setup");
+					providerResult = await cleanupTelegramInstallationWebhook(
+						{ installation, job },
+						{
+							db: deps?.db,
+							revisionRepository: deps?.revisionRepository,
+							readSecret: deps?.readSecret,
+						},
+					);
+				} else {
+					providerResult = { kind: "ok" };
+				}
 			} catch (error) {
 				const isTimeout =
 					error instanceof Error &&
@@ -1870,7 +1898,24 @@ export async function beginChatInstallationRestore(
 		let reconciledAtIso: string | null = null;
 
 		if (installation.endpointState === "uncertain") {
-			if (!deps?.reconcileProviderEndpoint) {
+			let reconcileResult: ProviderEndpointReconcileResult;
+			if (deps?.reconcileProviderEndpoint) {
+				reconcileResult = await deps.reconcileProviderEndpoint({
+					installation,
+					targetGeneration: nextGeneration,
+				});
+			} else if (installation.provider === "telegram") {
+				const { reconcileTelegramInstallationWebhook } = await import("./telegram-setup");
+				reconcileResult = await reconcileTelegramInstallationWebhook(
+					{ installation, targetGeneration: nextGeneration },
+					{
+						db: deps?.db,
+						revisionRepository: deps?.revisionRepository,
+						readSecret: deps?.readSecret,
+						appUrl: deps?.appUrl,
+					},
+				);
+			} else {
 				return {
 					kind: "refused" as const,
 					code: "endpoint_reconciliation_required" as const,
@@ -1878,10 +1923,6 @@ export async function beginChatInstallationRestore(
 						"Provider endpoint state is uncertain after a timed-out cleanup. Re-read and reconcile the provider endpoint before restoring this installation.",
 				};
 			}
-			const reconcileResult = await deps.reconcileProviderEndpoint({
-				installation,
-				targetGeneration: nextGeneration,
-			});
 			if (reconcileResult.kind !== "reconciled") {
 				return {
 					kind: "refused" as const,

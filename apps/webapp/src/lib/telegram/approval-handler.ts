@@ -58,7 +58,12 @@ export async function handleApprovalCallback(
 	telegramUserId: string,
 	bot: ResolvedTelegramBot,
 ): Promise<string | undefined> {
-	const user = await resolveTelegramUser(telegramUserId, bot.organizationId);
+	const user = await resolveTelegramUser(
+		telegramUserId,
+		bot.organizationId,
+		undefined,
+		bot.installationId ? { installationId: bot.installationId } : undefined,
+	);
 	if (user.status !== "found") return undefined;
 	try {
 		// The attempt below records its outcome whether or not a card is edited afterwards.
@@ -200,7 +205,12 @@ export async function handleBoundApprovalCallback(
 	updateId: number | undefined,
 	bot: ResolvedTelegramBot,
 ): Promise<string | undefined> {
-	const user = await resolveTelegramUser(String(query.from.id), bot.organizationId);
+	const user = await resolveTelegramUser(
+		String(query.from.id),
+		bot.organizationId,
+		undefined,
+		bot.installationId ? { installationId: bot.installationId } : undefined,
+	);
 	if (user.status !== "found") return undefined;
 	const receiverScope = telegramReceiverScope(bot.botToken);
 	const deliveredBeforeDecision =

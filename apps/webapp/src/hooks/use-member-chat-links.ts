@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
 	type GeneratedMemberLinkCode,
+	generateMemberTelegramCandidateLinkCode,
 	generateMemberTelegramLinkCode,
 	getMemberChatLinksAction,
 	unlinkMemberChatAccount,
@@ -26,6 +27,8 @@ export function useMemberChatLinks() {
 	const activeOrganizationId = session?.session?.activeOrganizationId ?? null;
 	const chatLinksQueryKey = queryKeys.notifications.chatLinks(userId, activeOrganizationId);
 	const [generatedTelegramCode, setGeneratedTelegramCode] =
+		useState<GeneratedMemberLinkCode | null>(null);
+	const [generatedTelegramCandidateCode, setGeneratedTelegramCandidateCode] =
 		useState<GeneratedMemberLinkCode | null>(null);
 	const [unlinkingProvider, setUnlinkingProvider] = useState<ChatInstallationProvider | null>(null);
 
@@ -54,6 +57,19 @@ export function useMemberChatLinks() {
 		},
 		onSuccess: (generated) => {
 			setGeneratedTelegramCode(generated);
+		},
+	});
+
+	const generateTelegramCandidateCodeMutation = useMutation({
+		mutationFn: async (installationId: string) => {
+			const result = await generateMemberTelegramCandidateLinkCode({ installationId });
+			if (!result.success) {
+				throw new Error(result.error);
+			}
+			return result.data;
+		},
+		onSuccess: (generated) => {
+			setGeneratedTelegramCandidateCode(generated);
 		},
 	});
 
@@ -91,6 +107,9 @@ export function useMemberChatLinks() {
 		clearGeneratedTelegramCode: () => setGeneratedTelegramCode(null),
 		generateTelegramCodeAsync: generateTelegramCodeMutation.mutateAsync,
 		isGeneratingTelegramCode: generateTelegramCodeMutation.isPending,
+		generatedTelegramCandidateCode,
+		generateTelegramCandidateCodeAsync: generateTelegramCandidateCodeMutation.mutateAsync,
+		isGeneratingTelegramCandidateCode: generateTelegramCandidateCodeMutation.isPending,
 		unlinkAccountAsync: unlinkMutation.mutateAsync,
 		unlinkingProvider,
 	};

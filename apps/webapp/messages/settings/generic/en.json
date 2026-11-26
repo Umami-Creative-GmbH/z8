@@ -2899,6 +2899,7 @@
         "expiresInMinutes": "Expires in {minutes} min",
         "generateCode": "Generate link code",
         "generateFailed": "Failed to generate link code",
+        "generateReplacementCode": "Link replacement bot",
         "hints": {
           "linkRequired": "Link your account in this chat app to receive notifications and use commands.",
           "remediation": "Your organization's connection needs attention from an administrator before status can be verified.",
@@ -2909,6 +2910,11 @@
         "linkedAs": "Linked as {identity}",
         "loadFailed": "We couldn't verify your chat connections right now. Your notification preferences below remain available.",
         "openTelegramBot": "Open @{botUsername}",
+        "replacementEnrolled": "Enrolled",
+        "replacementTelegramEnrolledHint": "You are enrolled for the replacement bot. Your current live Telegram link stays active until your admin completes the switch.",
+        "replacementTelegramHint": "Start and link the replacement Telegram bot ahead of the switch. Your current Telegram notifications stay uninterrupted until the switch.",
+        "replacementTelegramInstructions": "Open the replacement bot in Telegram and send this one-time command:",
+        "replacementTelegramTitle": "Replacement Telegram bot staged",
         "status": {
           "actionNeeded": "Action needed",
           "connected": "Connected",

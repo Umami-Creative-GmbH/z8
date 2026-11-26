@@ -3,6 +3,8 @@
  *
  * Sends daily summary messages to managers via Telegram at their configured time.
  * Reuses the shared buildDigestDataForManager from the Teams implementation.
+ * Integrates with the durable chat notification dispatch ledger (#2044 / #2047) so
+ * uncertain outcomes across a bot switch quarantine without automatic repeat.
  */
 
 import { Temporal } from "temporal-polyfill";
@@ -11,18 +13,16 @@ import { env } from "@/env";
 import { currentRosterDigestManager } from "@/lib/bot-platform/current-roster-team";
 import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import type { DailyDigestData } from "@/lib/bot-platform/types";
+import { extractRedactedErrorDiagnostics } from "@/lib/chat-installations/durable-dispatch";
 import { createLogger } from "@/lib/logger";
 import { resolveRecipientDisplayContext } from "@/lib/notifications/recipient-display-context";
 import { shouldSkipDigestForManager } from "@/lib/teams/jobs/daily-digest";
-import { sendMessage } from "../api";
+import * as telegramApi from "../api";
 import { getAllActiveBotConfigs } from "../bot-config";
 import { getOrganizationPrivateConversations } from "../conversation-manager";
 import { buildDailyDigestMessage } from "../formatters";
-import {
-	claimTelegramDigestDelivery,
-	markTelegramDigestDeliveryFailed,
-	markTelegramDigestDeliverySent,
-} from "./digest-delivery-ledger";
+import type { TelegramMessage } from "../types";
+import * as digestLedger from "./digest-delivery-ledger";
 import { evaluateDigestOccurrence } from "./digest-schedule";
 
 const logger = createLogger("TelegramDailyDigest");
@@ -84,10 +84,44 @@ export async function runTelegramDailyDigestJob(): Promise<TelegramDailyDigestRe
 
 type TelegramDigestBot = {
 	organizationId: string;
+	installationId?: string | null;
+	credentialRevisionId?: string | null;
 	botToken: string;
 	digestTime: string;
 	digestTimezone: string;
 };
+
+function isConfirmedUnsentTelegramError(errorCode: number | null): boolean {
+	// Telegram 4xx rejections (bad request, unauthorized, forbidden/bot blocked, not found)
+	// confirm the message was NOT delivered before acceptance.
+	return errorCode !== null && errorCode >= 400 && errorCode < 500 && errorCode !== 429;
+}
+
+async function sendDigestMessage(
+	botToken: string,
+	chatId: string,
+	text: string,
+): Promise<telegramApi.TelegramCallOutcome<TelegramMessage>> {
+	if (
+		"sendMessageWithOutcome" in telegramApi &&
+		typeof telegramApi.sendMessageWithOutcome === "function"
+	) {
+		return telegramApi.sendMessageWithOutcome(botToken, {
+			chat_id: chatId,
+			text,
+			parse_mode: "MarkdownV2",
+		});
+	}
+	const result = await telegramApi.sendMessage(botToken, {
+		chat_id: chatId,
+		text,
+		parse_mode: "MarkdownV2",
+	});
+	if (result) {
+		return { kind: "ok", result };
+	}
+	return { kind: "unknown", reason: "invalid_response" };
+}
 
 export async function processTelegramBotDigest(
 	bot: TelegramDigestBot,
@@ -103,7 +137,13 @@ export async function processTelegramBotDigest(
 		return 0;
 	}
 
-	const conversations = await getOrganizationPrivateConversations(bot.organizationId);
+	const conversations =
+		bot.installationId || bot.credentialRevisionId
+			? await getOrganizationPrivateConversations(bot.organizationId, {
+					installationId: bot.installationId,
+					credentialRevisionId: bot.credentialRevisionId,
+				})
+			: await getOrganizationPrivateConversations(bot.organizationId);
 	if (conversations.length === 0) return 0;
 
 	const appUrl = env.APP_URL || "https://z8-time.app";
@@ -115,6 +155,10 @@ export async function processTelegramBotDigest(
 		organizationId: bot.organizationId,
 		userIds: conversations.map((conv) => conv.userId),
 	});
+
+	const useDurableLedger =
+		"beginTelegramDigestDispatch" in digestLedger &&
+		typeof digestLedger.beginTelegramDigestDispatch === "function";
 
 	const results = await Promise.allSettled(
 		conversations.map(async (conv) => {
@@ -148,8 +192,57 @@ export async function processTelegramBotDigest(
 					recipientUserId: conv.userId,
 					logicalDate: recipientDate,
 				};
-				if (!(await claimTelegramDigestDelivery(delivery))) return false;
 
+				if (!useDurableLedger) {
+					if (!(await digestLedger.claimTelegramDigestDelivery(delivery))) return false;
+					try {
+						const digestData: DailyDigestData = await buildDigestDataForManager(
+							emp.id,
+							bot.organizationId,
+							display.timezone,
+							display.locale,
+							await complianceScopes.of({ userId: conv.userId, employeeId: emp.id }),
+						);
+						const t = await getBotTranslate(display.locale);
+						const messageText = buildDailyDigestMessage(digestData, appUrl, t, display.locale);
+						await telegramApi.sendMessage(bot.botToken, {
+							chat_id: conv.chatId,
+							text: messageText,
+							parse_mode: "MarkdownV2",
+						});
+					} catch (error) {
+						await digestLedger.markTelegramDigestDeliveryFailed(delivery);
+						throw error;
+					}
+					await digestLedger.markTelegramDigestDeliverySent(delivery);
+					return true;
+				}
+
+				const dispatch = await digestLedger.beginTelegramDigestDispatch(
+					delivery,
+					{
+						installationId: bot.installationId ?? null,
+						credentialRevisionId: bot.credentialRevisionId ?? null,
+					},
+					{ now: () => now },
+				);
+
+				if (dispatch.kind !== "proceed") {
+					if (dispatch.kind === "reconciliation_required") {
+						logger.warn(
+							{
+								organizationId: bot.organizationId,
+								attemptId: dispatch.attempt.id,
+								installationSwitched: dispatch.installationSwitched,
+							},
+							"Skipping Telegram daily digest due to uncertain prior dispatch requiring reconciliation",
+						);
+					}
+					return false;
+				}
+
+				const attemptId = dispatch.attempt.id;
+				let messageText: string;
 				try {
 					const digestData: DailyDigestData = await buildDigestDataForManager(
 						emp.id,
@@ -158,23 +251,80 @@ export async function processTelegramBotDigest(
 						display.locale,
 						await complianceScopes.of({ userId: conv.userId, employeeId: emp.id }),
 					);
-
 					const t = await getBotTranslate(display.locale);
-					const messageText = buildDailyDigestMessage(digestData, appUrl, t, display.locale);
-
-					await sendMessage(bot.botToken, {
-						chat_id: conv.chatId,
-						text: messageText,
-						parse_mode: "MarkdownV2",
-					});
+					messageText = buildDailyDigestMessage(digestData, appUrl, t, display.locale);
 				} catch (error) {
-					await markTelegramDigestDeliveryFailed(delivery);
+					// Failed before calling Telegram -> confirmed unsent so retries can safely proceed.
+					await digestLedger.completeTelegramDigestDispatchConfirmedUnsent(
+						delivery,
+						attemptId,
+						extractRedactedErrorDiagnostics(error, "telegram_digest_preflight_failed"),
+						{ now: () => now },
+					);
 					throw error;
 				}
 
-				await markTelegramDigestDeliverySent(delivery);
+				await digestLedger.markTelegramDigestProviderCalled(bot.organizationId, attemptId, {
+					now: () => now,
+				});
 
-				return true;
+				let outcome: telegramApi.TelegramCallOutcome<TelegramMessage>;
+				try {
+					outcome = await sendDigestMessage(bot.botToken, conv.chatId, messageText);
+				} catch (error) {
+					await digestLedger.completeTelegramDigestDispatchUncertain(
+						delivery,
+						attemptId,
+						{
+							classification: "provider_error",
+							diagnostics: extractRedactedErrorDiagnostics(
+								error,
+								"telegram_digest_provider_call_uncertain",
+							),
+						},
+						{ now: () => now },
+					);
+					throw error;
+				}
+
+				if (outcome.kind === "ok") {
+					await digestLedger.completeTelegramDigestDispatchSent(delivery, attemptId, {
+						now: () => now,
+					});
+					return true;
+				}
+
+				if (outcome.kind === "failed" && isConfirmedUnsentTelegramError(outcome.errorCode)) {
+					await digestLedger.completeTelegramDigestDispatchConfirmedUnsent(
+						delivery,
+						attemptId,
+						{
+							reason: "telegram_confirmed_unsent",
+							httpStatus: outcome.errorCode,
+							errorCode: `telegram_${outcome.errorCode}`,
+						},
+						{ now: () => now },
+					);
+					return false;
+				}
+
+				// Timeout, network disconnect, 429/5xx, or invalid response -> uncertain!
+				await digestLedger.completeTelegramDigestDispatchUncertain(
+					delivery,
+					attemptId,
+					{
+						classification: outcome.kind === "unknown" ? "ambiguous" : "provider_error",
+						diagnostics: {
+							reason:
+								outcome.kind === "unknown"
+									? `telegram_${outcome.reason}`
+									: `telegram_${outcome.errorCode ?? "error"}`,
+							httpStatus: outcome.kind === "failed" ? outcome.errorCode : null,
+						},
+					},
+					{ now: () => now },
+				);
+				return false;
 			} catch (error) {
 				logger.warn({ error, userId: conv.userId }, "Failed to send digest");
 				return false;
