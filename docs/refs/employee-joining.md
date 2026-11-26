@@ -43,7 +43,7 @@ sign-ins (`lib/auth/sso-organization-provisioning.ts`) and kiosk-only employees
 
 | Outcome | When | What joining writes |
 | --- | --- | --- |
-| `joined` | The user has no employee in the organization | A new employee, team placement, first terms and personnel number from the draft, the organization-wide team permissions for an owner or admin membership |
+| `joined` | The user has no employee in the organization | A new employee and their first open employment period, team placement, first terms and personnel number from the draft, the organization-wide team permissions for an owner or admin membership |
 | `reactivated` | The employee was switched off and is back on the current roster after `reactivateOnReturn` | The draft's values (or the admin role for an owner or admin membership), placement, first terms, team permissions |
 | `already_current` | The employee is on the current roster | Nothing: not the role, the team or permissions. A draft is discarded with the same audit entry (`employee.invitation_draft_not_applied`, reason `employee_already_current`) |
 | `membership_only` | A former employee whose departure took effect | Nothing else. The draft is discarded with an audit entry saying it was not applied. Only a rehire brings them back |
@@ -51,6 +51,16 @@ sign-ins (`lib/auth/sso-organization-provisioning.ts`) and kiosk-only employees
 The role rule: a new employee takes the draft's role when there is a draft, otherwise admin for an owner
 or admin membership, otherwise employee. A reactivated employee takes the draft's values when there is a
 draft, otherwise admin for an owner or admin membership, otherwise keeps the old role.
+
+Joining ensures that every new employee or External Contractor has one open employment
+period before the membership transaction commits, including when the draft has no terms.
+The period takes the employee's engagement kind. The first-period rules use the stored start
+date or earliest confirmed employment terms when available and leave the start unknown
+otherwise. Migration `0338_backfill_current_employment_periods` applies these same rules
+to people on the current roster who have no period. It skips employees with any period,
+so it can be rerun without changing existing periods or departure history.
+If a rolling deployment lets the previous webapp accept invitations after the migration
+starts, rerun the repair SQL after the replacement webapp has taken over.
 
 ## External Contractors
 

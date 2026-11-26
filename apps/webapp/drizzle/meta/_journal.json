@@ -2367,6 +2367,13 @@
       "when": 1813852800000,
       "tag": "0337_jarbschg_minor_contractors",
       "breakpoints": true
+    },
+    {
+      "idx": 338,
+      "version": "7",
+      "when": 1813939200000,
+      "tag": "0338_backfill_current_employment_periods",
+      "breakpoints": true
     }
   ]
 }

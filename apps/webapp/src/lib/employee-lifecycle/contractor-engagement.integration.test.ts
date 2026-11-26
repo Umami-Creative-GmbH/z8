@@ -346,10 +346,6 @@ describe("external contractor engagement kind (#1995)", () => {
 				},
 				projects: [projectId],
 			});
-			await fixture.pool.query("select employee_employment_period_backfill_legacy($1, $2::uuid)", [
-				fixture.organizationId,
-				employeeId,
-			]);
 			expect((await engagementOf(employeeId)).periods).toEqual([
 				expect.objectContaining({ status: "open", engagement_kind: "contractor" }),
 			]);
