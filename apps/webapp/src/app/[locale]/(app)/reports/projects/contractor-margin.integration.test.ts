@@ -11,6 +11,12 @@
 
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { exportReportDocumentToCSV } from "@/lib/reports/exporters/report-document-csv";
+import {
+	buildCustomerReportDocument,
+	buildProjectReportDocument,
+	DEFAULT_PROJECT_REPORT_EXPORT_LABELS,
+} from "@/lib/reports/project-report-export";
 import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 
@@ -68,6 +74,7 @@ vi.mock("@/lib/logger", () => ({
 
 const { getCustomerBillableReport, getProjectDetailedReport, getProjectsOverview } =
 	await import("./actions");
+const { createReportShareLink } = await import("./share-actions");
 
 const ORG = "t1999-org";
 const OTHER_ORG = "t1999-other-org";
@@ -643,41 +650,120 @@ describe("contractor cost in Billable Time margin on PostgreSQL", () => {
 		expect(report.summary.billable).toMatchObject({ cost: null, costUnknownWorkCount: 1 });
 	});
 
-	it("never prices rejected work and prices work awaiting approval as recorded", async () => {
+	it("excludes rejected work and keeps pending work in reports, exports and new snapshots", async () => {
 		const periodId = await contractor(ids.reviewed);
 		await terms(ids.reviewed, periodId, { basis: "daily", rate: "600", rule: "any_work_full_day" });
-		const day = { employeeId: ids.reviewed };
+		await admin.query(
+			`insert into cost_rate (organization_id, employee_id, hourly_rate, effective_from)
+			 values ($1, $2, 50.00, '2026-01-01')`,
+			[ORG, ids.pm],
+		);
+		const day = "2026-03-10";
+		const range = { fromDay: day, toDay: day };
 		await work({
-			...day,
+			employeeId: ids.reviewed,
 			projectId: ids.website,
-			start: "2026-03-10T08:00:00Z",
-			end: "2026-03-10T10:00:00Z",
+			start: day + "T08:00:00Z",
+			end: day + "T10:00:00Z",
 		});
-		await work({
-			...day,
-			projectId: ids.support,
-			start: "2026-03-10T10:00:00Z",
-			end: "2026-03-10T11:00:00Z",
-			approvalStatus: "pending",
-		});
-		await work({
-			...day,
-			projectId: ids.website,
-			start: "2026-03-10T11:00:00Z",
-			end: "2026-03-10T12:00:00Z",
-			approvalStatus: "rejected",
-		});
+		for (const employeeId of [ids.reviewed, ids.pm]) {
+			await work({
+				employeeId,
+				projectId: ids.support,
+				start: day + "T10:00:00Z",
+				end: day + "T11:00:00Z",
+				approvalStatus: "pending",
+			});
+		}
 		actAs(ids.owner);
-		const support = await costsByEmployee(ids.support);
-		const report = await unwrap(getProjectDetailedReport(ids.website, fromDay, toDay));
-		const website = await costsByEmployee(ids.website);
 
-		// The day's fee is shared by the 3 h of approved and pending work (not 4 h with the
-		// rejected hour): the pending hour carries 200.00.
-		expect(support[ids.reviewed]).toEqual({ revenue: "80.00", cost: "200.00", margin: "-120.00" });
-		// The rejected hour gets no share of the fee: its cost is unknown, never priced.
-		expect(website[ids.reviewed]).toMatchObject({ cost: null, margin: null });
-		expect(report.summary.billable).toMatchObject({ cost: null, costUnknownWorkCount: 1 });
+		const context = { labels: DEFAULT_PROJECT_REPORT_EXPORT_LABELS, generatedAt: "now" };
+		const reports = async () => {
+			const project = await unwrap(getProjectDetailedReport(ids.website, day, day));
+			const customer = await unwrap(getCustomerBillableReport(day, day));
+			const overview = await unwrap(getProjectsOverview(day, day));
+			return {
+				project,
+				customer,
+				overview,
+				exports: [
+					exportReportDocumentToCSV(buildProjectReportDocument(project, context)),
+					exportReportDocumentToCSV(buildCustomerReportDocument(customer, context)),
+				].map((csv) => csv.replace(/^Rates as of,.*$/m, "Rates as of,now")),
+			};
+		};
+		const readSnapshot = async (id: string) => {
+			const { rows } = await admin.query(
+				"select snapshot from report_share_link where id = $1 and organization_id = $2",
+				[id, ORG],
+			);
+			return rows[0].snapshot;
+		};
+		const shareOptions = { ...range, figures: "revenue", locale: "en" } as const;
+		const snapshots = async () => {
+			const project = await unwrap(
+				createReportShareLink({
+					...shareOptions,
+					kind: "project",
+					projectId: ids.website,
+				}),
+			);
+			const customer = await unwrap(
+				createReportShareLink({
+					...shareOptions,
+					kind: "customer",
+					customerId: ids.customer,
+				}),
+			);
+			return {
+				projectId: project.id,
+				customerId: customer.id,
+				project: await readSnapshot(project.id),
+				customer: await readSnapshot(customer.id),
+			};
+		};
+		const baseline = await reports();
+		const frozen = await snapshots();
+
+		for (const employeeId of [ids.reviewed, ids.pm]) {
+			await work({
+				employeeId,
+				projectId: ids.website,
+				start: day + "T11:00:00Z",
+				end: day + "T12:00:00Z",
+				approvalStatus: "rejected",
+			});
+		}
+
+		const { project, customer, overview, exports } = await reports();
+		// The contractor's 600.00 daily fee is split across two approved hours
+		// and one pending hour. The employee's pending hour costs 50.00.
+		const website = {
+			revenue: "200.00",
+			cost: "400.00",
+			margin: "-200.00",
+			costUnknownWorkCount: 0,
+		};
+		const support = {
+			revenue: "160.00",
+			cost: "250.00",
+			margin: "-90.00",
+			costUnknownWorkCount: 0,
+		};
+		const total = { revenue: "360.00", cost: "650.00", margin: "-290.00", costUnknownWorkCount: 0 };
+		expect(project.summary.billable).toMatchObject(website);
+		expect(overview.projects.find((row) => row.id === ids.support)?.billable).toMatchObject(
+			support,
+		);
+		expect(overview.totals.billable).toMatchObject(total);
+		expect(customer.customers[0]?.billable).toMatchObject(total);
+		expect(exports).toEqual(baseline.exports);
+
+		const shared = await snapshots();
+		expect(shared.project.summary.billable).toMatchObject({ revenue: website.revenue });
+		expect(shared.customer.customer.billable).toMatchObject({ revenue: total.revenue });
+		expect(await readSnapshot(frozen.projectId)).toEqual(frozen.project);
+		expect(await readSnapshot(frozen.customerId)).toEqual(frozen.customer);
 	});
 
 	it("rolls a known project cost up from the contractors' allocated fees", async () => {

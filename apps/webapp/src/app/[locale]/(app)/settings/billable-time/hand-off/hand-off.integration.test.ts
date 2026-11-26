@@ -210,7 +210,7 @@ describe("hand-off on PostgreSQL", () => {
 		minutes?: number;
 		billable?: boolean;
 		deleted?: boolean;
-		pending?: boolean;
+		approvalStatus?: "approved" | "pending" | "rejected";
 		employeeId?: string;
 		organizationId?: string;
 		/** The UTC offset both entries record (default 0). */
@@ -259,7 +259,7 @@ describe("hand-off on PostgreSQL", () => {
 					options.end ?? null,
 					options.minutes ?? null,
 					!options.end,
-					options.pending ? "pending" : "approved",
+					options.approvalStatus ?? "approved",
 					options.deleted ? "2026-09-20T00:00:00Z" : null,
 					options.deleted ? ids.ownerUser : null,
 				],
@@ -467,7 +467,7 @@ describe("hand-off on PostgreSQL", () => {
 			start: "2026-09-04T08:00:00Z",
 			end: "2026-09-04T09:00:00Z",
 			minutes: 60,
-			pending: true,
+			approvalStatus: "pending",
 		});
 		work.deleted = await addWork({
 			projectId: ids.website,
@@ -512,7 +512,14 @@ describe("hand-off on PostgreSQL", () => {
 
 	afterAll(cleanup);
 
-	it("previews lines per project and rate, and confirm creates exactly one draft that sums to it", async () => {
+	it("previews and freezes eligible lines per project and rate in one draft", async () => {
+		await addWork({
+			projectId: ids.website,
+			start: "2026-09-04T10:00:00Z",
+			end: "2026-09-04T11:00:00Z",
+			minutes: 60,
+			approvalStatus: "rejected",
+		});
 		const shown = await preview();
 
 		expect(shown.blockers).toEqual([]);
@@ -582,7 +589,7 @@ describe("hand-off on PostgreSQL", () => {
 				net_total: "237.21",
 			}),
 		]);
-		// Held-back, deleted, live, non-billable, customerless and out-of-period work never lands in it.
+		// Only the eligible work appears in the frozen draft.
 		expect((await invoiced()).map((row) => row.work_period_id)).toEqual([
 			work.website,
 			work.app,
@@ -1106,6 +1113,39 @@ describe("hand-off on PostgreSQL", () => {
 			moving.release();
 		}
 		expect(await invoiced()).toEqual([]);
+	});
+
+	it("refuses confirmation when work is rejected while it waits to reserve it", async () => {
+		const shown = await preview({ projectIds: [ids.website] });
+		const rejecting = await admin.connect();
+		try {
+			await rejecting.query("begin");
+			await rejecting.query(
+				"update time_record set approval_state = 'rejected' where id = $1 and organization_id = $2",
+				[work.website, ids.organization],
+			);
+			await rejecting.query(
+				"update work_period set approval_status = 'rejected' where id = $1 and organization_id = $2",
+				[work.website, ids.organization],
+			);
+			const confirming = confirmHandOffAction({
+				...september,
+				projectIds: [ids.website],
+				idempotencyKey: randomUUID(),
+				fingerprint: shown.fingerprint,
+			});
+			await waitForRowLockWaiter();
+			await rejecting.query("commit");
+
+			await expect(confirming).resolves.toMatchObject({
+				success: false,
+				error: "The work changed since the preview. Review the new preview before handing off",
+			});
+		} finally {
+			await rejecting.query("rollback").catch(() => undefined);
+			rejecting.release();
+		}
+		expect(await drafts()).toEqual([]);
 	});
 
 	describe("resolving changed-after-invoicing marks (#1499)", () => {
