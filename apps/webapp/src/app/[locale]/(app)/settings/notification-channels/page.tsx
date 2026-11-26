@@ -19,6 +19,8 @@ import {
 	updateTeamsNotificationChannelSettings,
 } from "./actions";
 import { ChatInstallationInventoryPanel } from "./chat-installation-inventory-panel";
+import { getDiscordLifecycleState } from "./discord-lifecycle-actions";
+import { DiscordLifecycleSection } from "./discord-lifecycle-section";
 import { getSlackRecoveryState } from "./recovery-actions";
 import { SlackPrepareTestSection } from "./slack-prepare-test-section";
 import { SlackRecoverySection } from "./slack-recovery-section";
@@ -50,6 +52,7 @@ async function ChatSettingsContent() {
 			teamsCapabilities,
 			telegramCapabilities,
 			discordCapabilities,
+			discordLifecycle,
 		],
 	] = await Promise.all([
 		access,
@@ -68,6 +71,7 @@ async function ChatSettingsContent() {
 				getProviderCapabilityDisclosure({ provider: "teams" }),
 				getProviderCapabilityDisclosure({ provider: "telegram" }),
 				getProviderCapabilityDisclosure({ provider: "discord" }),
+				getDiscordLifecycleState(),
 			]),
 		),
 	]);
@@ -77,6 +81,7 @@ async function ChatSettingsContent() {
 	const teamsCandidateData = teamsCandidate.success ? teamsCandidate.data : null;
 	const slackSwitchPreviewData = slackSwitchPreview.success ? slackSwitchPreview.data : null;
 	const slackRecoveryData = slackRecovery.success ? slackRecovery.data : null;
+	const discordLifecycleData = discordLifecycle.success ? discordLifecycle.data : null;
 
 	return (
 		<SettingsTabbedPage
@@ -204,6 +209,7 @@ async function ChatSettingsContent() {
 								channelName="Discord"
 								disclosure={discordCapabilities.success ? discordCapabilities.data : null}
 							/>
+							<DiscordLifecycleSection initialState={discordLifecycleData} />
 							<DiscordChannelSettings
 								config={discord.success ? discord.data : null}
 								updateAction={updateDiscordNotificationChannelSettings}

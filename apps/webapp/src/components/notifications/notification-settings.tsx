@@ -41,6 +41,7 @@ import {
 } from "@/lib/notifications/types";
 import type { ClockingReminderType } from "@/lib/time-tracking/clocking-reminders/occasion";
 import { ChatConnectionsCard } from "./chat-connections-card";
+import { DiscordMemberLinkCard } from "./discord-member-link-card";
 import { PushPermissionModal } from "./push-permission-modal";
 
 // Group notification types by category for better UX
@@ -885,6 +886,8 @@ function NotificationSettingsView({
 					void handleUnlinkChatAccount(provider, installationId)
 				}
 			/>
+
+			<DiscordMemberLinkCard />
 
 			{/* Channel legend */}
 			<div className="flex flex-wrap gap-4 text-sm text-muted-foreground">

@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { discordBotConfig } from "@/db/schema";
+import { chatInstallationMemberLink, discordBotConfig } from "@/db/schema";
 import {
 	type ChatInstallationOriginRecord,
 	findActiveInstallationConversation,
@@ -13,7 +13,7 @@ import type {
 } from "@/lib/approvals/delivery/owner";
 import { prepareApprovalPresentation } from "@/lib/approvals/presentation";
 import { discordApprovalNotice } from "@/lib/bot-platform/approval-notice";
-import { editMessageWithOutcome, sendMessageWithOutcome } from "./api";
+import { editMessageWithOutcome, openDMChannelWithOutcome, sendMessageWithOutcome } from "./api";
 import { discordActionableCard, fitsDiscordMessage } from "./approval-card";
 import { getBotConfigByOrganization } from "./bot-config";
 import { discordReceiverScope } from "./bound-approval";
@@ -123,7 +123,11 @@ export const discordApprovalDeliveryAdapter: ApprovalDeliveryAdapter = {
 				userId: input.recipientUserId,
 				conversationTypes: ["private", "dm"],
 			});
-			if (installationConversation?.externalConversationId) {
+			if (
+				installationConversation?.externalConversationId &&
+				installationConversation.reachabilityStatus === "reachable" &&
+				/^\d+$/.test(installationConversation.externalConversationId)
+			) {
 				dmChannelId = installationConversation.externalConversationId;
 			} else if (target.legacyTable === "discord_bot_config") {
 				const channel = await resolveApprovalDMChannel(
@@ -142,7 +146,30 @@ export const discordApprovalDeliveryAdapter: ApprovalDeliveryAdapter = {
 				}
 				dmChannelId = channel.result;
 			} else {
-				return { kind: "failed", outcome: "destination_invalid", reason: "destination_missing" };
+				const [memberLink] = await db
+					.select({ externalUserId: chatInstallationMemberLink.externalUserId })
+					.from(chatInstallationMemberLink)
+					.where(
+						and(
+							eq(chatInstallationMemberLink.organizationId, input.organizationId),
+							eq(chatInstallationMemberLink.installationId, target.id),
+							eq(chatInstallationMemberLink.userId, input.recipientUserId),
+							eq(chatInstallationMemberLink.isCandidateEnrollment, false),
+							eq(chatInstallationMemberLink.isActive, true),
+						),
+					)
+					.limit(1);
+				if (!memberLink) {
+					return { kind: "failed", outcome: "destination_invalid", reason: "destination_missing" };
+				}
+				const opened = await openDMChannelWithOutcome(botToken, memberLink.externalUserId);
+				if (opened.kind !== "ok") {
+					const failed = failure(opened, "send");
+					return typeof failed === "string"
+						? { kind: "failed", outcome: "permanent", reason: failed }
+						: failed;
+				}
+				dmChannelId = opened.result;
 			}
 		} else {
 			const bot = await getBotConfigByOrganization(input.organizationId);

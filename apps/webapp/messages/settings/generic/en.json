@@ -2966,7 +2966,30 @@
       "timeout": "Timeout",
       "timeoutInvalid": "Enter a whole number of hours from 1 to 168.",
       "timezone": "Timezone",
-      "title": "Notification Settings"
+      "title": "Notification Settings",
+      "discordLink": {
+        "title": "Discord direct message linking",
+        "description": "Link your Discord account and verify that Discord privacy controls allow direct messages from Z8.",
+        "currentBot": "Current Discord bot",
+        "replacementBot": "Upcoming replacement Discord bot",
+        "connected": "Connected",
+        "actionNeeded": "Action needed",
+        "linkedAs": "Linked as {username}",
+        "verifyDmButton": "Verify DM delivery",
+        "generateCode": "Generate link code",
+        "unlink": "Unlink",
+        "recoveryShareServer": "Z8 could not open a Discord DM because you do not share a server with this bot. Join a shared server with the bot, enable Direct Messages for that server, and click Verify DM delivery.",
+        "recoveryEnableDms": "Discord privacy settings blocked direct messages from this bot (error 50007). Open your Discord server Privacy Settings, enable Direct Messages, ensure the bot is not blocked, and click Verify DM delivery.",
+        "codeInstructions": "Run this one-time slash command with the Discord bot (Z8 will then verify direct message delivery):",
+        "copy": "Copy",
+        "checkStatus": "Check status",
+        "commandCopied": "Discord link command copied.",
+        "copyFailed": "Could not copy link command.",
+        "generateFailed": "Failed to generate Discord link code.",
+        "dmVerified": "Discord direct message delivery is verified.",
+        "dmRecheckFailed": "Could not verify Discord direct messages.",
+        "unlinked": "Discord account unlinked."
+      }
     },
     "organizations": {
       "description": "Manage organization details and configuration",

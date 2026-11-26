@@ -262,4 +262,45 @@ export {
 	type TeamsVerificationStepStatus,
 	type TeamsVerificationStepView,
 } from "./teams-setup";
+export {
+	type DiscordInstallationHttpRequestInput,
+	type DiscordInstallationHttpResponse,
+	type DiscordInstallationRouteDeps,
+	handleDiscordInstallationInteractionRequest,
+} from "./discord-installation-routes";
+export {
+	type DiscordMemberLinkDeps,
+	getMemberDiscordLinkState,
+	issueMemberDiscordLinkCode,
+	type MemberDiscordLaneStatus,
+	type MemberDiscordLinkState,
+	type RecheckMemberDiscordDmResult,
+	recheckMemberDiscordDmReachability,
+	type RedeemDiscordMemberLinkResult,
+	redeemDiscordMemberLinkCode,
+} from "./discord-member-link";
+export {
+	buildDiscordCandidateSetupView,
+	buildDiscordInteractionEndpointUrl,
+	computeDiscordCandidateSetupStatus,
+	type ConfigureDiscordCredentialsResult,
+	configureDiscordCandidateCredentials,
+	DISCORD_VERIFICATION_FRESHNESS_MS,
+	type DiscordCandidateInstallationRecord,
+	type DiscordCandidateSetupView,
+	type DiscordSetupAuditEvent,
+	type DiscordSetupRepository,
+	type DiscordSetupRuntimeDeps,
+	type DiscordVerificationStepStatus,
+	type DiscordVerificationStepView,
+	defaultSendDiscordPrivateDm,
+	getDiscordCandidateSetupView,
+	prepareDiscordCandidateInstallation,
+	type RetryDiscordCommandRegistrationResult,
+	retryDiscordCandidateCommandRegistration,
+	rotateDiscordInstallationCredentials,
+	type SendDiscordCandidatePrivateTestResult,
+	type SendDiscordPrivateDmResult,
+	sendDiscordCandidatePrivateTestMessage,
+} from "./discord-setup";
 export * from "./types";
