@@ -44,9 +44,6 @@ vi.mock("@/components/time-tracking/session-reminder-panel", () => ({
 vi.mock("@/components/compliance/exception-request-dialog", () => ({
 	ExceptionRequestDialog: () => null,
 }));
-vi.mock("@/components/driving-licence/operational-status", () => ({
-	DrivingAuthorizationAdvisory: () => null,
-}));
 // Vehicle use off; clock-vehicle-use.test.tsx covers the vehicle use the clock asks (#1122).
 vi.mock("@/components/time-tracking/clock-vehicle-use", async () =>
 	(await import("./clock-vehicle-use.test-stub")).vehicleUseOffModule(),
