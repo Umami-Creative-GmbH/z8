@@ -34,8 +34,22 @@ export interface ResolvedTenant {
 	tenantId: string;
 	tenantName: string | null;
 	organizationId: string;
-	/** Originating or active chat_installation.id when resolved via installations (#2043). */
+	/** Originating or active chat_installation.id when resolved via installations (#2043/#2050). */
 	installationId?: string | null;
+	/** Originating or active installation's Microsoft App ID (single-tenant org-owned or legacy). */
+	microsoftAppId?: string | null;
+	/** Active immutable credential revision ID for organization-owned Teams installations (#2050). */
+	credentialRevisionId?: string | null;
+	/** Current lifecycle status of the resolved installation (#2050). */
+	installationStatus?:
+		| "active"
+		| "legacy_active"
+		| "retiring"
+		| "revoked"
+		| "retired"
+		| "remediation_required";
+	/** Whether credentials are organization-owned or deployment-managed (#2050). */
+	credentialSource?: "organization_owned" | "deployment_managed";
 	setupStatus: string;
 	enableApprovals: boolean;
 	enableCommands: boolean;

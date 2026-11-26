@@ -1,9 +1,21 @@
 import { type Activity, type CloudAdapter, TurnContext } from "botbuilder";
-import type { db as defaultDb } from "@/db";
-import type { ChatVerificationEvidence } from "@/db/schema";
+import { and, eq } from "drizzle-orm";
+import { Temporal } from "temporal-polyfill";
+import { db as defaultDb } from "@/db";
+import {
+	type ChatVerificationEvidence,
+	chatInstallationConversation,
+	chatProviderSettings,
+} from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
+import { instantFromDate } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import { getTeamsInstallationBotAdapter } from "@/lib/teams/bot-adapter";
+import {
+	handleBotActivityForTenant,
+	type InstallationBotActivityHooks,
+} from "@/lib/teams/bot-handler";
+import type { ResolvedTenant } from "@/lib/teams/types";
 import { readInstallationCredentialRevision } from "./credential-revisions";
 import { isValidGuid } from "./legacy-analysis";
 import { redeemChatLinkProof } from "./member-links";
@@ -14,8 +26,19 @@ import {
 	type TeamsCandidateInstallationRecord,
 	type TeamsSetupRuntimeDeps,
 } from "./teams-setup";
+import type { ChatEffectiveSettings } from "./types";
 
 const logger = createLogger("TeamsCandidateRoutes");
+
+const DEFAULT_EFFECTIVE_SETTINGS: ChatEffectiveSettings = {
+	enableApprovals: true,
+	enableCommands: true,
+	enableDailyDigest: true,
+	enableEscalations: true,
+	digestTime: "08:00",
+	digestTimezone: "UTC",
+	escalationTimeoutHours: 24,
+};
 
 export interface TeamsCandidateMessageRequestInput {
 	routeId: string;
@@ -27,6 +50,15 @@ export interface TeamsCandidateMessageRequestInput {
 export interface TeamsCandidateHttpResponse {
 	status: number;
 	body: Record<string, unknown> | null;
+}
+
+export interface TeamsInstallationRouteDeps extends TeamsSetupRuntimeDeps {
+	loadEffectiveSettings?: (organizationId: string) => Promise<ChatEffectiveSettings>;
+	handleProductionActivity?: (
+		context: TurnContext,
+		tenant: ResolvedTenant,
+		hooks?: InstallationBotActivityHooks,
+	) => Promise<void>;
 }
 
 interface BotClaimsLike {
@@ -80,6 +112,58 @@ function stripBotMention(text: string, activity: Partial<Activity>): string {
 function extractCandidateLinkProofCode(text: string): string | null {
 	const match = /^(?:\/?link|\/?enroll)\s+([A-Za-z0-9-\s]+)$/i.exec(text.trim());
 	return match?.[1]?.trim() || null;
+}
+
+function isRetiringInstallationExpired(
+	installation: TeamsCandidateInstallationRecord,
+	now: Date,
+): boolean {
+	if (installation.revokedAt) return true;
+	if (installation.retiredAt) return true;
+	if (
+		installation.retirementDeadlineAt &&
+		Temporal.Instant.compare(
+			instantFromDate(installation.retirementDeadlineAt),
+			instantFromDate(now),
+		) <= 0
+	) {
+		return true;
+	}
+	return false;
+}
+
+async function loadAuthoritativeTeamsSettings(
+	organizationId: string,
+	deps?: TeamsInstallationRouteDeps,
+): Promise<ChatEffectiveSettings> {
+	if (deps?.loadEffectiveSettings) {
+		return deps.loadEffectiveSettings(organizationId);
+	}
+	const db = deps?.db ?? defaultDb;
+	const [row] = await db
+		.select()
+		.from(chatProviderSettings)
+		.where(
+			and(
+				eq(chatProviderSettings.organizationId, organizationId),
+				eq(chatProviderSettings.provider, "teams"),
+			),
+		)
+		.limit(1);
+
+	if (!row) {
+		return { ...DEFAULT_EFFECTIVE_SETTINGS };
+	}
+
+	return {
+		enableApprovals: row.enableApprovals,
+		enableCommands: row.enableCommands,
+		enableDailyDigest: row.enableDailyDigest,
+		enableEscalations: row.enableEscalations,
+		digestTime: row.digestTime,
+		digestTimezone: row.digestTimezone,
+		escalationTimeoutHours: row.escalationTimeoutHours,
+	};
 }
 
 async function recordInboundVerificationFailure(
@@ -145,26 +229,19 @@ export async function handleTeamsCandidateHealthRequest(
 }
 
 /**
- * Handles `POST /api/teams/installations/[routeId]/messages` for candidate single-tenant Teams apps.
- *
- * Security invariants:
- * - Resolves installation strictly by `routeId` (never global env vars).
- * - Requires Bot Framework JWT authentication through the installation+revision-scoped
- *   `SingleTenant` CloudAdapter; unsigned requests are rejected with `401`.
- * - Verifies authenticated `appId` AND `tenantId` match the candidate installation (`403` on mismatch).
- * - While `status === "candidate"`:
- *   - NEVER executes production commands, approval card actions, or live delivery.
- *   - Records fresh authenticated inbound verification proof and candidate-scoped personal
- *     conversation references in `chat_installation_conversation`.
- *   - Enrolls proven same-tenant Entra employees (`aadObjectId` verified in `(org, tenant)`)
- *     into the segregated candidate enrollment lane (`is_candidate_enrollment = true`).
- *   - Lets other employees redeem organization- and installation-bound link proofs
- *     (`purpose: "candidate_enrollment"`).
- *   - Never matches users by email or mutates legacy `teams_*` tables.
+ * Handles `POST /api/teams/installations/[routeId]/messages` across the full Teams
+ * installation lifecycle (#2049 + #2050):
+ * - `candidate`: strictly scoped to setup verification and segregated candidate enrollment.
+ * - `active`: full organization-owned Teams commands, proactive conversations, approval
+ *   cards, and member link redemption completely independent of deployment env vars.
+ * - `retiring` (before `retirementDeadlineAt` and not revoked): continues servicing
+ *   eligible old approval-card actions resolved to that originating installation under
+ *   current authorization; blocks new commands.
+ * - `revoked` / `retired`: immediately refuses local authorization (`403`).
  */
-export async function handleTeamsCandidateMessageRequest(
+export async function handleTeamsInstallationMessageRequest(
 	input: TeamsCandidateMessageRequestInput,
-	deps?: TeamsSetupRuntimeDeps,
+	deps?: TeamsInstallationRouteDeps,
 ): Promise<TeamsCandidateHttpResponse> {
 	const routeId = input.routeId.trim();
 	if (!routeId) {
@@ -177,10 +254,26 @@ export async function handleTeamsCandidateMessageRequest(
 		return { status: 404, body: { error: "Installation not found" } };
 	}
 
-	if (installation.status !== "candidate") {
+	const now = deps?.now ? deps.now() : new Date();
+
+	if (
+		installation.status !== "candidate" &&
+		installation.status !== "active" &&
+		installation.status !== "retiring"
+	) {
 		return {
 			status: 403,
-			body: { error: "This Teams endpoint is not accepting candidate setup traffic" },
+			body: { error: "This Teams installation has been revoked or retired." },
+		};
+	}
+
+	if (installation.status === "retiring" && isRetiringInstallationExpired(installation, now)) {
+		return {
+			status: 403,
+			body: {
+				error:
+					"This retiring Teams installation has expired or been revoked. Open Z8 to review pending approvals.",
+			},
 		};
 	}
 
@@ -191,7 +284,7 @@ export async function handleTeamsCandidateMessageRequest(
 	) {
 		return {
 			status: 401,
-			body: { error: "Candidate Teams credentials are not configured" },
+			body: { error: "Teams installation credentials are not configured" },
 		};
 	}
 
@@ -200,7 +293,7 @@ export async function handleTeamsCandidateMessageRequest(
 	if (!authHeader || !/^Bearer\s+\S+/i.test(authHeader)) {
 		logger.warn(
 			{ organizationId: installation.organizationId, installationId: installation.id },
-			"Rejected unsigned candidate Teams inbound request",
+			"Rejected unsigned Teams installation inbound request",
 		);
 		return {
 			status: 401,
@@ -231,13 +324,13 @@ export async function handleTeamsCandidateMessageRequest(
 	if (credentialResult.kind === "unavailable") {
 		logger.warn(
 			{ organizationId: installation.organizationId, installationId: installation.id },
-			"Secret store unavailable while authenticating candidate Teams activity",
+			"Secret store unavailable while authenticating Teams installation activity",
 		);
 		return { status: 503, body: { error: "Secret store unavailable" } };
 	}
 
 	if (credentialResult.kind !== "ok" || !credentialResult.secrets.microsoft_app_password) {
-		return { status: 401, body: { error: "Candidate Teams credentials are unavailable" } };
+		return { status: 401, body: { error: "Teams installation credentials are unavailable" } };
 	}
 
 	const getAdapter = deps?.getAdapter ?? getTeamsInstallationBotAdapter;
@@ -282,7 +375,6 @@ export async function handleTeamsCandidateMessageRequest(
 		setHeader() {},
 	};
 
-	const now = deps?.now ? deps.now() : new Date();
 	const ttlMs = deps?.verificationTtlMs ?? TEAMS_VERIFICATION_FRESHNESS_MS;
 	const expectedAppId = installation.externalAppId.trim().toLowerCase();
 	const expectedTenantId = installation.externalSpaceId.trim().toLowerCase();
@@ -301,10 +393,12 @@ export async function handleTeamsCandidateMessageRequest(
 			const effectiveAppId = claimAppId ?? recipientAppId;
 
 			if (!effectiveAppId || effectiveAppId !== expectedAppId) {
-				await recordInboundVerificationFailure(installation, "app_mismatch", now, deps);
+				if (installation.status === "candidate") {
+					await recordInboundVerificationFailure(installation, "app_mismatch", now, deps);
+				}
 				logger.warn(
 					{ organizationId: installation.organizationId, installationId: installation.id },
-					"Rejected candidate Teams activity with mismatched appId",
+					"Rejected Teams installation activity with mismatched appId",
 				);
 				overrideResponse = {
 					status: 403,
@@ -318,7 +412,9 @@ export async function handleTeamsCandidateMessageRequest(
 				isValidGuid(recipientAppId) &&
 				recipientAppId !== expectedAppId
 			) {
-				await recordInboundVerificationFailure(installation, "app_mismatch", now, deps);
+				if (installation.status === "candidate") {
+					await recordInboundVerificationFailure(installation, "app_mismatch", now, deps);
+				}
 				overrideResponse = {
 					status: 403,
 					body: { error: "Microsoft Teams recipient application identity mismatch" },
@@ -338,10 +434,12 @@ export async function handleTeamsCandidateMessageRequest(
 				activityTenantId !== expectedTenantId ||
 				(claimTenantId && claimTenantId !== expectedTenantId)
 			) {
-				await recordInboundVerificationFailure(installation, "tenant_mismatch", now, deps);
+				if (installation.status === "candidate") {
+					await recordInboundVerificationFailure(installation, "tenant_mismatch", now, deps);
+				}
 				logger.warn(
 					{ organizationId: installation.organizationId, installationId: installation.id },
-					"Rejected candidate Teams activity with mismatched tenantId",
+					"Rejected Teams installation activity with mismatched tenantId",
 				);
 				overrideResponse = {
 					status: 403,
@@ -349,6 +447,124 @@ export async function handleTeamsCandidateMessageRequest(
 				};
 				return;
 			}
+
+			// ============================================
+			// ACTIVE OR RETIRING ORG-OWNED TEAMS MODE (#2050)
+			// ============================================
+			if (installation.status === "active" || installation.status === "retiring") {
+				const effectiveSettings = await loadAuthoritativeTeamsSettings(
+					installation.organizationId,
+					deps,
+				);
+				const resolvedTenant: ResolvedTenant = {
+					tenantId: expectedTenantId,
+					tenantName: installation.externalSpaceName ?? installation.externalDisplayName,
+					organizationId: installation.organizationId,
+					installationId: installation.id,
+					microsoftAppId: expectedAppId,
+					credentialRevisionId: activeRevisionId,
+					installationStatus: installation.status,
+					credentialSource: installation.credentialSource,
+					setupStatus: installation.status === "active" ? "active" : installation.status,
+					...effectiveSettings,
+					serviceUrl: activity.serviceUrl ?? null,
+				};
+
+				const dbClient = deps?.db ?? defaultDb;
+				const hooks: InstallationBotActivityHooks = {
+					saveInstallationConversation: async ({
+						context: tc,
+						userId,
+						employeeId,
+						externalUserId,
+					}) => {
+						const ref = TurnContext.getConversationReference(tc.activity) as unknown as Record<
+							string,
+							unknown
+						>;
+						const convId = tc.activity.conversation?.id?.trim();
+						if (!convId || !tc.activity.serviceUrl) return;
+						await repository.upsertCandidatePersonalConversation({
+							organizationId: installation.organizationId,
+							installationId: installation.id,
+							userId,
+							employeeId,
+							externalUserId,
+							externalConversationId: convId,
+							conversationReference: ref,
+							reachabilityStatus: "reachable",
+							verifiedAt: now,
+						});
+						if (tc.activity.conversation?.conversationType === "personal") {
+							const { rearmApprovalDeliveryForRepairedDestination } =
+								await import("@/lib/approvals/delivery/recovery");
+							await rearmApprovalDeliveryForRepairedDestination({
+								organizationId: installation.organizationId,
+								userId,
+								provider: "teams",
+							});
+						}
+					},
+					deactivateInstallationConversation: async (conversationId) => {
+						await dbClient
+							.update(chatInstallationConversation)
+							.set({ isActive: false, updatedAt: now })
+							.where(
+								and(
+									eq(chatInstallationConversation.organizationId, installation.organizationId),
+									eq(chatInstallationConversation.installationId, installation.id),
+									eq(chatInstallationConversation.externalConversationId, conversationId),
+								),
+							);
+					},
+					redeemLinkCode: async ({
+						code,
+						aadObjectId,
+						displayName,
+						conversationId,
+						conversationRef,
+					}) => {
+						const redeemFn =
+							deps?.redeemLinkProof ??
+							((proofInput) =>
+								redeemChatLinkProof(proofInput, {
+									db: deps?.db as typeof defaultDb | undefined,
+									now: () => now,
+								}));
+						const redemption = await redeemFn({
+							organizationId: installation.organizationId,
+							installationId: installation.id,
+							purpose: "member_link",
+							code,
+							externalUserId: aadObjectId,
+							externalDisplayName: displayName,
+							externalConversationId: conversationId,
+							conversationType: "personal",
+							conversationReference: conversationRef,
+						});
+						if (redemption.status === "success") {
+							return {
+								status: "success",
+								replyText:
+									"Your Microsoft Teams account is now linked to Z8! You can use bot commands and receive notifications here.",
+							};
+						}
+						return {
+							status: "failed",
+							replyText:
+								"Could not redeem that link code. Generate a fresh code in Z8 Settings → Notifications and try again.",
+						};
+					},
+				};
+
+				const dispatch = deps?.handleProductionActivity ?? handleBotActivityForTenant;
+				await dispatch(turnContext, resolvedTenant, hooks);
+				return;
+			}
+
+			// ============================================
+			// CANDIDATE SETUP & ENROLLMENT MODE (#2049)
+			// ============================================
 
 			// 3. Strictly block production invoke / approval actions in candidate mode
 			if (activity.type === "invoke") {
@@ -548,7 +764,7 @@ export async function handleTeamsCandidateMessageRequest(
 				installationId: installation.id,
 				statusCode,
 			},
-			"Candidate Teams inbound authentication failed",
+			"Teams installation inbound authentication failed",
 		);
 		return {
 			status: statusCode >= 400 && statusCode < 600 ? statusCode : 401,
@@ -562,6 +778,15 @@ export async function handleTeamsCandidateMessageRequest(
 
 	return {
 		status: responseStatus,
-		body: responseBody ?? { ok: true, mode: "candidate", verificationRecorded: true },
+		body:
+			responseBody ??
+			(installation.status === "candidate"
+				? { ok: true, mode: "candidate", verificationRecorded: true }
+				: { ok: true, mode: installation.status }),
 	};
 }
+
+/**
+ * Backward-compatible alias for candidate & installation Teams message routing.
+ */
+export const handleTeamsCandidateMessageRequest = handleTeamsInstallationMessageRequest;

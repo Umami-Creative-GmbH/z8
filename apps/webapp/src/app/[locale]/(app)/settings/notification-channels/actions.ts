@@ -424,12 +424,43 @@ export const getTeamsNotificationChannelConfig = organizationAction(
 	({ organizationId }) =>
 		Effect.gen(function* () {
 			const dbService = yield* DatabaseService;
-			const config = yield* dbService.query("notificationChannels.getTeamsConfig", () =>
-				dbService.db.query.teamsTenantConfig.findFirst({
+			return yield* dbService.query("notificationChannels.getTeamsConfig", async () => {
+				const authoritative = await dbService.db.query?.chatProviderSettings?.findFirst({
+					where: and(
+						eq(chatProviderSettings.organizationId, organizationId),
+						eq(chatProviderSettings.provider, "teams"),
+						eq(chatProviderSettings.isAuthoritative, true),
+					),
+				});
+				if (authoritative) {
+					const activeInst = authoritative.activeInstallationId
+						? await dbService.db.query?.chatInstallation?.findFirst({
+								where: and(
+									eq(chatInstallation.id, authoritative.activeInstallationId),
+									eq(chatInstallation.organizationId, organizationId),
+								),
+							})
+						: undefined;
+					return mapConfig(
+						{
+							setupStatus: activeInst?.status === "active" ? "active" : "disconnected",
+							enableApprovals: authoritative.enableApprovals,
+							enableCommands: authoritative.enableCommands,
+							enableDailyDigest: authoritative.enableDailyDigest,
+							enableEscalations: authoritative.enableEscalations,
+							digestTime: authoritative.digestTime,
+							digestTimezone: authoritative.digestTimezone,
+							escalationTimeoutHours: authoritative.escalationTimeoutHours,
+						},
+						activeInst?.externalSpaceName ?? activeInst?.externalDisplayName ?? null,
+					);
+				}
+
+				const config = await dbService.db.query.teamsTenantConfig.findFirst({
 					where: eq(teamsTenantConfig.organizationId, organizationId),
-				}),
-			);
-			return mapConfig(config, config?.tenantName);
+				});
+				return mapConfig(config, config?.tenantName);
+			});
 		}),
 );
 
@@ -501,12 +532,31 @@ export const updateTeamsNotificationChannelSettings = organizationAction(
 	({ organizationId, input }) =>
 		Effect.gen(function* () {
 			const dbService = yield* DatabaseService;
-			yield* dbService.query("notificationChannels.updateTeamsSettings", () =>
-				dbService.db
+			yield* dbService.query("notificationChannels.updateTeamsSettings", async () => {
+				const authoritative = await dbService.db.query?.chatProviderSettings?.findFirst({
+					where: and(
+						eq(chatProviderSettings.organizationId, organizationId),
+						eq(chatProviderSettings.provider, "teams"),
+						eq(chatProviderSettings.isAuthoritative, true),
+					),
+				});
+				if (authoritative) {
+					await dbService.db
+						.update(chatProviderSettings)
+						.set(input)
+						.where(
+							and(
+								eq(chatProviderSettings.id, authoritative.id),
+								eq(chatProviderSettings.organizationId, organizationId),
+							),
+						);
+					return;
+				}
+				await dbService.db
 					.update(teamsTenantConfig)
 					.set(input)
-					.where(eq(teamsTenantConfig.organizationId, organizationId)),
-			);
+					.where(eq(teamsTenantConfig.organizationId, organizationId));
+			});
 			revalidatePath("/settings/notification-channels");
 			return undefined;
 		}),

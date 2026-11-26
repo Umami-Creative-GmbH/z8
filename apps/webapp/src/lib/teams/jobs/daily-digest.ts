@@ -50,7 +50,11 @@ import {
 import { createLogger } from "@/lib/logger";
 import { shiftDateBounds } from "@/lib/scheduling/shift-date";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
-import { sendAdaptiveCard } from "../bot-adapter";
+import {
+	resolveTeamsOutboundTransportForOrganization,
+	sendAdaptiveCard,
+	type TeamsOutboundTransport,
+} from "../bot-adapter";
 import { buildDailyDigestCard } from "../cards/daily-digest-card";
 import { getOrganizationPersonalConversations } from "../conversation-manager";
 import { getAllActiveTenants } from "../tenant-resolver";
@@ -180,6 +184,8 @@ export async function runDailyDigestJob(): Promise<DailyDigestResult> {
 type DigestTenant = {
 	tenantId: string;
 	organizationId: string;
+	installationId?: string | null;
+	credentialRevisionId?: string | null;
 	digestTime: string;
 	digestTimezone: string;
 };
@@ -213,12 +219,43 @@ async function processTenantDigest(tenant: DigestTenant): Promise<number> {
 		return 0;
 	}
 
+	const dispatchTarget =
+		tenant.installationId || tenant.credentialRevisionId
+			? {
+					installationId: tenant.installationId ?? null,
+					credentialRevisionId: tenant.credentialRevisionId ?? null,
+				}
+			: undefined;
+
 	// Get all managers in this organization who have Teams conversations
-	const conversations = await getOrganizationPersonalConversations(tenant.organizationId);
+	const conversations = dispatchTarget
+		? await getOrganizationPersonalConversations(tenant.organizationId, dispatchTarget)
+		: await getOrganizationPersonalConversations(tenant.organizationId);
 
 	if (conversations.length === 0) {
 		logger.debug({ organizationId: tenant.organizationId }, "No Teams conversations for digest");
 		return 0;
+	}
+
+	let outboundTransport: TeamsOutboundTransport | undefined;
+	if (typeof resolveTeamsOutboundTransportForOrganization === "function") {
+		const resolvedTransport = await resolveTeamsOutboundTransportForOrganization(
+			tenant.organizationId,
+			dispatchTarget,
+		);
+		if (resolvedTransport.kind !== "ok") {
+			logger.warn(
+				{ organizationId: tenant.organizationId, reason: resolvedTransport.reason },
+				"Teams outbound transport unavailable for daily digest",
+			);
+			return 0;
+		}
+		if (resolvedTransport.source === "organization_owned") {
+			outboundTransport = {
+				adapter: resolvedTransport.adapter,
+				appId: resolvedTransport.appId,
+			};
+		}
 	}
 
 	const appUrl = env.APP_URL || "https://z8-time.app";
@@ -263,13 +300,24 @@ async function processTenantDigest(tenant: DigestTenant): Promise<number> {
 				const t = await getBotTranslate(temporal.locale);
 				const card = buildDailyDigestCard(digestData, appUrl, temporal.locale, t);
 
-				await sendAdaptiveCard(
-					conv.conversationReference,
-					card,
-					t("bot.digest.title", "Daily Digest - {date}", {
-						date: digestTitleDate(digestData.date, digestData.timezone, temporal.locale),
-					}),
-				);
+				if (outboundTransport) {
+					await sendAdaptiveCard(
+						conv.conversationReference,
+						card,
+						t("bot.digest.title", "Daily Digest - {date}", {
+							date: digestTitleDate(digestData.date, digestData.timezone, temporal.locale),
+						}),
+						outboundTransport,
+					);
+				} else {
+					await sendAdaptiveCard(
+						conv.conversationReference,
+						card,
+						t("bot.digest.title", "Daily Digest - {date}", {
+							date: digestTitleDate(digestData.date, digestData.timezone, temporal.locale),
+						}),
+					);
+				}
 
 				return true;
 			} catch (error) {

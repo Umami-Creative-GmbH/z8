@@ -30,6 +30,8 @@ import {
 import { SlackSwitchReviewSection } from "./slack-switch-review-section";
 import { TeamsPrepareTestSection } from "./teams-prepare-test-section";
 import { getTeamsCandidateSetup } from "./teams-setup-actions";
+import { getTeamsSwitchImpactPreview } from "./teams-switch-actions";
+import { TeamsSwitchReviewSection } from "./teams-switch-review-section";
 import { TelegramPanel } from "./telegram-panel";
 
 async function ChatSettingsContent() {
@@ -45,6 +47,7 @@ async function ChatSettingsContent() {
 			slackCandidate,
 			teamsCandidate,
 			slackSwitchPreview,
+			teamsSwitchPreview,
 			slackRecovery,
 			slackCapabilities,
 			teamsCapabilities,
@@ -63,6 +66,7 @@ async function ChatSettingsContent() {
 				getSlackCandidateSetup(),
 				getTeamsCandidateSetup(),
 				getSlackSwitchImpactPreview(),
+				getTeamsSwitchImpactPreview(),
 				getSlackRecoveryState(),
 				getProviderCapabilityDisclosure({ provider: "slack" }),
 				getProviderCapabilityDisclosure({ provider: "teams" }),
@@ -76,6 +80,7 @@ async function ChatSettingsContent() {
 	const slackCandidateData = slackCandidate.success ? slackCandidate.data : null;
 	const teamsCandidateData = teamsCandidate.success ? teamsCandidate.data : null;
 	const slackSwitchPreviewData = slackSwitchPreview.success ? slackSwitchPreview.data : null;
+	const teamsSwitchPreviewData = teamsSwitchPreview.success ? teamsSwitchPreview.data : null;
 	const slackRecoveryData = slackRecovery.success ? slackRecovery.data : null;
 
 	return (
@@ -144,15 +149,16 @@ async function ChatSettingsContent() {
 								disclosure={teamsCapabilities.success ? teamsCapabilities.data : null}
 							/>
 							<TeamsPrepareTestSection initialSetup={teamsCandidateData} />
+							<TeamsSwitchReviewSection initialPreview={teamsSwitchPreviewData} />
 							<NotificationChannelSettings
 								channelName="Microsoft Teams"
 								config={teams.success ? teams.data : null}
 								updateAction={updateTeamsNotificationChannelSettings}
 								connectAction={
-									<p className="text-sm">
+									<p className="text-sm text-muted-foreground">
 										{t(
-											"settings.notifications.teams.setupInstructions",
-											"To connect Microsoft Teams, add the Z8 app to your Microsoft 365 tenant. The Z8 bot then sends a setup link that an organization admin opens to link the tenant to this organization.",
+											"settings.teamsSwitch.orgOwnedConnectHint",
+											"Prepare, verify, and switch to your single-tenant organization-owned Microsoft Teams app using the workflow above.",
 										)}
 									</p>
 								}

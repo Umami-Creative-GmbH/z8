@@ -226,12 +226,13 @@ export async function handleBoundApprovalInvoke(
 		return reviewRequiredMessage(recipient);
 	}
 	let result: BoundBotApprovalResult = { status: "review_required" };
+	const effectiveAppId = tenant.microsoftAppId ?? env.MICROSOFT_APP_ID;
 	if (invoke.kind === "action" && user.organizationId === tenant.organizationId) {
 		const activity = context.activity;
 		const conversationId = activity.conversation?.id;
 		const cardActivityId = activity.replyToId;
 		const tenantId = teamsActivityTenant(activity);
-		const receiverScope = tenantId ? teamsReceiverScope(env.MICROSOFT_APP_ID, tenantId) : null;
+		const receiverScope = tenantId ? teamsReceiverScope(effectiveAppId, tenantId) : null;
 		const deliveredBeforeDecision =
 			conversationId && cardActivityId && receiverScope
 				? await findApprovalDeliveryMessageByRemoteIdentity({
@@ -262,7 +263,7 @@ export async function handleBoundApprovalInvoke(
 				bindingId: invoke.bindingId,
 				action: invoke.action,
 				platform: "teams",
-				invocation: teamsInvocationEnvelope(context.activity, env.MICROSOFT_APP_ID),
+				invocation: teamsInvocationEnvelope(context.activity, effectiveAppId),
 			});
 		} catch (error) {
 			// Outcome unknown: claim nothing. A retry of this recorded activity
@@ -318,7 +319,8 @@ async function updatePressedCard(
 	const tenantId = teamsActivityTenant(activity);
 	if (!conversationId || !cardActivityId || tenantId !== tenant.tenantId) return null;
 	const recipient = { userId: user.userId, organizationId: tenant.organizationId };
-	const receiverScope = teamsReceiverScope(env.MICROSOFT_APP_ID, tenantId);
+	const effectiveAppId = tenant.microsoftAppId ?? env.MICROSOFT_APP_ID;
+	const receiverScope = teamsReceiverScope(effectiveAppId, tenantId);
 	const delivered = receiverScope
 		? await findApprovalDeliveryMessageByRemoteIdentity({
 				organizationId: tenant.organizationId,
@@ -410,6 +412,7 @@ export async function sendApprovalCardToManager(
 	approvalId: string,
 	approverId: string,
 	organizationId: string,
+	options?: { installationId?: string | null; credentialRevisionId?: string | null },
 ): Promise<void> {
 	try {
 		if (await deliveredByApprovalOwner(approvalId, organizationId)) return;
@@ -421,25 +424,45 @@ export async function sendApprovalCardToManager(
 			fits: fitsTeamsCard,
 		});
 		if (notice.status === "undisclosable") return;
-		const { sendProactiveMessage } = await import("./bot-adapter");
+		const { resolveTeamsOutboundTransportForOrganization, sendProactiveMessage } =
+			await import("./bot-adapter");
 		const { getConversationReferenceForUser } = await import("./conversation-manager");
 		const conversation = await getConversationReferenceForUser(
 			notice.recipientUserId,
 			organizationId,
+			options,
 		);
 		if (!conversation?.conversation?.id) return;
-		const activityId = await sendProactiveMessage(
-			conversation,
+		const transport =
+			typeof resolveTeamsOutboundTransportForOrganization === "function"
+				? await resolveTeamsOutboundTransportForOrganization(organizationId, options)
+				: null;
+		if (transport && transport.kind !== "ok") {
+			logger.warn(
+				{ organizationId, approvalId, reason: transport.reason },
+				"Teams outbound transport unavailable for approval card",
+			);
+			return;
+		}
+		const activity =
 			notice.status === "actionable"
 				? teamsActionableActivity(notice)
-				: teamsNoticeActivity(notice),
-		);
+				: teamsNoticeActivity(notice);
+		const activityId =
+			transport?.kind === "ok" && transport.source === "organization_owned"
+				? await sendProactiveMessage(conversation, activity, {
+						adapter: transport.adapter,
+						appId: transport.appId,
+					})
+				: await sendProactiveMessage(conversation, activity);
 		if (activityId) {
-			const installationId = await resolveLegacyCardInstallationId({
-				organizationId,
-				provider: "teams",
-				tenantId: conversation.conversation.tenantId ?? null,
-			});
+			const installationId =
+				(transport?.kind === "ok" ? transport.installationId : null) ??
+				(await resolveLegacyCardInstallationId({
+					organizationId,
+					provider: "teams",
+					tenantId: conversation.conversation.tenantId ?? null,
+				}));
 			await db.insert(teamsApprovalCard).values({
 				approvalRequestId: approvalId,
 				organizationId,
