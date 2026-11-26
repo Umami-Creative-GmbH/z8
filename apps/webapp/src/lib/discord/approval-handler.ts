@@ -51,7 +51,11 @@ export async function handleApprovalButtonClick(
 	discordUserId: string,
 	bot: ResolvedDiscordBot,
 ): Promise<void> {
-	const user = await resolveDiscordUser(discordUserId, bot.organizationId);
+	const user = bot.installationId
+		? await resolveDiscordUser(discordUserId, bot.organizationId, undefined, {
+				installationId: bot.installationId,
+			})
+		: await resolveDiscordUser(discordUserId, bot.organizationId);
 	if (user.status !== "found") {
 		await createInteractionResponse(
 			interaction.id,
@@ -136,7 +140,13 @@ async function decideBoundInteraction(
 	bot: ResolvedDiscordBot,
 ): Promise<DiscordMessagePayload> {
 	const discordUserId = interaction.member?.user?.id ?? interaction.user?.id;
-	const user = discordUserId ? await resolveDiscordUser(discordUserId, bot.organizationId) : null;
+	const user = discordUserId
+		? bot.installationId
+			? await resolveDiscordUser(discordUserId, bot.organizationId, undefined, {
+					installationId: bot.installationId,
+				})
+			: await resolveDiscordUser(discordUserId, bot.organizationId)
+		: null;
 	if (user?.status !== "found") {
 		return { content: await notLinkedReply(bot.organizationId) };
 	}

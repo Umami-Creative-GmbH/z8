@@ -6,8 +6,9 @@
  */
 
 import { and, eq } from "drizzle-orm";
+import { Temporal } from "temporal-polyfill";
 import { db } from "@/db";
-import { discordBotConfig } from "@/db/schema";
+import { chatInstallation, discordBotConfig } from "@/db/schema";
 import {
 	type ChatDispatchTargetHint,
 	listSwitchedActiveChatInstallationsForProvider,
@@ -15,6 +16,7 @@ import {
 	resolveSwitchedActiveChatInstallation,
 	type SwitchedActiveChatInstallation,
 } from "@/lib/chat-installations/runtime-target";
+import { instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import { getOrgSecret } from "@/lib/vault";
 import type { ResolvedDiscordBot } from "./types";
@@ -27,12 +29,20 @@ async function hydrateSwitchedDiscordBot(
 	target: SwitchedActiveChatInstallation,
 ): Promise<ResolvedDiscordBot | null> {
 	if (!target.credentialRevisionId) return null;
-	const botToken = await readInstallationRevisionSecret({
-		organizationId: target.organizationId,
-		installationId: target.installationId,
-		credentialRevisionId: target.credentialRevisionId,
-		secretKeyNames: ["bot_token"],
-	});
+	const [botToken, publicKey] = await Promise.all([
+		readInstallationRevisionSecret({
+			organizationId: target.organizationId,
+			installationId: target.installationId,
+			credentialRevisionId: target.credentialRevisionId,
+			secretKeyNames: ["bot_token"],
+		}),
+		readInstallationRevisionSecret({
+			organizationId: target.organizationId,
+			installationId: target.installationId,
+			credentialRevisionId: target.credentialRevisionId,
+			secretKeyNames: ["public_key"],
+		}),
+	]);
 	if (!botToken) {
 		logger.error(
 			{
@@ -47,9 +57,10 @@ async function hydrateSwitchedDiscordBot(
 
 	return {
 		organizationId: target.organizationId,
+		installationId: target.installationId,
 		botToken,
 		applicationId: target.externalAppId ?? "",
-		publicKey: "",
+		publicKey: publicKey ?? "",
 		webhookSecret: target.routeId,
 		setupStatus: "active",
 		...target.effectiveSettings,
@@ -57,7 +68,9 @@ async function hydrateSwitchedDiscordBot(
 }
 
 /**
- * Resolve bot config by webhook secret (used in interaction route)
+ * Resolve bot config by webhook secret (used in legacy interaction route).
+ * Respects chat_installation lifecycle state: refuses revoked/retired/expired-retiring
+ * installations and tags active/retiring legacy installations with their `installationId`.
  */
 export async function resolveBotByWebhookSecret(
 	webhookSecret: string,
@@ -71,7 +84,60 @@ export async function resolveBotByWebhookSecret(
 
 	if (!config) return null;
 
-	return hydrateBot(config);
+	let installationId: string | null = null;
+	let effectiveStatus = config.setupStatus;
+
+	if (typeof db.select === "function") {
+		const [inst] = await db
+			.select({
+				id: chatInstallation.id,
+				status: chatInstallation.status,
+				revokedAt: chatInstallation.revokedAt,
+				retiredAt: chatInstallation.retiredAt,
+				retirementDeadlineAt: chatInstallation.retirementDeadlineAt,
+			})
+			.from(chatInstallation)
+			.where(
+				and(
+					eq(chatInstallation.organizationId, config.organizationId),
+					eq(chatInstallation.legacyTable, "discord_bot_config"),
+					eq(chatInstallation.legacyRecordId, config.id),
+				),
+			)
+			.limit(1);
+
+		if (inst) {
+			if (
+				inst.status === "revoked" ||
+				inst.status === "retired" ||
+				inst.revokedAt ||
+				inst.retiredAt
+			) {
+				return null;
+			}
+			if (inst.status === "retiring") {
+				if (
+					inst.retirementDeadlineAt &&
+					Temporal.Instant.compare(
+						instantFromDate(inst.retirementDeadlineAt),
+						systemClock.nowInstant(),
+					) <= 0
+				) {
+					return null;
+				}
+				effectiveStatus = "retiring";
+			}
+			installationId = inst.id;
+		}
+	}
+
+	const hydrated = await hydrateBot(config);
+	if (!hydrated) return null;
+	return {
+		...hydrated,
+		...(installationId ? { installationId } : {}),
+		setupStatus: effectiveStatus,
+	};
 }
 
 /**

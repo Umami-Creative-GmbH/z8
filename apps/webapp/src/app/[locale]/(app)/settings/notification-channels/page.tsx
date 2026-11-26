@@ -19,6 +19,8 @@ import {
 	updateTeamsNotificationChannelSettings,
 } from "./actions";
 import { ChatInstallationInventoryPanel } from "./chat-installation-inventory-panel";
+import { getDiscordLifecycleState } from "./discord-lifecycle-actions";
+import { DiscordLifecycleSection } from "./discord-lifecycle-section";
 import { getSlackRecoveryState } from "./recovery-actions";
 import { SlackPrepareTestSection } from "./slack-prepare-test-section";
 import { SlackRecoverySection } from "./slack-recovery-section";
@@ -30,6 +32,8 @@ import {
 import { SlackSwitchReviewSection } from "./slack-switch-review-section";
 import { TeamsPrepareTestSection } from "./teams-prepare-test-section";
 import { getTeamsCandidateSetup } from "./teams-setup-actions";
+import { getTeamsSwitchImpactPreview } from "./teams-switch-actions";
+import { TeamsSwitchReviewSection } from "./teams-switch-review-section";
 import { getTelegramLifecycleState } from "./telegram-lifecycle-actions";
 import { TelegramLifecycleSection } from "./telegram-lifecycle-section";
 import { TelegramPanel } from "./telegram-panel";
@@ -47,12 +51,14 @@ async function ChatSettingsContent() {
 			slackCandidate,
 			teamsCandidate,
 			slackSwitchPreview,
+			teamsSwitchPreview,
 			slackRecovery,
 			telegramLifecycle,
 			slackCapabilities,
 			teamsCapabilities,
 			telegramCapabilities,
 			discordCapabilities,
+			discordLifecycle,
 		],
 	] = await Promise.all([
 		access,
@@ -66,12 +72,14 @@ async function ChatSettingsContent() {
 				getSlackCandidateSetup(),
 				getTeamsCandidateSetup(),
 				getSlackSwitchImpactPreview(),
+				getTeamsSwitchImpactPreview(),
 				getSlackRecoveryState(),
 				getTelegramLifecycleState(),
 				getProviderCapabilityDisclosure({ provider: "slack" }),
 				getProviderCapabilityDisclosure({ provider: "teams" }),
 				getProviderCapabilityDisclosure({ provider: "telegram" }),
 				getProviderCapabilityDisclosure({ provider: "discord" }),
+				getDiscordLifecycleState(),
 			]),
 		),
 	]);
@@ -80,8 +88,10 @@ async function ChatSettingsContent() {
 	const slackCandidateData = slackCandidate.success ? slackCandidate.data : null;
 	const teamsCandidateData = teamsCandidate.success ? teamsCandidate.data : null;
 	const slackSwitchPreviewData = slackSwitchPreview.success ? slackSwitchPreview.data : null;
+	const teamsSwitchPreviewData = teamsSwitchPreview.success ? teamsSwitchPreview.data : null;
 	const slackRecoveryData = slackRecovery.success ? slackRecovery.data : null;
 	const telegramLifecycleData = telegramLifecycle.success ? telegramLifecycle.data : null;
+	const discordLifecycleData = discordLifecycle.success ? discordLifecycle.data : null;
 
 	return (
 		<SettingsTabbedPage
@@ -149,15 +159,16 @@ async function ChatSettingsContent() {
 								disclosure={teamsCapabilities.success ? teamsCapabilities.data : null}
 							/>
 							<TeamsPrepareTestSection initialSetup={teamsCandidateData} />
+							<TeamsSwitchReviewSection initialPreview={teamsSwitchPreviewData} />
 							<NotificationChannelSettings
 								channelName="Microsoft Teams"
 								config={teams.success ? teams.data : null}
 								updateAction={updateTeamsNotificationChannelSettings}
 								connectAction={
-									<p className="text-sm">
+									<p className="text-sm text-muted-foreground">
 										{t(
-											"settings.notifications.teams.setupInstructions",
-											"To connect Microsoft Teams, add the Z8 app to your Microsoft 365 tenant. The Z8 bot then sends a setup link that an organization admin opens to link the tenant to this organization.",
+											"settings.teamsSwitch.orgOwnedConnectHint",
+											"Prepare, verify, and switch to your single-tenant organization-owned Microsoft Teams app using the workflow above.",
 										)}
 									</p>
 								}
@@ -210,6 +221,7 @@ async function ChatSettingsContent() {
 								channelName="Discord"
 								disclosure={discordCapabilities.success ? discordCapabilities.data : null}
 							/>
+							<DiscordLifecycleSection initialState={discordLifecycleData} />
 							<DiscordChannelSettings
 								config={discord.success ? discord.data : null}
 								updateAction={updateDiscordNotificationChannelSettings}

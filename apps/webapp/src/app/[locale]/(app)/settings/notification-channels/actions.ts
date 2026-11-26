@@ -14,10 +14,12 @@ import {
 } from "@/db/schema";
 import { env } from "@/env";
 import {
+	buildDiscordInteractionEndpointUrl,
 	CHAT_INSTALLATION_PROVIDERS,
 	type ChatProviderInventory,
 	getOrganizationChatInstallationsInventory,
 	getProviderChatInstallationInventory as loadProviderChatInstallationInventory,
+	isChatInstallationSwitchEnabled,
 	type OrganizationChatInstallationsInventory,
 } from "@/lib/chat-installations";
 import { ExternalServiceError, ValidationError } from "@/lib/effect/errors";
@@ -194,28 +196,111 @@ export const getSlackNotificationChannelConfig = organizationAction(
 		}),
 );
 
+async function loadLegacyDiscordMutationBlock(
+	db: Parameters<typeof isChatInstallationSwitchEnabled>[0] & {
+		query?: {
+			chatInstallation?: {
+				findMany?: (
+					...args: never[]
+				) => Promise<Array<{ status: string; credentialSource: string }>>;
+			};
+		};
+	},
+	organizationId: string,
+): Promise<"legacy_setup_superseded" | "migration_blocked" | null> {
+	if (typeof (db as { select?: unknown }).select !== "function") {
+		return null;
+	}
+	const switchEnabled = await isChatInstallationSwitchEnabled(db, organizationId, "discord");
+	if (switchEnabled) {
+		return "legacy_setup_superseded";
+	}
+	const installations = await db
+		.select({
+			status: chatInstallation.status,
+			legacyTable: chatInstallation.legacyTable,
+		})
+		.from(chatInstallation)
+		.where(
+			and(
+				eq(chatInstallation.organizationId, organizationId),
+				eq(chatInstallation.provider, "discord"),
+			),
+		);
+	if (
+		installations.some(
+			(row) => (row.status === "active" || row.status === "retiring") && row.legacyTable === null,
+		)
+	) {
+		return "legacy_setup_superseded";
+	}
+	if (installations.some((row) => row.status === "remediation_required")) {
+		return "migration_blocked";
+	}
+	return null;
+}
+
 export const getDiscordNotificationChannelConfig = organizationAction(
 	{ name: "notificationChannels.getDiscordConfig", requires: "orgAdmin", schema: noInput },
 	({ organizationId }) =>
 		Effect.gen(function* () {
 			const dbService = yield* DatabaseService;
-			const config = yield* dbService.query("notificationChannels.getDiscordConfig", () =>
-				dbService.db.query.discordBotConfig.findFirst({
+			return yield* dbService.query("notificationChannels.getDiscordConfig", async () => {
+				const authoritative = await dbService.db.query?.chatProviderSettings?.findFirst({
+					where: and(
+						eq(chatProviderSettings.organizationId, organizationId),
+						eq(chatProviderSettings.provider, "discord"),
+						eq(chatProviderSettings.isAuthoritative, true),
+					),
+				});
+				if (authoritative) {
+					const activeInst = authoritative.activeInstallationId
+						? await dbService.db.query?.chatInstallation?.findFirst({
+								where: and(
+									eq(chatInstallation.id, authoritative.activeInstallationId),
+									eq(chatInstallation.organizationId, organizationId),
+								),
+							})
+						: undefined;
+					const base = mapConfig(
+						{
+							setupStatus: activeInst?.status === "active" ? "active" : "disconnected",
+							enableApprovals: authoritative.enableApprovals,
+							enableCommands: authoritative.enableCommands,
+							enableDailyDigest: authoritative.enableDailyDigest,
+							enableEscalations: authoritative.enableEscalations,
+							digestTime: authoritative.digestTime,
+							digestTimezone: authoritative.digestTimezone,
+							escalationTimeoutHours: authoritative.escalationTimeoutHours,
+						},
+						activeInst?.externalDisplayName ?? activeInst?.externalAppId ?? null,
+					);
+					if (!base) return null;
+					return {
+						...base,
+						interactionUrl:
+							activeInst?.status === "active" && activeInst.routeId
+								? buildDiscordInteractionEndpointUrl(activeInst.routeId)
+								: null,
+					} satisfies DiscordNotificationChannelConfig;
+				}
+
+				const config = await dbService.db.query.discordBotConfig.findFirst({
 					where: eq(discordBotConfig.organizationId, organizationId),
-				}),
-			);
-			const base = mapConfig(config, config?.applicationId);
-			if (!base) {
-				return null;
-			}
-			const interactionUrl =
-				config && config.setupStatus !== "disconnected" && config.webhookSecret
-					? buildDiscordInteractionUrl(config.webhookSecret)
-					: null;
-			return {
-				...base,
-				interactionUrl,
-			} satisfies DiscordNotificationChannelConfig;
+				});
+				const base = mapConfig(config, config?.applicationId);
+				if (!base) {
+					return null;
+				}
+				const interactionUrl =
+					config && config.setupStatus !== "disconnected" && config.webhookSecret
+						? buildDiscordInteractionUrl(config.webhookSecret)
+						: null;
+				return {
+					...base,
+					interactionUrl,
+				} satisfies DiscordNotificationChannelConfig;
+			});
 		}),
 );
 
@@ -228,6 +313,21 @@ export const connectDiscordBot = organizationAction(
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
 			const dbService = yield* DatabaseService;
+			const legacyBlock = yield* dbService.query(
+				"notificationChannels.connectDiscord.checkLifecycle",
+				() => loadLegacyDiscordMutationBlock(dbService.db, organizationId),
+			);
+			if (legacyBlock) {
+				return yield* Effect.fail(
+					new ValidationError({
+						message:
+							legacyBlock === "migration_blocked"
+								? "Resolve Discord migration blockers before modifying bot credentials."
+								: "Use the organization-owned Discord lifecycle workflow (Prepare, Test, Switch, Rotate) to manage Discord bots.",
+						refusal: legacyBlock,
+					}),
+				);
+			}
 			const { registerDiscordSlashCommands, verifyBotApplication } = yield* Effect.promise(
 				() => import("@/lib/discord"),
 			);
@@ -385,6 +485,21 @@ export const disconnectDiscordBot = organizationAction(
 	({ organizationId }) =>
 		Effect.gen(function* () {
 			const dbService = yield* DatabaseService;
+			const legacyBlock = yield* dbService.query(
+				"notificationChannels.disconnectDiscord.checkLifecycle",
+				() => loadLegacyDiscordMutationBlock(dbService.db, organizationId),
+			);
+			if (legacyBlock) {
+				return yield* Effect.fail(
+					new ValidationError({
+						message:
+							legacyBlock === "migration_blocked"
+								? "Resolve Discord migration blockers before disconnecting the bot."
+								: "Use the Discord installation revoke action to disconnect an organization-owned Discord bot.",
+						refusal: legacyBlock,
+					}),
+				);
+			}
 			const config = yield* dbService.query("notificationChannels.getDiscordConfig", () =>
 				dbService.db.query.discordBotConfig.findFirst({
 					where: eq(discordBotConfig.organizationId, organizationId),
@@ -424,12 +539,43 @@ export const getTeamsNotificationChannelConfig = organizationAction(
 	({ organizationId }) =>
 		Effect.gen(function* () {
 			const dbService = yield* DatabaseService;
-			const config = yield* dbService.query("notificationChannels.getTeamsConfig", () =>
-				dbService.db.query.teamsTenantConfig.findFirst({
+			return yield* dbService.query("notificationChannels.getTeamsConfig", async () => {
+				const authoritative = await dbService.db.query?.chatProviderSettings?.findFirst({
+					where: and(
+						eq(chatProviderSettings.organizationId, organizationId),
+						eq(chatProviderSettings.provider, "teams"),
+						eq(chatProviderSettings.isAuthoritative, true),
+					),
+				});
+				if (authoritative) {
+					const activeInst = authoritative.activeInstallationId
+						? await dbService.db.query?.chatInstallation?.findFirst({
+								where: and(
+									eq(chatInstallation.id, authoritative.activeInstallationId),
+									eq(chatInstallation.organizationId, organizationId),
+								),
+							})
+						: undefined;
+					return mapConfig(
+						{
+							setupStatus: activeInst?.status === "active" ? "active" : "disconnected",
+							enableApprovals: authoritative.enableApprovals,
+							enableCommands: authoritative.enableCommands,
+							enableDailyDigest: authoritative.enableDailyDigest,
+							enableEscalations: authoritative.enableEscalations,
+							digestTime: authoritative.digestTime,
+							digestTimezone: authoritative.digestTimezone,
+							escalationTimeoutHours: authoritative.escalationTimeoutHours,
+						},
+						activeInst?.externalSpaceName ?? activeInst?.externalDisplayName ?? null,
+					);
+				}
+
+				const config = await dbService.db.query.teamsTenantConfig.findFirst({
 					where: eq(teamsTenantConfig.organizationId, organizationId),
-				}),
-			);
-			return mapConfig(config, config?.tenantName);
+				});
+				return mapConfig(config, config?.tenantName);
+			});
 		}),
 );
 
@@ -481,12 +627,31 @@ export const updateDiscordNotificationChannelSettings = organizationAction(
 	({ organizationId, input }) =>
 		Effect.gen(function* () {
 			const dbService = yield* DatabaseService;
-			yield* dbService.query("notificationChannels.updateDiscordSettings", () =>
-				dbService.db
+			yield* dbService.query("notificationChannels.updateDiscordSettings", async () => {
+				const authoritative = await dbService.db.query?.chatProviderSettings?.findFirst({
+					where: and(
+						eq(chatProviderSettings.organizationId, organizationId),
+						eq(chatProviderSettings.provider, "discord"),
+						eq(chatProviderSettings.isAuthoritative, true),
+					),
+				});
+				if (authoritative) {
+					await dbService.db
+						.update(chatProviderSettings)
+						.set(input)
+						.where(
+							and(
+								eq(chatProviderSettings.id, authoritative.id),
+								eq(chatProviderSettings.organizationId, organizationId),
+							),
+						);
+					return;
+				}
+				await dbService.db
 					.update(discordBotConfig)
 					.set(input)
-					.where(eq(discordBotConfig.organizationId, organizationId)),
-			);
+					.where(eq(discordBotConfig.organizationId, organizationId));
+			});
 			revalidatePath("/settings/notification-channels");
 			return undefined;
 		}),
@@ -501,12 +666,31 @@ export const updateTeamsNotificationChannelSettings = organizationAction(
 	({ organizationId, input }) =>
 		Effect.gen(function* () {
 			const dbService = yield* DatabaseService;
-			yield* dbService.query("notificationChannels.updateTeamsSettings", () =>
-				dbService.db
+			yield* dbService.query("notificationChannels.updateTeamsSettings", async () => {
+				const authoritative = await dbService.db.query?.chatProviderSettings?.findFirst({
+					where: and(
+						eq(chatProviderSettings.organizationId, organizationId),
+						eq(chatProviderSettings.provider, "teams"),
+						eq(chatProviderSettings.isAuthoritative, true),
+					),
+				});
+				if (authoritative) {
+					await dbService.db
+						.update(chatProviderSettings)
+						.set(input)
+						.where(
+							and(
+								eq(chatProviderSettings.id, authoritative.id),
+								eq(chatProviderSettings.organizationId, organizationId),
+							),
+						);
+					return;
+				}
+				await dbService.db
 					.update(teamsTenantConfig)
 					.set(input)
-					.where(eq(teamsTenantConfig.organizationId, organizationId)),
-			);
+					.where(eq(teamsTenantConfig.organizationId, organizationId));
+			});
 			revalidatePath("/settings/notification-channels");
 			return undefined;
 		}),

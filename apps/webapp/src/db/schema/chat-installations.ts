@@ -133,15 +133,21 @@ export interface ChatVerificationEvidence {
 	privateDeliveryExpiresAt?: string | null;
 	commandsRegisteredAt?: string | null;
 	commandsRevisionId?: string | null;
-	commandsRegistrationStatus?: "passed" | "failed" | "pending" | null;
+	commandsRegisteredRevisionId?: string | null;
+	commandsRegistrationStatus?: "pending" | "registered" | "passed" | "failed" | null;
 	commandsFailureCode?: string | null;
+	commandsRegistrationErrorCode?: string | null;
+	commandsRegistrationAttemptedAt?: string | null;
 	webhookRegisteredAt?: string | null;
 	webhookRegisteredRevisionId?: string | null;
 	webhookFailureCode?: string | null;
+	privateDeliveryErrorCode?: string | null;
+	privateDeliveryRecoveryHint?: string | null;
 	lastFailureStep?:
 		| "credentials"
 		| "identity"
 		| "signed_event"
+		| "command_registration"
 		| "private_test"
 		| "webhook"
 		| "commands"

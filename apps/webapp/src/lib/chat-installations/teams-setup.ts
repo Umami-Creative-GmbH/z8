@@ -94,6 +94,9 @@ export interface TeamsCandidateInstallationRecord {
 	verificationState: ChatVerificationState;
 	verificationEvidence: ChatVerificationEvidence | null;
 	lastVerifiedAt: Date | null;
+	retirementDeadlineAt?: Date | null;
+	retiredAt?: Date | null;
+	revokedAt?: Date | null;
 	endpointGeneration: number;
 	createdByUserId: string | null;
 	createdAt: Date;

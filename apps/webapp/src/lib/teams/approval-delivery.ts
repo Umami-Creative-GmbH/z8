@@ -6,6 +6,7 @@ import { env } from "@/env";
 import {
 	findActiveInstallationConversation,
 	resolveAuthoritativeProviderApprovalSettings,
+	resolveInstallationSecret,
 	resolveLegacyCardInstallationId,
 } from "@/lib/approvals/delivery/installation-origin";
 import type {
@@ -14,7 +15,13 @@ import type {
 } from "@/lib/approvals/delivery/owner";
 import { prepareApprovalPresentation } from "@/lib/approvals/presentation";
 import { fitsTeamsCard, teamsActionableActivity, teamsNoticeActivity } from "./approval-handler";
-import { isBotConfigured, sendActivityWithOutcome, updateActivityWithOutcome } from "./bot-adapter";
+import {
+	getTeamsInstallationBotAdapter,
+	isBotConfigured,
+	sendActivityWithOutcome,
+	type TeamsOutboundTransport,
+	updateActivityWithOutcome,
+} from "./bot-adapter";
 import { teamsReceiverScope } from "./bound-approval";
 import { findConversationReference, findPersonalConversation } from "./conversation-manager";
 import { classifyTeamsDeliveryFailure, type TeamsCallFailure } from "./delivery-outcome";
@@ -74,6 +81,7 @@ export const teamsApprovalDeliveryAdapter: ApprovalDeliveryAdapter = {
 		let destinationId: string;
 		let conversationReference: ConversationReference;
 		let recordedInstallationId: string | null = target?.id ?? null;
+		let outboundTransport: TeamsOutboundTransport | undefined;
 
 		if (target && target.legacyTable === null) {
 			const authoritative = await resolveAuthoritativeProviderApprovalSettings(
@@ -104,6 +112,30 @@ export const teamsApprovalDeliveryAdapter: ApprovalDeliveryAdapter = {
 					: null);
 			if (!receiverScope) {
 				return { kind: "failed", outcome: "unavailable", reason: "bot_identity_unknown" };
+			}
+			if (target.credentialSource === "organization_owned") {
+				if (
+					!target.externalAppId ||
+					!target.externalSpaceId ||
+					!target.activeCredentialRevisionId
+				) {
+					return { kind: "failed", outcome: "unavailable", reason: "bot_unavailable" };
+				}
+				const appPassword = await resolveInstallationSecret({
+					installation: target,
+					candidateKeyNames: ["microsoft_app_password"],
+				});
+				if (!appPassword) {
+					return { kind: "failed", outcome: "unavailable", reason: "bot_unavailable" };
+				}
+				const adapter = getTeamsInstallationBotAdapter({
+					installationId: target.id,
+					credentialRevisionId: target.activeCredentialRevisionId,
+					appId: target.externalAppId,
+					appPassword,
+					tenantId: target.externalSpaceId,
+				});
+				outboundTransport = { adapter, appId: target.externalAppId };
 			}
 			destinationId = installationConversation.externalConversationId;
 			conversationReference =
@@ -165,10 +197,16 @@ export const teamsApprovalDeliveryAdapter: ApprovalDeliveryAdapter = {
 			fits: fitsTeamsCard,
 		});
 		if (card.status === "undisclosable") return { kind: "suppressed", reason: "not_entitled" };
-		const sent = await sendActivityWithOutcome(
-			conversationReference,
-			card.status === "actionable" ? teamsActionableActivity(card) : teamsNoticeActivity(card),
-		);
+		const sent = outboundTransport
+			? await sendActivityWithOutcome(
+					conversationReference,
+					card.status === "actionable" ? teamsActionableActivity(card) : teamsNoticeActivity(card),
+					outboundTransport,
+				)
+			: await sendActivityWithOutcome(
+					conversationReference,
+					card.status === "actionable" ? teamsActionableActivity(card) : teamsNoticeActivity(card),
+				);
 		if (sent.kind !== "ok") {
 			const failed = failure(sent, "send");
 			// A send has no message to lose; classification never yields "gone" here.
@@ -195,7 +233,11 @@ export const teamsApprovalDeliveryAdapter: ApprovalDeliveryAdapter = {
 	async refresh(input) {
 		const origin = input.originInstallation ?? null;
 		let reference: ConversationReference | null = null;
+		let outboundTransport: TeamsOutboundTransport | undefined;
 		if (origin) {
+			if (origin.status === "revoked" || origin.status === "retired") {
+				return { kind: "gone", reason: "installation_revoked" };
+			}
 			if (origin.receiverScope && origin.receiverScope !== input.message.receiverScope) {
 				return { kind: "gone", reason: "bot_replaced" };
 			}
@@ -216,12 +258,39 @@ export const teamsApprovalDeliveryAdapter: ApprovalDeliveryAdapter = {
 				if (!isBotConfigured()) {
 					return { kind: "failed", outcome: "unavailable", reason: "bot_unavailable" };
 				}
+				// Scope strictly to the originating retiring tenant so Tenant A and Tenant B are never mixed.
 				reference = await findConversationReference(
 					input.message.destinationId,
 					input.organizationId,
+					origin.externalSpaceId ?? undefined,
 				);
 			}
 			if (!reference) return { kind: "gone", reason: "conversation_unknown" };
+
+			if (origin.credentialSource === "organization_owned") {
+				if (
+					!origin.externalAppId ||
+					!origin.externalSpaceId ||
+					!origin.activeCredentialRevisionId
+				) {
+					return { kind: "failed", outcome: "unavailable", reason: "bot_unavailable" };
+				}
+				const appPassword = await resolveInstallationSecret({
+					installation: origin,
+					candidateKeyNames: ["microsoft_app_password"],
+				});
+				if (!appPassword) {
+					return { kind: "failed", outcome: "unavailable", reason: "bot_unavailable" };
+				}
+				const adapter = getTeamsInstallationBotAdapter({
+					installationId: origin.id,
+					credentialRevisionId: origin.activeCredentialRevisionId,
+					appId: origin.externalAppId,
+					appPassword,
+					tenantId: origin.externalSpaceId,
+				});
+				outboundTransport = { adapter, appId: origin.externalAppId };
+			}
 		} else {
 			if (!isBotConfigured()) {
 				return { kind: "failed", outcome: "unavailable", reason: "bot_unavailable" };
@@ -239,11 +308,18 @@ export const teamsApprovalDeliveryAdapter: ApprovalDeliveryAdapter = {
 			);
 			if (!reference) return { kind: "gone", reason: "conversation_unknown" };
 		}
-		const updated = await updateActivityWithOutcome(
-			reference,
-			input.message.remoteMessageId,
-			teamsNoticeActivity(input.notice),
-		);
+		const updated = outboundTransport
+			? await updateActivityWithOutcome(
+					reference,
+					input.message.remoteMessageId,
+					teamsNoticeActivity(input.notice),
+					outboundTransport,
+				)
+			: await updateActivityWithOutcome(
+					reference,
+					input.message.remoteMessageId,
+					teamsNoticeActivity(input.notice),
+				);
 		if (updated.kind === "ok") return { kind: "accepted" };
 		const failed = failure(updated, "update");
 		if (failed === "gone") return { kind: "gone", reason: "message_not_updatable" };

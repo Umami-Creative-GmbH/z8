@@ -43,6 +43,10 @@ import {
 	verifyEligibleChatLinkMember,
 } from "./member-links";
 import {
+	computeDiscordCandidateSetupStatus,
+	type DiscordCandidateInstallationRecord,
+} from "./discord-setup";
+import {
 	computeSlackCandidateSetupStatus,
 	SLACK_VERIFICATION_FRESHNESS_MS,
 	type SlackCandidateInstallationRecord,
@@ -632,6 +636,17 @@ function evaluateCandidateReadiness(
 	if (candidate.provider === "telegram") {
 		const status = computeTelegramCandidateSetupStatus(
 			candidate as unknown as TelegramCandidateInstallationRecord,
+			now,
+			verificationTtlMs,
+		);
+		return {
+			ready: status.readyForSwitch,
+			verificationState: status.effectiveVerificationState,
+		};
+	}
+	if (candidate.provider === "discord") {
+		const status = computeDiscordCandidateSetupStatus(
+			candidate as unknown as DiscordCandidateInstallationRecord,
 			now,
 			verificationTtlMs,
 		);

@@ -197,12 +197,17 @@ export async function findPersonalConversation(
 export async function findConversationReference(
 	teamsConversationId: string,
 	organizationId: string,
+	expectedTenantId?: string | null,
 ): Promise<ConversationReference | null> {
+	const conditions = [
+		eq(teamsConversation.teamsConversationId, teamsConversationId),
+		eq(teamsConversation.organizationId, organizationId),
+	];
+	if (expectedTenantId) {
+		conditions.push(eq(teamsConversation.teamsTenantId, expectedTenantId));
+	}
 	const conv = await db.query.teamsConversation.findFirst({
-		where: and(
-			eq(teamsConversation.teamsConversationId, teamsConversationId),
-			eq(teamsConversation.organizationId, organizationId),
-		),
+		where: and(...conditions),
 		columns: { conversationReference: true },
 	});
 	return conv ? (JSON.parse(conv.conversationReference) as ConversationReference) : null;

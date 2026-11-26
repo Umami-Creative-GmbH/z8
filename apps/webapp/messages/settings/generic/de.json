@@ -2972,7 +2972,30 @@
       "timeout": "Zeitüberschreitung",
       "timeoutInvalid": "Geben Sie eine ganze Zahl an Stunden von 1 bis 168 ein.",
       "timezone": "Zeitzone",
-      "title": "Benachrichtigungseinstellungen"
+      "title": "Benachrichtigungseinstellungen",
+      "discordLink": {
+        "title": "Discord-Direktnachrichten verknüpfen",
+        "description": "Verknüpfen Sie Ihr Discord-Konto und prüfen Sie, ob Ihre Discord-Datenschutzeinstellungen Direktnachrichten von Z8 zulassen.",
+        "currentBot": "Aktueller Discord-Bot",
+        "replacementBot": "Geplanter Ersatz-Discord-Bot",
+        "connected": "Verbunden",
+        "actionNeeded": "Handlung nötig",
+        "linkedAs": "Verknüpft als {username}",
+        "verifyDmButton": "DM-Zustellung prüfen",
+        "generateCode": "Verknüpfungscode erzeugen",
+        "unlink": "Trennen",
+        "recoveryShareServer": "Z8 konnte keine Discord-DM öffnen, da Sie keinen Server mit diesem Bot teilen. Treten Sie einem gemeinsamen Server bei, aktivieren Sie Direktnachrichten und klicken Sie auf DM-Zustellung prüfen.",
+        "recoveryEnableDms": "Ihre Discord-Datenschutzeinstellungen blockieren Direktnachrichten dieses Bots (Fehler 50007). Aktivieren Sie in den Discord-Server-Datenschutzeinstellungen Direktnachrichten, prüfen Sie, dass der Bot nicht blockiert ist, und klicken Sie auf DM-Zustellung prüfen.",
+        "codeInstructions": "Führen Sie diesen einmaligen Slash-Befehl beim Discord-Bot aus (Z8 prüft anschließend die DM-Zustellung):",
+        "copy": "Kopieren",
+        "checkStatus": "Status prüfen",
+        "commandCopied": "Discord-Verknüpfungsbefehl kopiert.",
+        "copyFailed": "Befehl konnte nicht kopiert werden.",
+        "generateFailed": "Discord-Verknüpfungscode konnte nicht erzeugt werden.",
+        "dmVerified": "Zustellung von Discord-Direktnachrichten bestätigt.",
+        "dmRecheckFailed": "Discord-Direktnachrichten konnten nicht geprüft werden.",
+        "unlinked": "Discord-Konto getrennt."
+      }
     },
     "organizations": {
       "description": "Organisationsdetails und Konfiguration verwalten",
