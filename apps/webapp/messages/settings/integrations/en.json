@@ -443,6 +443,131 @@
     "teamsNotifications": {
       "title": "Microsoft Teams"
     },
+    "teamsPrepare": {
+      "badge": {
+        "candidate": "Candidate setup",
+        "ready": "Ready to review switch"
+      },
+      "copiedAnnouncement": "{label} copied.",
+      "copyFailed": "Could not copy automatically. Select the text and copy it manually.",
+      "credentials": {
+        "appId": "Microsoft App ID (GUID)",
+        "appIdHelp": "Application (client) ID from your Single-Tenant Azure Bot registration.",
+        "appPassword": "Microsoft App Password (Client Secret)",
+        "appPasswordHelp": "Write-only client secret generated under Certificates & secrets in Microsoft Entra ID.",
+        "description": "The client secret is stored in an immutable organization-scoped revision and is never displayed again after saving. Existing legacy Teams tenants remain active.",
+        "heading": "2. Enter single-tenant credentials (write-only)",
+        "saveButton": "Save single-tenant credentials",
+        "storedBadge": "Stored (revision v{revision})",
+        "tenantDisplayName": "Tenant Display Name (optional)",
+        "tenantDisplayNameHelp": "Friendly label shown during verification and switch review.",
+        "tenantId": "Microsoft Entra Tenant ID (GUID)",
+        "tenantIdHelp": "Directory (tenant) ID of your Microsoft 365 tenant. You can stage a replacement in the same tenant as your live Teams connection.",
+        "updateButton": "Save new credential revision"
+      },
+      "credentialsSavedAnnouncement": "Single-tenant Teams credentials stored in revision {revision}.",
+      "description": "Stage and verify an organization-owned, single-tenant Microsoft Teams app without interrupting your active Teams tenants. Switching happens separately after verification passes.",
+      "emptyPrompt": "Generate a dedicated single-tenant Teams app package, messaging endpoint, and Microsoft Teams Admin Center rollout instructions. Your current Teams deployment continues serving traffic throughout setup.",
+      "errors": {
+        "appClaimed": "This Microsoft Teams App ID is already claimed by another Z8 organization.",
+        "candidateNotFound": "Candidate Teams setup was not found. Reload and prepare the app again.",
+        "credentialsMissing": "Stored credentials could not be found. Re-enter and save your single-tenant credentials.",
+        "credentialsNotConfigured": "Save your single-tenant Teams credentials before running the proactive test.",
+        "invalidAppIdFormat": "Microsoft App ID must be a valid GUID.",
+        "invalidAppPasswordFormat": "Microsoft App Password (client secret) must be at least 8 characters.",
+        "invalidTenantIdFormat": "Microsoft Entra Tenant ID must be a valid GUID.",
+        "missingPrivateReachability": "No personal chat reachability has been captured for this candidate Teams app yet. Send a 1:1 message to the candidate bot in Microsoft Teams first, then retry.",
+        "prepareFailed": "Could not prepare single-tenant Teams app.",
+        "proactiveTestFailed": "Could not send the proactive private test message.",
+        "refreshFailed": "Could not refresh Teams verification status.",
+        "saveCredentialsFailed": "Failed to save single-tenant Teams credentials.",
+        "tenantClaimed": "This Microsoft Teams tenant is already connected to another Z8 organization.",
+        "tenantMismatch": "The captured conversation belongs to a different Microsoft Teams tenant. Message the candidate bot from the configured tenant and retry."
+      },
+      "manifestDownloaded": "Teams app manifest downloaded.",
+      "packageDownloaded": "Single-tenant Teams app package (.zip) downloaded.",
+      "packageDownloadFailed": "Could not generate Teams app package (.zip).",
+      "prepare": {
+        "copyManifest": "Copy manifest",
+        "copyUrl": "Copy",
+        "downloadManifest": "Download manifest.json",
+        "downloadPackage": "Download App Package (.zip)",
+        "heading": "1. Prepare single-tenant Teams app & admin rollout",
+        "instructions": "Configure your Single-Tenant Azure Bot with the dedicated messaging endpoint below, save your credentials, then upload the app package in Microsoft Teams Admin Center.",
+        "manifestLabel": "Teams app manifest",
+        "messagingEndpointLabel": "Dedicated Messaging Endpoint",
+        "placeholderAppIdNote": "Save your Microsoft App ID below to populate the app ID inside manifest.json before uploading to Microsoft Teams Admin Center."
+      },
+      "prepareButton": "Prepare single-tenant Teams app",
+      "preparedAnnouncement": "Single-tenant Teams app package and messaging endpoint generated.",
+      "proactiveTestSentAnnouncement": "Synthetic proactive private test message delivered to Microsoft Teams.",
+      "readyAnnouncement": "Single-tenant Teams app verification complete. Ready for switch review.",
+      "readyBanner": "Your single-tenant Microsoft Teams app passed credential, authenticated inbound activity, and proactive private delivery checks. Existing legacy Teams tenants remain active until you review and confirm a switch.",
+      "refreshedAnnouncement": "Teams verification status refreshed.",
+      "rollout": {
+        "heading": "Microsoft Teams Admin Center rollout instructions",
+        "steps": {
+          "azure_bot_registration": {
+            "summary": "In Azure Portal, create an Azure Bot with Type = Single Tenant under your organization's Microsoft Entra ID tenant, enable the Microsoft Teams channel, and generate a Client Secret.",
+            "title": "Create a Single-Tenant Azure Bot & Entra App Registration"
+          },
+          "configure_messaging_endpoint": {
+            "summary": "Set the Azure Bot Messaging endpoint to {endpointUrl}. Keep this installation route dedicated to your organization.",
+            "title": "Configure the dedicated Z8 Messaging Endpoint"
+          },
+          "save_credentials_in_z8": {
+            "summary": "Enter the Microsoft App ID (GUID), Microsoft Entra Tenant ID (GUID), and Client Secret below. Z8 stores the secret in an immutable credential revision and updates your app package manifest with your App ID.",
+            "title": "Save single-tenant credentials in Z8 (write-only)"
+          },
+          "upload_teams_admin_center": {
+            "summary": "Download the single-tenant Teams App Package (.zip), open Microsoft Teams Admin Center (admin.teams.microsoft.com) → Teams apps → Manage apps → Upload new app, and assign it via your App setup policy.",
+            "title": "Upload app package in Microsoft Teams Admin Center"
+          },
+          "verify_private_chat": {
+            "summary": "Open a 1:1 personal chat with your new Teams bot and send a message (for example, 'verify'). Then return here to refresh verification status and send the proactive private test message.",
+            "title": "Verify authenticated inbound activity & proactive private delivery"
+          }
+        }
+      },
+      "status": {
+        "expired": "Expired",
+        "failed": "Action needed",
+        "passed": "Passed",
+        "pending": "Pending"
+      },
+      "stepExpiredAt": "Previously verified at {timestamp}. Proof has expired and must be refreshed.",
+      "stepFailureCode": "Last verification check failed ({code}). Fix the step and retry.",
+      "steps": {
+        "credentials": {
+          "description": "Microsoft App ID, Entra Tenant ID, and write-only client secret stored in an immutable organization-scoped revision.",
+          "title": "Single-tenant credentials & tenant ownership"
+        },
+        "inboundProof": {
+          "description": "Open a 1:1 personal chat with your candidate Teams bot and send a message (e.g., 'verify') so Z8 confirms your Bot Framework token, App ID, Tenant ID, and personal conversation reachability.",
+          "retry": "Recheck inbound activity",
+          "title": "Authenticated inbound activity (matching app & tenant)"
+        },
+        "privateTest": {
+          "descriptionMissing": "Waiting for a 1:1 personal message to the candidate bot in Microsoft Teams to capture your conversation reference before running the proactive test.",
+          "descriptionReady": "Personal conversation reachability is captured for this candidate app. Send a synthetic proactive test message using the installation-scoped adapter.",
+          "title": "Proactive private test message"
+        }
+      },
+      "stepVerifiedAt": "Verified: {timestamp}",
+      "test": {
+        "description": "Candidate verification never executes production commands, approval cards, or live notifications. Employees with a proven same-tenant Entra identity can message the bot directly; others link with a code from Settings → Notifications.",
+        "heading": "3. Test & verify single-tenant Teams app",
+        "refreshStatus": "Refresh status",
+        "retryProactiveTest": "Retry proactive private test",
+        "sendProactiveTest": "Send proactive private test"
+      },
+      "title": "Prepare & test single-tenant Microsoft Teams app",
+      "validation": {
+        "appIdRequired": "Microsoft App ID is required.",
+        "appPasswordRequired": "Microsoft App Password is required.",
+        "tenantIdRequired": "Microsoft Entra Tenant ID is required."
+      }
+    },
     "telegram": {
       "bot": {
         "description": "Connect a Telegram bot to enable notifications and commands for your organization.",

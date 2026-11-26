@@ -1,14 +1,14 @@
 /**
  * Teams User Resolver
  *
- * Maps Teams users to Z8 users via email matching.
- * Creates automatic mappings when a Teams user's email matches a Z8 user.
+ * Maps Teams users to Z8 users strictly through verified organization- and
+ * tenant-scoped mappings. Automatic email matching is explicitly forbidden so
+ * cross-organization or unverified emails can never establish member identity.
  */
 
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { user } from "@/db/auth-schema";
-import { employee, teamsUserMapping } from "@/db/schema";
+import { teamsUserMapping } from "@/db/schema";
 import { resolveCommandActorEmployee } from "@/lib/integrations/resolve-command-actor";
 import { createLogger } from "@/lib/logger";
 import type { UserResolutionResult } from "./types";
@@ -18,22 +18,26 @@ const logger = createLogger("TeamsUserResolver");
 /**
  * Resolve a Teams user to a Z8 user
  *
- * First checks for existing mapping, then tries email matching.
+ * Resolves strictly from verified active `teams_user_mapping` rows scoped by
+ * `(teamsUserId, teamsTenantId)` (and optional `expectedOrganizationId`).
+ * Email-based automatic matching is intentionally refused.
  *
  * @param teamsUserId - Microsoft AAD user object ID
- * @param teamsEmail - User's email from Teams (may be UPN or email)
+ * @param _teamsEmail - Unused (email matching cannot establish Teams identity)
  * @param teamsTenantId - Microsoft tenant ID
- * @param teamsDisplayName - User's display name in Teams
+ * @param _teamsDisplayName - User's display name in Teams
+ * @param expectedOrganizationId - Optional organization ID to enforce org scope
  * @returns Resolution result with user data or status
  */
 export async function resolveTeamsUser(
 	teamsUserId: string,
-	teamsEmail: string | null,
+	_teamsEmail: string | null,
 	teamsTenantId: string,
-	teamsDisplayName?: string,
+	_teamsDisplayName?: string,
+	expectedOrganizationId?: string,
 ): Promise<UserResolutionResult> {
 	try {
-		// 1. Check for existing mapping
+		// 1. Check for existing verified mapping in this Teams tenant
 		const existing = await db.query.teamsUserMapping.findFirst({
 			where: and(
 				eq(teamsUserMapping.teamsUserId, teamsUserId),
@@ -43,11 +47,20 @@ export async function resolveTeamsUser(
 		});
 
 		if (existing) {
+			if (expectedOrganizationId && existing.organizationId !== expectedOrganizationId) {
+				logger.warn(
+					{
+						teamsUserId,
+						teamsTenantId,
+						expectedOrganizationId,
+					},
+					"Rejected Teams user mapping belonging to a different organization",
+				);
+				return { status: "not_linked", teamsUserId, teamsEmail: null };
+			}
+
 			// Get employee ID for this user in this org
-			const emp = await resolveCommandActorEmployee(
-				existing.userId,
-				existing.organizationId,
-			);
+			const emp = await resolveCommandActorEmployee(existing.userId, existing.organizationId);
 
 			if (!emp) {
 				logger.warn(
@@ -77,83 +90,11 @@ export async function resolveTeamsUser(
 			};
 		}
 
-		// 2. No existing mapping - try email matching
-		if (!teamsEmail) {
-			logger.debug({ teamsUserId }, "No email available for Teams user");
-			return { status: "not_linked", teamsUserId, teamsEmail: null };
-		}
-
-		// Normalize email (lowercase, handle UPN format)
-		const normalizedEmail = teamsEmail.toLowerCase().trim();
-
-		// Find Z8 user by email
-		const matchedUser = await db.query.user.findFirst({
-			where: eq(user.email, normalizedEmail),
-		});
-
-		if (!matchedUser) {
-			logger.debug(
-				{ teamsEmail: normalizedEmail },
-				"No Z8 user found with this email",
-			);
-			return { status: "not_linked", teamsUserId, teamsEmail: normalizedEmail };
-		}
-
-		// 3. Find employee record for this user (need to determine org)
-		const emp = await db.query.employee.findFirst({
-			where: eq(employee.userId, matchedUser.id),
-		});
-
-		if (!emp) {
-			logger.debug({ userId: matchedUser.id }, "User has no employee record");
-			return { status: "no_employee", userId: matchedUser.id };
-		}
-		const activeEmployee = await resolveCommandActorEmployee(
-			matchedUser.id,
-			emp.organizationId,
-		);
-		if (!activeEmployee) {
-			return { status: "no_employee", userId: matchedUser.id };
-		}
-
-		// 4. Create new mapping
-		await db.insert(teamsUserMapping).values({
-			userId: matchedUser.id,
-			organizationId: emp.organizationId,
-			teamsUserId,
-			teamsEmail: normalizedEmail,
-			teamsTenantId,
-			teamsDisplayName: teamsDisplayName || null,
-			lastSeenAt: new Date(),
-		});
-
-		logger.info(
-			{
-				userId: matchedUser.id,
-				teamsUserId,
-				teamsEmail: normalizedEmail,
-				organizationId: emp.organizationId,
-			},
-			"Created new Teams user mapping via email match",
-		);
-
-		return {
-			status: "found",
-			user: {
-				userId: matchedUser.id,
-				employeeId: activeEmployee.id,
-				organizationId: emp.organizationId,
-				teamsUserId,
-				teamsEmail: normalizedEmail,
-				teamsTenantId,
-				isNewMapping: true,
-			},
-		};
+		// 2. Never establish identity via email matching (cross-org or unverified email matching is blocked).
+		logger.debug({ teamsUserId, teamsTenantId }, "No verified Teams user mapping found");
+		return { status: "not_linked", teamsUserId, teamsEmail: null };
 	} catch (error) {
-		logger.error(
-			{ error, teamsUserId, teamsEmail },
-			"Failed to resolve Teams user",
-		);
+		logger.error({ error, teamsUserId, teamsTenantId }, "Failed to resolve Teams user");
 		throw error;
 	}
 }
@@ -192,10 +133,7 @@ export async function getTeamsMapping(
 			teamsTenantId: mapping.teamsTenantId,
 		};
 	} catch (error) {
-		logger.error(
-			{ error, userId, organizationId },
-			"Failed to get Teams mapping",
-		);
+		logger.error({ error, userId, organizationId }, "Failed to get Teams mapping");
 		return null;
 	}
 }
@@ -223,10 +161,7 @@ export async function deactivateTeamsMapping(
 
 		logger.info({ userId, organizationId }, "Deactivated Teams user mapping");
 	} catch (error) {
-		logger.error(
-			{ error, userId, organizationId },
-			"Failed to deactivate Teams mapping",
-		);
+		logger.error({ error, userId, organizationId }, "Failed to deactivate Teams mapping");
 	}
 }
 
@@ -236,9 +171,7 @@ export async function deactivateTeamsMapping(
  * @param organizationId - Z8 organization ID
  * @returns Array of user mappings
  */
-export async function getOrganizationTeamsMappings(
-	organizationId: string,
-): Promise<
+export async function getOrganizationTeamsMappings(organizationId: string): Promise<
 	Array<{
 		userId: string;
 		teamsUserId: string;
@@ -263,10 +196,7 @@ export async function getOrganizationTeamsMappings(
 			lastSeenAt: m.lastSeenAt,
 		}));
 	} catch (error) {
-		logger.error(
-			{ error, organizationId },
-			"Failed to get organization Teams mappings",
-		);
+		logger.error({ error, organizationId }, "Failed to get organization Teams mappings");
 		return [];
 	}
 }
