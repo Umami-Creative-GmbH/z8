@@ -13,7 +13,6 @@ import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { useState, useSyncExternalStore } from "react";
 import { toast } from "sonner";
-import { DrivingAuthorizationAdvisory } from "@/components/driving-licence/operational-status";
 import {
 	ClockCaptureControls,
 	type ClockCaptureMode,
@@ -340,7 +339,6 @@ function ClockControlsView(props: ClockControlsViewProps) {
 				<WorkLocationField value={workLocationType} onChange={onWorkLocationChange} t={t} />
 			)}
 			<ClockVehicleUseField {...props} />
-			<DrivingAuthorizationAdvisory />
 			<ClockConnectionNotice show={connectionRequired} />
 			<ClockActionButtons {...props} />
 			<BreakConnectionNote show={props.isOffline && isClockedIn} t={t} />
