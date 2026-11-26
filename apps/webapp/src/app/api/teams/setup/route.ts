@@ -1,24 +1,22 @@
 /**
- * Teams Integration Setup
+ * Teams Integration Setup (Legacy Lifecycle-Guarded Route — #2050 / ADR 0003)
  *
- * GET /api/teams/setup - Redirects admin to setup page
- * POST /api/teams/setup - Links tenant to organization
- *
- * This handles the setup flow when an O365 admin wants to connect
- * their tenant to a Z8 organization.
+ * GET /api/teams/setup - Redirects admin to Teams Chat Integrations settings tab
+ * POST /api/teams/setup - Closed (410 Gone); superseded by org-owned single-tenant Teams setup
+ * DELETE /api/teams/setup - Routes eligible legacy tenant disconnects through authorized lifecycle
  */
 
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import type { NextRequest } from "next/server";
 import { connection, NextResponse } from "next/server";
 import { db } from "@/db";
-import { organization } from "@/db/auth-schema";
 import { teamsTenantConfig } from "@/db/schema";
 import { auth } from "@/lib/auth";
 import { runActiveOrganizationActionActorCheck as requireActiveOrganizationActionActor } from "@/lib/auth/organization-action-authorization";
 import { getAbility } from "@/lib/auth-helpers";
 import { ForbiddenError, toHttpError } from "@/lib/authorization";
+import { disconnectLegacyTeamsTenantInstallation } from "@/lib/chat-installations/teams-switch";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("TeamsSetup");
@@ -26,8 +24,7 @@ const logger = createLogger("TeamsSetup");
 /**
  * GET /api/teams/setup
  *
- * When an admin clicks the setup link from Teams, this redirects them
- * to the Z8 admin settings page to complete the connection.
+ * Redirects admins to the Teams tab in Settings → Chat Integrations.
  */
 export async function GET(request: NextRequest) {
 	await connection();
@@ -36,183 +33,49 @@ export async function GET(request: NextRequest) {
 
 	if (!tenantId) {
 		return NextResponse.redirect(
-			new URL("/settings/integrations?error=missing_tenant", request.url),
+			new URL("/settings/notification-channels?tab=teams&error=missing_tenant", request.url),
 		);
 	}
 
-	// Check if tenant is already configured
 	const existing = await db.query.teamsTenantConfig.findFirst({
 		where: eq(teamsTenantConfig.tenantId, tenantId),
 	});
 
 	if (existing?.setupStatus === "active") {
 		return NextResponse.redirect(
-			new URL(
-				"/settings/integrations/teams?status=already_configured",
-				request.url,
-			),
+			new URL("/settings/notification-channels?tab=teams&status=already_configured", request.url),
 		);
 	}
 
-	// Redirect to Teams integration settings page with tenant ID
-	return NextResponse.redirect(
-		new URL(
-			`/settings/integrations/teams/setup?tenantId=${encodeURIComponent(tenantId)}`,
-			request.url,
-		),
-	);
+	return NextResponse.redirect(new URL("/settings/notification-channels?tab=teams", request.url));
 }
 
 /**
- * POST /api/teams/setup
+ * POST /api/teams/setup (RETIRED — #2050 / ADR 0003)
  *
- * Links a Microsoft tenant to a Z8 organization.
- * Requires user to be logged in as an organization admin.
+ * Superseded legacy tenant setup mutation cannot bypass the organization-owned
+ * single-tenant Teams preparation, verification, and switch lifecycle.
  */
-export async function POST(request: NextRequest) {
+export async function POST() {
 	await connection();
 
-	try {
-		// Verify user is authenticated
-		const session = await auth.api.getSession({ headers: await headers() });
-		if (!session?.user?.id) {
-			return NextResponse.json(
-				{ error: "Authentication required" },
-				{ status: 401 },
-			);
-		}
-
-		const body = await request.json();
-		const { tenantId, tenantName, organizationId } = body;
-
-		if (!tenantId || !organizationId) {
-			return NextResponse.json(
-				{ error: "Missing required fields" },
-				{ status: 400 },
-			);
-		}
-
-		if (session.session.activeOrganizationId !== organizationId) {
-			return NextResponse.json({ error: "Access denied" }, { status: 403 });
-		}
-		try {
-			await requireActiveOrganizationActionActor({
-				userId: session.user.id,
-				organizationId,
-				requiredRole: "admin",
-				message: "Only active approved admins and owners can configure Teams",
-				resource: "teamsIntegration",
-				action: "create",
-			});
-		} catch {
-			return NextResponse.json({ error: "Access denied" }, { status: 403 });
-		}
-
-		// Check CASL permissions - must be able to manage OrgIntegrations or be employee admin
-		const ability = await getAbility();
-		// Employee admins get manage Team permission, so use that as proxy for employee admin check
-		// Also check OrgIntegrations for org-level admin
-		if (
-			!ability ||
-			(ability.cannot("manage", "OrgIntegrations") &&
-				ability.cannot("manage", "Team"))
-		) {
-			const error = new ForbiddenError("manage", "OrgIntegrations");
-			const httpError = toHttpError(error);
-			return NextResponse.json(httpError.body, { status: httpError.status });
-		}
-
-		const org = await db.query.organization.findFirst({
-			where: eq(organization.id, organizationId),
-		});
-
-		if (!org) {
-			return NextResponse.json(
-				{ error: "Organization not found" },
-				{ status: 404 },
-			);
-		}
-
-		// Check if tenant is already linked to another org
-		const existingTenant = await db.query.teamsTenantConfig.findFirst({
-			where: eq(teamsTenantConfig.tenantId, tenantId),
-		});
-
-		if (existingTenant && existingTenant.organizationId !== organizationId) {
-			return NextResponse.json(
-				{ error: "Tenant is already linked to another organization" },
-				{ status: 409 },
-			);
-		}
-
-		// Check if org already has a tenant linked
-		const existingOrg = await db.query.teamsTenantConfig.findFirst({
-			where: eq(teamsTenantConfig.organizationId, organizationId),
-		});
-
-		if (existingOrg && existingOrg.tenantId !== tenantId) {
-			return NextResponse.json(
-				{ error: "Organization already has a different tenant linked" },
-				{ status: 409 },
-			);
-		}
-
-		// Create or update tenant config
-		if (existingTenant) {
-			// Update existing
-			await db
-				.update(teamsTenantConfig)
-				.set({
-					tenantName: tenantName || existingTenant.tenantName,
-					setupStatus: "active",
-					configuredByUserId: session.user.id,
-					updatedAt: new Date(),
-				})
-				.where(
-					and(
-						eq(teamsTenantConfig.id, existingTenant.id),
-						eq(teamsTenantConfig.organizationId, organizationId),
-					),
-				);
-
-			logger.info(
-				{ tenantId, organizationId, userId: session.user.id },
-				"Updated Teams tenant configuration",
-			);
-		} else {
-			// Create new
-			await db.insert(teamsTenantConfig).values({
-				tenantId,
-				tenantName,
-				organizationId,
-				setupStatus: "active",
-				configuredByUserId: session.user.id,
-			});
-
-			logger.info(
-				{ tenantId, organizationId, userId: session.user.id },
-				"Created Teams tenant configuration",
-			);
-		}
-
-		return NextResponse.json({
-			success: true,
-			message: "Teams integration configured successfully",
-		});
-	} catch (error) {
-		logger.error({ error }, "Failed to setup Teams integration");
-
-		return NextResponse.json(
-			{ error: "Internal server error" },
-			{ status: 500 },
-		);
-	}
+	return NextResponse.json(
+		{
+			error:
+				"Legacy Microsoft Teams tenant setup has been retired. Prepare, verify, and switch to an organization-owned single-tenant Teams app in Settings → Chat Integrations.",
+			code: "legacy_setup_superseded",
+		},
+		{ status: 410 },
+	);
 }
 
 /**
  * DELETE /api/teams/setup
  *
- * Unlinks a tenant from an organization.
+ * Routes eligible legacy tenant disconnects through the authorized chat installation
+ * lifecycle service. Refuses with 410 Gone once an organization-owned Teams app is
+ * active or legacy tenants are retiring, and refuses with 409 Conflict during remediation
+ * or when multiple legacy tenants exist without an explicit `tenantId`.
  */
 export async function DELETE(request: NextRequest) {
 	await connection();
@@ -220,20 +83,15 @@ export async function DELETE(request: NextRequest) {
 	try {
 		const session = await auth.api.getSession({ headers: await headers() });
 		if (!session?.user?.id) {
-			return NextResponse.json(
-				{ error: "Authentication required" },
-				{ status: 401 },
-			);
+			return NextResponse.json({ error: "Authentication required" }, { status: 401 });
 		}
 
 		const { searchParams } = new URL(request.url);
 		const organizationId = searchParams.get("organizationId");
+		const tenantId = searchParams.get("tenantId");
 
 		if (!organizationId) {
-			return NextResponse.json(
-				{ error: "Missing organizationId" },
-				{ status: 400 },
-			);
+			return NextResponse.json({ error: "Missing organizationId" }, { status: 400 });
 		}
 
 		if (session.session.activeOrganizationId !== organizationId) {
@@ -252,55 +110,47 @@ export async function DELETE(request: NextRequest) {
 			return NextResponse.json({ error: "Access denied" }, { status: 403 });
 		}
 
-		// Check CASL permissions - must be able to manage OrgIntegrations or be employee admin
 		const ability = await getAbility();
 		if (
 			!ability ||
-			(ability.cannot("manage", "OrgIntegrations") &&
-				ability.cannot("manage", "Team"))
+			(ability.cannot("manage", "OrgIntegrations") && ability.cannot("manage", "Team"))
 		) {
 			const error = new ForbiddenError("manage", "OrgIntegrations");
 			const httpError = toHttpError(error);
 			return NextResponse.json(httpError.body, { status: httpError.status });
 		}
 
-		// Deactivate the tenant config
-		const config = await db.query.teamsTenantConfig.findFirst({
-			where: eq(teamsTenantConfig.organizationId, organizationId),
+		const result = await disconnectLegacyTeamsTenantInstallation({
+			organizationId,
+			actorUserId: session.user.id,
+			tenantId,
 		});
 
-		if (!config) {
+		if (result.kind === "refused") {
+			logger.warn(
+				{ organizationId, tenantId, code: result.code },
+				"Refused legacy Teams setup disconnect via lifecycle guard",
+			);
 			return NextResponse.json(
-				{ error: "No Teams integration found" },
-				{ status: 404 },
+				{ error: result.message, code: result.code },
+				{ status: result.status },
 			);
 		}
 
-		await db
-			.update(teamsTenantConfig)
-			.set({ setupStatus: "disabled" })
-			.where(
-				and(
-					eq(teamsTenantConfig.id, config.id),
-					eq(teamsTenantConfig.organizationId, organizationId),
-				),
-			);
-
 		logger.info(
-			{ organizationId, tenantId: config.tenantId },
-			"Disabled Teams integration",
+			{ organizationId, tenantId: result.tenantId, installationId: result.installationId },
+			"Legacy Teams tenant disconnected via authorized lifecycle service",
 		);
 
 		return NextResponse.json({
 			success: true,
-			message: "Teams integration disabled",
+			message: "Teams tenant disconnected",
+			installationId: result.installationId,
+			tenantId: result.tenantId,
 		});
 	} catch (error) {
 		logger.error({ error }, "Failed to disable Teams integration");
 
-		return NextResponse.json(
-			{ error: "Internal server error" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 	}
 }

@@ -760,6 +760,121 @@
         "tenantIdRequired": "Microsoft Entra Tenant ID is required."
       }
     },
+    "teamsSwitch": {
+      "acknowledgeUnready": "I understand that {count} active employees still need to connect or verify direct messages with the new Teams app, and I want to switch now.",
+      "affectedTenantsHeading": "Affected live Teams tenants ({count})",
+      "completeVerificationFirst": "Complete all single-tenant Teams verification steps above before confirming the switch.",
+      "confirmButton": "Switch all reviewed Teams tenants together",
+      "description": "Review every affected Microsoft Teams tenant, resolve any settings differences, and switch the organization in one atomic transaction while retiring tenants keep servicing their open approval cards.",
+      "disagreements": {
+        "confirmCheckbox": "I confirm these replacement settings should become authoritative for Microsoft Teams across this organization.",
+        "description": "Review the differences below and confirm the single set of settings for your organization-owned Teams app.",
+        "heading": "Legacy Teams tenants have differing settings"
+      },
+      "errors": {
+        "alreadySwitched": "This Microsoft Teams installation is already active.",
+        "candidateNotFound": "No candidate Microsoft Teams installation was found. Prepare and verify one first.",
+        "candidateNotReady": "Complete all single-tenant Microsoft Teams verification steps before switching.",
+        "candidateVerificationExpired": "Verification proofs for the candidate Teams app have expired. Re-verify before switching.",
+        "confirmFailed": "Could not switch Microsoft Teams installation.",
+        "endpointReconciliationRequired": "Endpoint state is uncertain after cleanup timeout. Reconcile before activating.",
+        "externalIdentityMismatch": "The provided Microsoft App ID or Entra Tenant ID does not match this Teams installation.",
+        "impactChanged": "Affected Teams tenants, settings, revisions, or counts changed since your review. Review the updated summary and confirm again.",
+        "installationNotFound": "The selected Microsoft Teams installation could not be found.",
+        "invalidCredentials": "Check your Microsoft App ID, Entra Tenant ID, and Client Secret and try again.",
+        "invalidReplacementSettings": "Check the replacement Teams settings (time, timezone, and escalation timeout) and try again.",
+        "migrationBlocked": "Resolve Microsoft Teams migration blockers before switching.",
+        "missingPrivateReachability": "Send a 1:1 personal message to this Teams bot first so Z8 can capture reachability before testing.",
+        "prepareRestoreFailed": "Could not start restoring this Microsoft Teams installation.",
+        "refreshFailed": "Could not refresh Microsoft Teams switch preview.",
+        "revokeFailed": "Could not revoke Microsoft Teams installation.",
+        "rotateFailed": "Could not rotate Microsoft Teams credentials.",
+        "secretStoreUnavailable": "The organization secret store is currently unavailable. Existing connections remain unchanged.",
+        "settingsConfirmationRequired": "Your legacy Teams tenants disagree on settings. Explicitly confirm the replacement settings below before switching.",
+        "switchNotEnabled": "Switching to an organization-owned Microsoft Teams app is not enabled for this organization yet.",
+        "unreadyAckRequired": "Acknowledge that some employees still need to connect or verify direct messages before switching.",
+        "verifyRestoreFailed": "Could not verify Microsoft Teams restore."
+      },
+      "gate": {
+        "disabled": "Switch gated",
+        "enabled": "Switch enabled"
+      },
+      "gateDisabledNotice": "Organization-owned Microsoft Teams switching is not yet enabled for this organization. You can review all affected tenants and verify your single-tenant app now; activation unlocks once enabled.",
+      "generatedAt": "Snapshot: {timestamp}",
+      "metrics": {
+        "actionNeeded": "Employee action needed",
+        "actionNeededHint": "Must message bot or link in Settings → Notifications",
+        "carryForwardHint": "{count} same-tenant Entra identities carry forward",
+        "inFlightNotifications": "In-flight notifications",
+        "inFlightNotificationsHint": "Bound to original installation without duplicate resends",
+        "outstandingApprovals": "Total open approval cards",
+        "outstandingApprovalsHint": "Across all affected tenants; each retiring tenant services its own cards",
+        "unknownReachability": "Unknown reachability",
+        "unknownReachabilityHint": "Linked identity whose personal chat is not yet verified",
+        "verifiedReachable": "Verified reachable",
+        "verifiedReachableHint": "Personal chats confirmed with new Teams app"
+      },
+      "noLiveTenants": "No live legacy Teams tenants will be retired by this switch.",
+      "optionalAppPasswordPlaceholder": "Optional new Microsoft App Password (leave blank to reuse stored)",
+      "orgOwnedConnectHint": "Prepare, verify, and switch to your single-tenant organization-owned Microsoft Teams app using the workflow above.",
+      "readyToConfirmHint": "New Teams notifications, approvals, commands, digests, and escalations will use your organization-owned Teams app immediately after switching.",
+      "recovery": {
+        "activeBadge": "Active org-owned",
+        "description": "Rotate your single-tenant Entra client secret without downtime, revoke access immediately, or re-verify and restore a previous organization-owned Teams installation.",
+        "restorableHeading": "Previous organization-owned Teams installations",
+        "revokeButton": "Revoke access immediately",
+        "rotateButton": "Rotate credentials",
+        "rotatedBanner": "Credentials rotated to revision v{revision}. Cached Teams adapters were evicted immediately.",
+        "startRestoreButton": "Start restore & verify",
+        "title": "Microsoft Teams credential rotation, revocation & restore"
+      },
+      "refresh": "Refresh impact",
+      "refreshedAnnouncement": "Microsoft Teams switch impact refreshed.",
+      "restoreStartedAnnouncement": "Restore started. Verify credentials, inbound activity, and proactive private delivery before confirming.",
+      "restoreVerifiedReadyAnnouncement": "Restore verification passed. Review impact and confirm switch-back.",
+      "restoreVerifiedStepAnnouncement": "Restore credentials verified. Send a 1:1 message to the Teams bot and run the proactive test to complete verification.",
+      "restoreVerifyHint": "Need to re-verify credentials or trigger a fresh proactive private test for this candidate Teams app?",
+      "restoredAnnouncement": "Verified Microsoft Teams app restored as active.",
+      "retirement": {
+        "deadline": "Automatic retirement deadline: {deadline}",
+        "description": "Each retiring Teams tenant continues servicing its own open approval cards until all cards settle or its 30-day deadline is reached. You can revoke any individual tenant immediately without affecting other tenants or your active Teams app.",
+        "noDeadline": "Retiring when open cards settle",
+        "outstandingCount": "{count} open cards / jobs",
+        "previousTenant": "Previous Teams tenant",
+        "title": "Retiring Microsoft Teams tenants"
+      },
+      "revokeDialog": {
+        "confirm": "Confirm immediate revocation",
+        "description": "Revoking {label} immediately ends local authorization for this installation only. Sibling retiring tenants, your active Teams app, shared deployment credentials, and pending approvals in the Z8 inbox remain untouched.",
+        "title": "Revoke Microsoft Teams installation?"
+      },
+      "revokeTenantButton": "Revoke tenant",
+      "revokedAnnouncement": "Selected Microsoft Teams installation revoked immediately. Other tenants and Z8 inbox approvals remain unaffected.",
+      "rotateDialog": {
+        "appId": "Microsoft App ID (GUID)",
+        "appPassword": "New Microsoft App Password (write-only)",
+        "description": "Enter the new Microsoft Entra client secret for the exact same Microsoft App ID and Entra Tenant ID. Conversations, employee links, and open approval cards are preserved.",
+        "submit": "Verify identity & rotate",
+        "tenantId": "Microsoft Entra Tenant ID (GUID)",
+        "title": "Rotate Microsoft Teams credentials"
+      },
+      "rotatedAnnouncement": "Microsoft Teams credentials rotated to revision v{revision}.",
+      "settingsField": {
+        "digestTime": "Digest time",
+        "digestTimezone": "Digest timezone",
+        "enableApprovals": "Approvals",
+        "enableCommands": "Bot commands",
+        "enableDailyDigest": "Daily digest",
+        "enableEscalations": "Escalations",
+        "escalationTimeoutHours": "Escalation timeout (hours)"
+      },
+      "summaryHeading": "Multi-tenant switch impact summary",
+      "switchedAnnouncement": "Switched to your organization-owned Microsoft Teams app. All reviewed legacy tenants are now retiring.",
+      "tenantOpenCards": "{count} open cards / jobs",
+      "tenantSettingsSummary": "Approvals: {approvals} · Commands: {commands} · Digest: {digest} ({time} {tz}) · Escalations: {escalations} ({hours}h)",
+      "title": "Review legacy Teams tenants & switch organization",
+      "verifyRestoreButton": "Re-verify & send test"
+    },
     "telegram": {
       "bot": {
         "description": "Connect a Telegram bot to enable notifications and commands for your organization.",

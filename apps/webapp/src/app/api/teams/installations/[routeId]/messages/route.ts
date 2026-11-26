@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import { connection, NextResponse } from "next/server";
 import {
 	handleTeamsCandidateHealthRequest,
-	handleTeamsCandidateMessageRequest,
+	handleTeamsInstallationMessageRequest,
 } from "@/lib/chat-installations/teams-candidate-routes";
 
 export async function POST(
@@ -15,7 +15,7 @@ export async function POST(
 	const authorizationHeader = request.headers.get("authorization") ?? "";
 	const contentType = request.headers.get("content-type") ?? "application/json";
 
-	const result = await handleTeamsCandidateMessageRequest({
+	const result = await handleTeamsInstallationMessageRequest({
 		routeId,
 		rawBody,
 		authorizationHeader,

@@ -8,7 +8,7 @@
 
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { teamsUserMapping } from "@/db/schema";
+import { chatInstallationMemberLink, teamsUserMapping } from "@/db/schema";
 import { resolveCommandActorEmployee } from "@/lib/integrations/resolve-command-actor";
 import { createLogger } from "@/lib/logger";
 import type { UserResolutionResult } from "./types";
@@ -95,6 +95,83 @@ export async function resolveTeamsUser(
 		return { status: "not_linked", teamsUserId, teamsEmail: null };
 	} catch (error) {
 		logger.error({ error, teamsUserId, teamsTenantId }, "Failed to resolve Teams user");
+		throw error;
+	}
+}
+
+/**
+ * Resolve a Teams user for a specific organization-owned or retiring chat installation.
+ * Checks verified non-candidate `chat_installation_member_link` rows first, then falls back
+ * to verified legacy `teams_user_mapping` in the exact same `(organizationId, tenantId)`.
+ * Always enforces current employee roster eligibility and NEVER matches by email.
+ */
+export async function resolveTeamsUserForInstallation(input: {
+	teamsUserId: string;
+	teamsTenantId: string;
+	organizationId: string;
+	installationId: string;
+}): Promise<UserResolutionResult> {
+	try {
+		if (typeof db.select === "function") {
+			const [memberLink] = await db
+				.select({
+					id: chatInstallationMemberLink.id,
+					userId: chatInstallationMemberLink.userId,
+					externalUserId: chatInstallationMemberLink.externalUserId,
+				})
+				.from(chatInstallationMemberLink)
+				.where(
+					and(
+						eq(chatInstallationMemberLink.organizationId, input.organizationId),
+						eq(chatInstallationMemberLink.installationId, input.installationId),
+						eq(chatInstallationMemberLink.externalUserId, input.teamsUserId),
+						eq(chatInstallationMemberLink.isCandidateEnrollment, false),
+						eq(chatInstallationMemberLink.isActive, true),
+					),
+				)
+				.limit(1);
+
+			if (memberLink) {
+				const emp = await resolveCommandActorEmployee(memberLink.userId, input.organizationId);
+				if (!emp) {
+					return { status: "no_employee", userId: memberLink.userId };
+				}
+				await db
+					.update(chatInstallationMemberLink)
+					.set({ lastSeenAt: new Date(), updatedAt: new Date() })
+					.where(eq(chatInstallationMemberLink.id, memberLink.id));
+				return {
+					status: "found",
+					user: {
+						userId: memberLink.userId,
+						employeeId: emp.id,
+						organizationId: input.organizationId,
+						teamsUserId: memberLink.externalUserId,
+						teamsEmail: "",
+						teamsTenantId: input.teamsTenantId,
+						isNewMapping: false,
+					},
+				};
+			}
+		}
+
+		return resolveTeamsUser(
+			input.teamsUserId,
+			null,
+			input.teamsTenantId,
+			undefined,
+			input.organizationId,
+		);
+	} catch (error) {
+		logger.error(
+			{
+				error,
+				teamsUserId: input.teamsUserId,
+				organizationId: input.organizationId,
+				installationId: input.installationId,
+			},
+			"Failed to resolve Teams user for installation",
+		);
 		throw error;
 	}
 }
