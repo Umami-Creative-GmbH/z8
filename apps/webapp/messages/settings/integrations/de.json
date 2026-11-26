@@ -51,6 +51,107 @@
       "title": "Kalendersynchronisierung",
       "titleTemplatePlaceholder": "Abwesend – {categoryName}"
     },
+    "chatInstallations": {
+      "blockers": {
+        "duplicateIdentity": {
+          "nextAction": "Trennen oder ersetzen Sie den doppelten externen Bot, sodass nur eine Organisation diese App beansprucht, bevor Sie wechseln.",
+          "title": "Doppelte externe App- oder Bot-Identität"
+        },
+        "heading": "Migrationsblocker",
+        "nextActionLabel": "Nächster Schritt:",
+        "secretStoreUnavailable": {
+          "nextAction": "Versuchen Sie es erneut, sobald der Secret-Store der Organisation erreichbar ist. Die bestehende Konfiguration wurde nicht verändert.",
+          "title": "Secret-Store vorübergehend nicht erreichbar"
+        },
+        "teamsDisagreement": {
+          "nextAction": "Prüfen Sie die abweichenden Mandanteneinstellungen unten und bestätigen Sie die Zieleinstellungen für Ihre organisations­eigene Teams-App.",
+          "title": "Abweichende Einstellungen zwischen bestehenden Teams-Mandanten"
+        },
+        "trafficPreserved": "Wechsel und Endpunktänderungen sind bis zur Klärung blockiert. Der laufende Betrieb bleibt unverändert auf dem bestehenden Weg.",
+        "unexpectedLegacyStatus": {
+          "nextAction": "Prüfen Sie diese historische Verbindung und entscheiden Sie vor dem Wechsel, ob sie stillgelegt oder neu verbunden werden soll.",
+          "title": "Unerwarteter historischer Status: {status}"
+        },
+        "unknownBotIdentity": {
+          "nextAction": "Überprüfen Sie die externen Bot-Zugangsdaten und Metadaten, bevor Sie einen Wechsel oder eine Endpunktänderung vornehmen.",
+          "title": "Unbekannte Bot-Identität"
+        },
+        "unknownBotIdentityField": {
+          "title": "Unbekannte Bot-Identität ({field} fehlt)"
+        }
+      },
+      "credentialSource": {
+        "deploymentManaged": "Plattformverwaltet",
+        "organizationOwned": "Organisationseigen"
+      },
+      "description": "Prüfen Sie externe App-Identität, Zugangsdaten-Eigentum, Verifizierungsnachweise und Migrationsbereitschaft, bevor Sie die Live-Zustellung ändern.",
+      "disconnectedDescription": "Für diese Organisation ist keine aktive {channelName}-Installation verbunden.",
+      "evidence": {
+        "configuredAt": "Konfiguriert: {timestamp}",
+        "interactionEndpointPending": "Interaktions-Endpunkt nicht bestätigt",
+        "interactionEndpointReady": "Interaktions-Endpunkt konfiguriert",
+        "lastVerified": "Zuletzt verifiziert: {timestamp}",
+        "noneRecorded": "Noch kein Verifizierungszeitpunkt erfasst.",
+        "secretMissing": "Gespeicherte Zugangsdaten fehlen im Secret-Store",
+        "secretStoreUnavailable": "Secret-Store während der Prüfung nicht erreichbar",
+        "serviceUrlMissing": "Noch keine Service-URL erfasst",
+        "serviceUrlRecorded": "Service-URL erfasst",
+        "webhookNotRegistered": "Webhook nicht registriert",
+        "webhookRegistered": "Webhook registriert"
+      },
+      "identity": {
+        "appId": "App-ID: {id}",
+        "botId": "Bot-ID: {id}",
+        "spaceId": "Workspace / Mandant: {id}",
+        "unidentified": "Nicht identifizierte Installation"
+      },
+      "loadErrorActionHint": "Laden Sie erneut, um Zugangsdaten-Eigentum, Verifizierungsnachweise und Migrationsblocker anzuzeigen.",
+      "loadErrorDescription": "Der aktuelle Installationsstatus konnte nicht geladen werden. Die bestehende Zustellung bleibt unverändert.",
+      "loadErrorTitle": "{channelName}-Installation konnte nicht geladen werden",
+      "reloaded": "{channelName}-Installationsstatus aktualisiert.",
+      "retry": "Erneut versuchen",
+      "retrying": "{channelName}-Installationsstatus wird neu geladen…",
+      "state": {
+        "connected": "Verbunden",
+        "disconnected": "Getrennt",
+        "loadFailed": "Laden fehlgeschlagen",
+        "remediationRequired": "Klärung erforderlich",
+        "unknownReadiness": "Bereitschaft unbekannt"
+      },
+      "teams": {
+        "disagreementsHeading": "Abweichende Mandanteneinstellungen",
+        "disagreementsHelp": "Prüfen Sie diese Unterschiede, um vor dem Wechsel einheitliche Zieleinstellungen zu bestätigen.",
+        "disagreementsTitle": "Abweichende Einstellungen zwischen bestehenden Teams-Mandanten",
+        "discoveredTenants": "Gefundene bestehende Teams-Mandanten ({count})",
+        "discoveredTenantsDescription": "Jeder mit dieser Organisation verknüpfte Microsoft-365-Mandant behält seine wirksamen Einstellungen bis zum organisationsweiten Wechsel.",
+        "fields": {
+          "digestTime": "Uhrzeit der Zusammenfassung",
+          "digestTimezone": "Zeitzone der Zusammenfassung",
+          "enableApprovals": "Genehmigungsbenachrichtigungen",
+          "enableCommands": "Befehle",
+          "enableDailyDigest": "Tägliche Zusammenfassung",
+          "enableEscalations": "Eskalationen",
+          "escalationTimeoutHours": "Eskalations-Timeout"
+        },
+        "unexpectedStatus": "Unerwarteter Status: {status}"
+      },
+      "title": "Aktuelle {channelName}-Installation",
+      "unknownReadinessDescription": "Prüfen Sie den Secret-Store Ihrer Organisation oder die Plattform-Zugangsdaten und versuchen Sie es vor einem Wechsel erneut.",
+      "unknownReadinessTitle": "Verifizierungs- und Zugangsdatenbereitschaft konnten nicht bestätigt werden",
+      "values": {
+        "disabled": "Deaktiviert",
+        "enabled": "Aktiviert",
+        "hours": "{hours} Std."
+      },
+      "verification": {
+        "expired": "Verifizierung abgelaufen",
+        "failed": "Verifizierung fehlgeschlagen",
+        "pending": "Verifizierung ausstehend",
+        "unverified": "Nicht verifiziert",
+        "unverifiedLegacy": "Nicht verifiziert (Bestand)",
+        "verified": "Verifiziert"
+      }
+    },
     "clockinImport": {
       "credentials": {
         "connect": "Verbinden & Vorschau",

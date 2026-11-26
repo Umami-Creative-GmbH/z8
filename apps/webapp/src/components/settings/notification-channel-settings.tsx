@@ -6,7 +6,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
 import { useRouter } from "next/navigation";
-import type { ReactNode } from "react";
+import { type ReactNode, useId } from "react";
 import { toast } from "sonner";
 import type {
 	NotificationChannelConfig,
@@ -222,6 +222,15 @@ export function NotificationChannelSettings(props: NotificationChannelSettingsPr
 	const { channelName, description, config, connectAction, connectedAction } = props;
 	const { t, isActive, statusLabel, form, isDirty, isSubmitting, disableForm } =
 		useNotificationChannelForm(props);
+	const fieldPrefix = useId();
+	const enableApprovalsId = `${fieldPrefix}-enableApprovals`;
+	const enableCommandsId = `${fieldPrefix}-enableCommands`;
+	const enableDailyDigestId = `${fieldPrefix}-enableDailyDigest`;
+	const digestTimeId = `${fieldPrefix}-digestTime`;
+	const digestTimezoneId = `${fieldPrefix}-digestTimezone`;
+	const enableEscalationsId = `${fieldPrefix}-enableEscalations`;
+	const escalationTimeoutHoursId = `${fieldPrefix}-escalationTimeoutHours`;
+	const escalationTimeoutErrorId = `${fieldPrefix}-escalationTimeoutHours-error`;
 
 	return (
 		<div className="min-w-0 space-y-6">
@@ -255,7 +264,7 @@ export function NotificationChannelSettings(props: NotificationChannelSettingsPr
 						}}
 					>
 						<FeatureToggleRow
-							id="enableApprovals"
+							id={enableApprovalsId}
 							label={t("settings.notifications.approvals", "Approval notifications")}
 							description={t(
 								"settings.notifications.approvalsDescription",
@@ -265,11 +274,11 @@ export function NotificationChannelSettings(props: NotificationChannelSettingsPr
 							<form.Field name="enableApprovals">
 								{(field) => (
 									<Switch
-										id="enableApprovals"
+										id={enableApprovalsId}
 										checked={field.state.value}
 										onCheckedChange={field.handleChange}
 										disabled={disableForm}
-										aria-describedby="enableApprovals-description"
+										aria-describedby={`${enableApprovalsId}-description`}
 										className="shrink-0"
 									/>
 								)}
@@ -279,7 +288,7 @@ export function NotificationChannelSettings(props: NotificationChannelSettingsPr
 						<div className="h-px bg-border" />
 
 						<FeatureToggleRow
-							id="enableCommands"
+							id={enableCommandsId}
 							label={t("settings.notifications.commands", "Commands")}
 							description={t(
 								"settings.notifications.commandsDescription",
@@ -289,11 +298,11 @@ export function NotificationChannelSettings(props: NotificationChannelSettingsPr
 							<form.Field name="enableCommands">
 								{(field) => (
 									<Switch
-										id="enableCommands"
+										id={enableCommandsId}
 										checked={field.state.value}
 										onCheckedChange={field.handleChange}
 										disabled={disableForm}
-										aria-describedby="enableCommands-description"
+										aria-describedby={`${enableCommandsId}-description`}
 										className="shrink-0"
 									/>
 								)}
@@ -304,7 +313,7 @@ export function NotificationChannelSettings(props: NotificationChannelSettingsPr
 
 						<div className="space-y-3">
 							<FeatureToggleRow
-								id="enableDailyDigest"
+								id={enableDailyDigestId}
 								label={t("settings.notifications.dailyDigest", "Daily digest")}
 								description={t(
 									"settings.notifications.dailyDigestDescription",
@@ -314,11 +323,11 @@ export function NotificationChannelSettings(props: NotificationChannelSettingsPr
 								<form.Field name="enableDailyDigest">
 									{(field) => (
 										<Switch
-											id="enableDailyDigest"
+											id={enableDailyDigestId}
 											checked={field.state.value}
 											onCheckedChange={field.handleChange}
 											disabled={disableForm}
-											aria-describedby="enableDailyDigest-description"
+											aria-describedby={`${enableDailyDigestId}-description`}
 											className="shrink-0"
 										/>
 									)}
@@ -329,11 +338,11 @@ export function NotificationChannelSettings(props: NotificationChannelSettingsPr
 								<form.Field name="digestTime">
 									{(field) => (
 										<div className="space-y-2">
-											<Label htmlFor="digestTime">
+											<Label htmlFor={digestTimeId}>
 												{t("settings.notifications.digestTime", "Digest time")}
 											</Label>
 											<TimeInput
-												id="digestTime"
+												id={digestTimeId}
 												name="digestTime"
 												value={field.state.value}
 												onChange={(event) => field.handleChange(event.target.value)}
@@ -346,11 +355,11 @@ export function NotificationChannelSettings(props: NotificationChannelSettingsPr
 								<form.Field name="digestTimezone">
 									{(field) => (
 										<div className="space-y-2">
-											<Label htmlFor="digestTimezone">
+											<Label htmlFor={digestTimezoneId}>
 												{t("settings.notifications.timezone", "Timezone")}
 											</Label>
 											<TimezonePicker
-												id="digestTimezone"
+												id={digestTimezoneId}
 												value={field.state.value}
 												onChange={field.handleChange}
 												disabled={disableForm}
@@ -365,7 +374,7 @@ export function NotificationChannelSettings(props: NotificationChannelSettingsPr
 
 						<div className="space-y-3">
 							<FeatureToggleRow
-								id="enableEscalations"
+								id={enableEscalationsId}
 								label={t("settings.notifications.escalations", "Escalations")}
 								description={t(
 									"settings.notifications.escalationsDescription",
@@ -375,11 +384,11 @@ export function NotificationChannelSettings(props: NotificationChannelSettingsPr
 								<form.Field name="enableEscalations">
 									{(field) => (
 										<Switch
-											id="enableEscalations"
+											id={enableEscalationsId}
 											checked={field.state.value}
 											onCheckedChange={field.handleChange}
 											disabled={disableForm}
-											aria-describedby="enableEscalations-description"
+											aria-describedby={`${enableEscalationsId}-description`}
 											className="shrink-0"
 										/>
 									)}
@@ -403,11 +412,11 @@ export function NotificationChannelSettings(props: NotificationChannelSettingsPr
 									return (
 										<div className="space-y-2">
 											<div className="flex max-w-xs items-center gap-3 rounded-lg border bg-muted/30 p-3">
-												<Label htmlFor="escalationTimeoutHours" className="shrink-0">
+												<Label htmlFor={escalationTimeoutHoursId} className="shrink-0">
 													{t("settings.notifications.timeout", "Timeout")}
 												</Label>
 												<Input
-													id="escalationTimeoutHours"
+													id={escalationTimeoutHoursId}
 													name="escalationTimeoutHours"
 													type="number"
 													inputMode="numeric"
@@ -420,7 +429,7 @@ export function NotificationChannelSettings(props: NotificationChannelSettingsPr
 													disabled={disableForm}
 													autoComplete="off"
 													aria-invalid={hasError}
-													aria-describedby={hasError ? "escalationTimeoutHours-error" : undefined}
+													aria-describedby={hasError ? escalationTimeoutErrorId : undefined}
 													className="w-24 tabular-nums"
 												/>
 												<span className="text-sm text-muted-foreground">
@@ -429,7 +438,7 @@ export function NotificationChannelSettings(props: NotificationChannelSettingsPr
 											</div>
 											{hasError ? (
 												<p
-													id="escalationTimeoutHours-error"
+													id={escalationTimeoutErrorId}
 													className="text-sm text-destructive"
 													role="alert"
 												>

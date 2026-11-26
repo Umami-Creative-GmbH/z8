@@ -9,6 +9,7 @@ import { getTranslate } from "@/tolgee/server";
 import {
 	connectDiscordBot,
 	disconnectDiscordBot,
+	getChatInstallationsInventory,
 	getDiscordNotificationChannelConfig,
 	getSlackNotificationChannelConfig,
 	getTeamsNotificationChannelConfig,
@@ -16,12 +17,13 @@ import {
 	updateSlackNotificationChannelSettings,
 	updateTeamsNotificationChannelSettings,
 } from "./actions";
+import { ChatInstallationInventoryPanel } from "./chat-installation-inventory-panel";
 import { SlackConnectButton } from "./slack-connect-button";
 import { TelegramPanel } from "./telegram-panel";
 
 async function ChatSettingsContent() {
 	const access = requireOrgAdminSettingsAccess();
-	const [{ organizationId }, t, [slack, teams, discord]] = await Promise.all([
+	const [{ organizationId }, t, [slack, teams, discord, inventory]] = await Promise.all([
 		access,
 		getTranslate(),
 		access.then(() =>
@@ -29,9 +31,13 @@ async function ChatSettingsContent() {
 				getSlackNotificationChannelConfig(),
 				getTeamsNotificationChannelConfig(),
 				getDiscordNotificationChannelConfig(),
+				getChatInstallationsInventory(),
 			]),
 		),
 	]);
+	const inventoryData = inventory.success ? inventory.data : null;
+	const inventoryLoadFailed = !inventory.success;
+
 	return (
 		<SettingsTabbedPage
 			key={organizationId}
@@ -47,12 +53,20 @@ async function ChatSettingsContent() {
 					),
 					measure: true,
 					panel: (
-						<NotificationChannelSettings
-							channelName="Slack"
-							config={slack.success ? slack.data : null}
-							updateAction={updateSlackNotificationChannelSettings}
-							connectAction={<SlackConnectButton organizationId={organizationId} />}
-						/>
+						<div className="min-w-0 space-y-6">
+							<ChatInstallationInventoryPanel
+								provider="slack"
+								channelName="Slack"
+								initialInventory={inventoryData?.providers.slack ?? null}
+								initialLoadFailed={inventoryLoadFailed}
+							/>
+							<NotificationChannelSettings
+								channelName="Slack"
+								config={slack.success ? slack.data : null}
+								updateAction={updateSlackNotificationChannelSettings}
+								connectAction={<SlackConnectButton organizationId={organizationId} />}
+							/>
+						</div>
 					),
 				},
 				{
@@ -64,19 +78,27 @@ async function ChatSettingsContent() {
 					),
 					measure: true,
 					panel: (
-						<NotificationChannelSettings
-							channelName="Microsoft Teams"
-							config={teams.success ? teams.data : null}
-							updateAction={updateTeamsNotificationChannelSettings}
-							connectAction={
-								<p className="text-sm">
-									{t(
-										"settings.notifications.teams.setupInstructions",
-										"To connect Microsoft Teams, add the Z8 app to your Microsoft 365 tenant. The Z8 bot then sends a setup link that an organization admin opens to link the tenant to this organization.",
-									)}
-								</p>
-							}
-						/>
+						<div className="min-w-0 space-y-6">
+							<ChatInstallationInventoryPanel
+								provider="teams"
+								channelName="Microsoft Teams"
+								initialInventory={inventoryData?.providers.teams ?? null}
+								initialLoadFailed={inventoryLoadFailed}
+							/>
+							<NotificationChannelSettings
+								channelName="Microsoft Teams"
+								config={teams.success ? teams.data : null}
+								updateAction={updateTeamsNotificationChannelSettings}
+								connectAction={
+									<p className="text-sm">
+										{t(
+											"settings.notifications.teams.setupInstructions",
+											"To connect Microsoft Teams, add the Z8 app to your Microsoft 365 tenant. The Z8 bot then sends a setup link that an organization admin opens to link the tenant to this organization.",
+										)}
+									</p>
+								}
+							/>
+						</div>
 					),
 				},
 				{
@@ -87,7 +109,17 @@ async function ChatSettingsContent() {
 						"Configure Telegram bot integration for notifications and commands",
 					),
 					measure: true,
-					panel: <TelegramPanel />,
+					panel: (
+						<div className="min-w-0 space-y-6">
+							<ChatInstallationInventoryPanel
+								provider="telegram"
+								channelName="Telegram"
+								initialInventory={inventoryData?.providers.telegram ?? null}
+								initialLoadFailed={inventoryLoadFailed}
+							/>
+							<TelegramPanel />
+						</div>
+					),
 				},
 				{
 					value: "discord",
@@ -98,12 +130,20 @@ async function ChatSettingsContent() {
 					),
 					measure: true,
 					panel: (
-						<DiscordChannelSettings
-							config={discord.success ? discord.data : null}
-							updateAction={updateDiscordNotificationChannelSettings}
-							connectAction={connectDiscordBot}
-							disconnectAction={disconnectDiscordBot}
-						/>
+						<div className="min-w-0 space-y-6">
+							<ChatInstallationInventoryPanel
+								provider="discord"
+								channelName="Discord"
+								initialInventory={inventoryData?.providers.discord ?? null}
+								initialLoadFailed={inventoryLoadFailed}
+							/>
+							<DiscordChannelSettings
+								config={discord.success ? discord.data : null}
+								updateAction={updateDiscordNotificationChannelSettings}
+								connectAction={connectDiscordBot}
+								disconnectAction={disconnectDiscordBot}
+							/>
+						</div>
 					),
 				},
 			]}

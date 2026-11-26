@@ -2374,6 +2374,13 @@
       "when": 1813939200000,
       "tag": "0338_backfill_current_employment_periods",
       "breakpoints": true
+    },
+    {
+      "idx": 339,
+      "version": "7",
+      "when": 1814025600000,
+      "tag": "0339_chat_installations_foundation",
+      "breakpoints": true
     }
   ]
 }
