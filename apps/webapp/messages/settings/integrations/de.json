@@ -530,6 +530,131 @@
     "teamsNotifications": {
       "title": "Microsoft Teams"
     },
+    "teamsPrepare": {
+      "badge": {
+        "candidate": "Kandidaten-Einrichtung",
+        "ready": "Bereit zur Wechselprüfung"
+      },
+      "copiedAnnouncement": "{label} kopiert.",
+      "copyFailed": "Automatisches Kopieren fehlgeschlagen. Markieren Sie den Text und kopieren Sie ihn manuell.",
+      "credentials": {
+        "appId": "Microsoft-App-ID (GUID)",
+        "appIdHelp": "Anwendungs-ID (Client) Ihrer Single-Tenant-Azure-Bot-Registrierung.",
+        "appPassword": "Microsoft-App-Passwort (Client-Secret)",
+        "appPasswordHelp": "Nur schreibendes Client-Secret aus „Zertifikate & Geheimnisse“ in Microsoft Entra ID.",
+        "description": "Das Client-Secret wird in einer unveränderlichen organisationsbezogenen Revision gespeichert und nach dem Speichern nie wieder angezeigt. Bestehende Legacy-Teams-Mandanten bleiben aktiv.",
+        "heading": "2. Single-Tenant-Zugangsdaten eingeben (nur schreibend)",
+        "saveButton": "Single-Tenant-Zugangsdaten speichern",
+        "storedBadge": "Gespeichert (Revision v{revision})",
+        "tenantDisplayName": "Mandanten-Anzeigename (optional)",
+        "tenantDisplayNameHelp": "Anzeigename für die Prüfung und die Wechselübersicht.",
+        "tenantId": "Microsoft-Entra-Mandanten-ID (GUID)",
+        "tenantIdHelp": "Verzeichnis-ID (Mandant) Ihres Microsoft-365-Mandanten. Sie können einen Ersatz im selben Mandanten wie Ihre laufende Teams-Verbindung vorbereiten.",
+        "updateButton": "Neue Zugangsdaten-Revision speichern"
+      },
+      "credentialsSavedAnnouncement": "Single-Tenant-Teams-Zugangsdaten in Revision {revision} gespeichert.",
+      "description": "Bereiten Sie eine organisationseigene Single-Tenant-Microsoft-Teams-App vor und prüfen Sie sie, ohne aktive Teams-Mandanten zu unterbrechen. Der Wechsel erfolgt erst nach bestandener Prüfung.",
+      "emptyPrompt": "Erstellen Sie ein dediziertes Single-Tenant-Teams-App-Paket, einen Messaging-Endpunkt sowie Anleitungen für das Microsoft Teams Admin Center. Ihre bestehende Teams-Bereitstellung verarbeitet während der Einrichtung weiter alle Anfragen.",
+      "errors": {
+        "appClaimed": "Diese Microsoft-Teams-App-ID ist bereits von einer anderen Z8-Organisation beansprucht.",
+        "candidateNotFound": "Kandidaten-Teams-Einrichtung nicht gefunden. Laden Sie die Seite neu und bereiten Sie die App erneut vor.",
+        "credentialsMissing": "Gespeicherte Zugangsdaten wurden nicht gefunden. Geben Sie Ihre Single-Tenant-Zugangsdaten erneut ein und speichern Sie sie.",
+        "credentialsNotConfigured": "Speichern Sie zuerst Ihre Single-Tenant-Teams-Zugangsdaten, bevor Sie den proaktiven Test ausführen.",
+        "invalidAppIdFormat": "Die Microsoft-App-ID muss eine gültige GUID sein.",
+        "invalidAppPasswordFormat": "Das Microsoft-App-Passwort (Client-Secret) muss mindestens 8 Zeichen enthalten.",
+        "invalidTenantIdFormat": "Die Microsoft-Entra-Mandanten-ID muss eine gültige GUID sein.",
+        "missingPrivateReachability": "Für diese Kandidaten-Teams-App wurde noch kein privater Chat erfasst. Senden Sie dem Kandidaten-Bot zuerst eine 1:1-Nachricht in Microsoft Teams und versuchen Sie es erneut.",
+        "prepareFailed": "Single-Tenant-Teams-App konnte nicht vorbereitet werden.",
+        "proactiveTestFailed": "Die proaktive private Testnachricht konnte nicht gesendet werden.",
+        "refreshFailed": "Der Teams-Prüfstatus konnte nicht aktualisiert werden.",
+        "saveCredentialsFailed": "Single-Tenant-Teams-Zugangsdaten konnten nicht gespeichert werden.",
+        "tenantClaimed": "Dieser Microsoft-Teams-Mandant ist bereits mit einer anderen Z8-Organisation verbunden.",
+        "tenantMismatch": "Die erfasste Unterhaltung gehört zu einem anderen Microsoft-Teams-Mandanten. Schreiben Sie dem Kandidaten-Bot aus dem konfigurierten Mandanten und versuchen Sie es erneut."
+      },
+      "manifestDownloaded": "Teams-App-Manifest heruntergeladen.",
+      "packageDownloaded": "Single-Tenant-Teams-App-Paket (.zip) heruntergeladen.",
+      "packageDownloadFailed": "Teams-App-Paket (.zip) konnte nicht erstellt werden.",
+      "prepare": {
+        "copyManifest": "Manifest kopieren",
+        "copyUrl": "Kopieren",
+        "downloadManifest": "manifest.json herunterladen",
+        "downloadPackage": "App-Paket herunterladen (.zip)",
+        "heading": "1. Single-Tenant-Teams-App & Admin-Rollout vorbereiten",
+        "instructions": "Konfigurieren Sie Ihren Single-Tenant-Azure-Bot mit dem dedizierten Messaging-Endpunkt unten, speichern Sie Ihre Zugangsdaten und laden Sie anschließend das App-Paket im Microsoft Teams Admin Center hoch.",
+        "manifestLabel": "Teams-App-Manifest",
+        "messagingEndpointLabel": "Dedizierter Messaging-Endpunkt",
+        "placeholderAppIdNote": "Speichern Sie unten Ihre Microsoft-App-ID, damit die App-ID vor dem Hochladen im Microsoft Teams Admin Center in manifest.json eingetragen wird."
+      },
+      "prepareButton": "Single-Tenant-Teams-App vorbereiten",
+      "preparedAnnouncement": "Single-Tenant-Teams-App-Paket und Messaging-Endpunkt generiert.",
+      "proactiveTestSentAnnouncement": "Synthetische proaktive private Testnachricht an Microsoft Teams zugestellt.",
+      "readyAnnouncement": "Prüfung der Single-Tenant-Teams-App abgeschlossen. Bereit für die Wechselprüfung.",
+      "readyBanner": "Ihre Single-Tenant-Microsoft-Teams-App hat Zugangsdaten-, authentifizierte Eingangsaktivitäts- und proaktive private Zustellungsprüfungen bestanden. Bestehende Legacy-Teams-Mandanten bleiben bis zur bestätigten Umstellung aktiv.",
+      "refreshedAnnouncement": "Teams-Prüfstatus aktualisiert.",
+      "rollout": {
+        "heading": "Rollout-Anleitung für das Microsoft Teams Admin Center",
+        "steps": {
+          "azure_bot_registration": {
+            "summary": "Erstellen Sie im Azure-Portal einen Azure Bot mit Typ = Single Tenant im Microsoft-Entra-ID-Mandanten Ihrer Organisation, aktivieren Sie den Microsoft-Teams-Kanal und erstellen Sie ein Client-Secret.",
+            "title": "Single-Tenant-Azure-Bot & Entra-App-Registrierung erstellen"
+          },
+          "configure_messaging_endpoint": {
+            "summary": "Tragen Sie als Azure-Bot-Messaging-Endpunkt {endpointUrl} ein. Diese Installationsroute ist ausschließlich Ihrer Organisation zugeordnet.",
+            "title": "Dedizierten Z8-Messaging-Endpunkt konfigurieren"
+          },
+          "save_credentials_in_z8": {
+            "summary": "Geben Sie unten Microsoft-App-ID (GUID), Microsoft-Entra-Mandanten-ID (GUID) und Client-Secret ein. Z8 speichert das Secret in einer unveränderlichen Zugangsdaten-Revision und aktualisiert Ihr App-Paket-Manifest mit Ihrer App-ID.",
+            "title": "Single-Tenant-Zugangsdaten in Z8 speichern (nur schreibend)"
+          },
+          "upload_teams_admin_center": {
+            "summary": "Laden Sie das Single-Tenant-Teams-App-Paket (.zip) herunter, öffnen Sie das Microsoft Teams Admin Center (admin.teams.microsoft.com) → Teams-Apps → Apps verwalten → Neue App hochladen und weisen Sie sie über Ihre App-Einrichtungsrichtlinie zu.",
+            "title": "App-Paket im Microsoft Teams Admin Center hochladen"
+          },
+          "verify_private_chat": {
+            "summary": "Öffnen Sie einen 1:1-Privatchat mit Ihrem neuen Teams-Bot und senden Sie eine Nachricht (z. B. „verify“). Kehren Sie anschließend hierher zurück, aktualisieren Sie den Status und senden Sie die proaktive private Testnachricht.",
+            "title": "Authentifizierte Eingangsaktivität & proaktive private Zustellung prüfen"
+          }
+        }
+      },
+      "status": {
+        "expired": "Abgelaufen",
+        "failed": "Handlung erforderlich",
+        "passed": "Bestanden",
+        "pending": "Ausstehend"
+      },
+      "stepExpiredAt": "Zuletzt geprüft am {timestamp}. Der Nachweis ist abgelaufen und muss erneuert werden.",
+      "stepFailureCode": "Letzte Prüfung fehlgeschlagen ({code}). Beheben Sie den Schritt und versuchen Sie es erneut.",
+      "steps": {
+        "credentials": {
+          "description": "Microsoft-App-ID, Entra-Mandanten-ID und nur schreibendes Client-Secret in einer unveränderlichen organisationsbezogenen Revision gespeichert.",
+          "title": "Single-Tenant-Zugangsdaten & Mandanteneigentum"
+        },
+        "inboundProof": {
+          "description": "Öffnen Sie einen 1:1-Privatchat mit Ihrem Kandidaten-Teams-Bot und senden Sie eine Nachricht (z. B. „verify“), damit Z8 Bot-Framework-Token, App-ID, Mandanten-ID und private Erreichbarkeit bestätigt.",
+          "retry": "Eingangsaktivität erneut prüfen",
+          "title": "Authentifizierte Eingangsaktivität (passende App & Mandant)"
+        },
+        "privateTest": {
+          "descriptionMissing": "Wartet auf eine 1:1-Privatnachricht an den Kandidaten-Bot in Microsoft Teams, um Ihre Unterhaltungsreferenz vor dem proaktiven Test zu erfassen.",
+          "descriptionReady": "Die private Unterhaltungsreferenz ist für diese Kandidaten-App erfasst. Senden Sie eine synthetische proaktive Testnachricht über den installationsbezogenen Adapter.",
+          "title": "Proaktive private Testnachricht"
+        }
+      },
+      "stepVerifiedAt": "Geprüft: {timestamp}",
+      "test": {
+        "description": "Kandidatenprüfungen führen niemals Produktivbefehle, Genehmigungskarten oder Live-Benachrichtigungen aus. Mitarbeitende mit nachgewiesener Entra-Identität im selben Mandanten können den Bot direkt anschreiben; andere verknüpfen sich per Code unter Einstellungen → Benachrichtigungen.",
+        "heading": "3. Single-Tenant-Teams-App testen & prüfen",
+        "refreshStatus": "Status aktualisieren",
+        "retryProactiveTest": "Proaktiven privaten Test wiederholen",
+        "sendProactiveTest": "Proaktiven privaten Test senden"
+      },
+      "title": "Single-Tenant-Microsoft-Teams-App vorbereiten & testen",
+      "validation": {
+        "appIdRequired": "Microsoft-App-ID ist erforderlich.",
+        "appPasswordRequired": "Microsoft-App-Passwort ist erforderlich.",
+        "tenantIdRequired": "Microsoft-Entra-Mandanten-ID ist erforderlich."
+      }
+    },
     "telegram": {
       "bot": {
         "description": "Verbinden Sie einen Telegram-Bot, um Benachrichtigungen und Befehle für Ihre Organisation zu aktivieren.",

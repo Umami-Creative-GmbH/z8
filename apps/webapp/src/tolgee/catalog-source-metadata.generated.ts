@@ -440,6 +440,7 @@ const sourceShape0: CatalogSourceMetadata = {
 				slack: 1,
 				slackSwitch: 1,
 				teamsNotifications: 1,
+				teamsPrepare: 1,
 				telegram: 1,
 			},
 		},

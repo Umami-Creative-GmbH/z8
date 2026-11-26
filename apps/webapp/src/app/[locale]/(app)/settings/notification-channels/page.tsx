@@ -26,6 +26,8 @@ import {
 	getSlackSwitchImpactPreview,
 } from "./slack-switch-actions";
 import { SlackSwitchReviewSection } from "./slack-switch-review-section";
+import { TeamsPrepareTestSection } from "./teams-prepare-test-section";
+import { getTeamsCandidateSetup } from "./teams-setup-actions";
 import { TelegramPanel } from "./telegram-panel";
 
 async function ChatSettingsContent() {
@@ -39,6 +41,7 @@ async function ChatSettingsContent() {
 			discord,
 			inventory,
 			slackCandidate,
+			teamsCandidate,
 			slackSwitchPreview,
 			slackCapabilities,
 			teamsCapabilities,
@@ -55,6 +58,7 @@ async function ChatSettingsContent() {
 				getDiscordNotificationChannelConfig(),
 				getChatInstallationsInventory(),
 				getSlackCandidateSetup(),
+				getTeamsCandidateSetup(),
 				getSlackSwitchImpactPreview(),
 				getProviderCapabilityDisclosure({ provider: "slack" }),
 				getProviderCapabilityDisclosure({ provider: "teams" }),
@@ -66,6 +70,7 @@ async function ChatSettingsContent() {
 	const inventoryData = inventory.success ? inventory.data : null;
 	const inventoryLoadFailed = !inventory.success;
 	const slackCandidateData = slackCandidate.success ? slackCandidate.data : null;
+	const teamsCandidateData = teamsCandidate.success ? teamsCandidate.data : null;
 	const slackSwitchPreviewData = slackSwitchPreview.success ? slackSwitchPreview.data : null;
 
 	return (
@@ -132,6 +137,7 @@ async function ChatSettingsContent() {
 								channelName="Microsoft Teams"
 								disclosure={teamsCapabilities.success ? teamsCapabilities.data : null}
 							/>
+							<TeamsPrepareTestSection initialSetup={teamsCandidateData} />
 							<NotificationChannelSettings
 								channelName="Microsoft Teams"
 								config={teams.success ? teams.data : null}
