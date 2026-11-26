@@ -13,7 +13,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 import type {
 	DiscordConnectFormValues,
@@ -340,6 +340,7 @@ function DiscordConnectedDetails({
 	onDisconnected: () => void;
 }) {
 	const { t } = useTranslate();
+	const interactionUrlId = useId();
 	const [copied, setCopied] = useState(false);
 	const copyResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const disconnection = useConfirmedAction<"bot">();
@@ -413,12 +414,12 @@ function DiscordConnectedDetails({
 
 			{interactionUrl ? (
 				<div className="space-y-2">
-					<Label htmlFor="discord-interaction-url">
+					<Label htmlFor={interactionUrlId}>
 						{t("settings.discord.interactionEndpointUrl", "Interaction Endpoint URL")}
 					</Label>
 					<div className="flex flex-col gap-2 sm:flex-row">
 						<Input
-							id="discord-interaction-url"
+							id={interactionUrlId}
 							value={interactionUrl}
 							readOnly
 							className="font-mono text-xs"

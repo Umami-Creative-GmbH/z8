@@ -49,6 +49,7 @@ export function createAutoClockOutTaskOutbox(database: Pick<typeof db, "execute"
 				employee_id: string;
 				operation_id: string;
 				kind: AutoClockOutTaskKind;
+				dedupe_key: string;
 				payload: Record<string, unknown>;
 				claim_token: string;
 				attempt_count: number;
@@ -66,6 +67,7 @@ export function createAutoClockOutTaskOutbox(database: Pick<typeof db, "execute"
 				employeeId: r.employee_id,
 				operationId: r.operation_id,
 				kind: r.kind,
+				dedupeKey: r.dedupe_key,
 				payload: r.payload,
 				claimToken: r.claim_token,
 				attemptCount: r.attempt_count,

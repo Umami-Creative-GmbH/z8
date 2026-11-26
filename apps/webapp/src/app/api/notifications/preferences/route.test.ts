@@ -15,10 +15,10 @@ const mockState = vi.hoisted(() => {
 	return {
 		connection: vi.fn(),
 		findFirst,
+		getOrganizationChatChannelAvailability: vi.fn(),
 		getSession: vi.fn(),
 		headers: vi.fn(),
 		insert,
-		isTelegramEnabledForOrganization: vi.fn(),
 		onConflictDoUpdate,
 		select,
 		update,
@@ -34,8 +34,7 @@ vi.mock("next/headers", () => ({
 }));
 
 vi.mock("next/server", async () => {
-	const actual =
-		await vi.importActual<typeof import("next/server")>("next/server");
+	const actual = await vi.importActual<typeof import("next/server")>("next/server");
 	return {
 		...actual,
 		connection: mockState.connection,
@@ -75,8 +74,19 @@ vi.mock("@/db/schema", () => ({
 	},
 }));
 
-vi.mock("@/lib/telegram", () => ({
-	isTelegramEnabledForOrganization: mockState.isTelegramEnabledForOrganization,
+vi.mock("@/lib/chat-installations/member-links", () => ({
+	getOrganizationChatChannelAvailability: mockState.getOrganizationChatChannelAvailability,
+	buildAvailableNotificationChannels: (chat: {
+		teams: boolean;
+		telegram: boolean;
+		discord: boolean;
+		slack: boolean;
+	}) => ({
+		in_app: true,
+		push: true,
+		email: true,
+		...chat,
+	}),
 }));
 
 vi.mock("drizzle-orm", () => ({
@@ -97,11 +107,21 @@ describe("GET /api/notifications/preferences", () => {
 		});
 		mockState.findFirst.mockResolvedValue(null);
 		mockState.where.mockResolvedValue([]);
-		mockState.isTelegramEnabledForOrganization.mockResolvedValue(false);
+		mockState.getOrganizationChatChannelAvailability.mockResolvedValue({
+			teams: false,
+			telegram: false,
+			discord: false,
+			slack: false,
+		});
 	});
 
-	it("returns organization-scoped channel availability using the Telegram availability helper", async () => {
-		mockState.isTelegramEnabledForOrganization.mockResolvedValue(true);
+	it("returns organization-scoped channel availability for all chat providers via the shared reader", async () => {
+		mockState.getOrganizationChatChannelAvailability.mockResolvedValue({
+			teams: true,
+			telegram: true,
+			discord: true,
+			slack: true,
+		});
 
 		const response = await GET();
 		const body = await response.json();
@@ -110,16 +130,46 @@ describe("GET /api/notifications/preferences", () => {
 			in_app: true,
 			push: true,
 			email: true,
-			teams: false,
+			teams: true,
 			telegram: true,
-			discord: false,
-			slack: false,
+			discord: true,
+			slack: true,
 		});
 		expect(JSON.stringify(body)).not.toContain("botToken");
 		expect(JSON.stringify(body)).not.toContain("webhookSecret");
-		expect(mockState.isTelegramEnabledForOrganization).toHaveBeenCalledWith(
-			"org-active",
-		);
+		expect(mockState.getOrganizationChatChannelAvailability).toHaveBeenCalledWith("org-active");
+	});
+
+	it("preserves account-wide preferences when active organization context is absent", async () => {
+		mockState.getSession.mockResolvedValue({
+			session: { activeOrganizationId: null },
+			user: { id: "user-1" },
+		});
+		mockState.where.mockResolvedValue([
+			{
+				id: "pref-1",
+				userId: "user-1",
+				notificationType: "approval_request_submitted",
+				channel: "email",
+				enabled: false,
+			},
+		]);
+
+		const response = await GET();
+		const body = await response.json();
+
+		expect(response.status).toBe(200);
+		expect(body.matrix.approval_request_submitted.email).toBe(false);
+		expect(body.availableChannels).toEqual({
+			in_app: true,
+			push: true,
+			email: true,
+			teams: false,
+			telegram: false,
+			discord: false,
+			slack: false,
+		});
+		expect(mockState.getOrganizationChatChannelAvailability).toHaveBeenCalledWith(null);
 	});
 
 	it("reads preferences by user while keeping channel availability organization-scoped", async () => {
@@ -130,9 +180,7 @@ describe("GET /api/notifications/preferences", () => {
 			type: "eq",
 			value: "user-1",
 		});
-		expect(mockState.isTelegramEnabledForOrganization).toHaveBeenCalledWith(
-			"org-active",
-		);
+		expect(mockState.getOrganizationChatChannelAvailability).toHaveBeenCalledWith("org-active");
 	});
 
 	it("rejects bulk updates when enabled is not boolean", async () => {

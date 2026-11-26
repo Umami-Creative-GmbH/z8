@@ -62,6 +62,7 @@ export interface DiscordInteraction {
 	type: number;
 	data?: DiscordInteractionData;
 	token: string;
+	guild_id?: string;
 	member?: DiscordMember;
 	user?: DiscordUser;
 	channel_id?: string;
@@ -160,6 +161,8 @@ export interface DiscordSlashCommandDefinition {
 
 export interface ResolvedDiscordBot {
 	organizationId: string;
+	/** Originating or active chat_installation.id when resolved via installations (#2043). */
+	installationId?: string | null;
 	botToken: string;
 	applicationId: string;
 	publicKey: string;

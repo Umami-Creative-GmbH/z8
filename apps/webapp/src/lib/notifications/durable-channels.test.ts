@@ -10,11 +10,15 @@ const mocks = vi.hoisted(() => ({
 	send: vi.fn(async () => null),
 	enabled: vi.fn(async () => true),
 }));
+vi.mock("@/lib/chat-installations/runtime-target", () => ({
+	resolveSwitchedActiveChatInstallation: async () => ({ kind: "legacy" }),
+}));
 vi.mock("@/lib/teams", () => ({
 	isTeamsEnabledForOrganization: mocks.enabled,
 	isBotConfigured: () => true,
 	sendApprovalCardToManager: vi.fn(),
 	getConversationReferenceForUser: mocks.recipient,
+	resolveTeamsOutboundTransportForOrganization: async () => null,
 	sendProactiveMessage: mocks.send,
 }));
 vi.mock("@/lib/slack", () => ({

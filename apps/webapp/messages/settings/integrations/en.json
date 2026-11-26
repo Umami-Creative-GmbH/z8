@@ -51,6 +51,143 @@
       "title": "Calendar Sync",
       "titleTemplatePlaceholder": "Out of Office - {categoryName}"
     },
+    "capabilities": {
+      "approvalKind": {
+        "absence": "Absences",
+        "manualTimeSubmission": "Manual time submissions",
+        "policyClockOut": "Automatic clock-outs",
+        "timeCorrection": "Time corrections",
+        "travelExpense": "Travel expenses"
+      },
+      "approvalKindsHeading": "Support by approval kind",
+      "delivery": {
+        "active": "Delivery enabled for this approval kind",
+        "inactive": "Handled in the Z8 inbox unless delivery is enabled"
+      },
+      "description": "Feature availability and approval card behavior are shown separately from connection readiness.",
+      "escalationDeliveryOnlyNote": "Controls channel delivery only; timeout is managed by escalation policy.",
+      "escalationPolicyOwnsTiming": "Your organization's approval escalation policy owns escalation timing ({hours} h response window). The {channelName} escalation setting controls delivery over this channel only.",
+      "feature": {
+        "approvals": "Approvals",
+        "commands": "Commands",
+        "dailyDigest": "Daily digest",
+        "escalations": "Escalations",
+        "notifications": "Notifications"
+      },
+      "featuresHeading": "Channel features",
+      "mode": {
+        "inChatDecision": "In-chat decision",
+        "reviewInZ8": "Review in Z8",
+        "unverified": "Unverified"
+      },
+      "slackReviewNote": "Slack approval cards link to Z8 for authenticated review and decisions.",
+      "state": {
+        "disabled": "Disabled",
+        "enabled": "Enabled"
+      },
+      "title": "{channelName} capabilities & approval support"
+    },
+    "chatInstallations": {
+      "blockers": {
+        "duplicateIdentity": {
+          "nextAction": "Disconnect or replace the duplicate external bot so only one organization claims this app before switching.",
+          "title": "Duplicate external app or bot identity"
+        },
+        "heading": "Migration blockers",
+        "nextActionLabel": "Next action:",
+        "secretStoreUnavailable": {
+          "nextAction": "Retry once the organization secret store is reachable. Existing configuration has not been altered.",
+          "title": "Secret store temporarily unavailable"
+        },
+        "teamsDisagreement": {
+          "nextAction": "Review the differing tenant settings below and confirm the target settings for your organization-owned Teams app.",
+          "title": "Settings disagree across legacy Teams tenants"
+        },
+        "trafficPreserved": "Replacement and endpoint changes are blocked until resolved. Current traffic continues on its existing route.",
+        "unexpectedLegacyStatus": {
+          "nextAction": "Review this historical connection and confirm whether it should be retired or reconnected before switching.",
+          "title": "Unexpected historical status: {status}"
+        },
+        "unknownBotIdentity": {
+          "nextAction": "Verify the external bot credentials and metadata before attempting a replacement or endpoint change.",
+          "title": "Unknown bot identity"
+        },
+        "unknownBotIdentityField": {
+          "title": "Unknown bot identity ({field} missing)"
+        }
+      },
+      "credentialSource": {
+        "deploymentManaged": "Deployment-managed",
+        "organizationOwned": "Organization-owned"
+      },
+      "description": "Inspect external app identity, credential ownership, verification evidence, and migration readiness before changing live delivery.",
+      "disconnectedDescription": "No active {channelName} installation is connected for this organization.",
+      "evidence": {
+        "configuredAt": "Configured: {timestamp}",
+        "interactionEndpointPending": "Interaction endpoint not confirmed",
+        "interactionEndpointReady": "Interaction endpoint configured",
+        "lastVerified": "Last verified: {timestamp}",
+        "noneRecorded": "No verification timestamp recorded yet.",
+        "secretMissing": "Stored credential missing from secret store",
+        "secretStoreUnavailable": "Secret store unavailable during check",
+        "serviceUrlMissing": "No service URL recorded yet",
+        "serviceUrlRecorded": "Service URL recorded",
+        "webhookNotRegistered": "Webhook not registered",
+        "webhookRegistered": "Webhook registered"
+      },
+      "identity": {
+        "appId": "App ID: {id}",
+        "botId": "Bot ID: {id}",
+        "spaceId": "Workspace / Tenant: {id}",
+        "unidentified": "Unidentified installation"
+      },
+      "loadErrorActionHint": "Retry loading to inspect credential ownership, verification evidence, and migration blockers.",
+      "loadErrorDescription": "The current installation status could not be loaded. Existing delivery is unchanged.",
+      "loadErrorTitle": "Could not load {channelName} installation",
+      "reloaded": "{channelName} installation status updated.",
+      "retry": "Retry",
+      "retrying": "Reloading {channelName} installation status…",
+      "state": {
+        "connected": "Connected",
+        "disconnected": "Disconnected",
+        "loadFailed": "Load failed",
+        "remediationRequired": "Remediation required",
+        "unknownReadiness": "Readiness unknown"
+      },
+      "teams": {
+        "disagreementsHeading": "Tenant settings disagreements",
+        "disagreementsHelp": "Review these differences so you can confirm one set of replacement settings before switching.",
+        "disagreementsTitle": "Settings disagree across legacy Teams tenants",
+        "discoveredTenants": "Discovered legacy Teams tenants ({count})",
+        "discoveredTenantsDescription": "Every legacy Microsoft 365 tenant linked to this organization retains its effective settings until an organization-wide switch.",
+        "fields": {
+          "digestTime": "Digest time",
+          "digestTimezone": "Digest timezone",
+          "enableApprovals": "Approval notifications",
+          "enableCommands": "Commands",
+          "enableDailyDigest": "Daily digest",
+          "enableEscalations": "Escalations",
+          "escalationTimeoutHours": "Escalation timeout"
+        },
+        "unexpectedStatus": "Unexpected status: {status}"
+      },
+      "title": "Current {channelName} installation",
+      "unknownReadinessDescription": "Check the organization secret store or deployment credentials and retry before replacing this installation.",
+      "unknownReadinessTitle": "Verification and credential readiness could not be confirmed",
+      "values": {
+        "disabled": "Disabled",
+        "enabled": "Enabled",
+        "hours": "{hours} h"
+      },
+      "verification": {
+        "expired": "Verification expired",
+        "failed": "Verification failed",
+        "pending": "Verification pending",
+        "unverified": "Unverified",
+        "unverifiedLegacy": "Unverified (legacy)",
+        "verified": "Verified"
+      }
+    },
     "clockinImport": {
       "credentials": {
         "connect": "Connect & Preview",
@@ -242,10 +379,501 @@
       }
     },
     "slack": {
+      "orgOwned": {
+        "badge": {
+          "candidate": "Candidate setup",
+          "ready": "Ready to review switch"
+        },
+        "copiedAnnouncement": "{label} copied.",
+        "copyFailed": "Could not copy automatically. Select the text and copy it manually.",
+        "credentials": {
+          "botToken": "Bot User OAuth Token",
+          "botTokenHelp": "Found under OAuth & Permissions after installing your Slack app.",
+          "description": "Credentials are stored in an immutable organization-scoped revision and are never displayed again after saving.",
+          "heading": "2. Enter credentials (write-only)",
+          "saveButton": "Verify & save credentials",
+          "signingSecret": "Signing Secret",
+          "signingSecretHelp": "Found under Basic Information → App Credentials in Slack.",
+          "storedBadge": "Stored (revision v{revision})",
+          "updateButton": "Verify & save new credential revision"
+        },
+        "credentialsSavedAnnouncement": "Slack bot identity verified and credentials stored in revision {revision}.",
+        "description": "Create and verify your organization's own Slack app without interrupting live Slack delivery. Switching happens separately after verification passes.",
+        "emptyPrompt": "Generate a dedicated Slack app manifest with organization-scoped verification URLs. Your current Slack connection continues delivering throughout setup.",
+        "errors": {
+          "appClaimed": "This Slack app is already claimed by another Z8 organization.",
+          "candidateNotFound": "Candidate Slack setup was not found. Reload and prepare the app again.",
+          "credentialsMissing": "Stored credentials could not be found. Re-enter and verify your bot token and signing secret.",
+          "credentialsNotConfigured": "Save and verify your Slack credentials before sending a test message.",
+          "identityMismatch": "Slack returned incomplete or inconsistent app and bot metadata. Verify the app credentials and try again.",
+          "invalidBotToken": "Slack rejected the bot token. Check your Bot User OAuth Token and try again.",
+          "invalidBotTokenFormat": "Bot token must start with xoxb-.",
+          "invalidSigningSecretFormat": "Signing secret must be at least 16 characters with no spaces.",
+          "invalidSlackUserId": "Enter a valid Slack member ID (for example, U01234567).",
+          "missingScope": "The bot token is missing required Slack scopes (including users:read). Reinstall the app from the generated manifest.",
+          "prepareFailed": "Could not prepare organization-owned Slack app.",
+          "privateTestFailed": "Could not send the synthetic private test message.",
+          "refreshFailed": "Could not refresh Slack verification status.",
+          "saveCredentialsFailed": "Failed to verify and save Slack credentials.",
+          "workspaceClaimed": "This Slack workspace is already connected to another Z8 organization."
+        },
+        "manifestDownloaded": "Slack app manifest downloaded.",
+        "prepare": {
+          "commandsUrl": "Slash Command URL",
+          "copyManifest": "Copy manifest",
+          "copyUrl": "Copy",
+          "downloadManifest": "Download",
+          "eventsUrl": "Event Subscriptions URL",
+          "heading": "1. Prepare your Slack app",
+          "instructions": "In Slack API (api.slack.com/apps), choose Create New App → From an app manifest, paste this manifest, and install the app to your workspace.",
+          "interactionsUrl": "Interactivity Request URL",
+          "manifestLabel": "Slack app manifest"
+        },
+        "prepareButton": "Generate Slack app manifest",
+        "preparedAnnouncement": "Organization-owned Slack app manifest generated.",
+        "privateTestSentAnnouncement": "Synthetic private test message sent to Slack.",
+        "readyAnnouncement": "Slack app verification complete. Ready for switch review.",
+        "readyBanner": "Your organization-owned Slack app passed identity, signed inbound event, and private test delivery checks. Existing Slack traffic remains on your current connection until you review and confirm a switch.",
+        "refreshedAnnouncement": "Slack verification status refreshed.",
+        "status": {
+          "expired": "Expired",
+          "failed": "Action needed",
+          "passed": "Passed",
+          "pending": "Pending"
+        },
+        "stepExpiredAt": "Previously verified at {timestamp}. Proof has expired and must be refreshed.",
+        "stepFailureCode": "Last verification check failed ({code}). Fix the step and retry.",
+        "steps": {
+          "identity": {
+            "description": "Confirmed from Slack bot metadata (auth.test and bots.info) and bound to your organization.",
+            "title": "App & workspace identity"
+          },
+          "privateTest": {
+            "description": "Send a private verification DM to your Slack member ID (found in Slack profile → Copy member ID).",
+            "title": "Synthetic private test message"
+          },
+          "signedEvent": {
+            "description": "After saving credentials, enable Event Subscriptions in Slack and send a direct message or @mention to your candidate app, then refresh status.",
+            "retry": "Recheck signed event",
+            "title": "Fresh signed app-and-workspace event"
+          }
+        },
+        "stepVerifiedAt": "Verified: {timestamp}",
+        "test": {
+          "description": "Candidate testing never executes production commands, approval actions, or live notifications.",
+          "heading": "3. Test & verify candidate app",
+          "refreshStatus": "Refresh status",
+          "retryPrivateTest": "Retry private test",
+          "sendPrivateTest": "Send test DM",
+          "slackUserIdLabel": "Your Slack Member ID"
+        },
+        "title": "Prepare & test organization-owned Slack app",
+        "validation": {
+          "botTokenRequired": "Bot User OAuth Token is required.",
+          "signingSecretRequired": "Signing Secret is required.",
+          "slackUserIdRequired": "Slack member ID is required."
+        }
+      },
       "title": "Slack"
+    },
+    "slackSwitch": {
+      "acknowledgeUnready": "I understand that {count} active employees still need to connect or verify direct messages with the replacement Slack app, and I want to switch now.",
+      "completeVerificationFirst": "Complete all candidate verification steps above before confirming the switch.",
+      "confirmButton": "Confirm switch to verified Slack app",
+      "description": "Review employee reachability, open approval cards, and in-flight notifications before activating your verified organization-owned Slack app.",
+      "errors": {
+        "alreadySwitched": "This Slack installation is already active.",
+        "candidateNotFound": "No candidate Slack installation was found. Prepare and verify one first.",
+        "candidateNotReady": "Complete all Slack app verification steps before switching.",
+        "candidateVerificationExpired": "Verification proofs for the candidate Slack app have expired. Re-verify before switching.",
+        "confirmFailed": "Could not switch Slack installation.",
+        "impactChanged": "Impact or installation revisions changed since your review. Review the updated summary and confirm again.",
+        "migrationBlocked": "Resolve the migration blockers above before switching Slack installations.",
+        "refreshFailed": "Could not refresh Slack switch impact preview.",
+        "switchNotEnabled": "Switching to an organization-owned Slack app is not enabled for this organization yet.",
+        "unreadyAckRequired": "Acknowledge that some employees still need to connect or verify direct messages before switching."
+      },
+      "gate": {
+        "disabled": "Switch gated",
+        "enabled": "Switch enabled"
+      },
+      "gateDisabledNotice": "Organization-owned Slack switching is not yet enabled for this organization. You can prepare, verify, and review impact now; activation unlocks once enabled for your organization.",
+      "generatedAt": "Snapshot: {timestamp}",
+      "metrics": {
+        "actionNeeded": "Employee action needed",
+        "actionNeededHint": "Must link or reopen DM in Settings → Notifications",
+        "carryForwardHint": "{count} same-workspace identities carry forward; DM reachability verified on first use",
+        "inFlightNotifications": "In-flight notifications",
+        "inFlightNotificationsHint": "Bound to their original installation without duplicate resends",
+        "outstandingApprovals": "Outstanding approval cards",
+        "outstandingApprovalsHint": "{refresh} refresh jobs queued; old cards keep their Z8 review links",
+        "unknownReachability": "Unknown reachability",
+        "unknownReachabilityHint": "Linked identity whose replacement DM has not been verified yet",
+        "verifiedReachable": "Verified reachable",
+        "verifiedReachableHint": "Direct messages confirmed with replacement app"
+      },
+      "readyToConfirmHint": "New Slack notifications, commands, and digests will use your organization-owned Slack app immediately after switching.",
+      "refresh": "Refresh impact",
+      "refreshedAnnouncement": "Slack switch impact preview refreshed.",
+      "retirement": {
+        "deadline": "Automatic retirement deadline: {deadline}",
+        "description": "Retiring installations continue refreshing their existing approval cards until all open cards settle or the 30-day limit is reached. Pending approvals always remain available in the Z8 inbox.",
+        "noDeadline": "Retiring when open cards settle",
+        "outstandingCount": "{count} open cards / jobs",
+        "previousApp": "Previous Slack app",
+        "title": "Retiring Slack installations"
+      },
+      "summaryHeading": "Switch impact summary",
+      "switchedAnnouncement": "Switched to your organization-owned Slack app. Previous approval cards remain serviced during retirement.",
+      "title": "Review impact & switch Slack app"
+    },
+    "recovery": {
+      "appIdLabel": "App ID",
+      "cleanup": {
+        "credentialKind": "Credential revision cleanup",
+        "endpointKind": "Provider endpoint cleanup",
+        "heading": "Background cleanup queue"
+      },
+      "deploymentManagedLabel": "Deployment-managed app",
+      "description": "Rotate credentials for the same app identity, revoke local authorization immediately, or re-verify and restore a previous installation.",
+      "endpointState": {
+        "uncertain": "Endpoint uncertain"
+      },
+      "errors": {
+        "candidateNotReady": "Complete all fresh verification steps before confirming restore.",
+        "candidateVerificationExpired": "Verification proofs have expired. Re-verify before confirming restore.",
+        "confirmRestoreFailed": "Could not confirm installation restore.",
+        "credentialsRequired": "Enter fresh credentials to re-verify this installation before restoring.",
+        "credentialWriteFailed": "Failed to store credentials securely. Existing credentials remain unchanged.",
+        "deploymentManagedNotRestorable": "Deployment-managed connections cannot be restored as organization-owned replacements.",
+        "deploymentManagedNotRotatable": "Deployment-managed connections cannot rotate credentials here. Prepare and switch to an organization-owned app instead.",
+        "endpointReconciliationRequired": "Provider endpoint state is uncertain after a timed-out cleanup. Reconcile endpoint state before restoring.",
+        "externalIdentityMismatch": "The credentials belong to a different app or workspace. Rotation requires the exact same external identity; use app replacement to switch apps.",
+        "impactChanged": "Impact or revisions changed since your review. Review the updated summary and confirm again.",
+        "installationNotFound": "The selected chat installation could not be found.",
+        "installationNotRestorable": "Only retiring, retired, or revoked installations can be restored.",
+        "installationNotRotatable": "This installation cannot rotate credentials in its current state.",
+        "invalidBotToken": "Slack rejected the bot token. Check your Bot User OAuth Token and try again.",
+        "invalidBotTokenFormat": "Bot token must start with xoxb-.",
+        "invalidSigningSecretFormat": "Signing secret must be at least 16 characters with no spaces.",
+        "invalidSlackUserId": "Enter a valid Slack member ID (for example, U01234567).",
+        "missingSlackScope": "The bot token is missing required Slack scopes (including users:read).",
+        "prepareRestoreFailed": "Could not start restoring this installation.",
+        "privateDeliveryFailed": "Could not send the synthetic private test message. Check bot permissions and retry.",
+        "providerUnavailable": "The chat provider API is temporarily unavailable. Please retry.",
+        "refreshFailed": "Could not refresh recovery state.",
+        "revokeFailed": "Could not revoke chat installation.",
+        "rotateFailed": "Could not rotate installation credentials.",
+        "secretStoreUnavailable": "The organization secret store is currently unavailable. Existing credentials remain active.",
+        "switchNotEnabled": "Switching or restoring an organization-owned app is not enabled for this organization yet.",
+        "unreadyAckRequired": "Acknowledge that some employees still need to connect or verify direct messages before restoring.",
+        "verifyRestoreFailed": "Could not verify the installation for restore."
+      },
+      "fields": {
+        "botToken": "Bot User OAuth Token (write-only)",
+        "signingSecret": "Signing Secret (write-only)",
+        "writeOnlyHint": "Stored in a new immutable revision and never displayed again."
+      },
+      "guidance": {
+        "heading": "Provider interruption & recovery guidance"
+      },
+      "refresh": "Refresh",
+      "refreshedAnnouncement": "{channel} recovery state refreshed.",
+      "restore": {
+        "acknowledgeUnready": "I acknowledge that {count} employees still need to connect or verify direct messages after restoring this installation.",
+        "confirmButton": "Confirm restore",
+        "confirmedAnnouncement": "Previous installation verified and restored as active.",
+        "impactHeading": "Fresh restore impact review",
+        "listDescription": "Restoring a previous installation requires fresh credential and delivery verification plus a fresh impact review before it becomes active.",
+        "listHeading": "Previous installations available to restore",
+        "metrics": {
+          "approvals": "Outstanding approval cards",
+          "reachable": "Verified reachable",
+          "unready": "Employees needing action / unknown"
+        },
+        "pendingBadge": "Verification required",
+        "readyBadge": "Ready to confirm restore",
+        "retiredAt": "Retired: {timestamp}",
+        "revokedAt": "Revoked: {timestamp}",
+        "slackUserIdLabel": "Slack Member ID for synthetic DM test (optional)",
+        "snapshot": "Snapshot: {timestamp}",
+        "startButton": "Start restore & verify",
+        "startedAnnouncement": "Restore started. Complete fresh verification and review impact before reactivating.",
+        "uncertainWarning": "Endpoint cleanup timed out; endpoint reconciliation is required before restoring.",
+        "verifyButton": "Verify credentials & test DM",
+        "verifyDescription": "Re-verify credentials, receive a fresh signed Slack event, and send a synthetic private DM test before confirming restore.",
+        "verifiedReadyAnnouncement": "Fresh restore verification complete. Review impact and confirm restore.",
+        "verifiedStepAnnouncement": "Restore verification step recorded. Complete remaining checks before confirming.",
+        "verifyHeading": "Verify installation before restoring"
+      },
+      "revoke": {
+        "confirmButton": "Confirm immediate revocation",
+        "dialogDescription": "Revocation immediately ends local authorization for this installation. Asynchronous cleanup removes only this organization's credentials and leaves shared deployment credentials and unrelated organizations unaffected. Pending approvals remain available in the Z8 inbox.",
+        "dialogTitle": "Revoke {channel} access immediately?",
+        "openButton": "Revoke access immediately",
+        "successAnnouncement": "Installation revoked immediately. Pending approvals remain accessible in the Z8 inbox."
+      },
+      "rotate": {
+        "dialogDescription": "Enter new credentials for the exact same app and workspace. Existing DM conversations, employee links, and open approval cards are preserved.",
+        "dialogTitle": "Rotate {channel} credentials",
+        "interruptionTitle": "Provider-imposed interruption",
+        "openButton": "Rotate credentials",
+        "postRotationHeading": "Credentials rotated to revision v{revision} — verify recovery",
+        "submitButton": "Verify identity & rotate",
+        "successAnnouncement": "Credentials rotated to revision v{revision}. Follow the verification steps below to confirm recovery."
+      },
+      "status": {
+        "active": "Active",
+        "legacyActive": "Legacy active"
+      },
+      "title": "{channel} credential rotation, revocation & recovery",
+      "validation": {
+        "botTokenRequired": "Bot token is required.",
+        "signingSecretRequired": "Signing secret is required."
+      }
     },
     "teamsNotifications": {
       "title": "Microsoft Teams"
+    },
+    "teamsPrepare": {
+      "badge": {
+        "candidate": "Candidate setup",
+        "ready": "Ready to review switch"
+      },
+      "copiedAnnouncement": "{label} copied.",
+      "copyFailed": "Could not copy automatically. Select the text and copy it manually.",
+      "credentials": {
+        "appId": "Microsoft App ID (GUID)",
+        "appIdHelp": "Application (client) ID from your Single-Tenant Azure Bot registration.",
+        "appPassword": "Microsoft App Password (Client Secret)",
+        "appPasswordHelp": "Write-only client secret generated under Certificates & secrets in Microsoft Entra ID.",
+        "description": "The client secret is stored in an immutable organization-scoped revision and is never displayed again after saving. Existing legacy Teams tenants remain active.",
+        "heading": "2. Enter single-tenant credentials (write-only)",
+        "saveButton": "Save single-tenant credentials",
+        "storedBadge": "Stored (revision v{revision})",
+        "tenantDisplayName": "Tenant Display Name (optional)",
+        "tenantDisplayNameHelp": "Friendly label shown during verification and switch review.",
+        "tenantId": "Microsoft Entra Tenant ID (GUID)",
+        "tenantIdHelp": "Directory (tenant) ID of your Microsoft 365 tenant. You can stage a replacement in the same tenant as your live Teams connection.",
+        "updateButton": "Save new credential revision"
+      },
+      "credentialsSavedAnnouncement": "Single-tenant Teams credentials stored in revision {revision}.",
+      "description": "Stage and verify an organization-owned, single-tenant Microsoft Teams app without interrupting your active Teams tenants. Switching happens separately after verification passes.",
+      "emptyPrompt": "Generate a dedicated single-tenant Teams app package, messaging endpoint, and Microsoft Teams Admin Center rollout instructions. Your current Teams deployment continues serving traffic throughout setup.",
+      "errors": {
+        "appClaimed": "This Microsoft Teams App ID is already claimed by another Z8 organization.",
+        "candidateNotFound": "Candidate Teams setup was not found. Reload and prepare the app again.",
+        "credentialsMissing": "Stored credentials could not be found. Re-enter and save your single-tenant credentials.",
+        "credentialsNotConfigured": "Save your single-tenant Teams credentials before running the proactive test.",
+        "invalidAppIdFormat": "Microsoft App ID must be a valid GUID.",
+        "invalidAppPasswordFormat": "Microsoft App Password (client secret) must be at least 8 characters.",
+        "invalidTenantIdFormat": "Microsoft Entra Tenant ID must be a valid GUID.",
+        "missingPrivateReachability": "No personal chat reachability has been captured for this candidate Teams app yet. Send a 1:1 message to the candidate bot in Microsoft Teams first, then retry.",
+        "prepareFailed": "Could not prepare single-tenant Teams app.",
+        "proactiveTestFailed": "Could not send the proactive private test message.",
+        "refreshFailed": "Could not refresh Teams verification status.",
+        "saveCredentialsFailed": "Failed to save single-tenant Teams credentials.",
+        "tenantClaimed": "This Microsoft Teams tenant is already connected to another Z8 organization.",
+        "tenantMismatch": "The captured conversation belongs to a different Microsoft Teams tenant. Message the candidate bot from the configured tenant and retry."
+      },
+      "manifestDownloaded": "Teams app manifest downloaded.",
+      "packageDownloaded": "Single-tenant Teams app package (.zip) downloaded.",
+      "packageDownloadFailed": "Could not generate Teams app package (.zip).",
+      "prepare": {
+        "copyManifest": "Copy manifest",
+        "copyUrl": "Copy",
+        "downloadManifest": "Download manifest.json",
+        "downloadPackage": "Download App Package (.zip)",
+        "heading": "1. Prepare single-tenant Teams app & admin rollout",
+        "instructions": "Configure your Single-Tenant Azure Bot with the dedicated messaging endpoint below, save your credentials, then upload the app package in Microsoft Teams Admin Center.",
+        "manifestLabel": "Teams app manifest",
+        "messagingEndpointLabel": "Dedicated Messaging Endpoint",
+        "placeholderAppIdNote": "Save your Microsoft App ID below to populate the app ID inside manifest.json before uploading to Microsoft Teams Admin Center."
+      },
+      "prepareButton": "Prepare single-tenant Teams app",
+      "preparedAnnouncement": "Single-tenant Teams app package and messaging endpoint generated.",
+      "proactiveTestSentAnnouncement": "Synthetic proactive private test message delivered to Microsoft Teams.",
+      "readyAnnouncement": "Single-tenant Teams app verification complete. Ready for switch review.",
+      "readyBanner": "Your single-tenant Microsoft Teams app passed credential, authenticated inbound activity, and proactive private delivery checks. Existing legacy Teams tenants remain active until you review and confirm a switch.",
+      "refreshedAnnouncement": "Teams verification status refreshed.",
+      "rollout": {
+        "heading": "Microsoft Teams Admin Center rollout instructions",
+        "steps": {
+          "azure_bot_registration": {
+            "summary": "In Azure Portal, create an Azure Bot with Type = Single Tenant under your organization's Microsoft Entra ID tenant, enable the Microsoft Teams channel, and generate a Client Secret.",
+            "title": "Create a Single-Tenant Azure Bot & Entra App Registration"
+          },
+          "configure_messaging_endpoint": {
+            "summary": "Set the Azure Bot Messaging endpoint to {endpointUrl}. Keep this installation route dedicated to your organization.",
+            "title": "Configure the dedicated Z8 Messaging Endpoint"
+          },
+          "save_credentials_in_z8": {
+            "summary": "Enter the Microsoft App ID (GUID), Microsoft Entra Tenant ID (GUID), and Client Secret below. Z8 stores the secret in an immutable credential revision and updates your app package manifest with your App ID.",
+            "title": "Save single-tenant credentials in Z8 (write-only)"
+          },
+          "upload_teams_admin_center": {
+            "summary": "Download the single-tenant Teams App Package (.zip), open Microsoft Teams Admin Center (admin.teams.microsoft.com) → Teams apps → Manage apps → Upload new app, and assign it via your App setup policy.",
+            "title": "Upload app package in Microsoft Teams Admin Center"
+          },
+          "verify_private_chat": {
+            "summary": "Open a 1:1 personal chat with your new Teams bot and send a message (for example, 'verify'). Then return here to refresh verification status and send the proactive private test message.",
+            "title": "Verify authenticated inbound activity & proactive private delivery"
+          }
+        }
+      },
+      "status": {
+        "expired": "Expired",
+        "failed": "Action needed",
+        "passed": "Passed",
+        "pending": "Pending"
+      },
+      "stepExpiredAt": "Previously verified at {timestamp}. Proof has expired and must be refreshed.",
+      "stepFailureCode": "Last verification check failed ({code}). Fix the step and retry.",
+      "steps": {
+        "credentials": {
+          "description": "Microsoft App ID, Entra Tenant ID, and write-only client secret stored in an immutable organization-scoped revision.",
+          "title": "Single-tenant credentials & tenant ownership"
+        },
+        "inboundProof": {
+          "description": "Open a 1:1 personal chat with your candidate Teams bot and send a message (e.g., 'verify') so Z8 confirms your Bot Framework token, App ID, Tenant ID, and personal conversation reachability.",
+          "retry": "Recheck inbound activity",
+          "title": "Authenticated inbound activity (matching app & tenant)"
+        },
+        "privateTest": {
+          "descriptionMissing": "Waiting for a 1:1 personal message to the candidate bot in Microsoft Teams to capture your conversation reference before running the proactive test.",
+          "descriptionReady": "Personal conversation reachability is captured for this candidate app. Send a synthetic proactive test message using the installation-scoped adapter.",
+          "title": "Proactive private test message"
+        }
+      },
+      "stepVerifiedAt": "Verified: {timestamp}",
+      "test": {
+        "description": "Candidate verification never executes production commands, approval cards, or live notifications. Employees with a proven same-tenant Entra identity can message the bot directly; others link with a code from Settings → Notifications.",
+        "heading": "3. Test & verify single-tenant Teams app",
+        "refreshStatus": "Refresh status",
+        "retryProactiveTest": "Retry proactive private test",
+        "sendProactiveTest": "Send proactive private test"
+      },
+      "title": "Prepare & test single-tenant Microsoft Teams app",
+      "validation": {
+        "appIdRequired": "Microsoft App ID is required.",
+        "appPasswordRequired": "Microsoft App Password is required.",
+        "tenantIdRequired": "Microsoft Entra Tenant ID is required."
+      }
+    },
+    "teamsSwitch": {
+      "acknowledgeUnready": "I understand that {count} active employees still need to connect or verify direct messages with the new Teams app, and I want to switch now.",
+      "affectedTenantsHeading": "Affected live Teams tenants ({count})",
+      "completeVerificationFirst": "Complete all single-tenant Teams verification steps above before confirming the switch.",
+      "confirmButton": "Switch all reviewed Teams tenants together",
+      "description": "Review every affected Microsoft Teams tenant, resolve any settings differences, and switch the organization in one atomic transaction while retiring tenants keep servicing their open approval cards.",
+      "disagreements": {
+        "confirmCheckbox": "I confirm these replacement settings should become authoritative for Microsoft Teams across this organization.",
+        "description": "Review the differences below and confirm the single set of settings for your organization-owned Teams app.",
+        "heading": "Legacy Teams tenants have differing settings"
+      },
+      "errors": {
+        "alreadySwitched": "This Microsoft Teams installation is already active.",
+        "candidateNotFound": "No candidate Microsoft Teams installation was found. Prepare and verify one first.",
+        "candidateNotReady": "Complete all single-tenant Microsoft Teams verification steps before switching.",
+        "candidateVerificationExpired": "Verification proofs for the candidate Teams app have expired. Re-verify before switching.",
+        "confirmFailed": "Could not switch Microsoft Teams installation.",
+        "endpointReconciliationRequired": "Endpoint state is uncertain after cleanup timeout. Reconcile before activating.",
+        "externalIdentityMismatch": "The provided Microsoft App ID or Entra Tenant ID does not match this Teams installation.",
+        "impactChanged": "Affected Teams tenants, settings, revisions, or counts changed since your review. Review the updated summary and confirm again.",
+        "installationNotFound": "The selected Microsoft Teams installation could not be found.",
+        "invalidCredentials": "Check your Microsoft App ID, Entra Tenant ID, and Client Secret and try again.",
+        "invalidReplacementSettings": "Check the replacement Teams settings (time, timezone, and escalation timeout) and try again.",
+        "migrationBlocked": "Resolve Microsoft Teams migration blockers before switching.",
+        "missingPrivateReachability": "Send a 1:1 personal message to this Teams bot first so Z8 can capture reachability before testing.",
+        "prepareRestoreFailed": "Could not start restoring this Microsoft Teams installation.",
+        "refreshFailed": "Could not refresh Microsoft Teams switch preview.",
+        "revokeFailed": "Could not revoke Microsoft Teams installation.",
+        "rotateFailed": "Could not rotate Microsoft Teams credentials.",
+        "secretStoreUnavailable": "The organization secret store is currently unavailable. Existing connections remain unchanged.",
+        "settingsConfirmationRequired": "Your legacy Teams tenants disagree on settings. Explicitly confirm the replacement settings below before switching.",
+        "switchNotEnabled": "Switching to an organization-owned Microsoft Teams app is not enabled for this organization yet.",
+        "unreadyAckRequired": "Acknowledge that some employees still need to connect or verify direct messages before switching.",
+        "verifyRestoreFailed": "Could not verify Microsoft Teams restore."
+      },
+      "gate": {
+        "disabled": "Switch gated",
+        "enabled": "Switch enabled"
+      },
+      "gateDisabledNotice": "Organization-owned Microsoft Teams switching is not yet enabled for this organization. You can review all affected tenants and verify your single-tenant app now; activation unlocks once enabled.",
+      "generatedAt": "Snapshot: {timestamp}",
+      "metrics": {
+        "actionNeeded": "Employee action needed",
+        "actionNeededHint": "Must message bot or link in Settings → Notifications",
+        "carryForwardHint": "{count} same-tenant Entra identities carry forward",
+        "inFlightNotifications": "In-flight notifications",
+        "inFlightNotificationsHint": "Bound to original installation without duplicate resends",
+        "outstandingApprovals": "Total open approval cards",
+        "outstandingApprovalsHint": "Across all affected tenants; each retiring tenant services its own cards",
+        "unknownReachability": "Unknown reachability",
+        "unknownReachabilityHint": "Linked identity whose personal chat is not yet verified",
+        "verifiedReachable": "Verified reachable",
+        "verifiedReachableHint": "Personal chats confirmed with new Teams app"
+      },
+      "noLiveTenants": "No live legacy Teams tenants will be retired by this switch.",
+      "optionalAppPasswordPlaceholder": "Optional new Microsoft App Password (leave blank to reuse stored)",
+      "orgOwnedConnectHint": "Prepare, verify, and switch to your single-tenant organization-owned Microsoft Teams app using the workflow above.",
+      "readyToConfirmHint": "New Teams notifications, approvals, commands, digests, and escalations will use your organization-owned Teams app immediately after switching.",
+      "recovery": {
+        "activeBadge": "Active org-owned",
+        "description": "Rotate your single-tenant Entra client secret without downtime, revoke access immediately, or re-verify and restore a previous organization-owned Teams installation.",
+        "restorableHeading": "Previous organization-owned Teams installations",
+        "revokeButton": "Revoke access immediately",
+        "rotateButton": "Rotate credentials",
+        "rotatedBanner": "Credentials rotated to revision v{revision}. Cached Teams adapters were evicted immediately.",
+        "startRestoreButton": "Start restore & verify",
+        "title": "Microsoft Teams credential rotation, revocation & restore"
+      },
+      "refresh": "Refresh impact",
+      "refreshedAnnouncement": "Microsoft Teams switch impact refreshed.",
+      "restoreStartedAnnouncement": "Restore started. Verify credentials, inbound activity, and proactive private delivery before confirming.",
+      "restoreVerifiedReadyAnnouncement": "Restore verification passed. Review impact and confirm switch-back.",
+      "restoreVerifiedStepAnnouncement": "Restore credentials verified. Send a 1:1 message to the Teams bot and run the proactive test to complete verification.",
+      "restoreVerifyHint": "Need to re-verify credentials or trigger a fresh proactive private test for this candidate Teams app?",
+      "restoredAnnouncement": "Verified Microsoft Teams app restored as active.",
+      "retirement": {
+        "deadline": "Automatic retirement deadline: {deadline}",
+        "description": "Each retiring Teams tenant continues servicing its own open approval cards until all cards settle or its 30-day deadline is reached. You can revoke any individual tenant immediately without affecting other tenants or your active Teams app.",
+        "noDeadline": "Retiring when open cards settle",
+        "outstandingCount": "{count} open cards / jobs",
+        "previousTenant": "Previous Teams tenant",
+        "title": "Retiring Microsoft Teams tenants"
+      },
+      "revokeDialog": {
+        "confirm": "Confirm immediate revocation",
+        "description": "Revoking {label} immediately ends local authorization for this installation only. Sibling retiring tenants, your active Teams app, shared deployment credentials, and pending approvals in the Z8 inbox remain untouched.",
+        "title": "Revoke Microsoft Teams installation?"
+      },
+      "revokeTenantButton": "Revoke tenant",
+      "revokedAnnouncement": "Selected Microsoft Teams installation revoked immediately. Other tenants and Z8 inbox approvals remain unaffected.",
+      "rotateDialog": {
+        "appId": "Microsoft App ID (GUID)",
+        "appPassword": "New Microsoft App Password (write-only)",
+        "description": "Enter the new Microsoft Entra client secret for the exact same Microsoft App ID and Entra Tenant ID. Conversations, employee links, and open approval cards are preserved.",
+        "submit": "Verify identity & rotate",
+        "tenantId": "Microsoft Entra Tenant ID (GUID)",
+        "title": "Rotate Microsoft Teams credentials"
+      },
+      "rotatedAnnouncement": "Microsoft Teams credentials rotated to revision v{revision}.",
+      "settingsField": {
+        "digestTime": "Digest time",
+        "digestTimezone": "Digest timezone",
+        "enableApprovals": "Approvals",
+        "enableCommands": "Bot commands",
+        "enableDailyDigest": "Daily digest",
+        "enableEscalations": "Escalations",
+        "escalationTimeoutHours": "Escalation timeout (hours)"
+      },
+      "summaryHeading": "Multi-tenant switch impact summary",
+      "switchedAnnouncement": "Switched to your organization-owned Microsoft Teams app. All reviewed legacy tenants are now retiring.",
+      "tenantOpenCards": "{count} open cards / jobs",
+      "tenantSettingsSummary": "Approvals: {approvals} · Commands: {commands} · Digest: {digest} ({time} {tz}) · Escalations: {escalations} ({hours}h)",
+      "title": "Review legacy Teams tenants & switch organization",
+      "verifyRestoreButton": "Re-verify & send test"
     },
     "telegram": {
       "bot": {
@@ -313,6 +941,192 @@
       "unlinkError": "Failed to unlink Telegram account",
       "webhookActive": "Webhook registered",
       "webhookPending": "Webhook pending"
+    },
+    "telegramLifecycle": {
+      "acknowledgeUnready": "I acknowledge that {count} employees still need to start and link the new Telegram bot in Settings -> Notifications.",
+      "botTokenLabel": "BotFather Token (write-only)",
+      "commandsRetried": "Registered the 11 Telegram bot commands.",
+      "confirmRestoreButton": "Confirm restore",
+      "confirmSwitchButton": "Confirm switch",
+      "credentialsSaved": "Verified Telegram bot identity and stored a new credential revision.",
+      "errors": {
+        "impactChanged": "Switch impact or installation revisions changed since you reviewed them. Review the updated summary and confirm again."
+      },
+      "metrics": {
+        "actionNeeded": "Action needed",
+        "inFlight": "In-flight work",
+        "openCards": "Open approval cards",
+        "reachable": "Verified reachable",
+        "uncertain": "Needs reconciliation",
+        "unknown": "Unknown reachability"
+      },
+      "prepareButton": "Prepare replacement Telegram bot",
+      "prepared": "Prepared a staged replacement Telegram bot installation.",
+      "prepareDescription": "Stage an organization-owned Telegram bot and verify bot identity, authenticated webhook receipt, command registration, and private delivery while your current bot continues serving open approvals.",
+      "prepareTitle": "Prepare & verify replacement Telegram bot",
+      "privateTestSent": "Synthetic private test message delivered to Telegram.",
+      "recoveryTitle": "Credential rotation, revocation & recovery",
+      "refresh": "Refresh",
+      "refreshed": "Telegram installation status refreshed.",
+      "restoreButton": "Begin verified restore",
+      "restored": "Restored verified Telegram bot installation.",
+      "restoreListTitle": "Previous organization-owned Telegram bots",
+      "restoreMeta": "Status: {status} · Endpoint: {endpointState} · Gen {generation}",
+      "restoreStarted": "Restore prepared. Complete fresh verification and impact review before reactivating.",
+      "retiringBadge": "Retiring",
+      "retiringDeadline": "Deadline: {date}",
+      "retiringDescription": "Retiring bots keep servicing open approval cards they already sent until all open cards settle or the 30-day retirement deadline is reached.",
+      "retiringStats": "Outstanding cards/work: {count}",
+      "retiringTitle": "Retiring Telegram bots",
+      "retryCommandsButton": "Retry command registration",
+      "retryWebhookButton": "Retry webhook registration",
+      "revokeButton": "Revoke access",
+      "revoked": "Revoked Telegram installation immediately. Pending approvals remain available in Z8.",
+      "revokeDescription": "Immediately stops local authorization and queues generation-fenced webhook cleanup. Open approvals stay accessible in Z8.",
+      "revokeTitle": "Revoke active Telegram bot",
+      "rotateButton": "Rotate token",
+      "rotated": "Rotated Telegram bot token while preserving installation, conversations, and webhook route.",
+      "rotateTitle": "Rotate BotFather token (same bot identity)",
+      "rotateTokenLabel": "New BotFather token",
+      "sendPrivateTestButton": "Send private test",
+      "step": {
+        "expired": "Expired",
+        "failed": "Needs attention",
+        "passed": "Verified",
+        "pending": "Pending"
+      },
+      "steps": {
+        "commandsHint": "Registers the 11 Z8 slash commands independently so failures can be retried without changing credentials.",
+        "commandsPassed": "Registered all 11 Z8 commands in the Telegram bot menu.",
+        "commandsTitle": "3. Command registration",
+        "identityHint": "Verifies the numeric Telegram bot ID and claims ownership before changing webhook settings.",
+        "identityTitle": "1. Bot identity",
+        "privateDeliveryHint": "Sends a synthetic private test message to your candidate Telegram chat (never production notifications or approvals).",
+        "privateDeliveryTitle": "4. Private delivery",
+        "webhookReceiptAwaiting": "Webhook registered. Send /start to your new bot on Telegram to confirm authenticated inbound receipt.",
+        "webhookReceiptPassed": "Confirmed via authenticated inbound Telegram webhook matching this installation and secret.",
+        "webhookReceiptPending": "Registers the installation-scoped webhook and waits for an authenticated Telegram update.",
+        "webhookReceiptTitle": "2. Authenticated webhook receipt"
+      },
+      "switchDescription": "Review employee reachability, open approval cards, and in-flight work before switching. Existing open cards stay serviceable on the retiring bot during the 30-day retirement window.",
+      "switched": "Switched to the verified organization-owned Telegram bot. Existing open approval cards remain serviceable during retirement.",
+      "switchGateDisabled": "Telegram switching is currently gated off for this organization. Complete verification above so you are ready when enabled.",
+      "switchTitle": "Review impact & switch Telegram bot",
+      "testChatIdLabel": "Candidate Telegram chat ID (optional if enrolled)",
+      "testChatIdPlaceholder": "Chat ID (optional if linked)",
+      "verifyTokenButton": "Verify bot & configure webhook",
+      "webhookEndpointLabel": "Dedicated webhook route:",
+      "webhookRetried": "Telegram webhook registered. Send a private message to the new bot to confirm authenticated receipt."
+    },
+    "discordLifecycle": {
+      "prepareTitle": "Prepare & verify replacement Discord bot",
+      "prepareDescription": "Verify application identity, signed interactions, slash commands, and private DM delivery while your current Discord bot keeps serving employees.",
+      "refresh": "Refresh status",
+      "prepareButton": "Prepare replacement bot",
+      "interactionEndpointUrl": "Candidate Interaction Endpoint URL",
+      "copied": "Copied",
+      "copy": "Copy",
+      "endpointHelp": "Save credentials below first, then paste this URL into the Discord Developer Portal so Discord sends a signed PING.",
+      "retryCommands": "Retry commands",
+      "credentialsFormTitle": "Save & verify candidate bot credentials",
+      "botTokenLabel": "Bot Token (write-only)",
+      "applicationIdLabel": "Application ID",
+      "publicKeyLabel": "Ed25519 Public Key",
+      "saveCredentialsButton": "Verify & save credentials",
+      "dmTestLabel": "Test private DM delivery (Discord User ID)",
+      "dmTestHelp": "Enter your numeric Discord User ID. If Discord returns error 50007, ensure you share a server with the bot and enable server Direct Messages.",
+      "sendTestDmButton": "Send test DM",
+      "switchTitle": "Review impact & switch Discord bot",
+      "switchDescription": "Review verified Discord DM reachability, open approval cards, and in-flight notifications before switching.",
+      "gateDisabledNotice": "Organization-owned Discord switching is not yet enabled for this organization. You can prepare, test, and review impact now.",
+      "impactSummaryHeading": "Switch impact summary",
+      "ackUnreadyLabel": "I acknowledge that {count} employees still need to link or verify Discord direct messages on the replacement bot.",
+      "confirmSwitchButton": "Confirm Discord switch",
+      "confirmRestoreButton": "Confirm Discord restore",
+      "retiringTitle": "Retiring Discord bots",
+      "retiringDescription": "Retiring bots continue servicing eligible approval cards they originally sent until work settles or the 30-day deadline.",
+      "retiringMeta": "Outstanding cards & work: {count} · Deadline: {deadline}",
+      "recoveryTitle": "Credential rotation, revoke & restore",
+      "rotateHeading": "Rotate Discord bot token",
+      "rotateTokenLabel": "New Bot Token (same application)",
+      "rotateButton": "Rotate token",
+      "revokeHeading": "Revoke active Discord bot",
+      "revokeHelp": "Immediately stops Discord authorization while keeping pending approvals available in the Z8 inbox.",
+      "revokeButton": "Revoke bot",
+      "restoreHeading": "Restore a previous Discord bot",
+      "restoreMeta": "Status: {status}",
+      "restoreButton": "Begin verified restore",
+      "refreshedAnnouncement": "Discord lifecycle status refreshed.",
+      "preparedAnnouncement": "Replacement Discord bot staged. Copy the Interaction Endpoint URL and save your bot credentials.",
+      "credentialsSaved": "Discord credentials verified and slash commands registered. Configure the Interaction Endpoint URL and run a private DM test next.",
+      "credentialsSavedCommandsFailed": "Discord credentials verified, but slash command registration failed. Retry command registration below without re-entering credentials.",
+      "commandsRetriedSuccess": "Discord slash commands registered successfully.",
+      "privateTestSucceeded": "Synthetic private DM delivered and verified.",
+      "switchedAnnouncement": "Switched to the verified organization-owned Discord bot. Previous approval cards remain serviced during retirement.",
+      "rotatedAnnouncement": "Discord bot token rotated cleanly while preserving conversations and approval card ownership.",
+      "revokedAnnouncement": "Discord installation revoked immediately. Pending approvals remain accessible in the Z8 inbox.",
+      "restoreStartedAnnouncement": "Restore started. Complete fresh signed endpoint and private DM verification before confirming switch-back.",
+      "endpointCopied": "Interaction Endpoint URL copied.",
+      "endpointCopyFailed": "Could not copy URL. Select and copy it manually.",
+      "gate": {
+        "enabled": "Switch enabled",
+        "disabled": "Switch gated"
+      },
+      "stepStatus": {
+        "passed": "Verified",
+        "pending": "Pending",
+        "failed": "Needs attention",
+        "expired": "Expired"
+      },
+      "steps": {
+        "identityTitle": "1. Application identity & credentials",
+        "identityDesc": "Verifies bot token, Application ID, and Ed25519 Public Key via Discord API and stores an immutable revision.",
+        "signedEndpointTitle": "2. Signed interaction endpoint (PING)",
+        "signedEndpointDesc": "Confirms Ed25519-signed traffic for this application ID. A signed PING alone does not confirm private DM reachability.",
+        "commandsTitle": "3. Slash command registration",
+        "commandsDesc": "Tracked independently so registration errors can be retried without re-entering credentials.",
+        "privateDmTitle": "4. Private DM delivery check (required)",
+        "privateDmDesc": "Sends a synthetic private DM to your Discord user ID to confirm real direct-message reachability."
+      },
+      "metrics": {
+        "reachable": "Verified DM reachable",
+        "actionNeeded": "Action needed",
+        "unknown": "Unknown reachability",
+        "openCards": "Open approval cards & work"
+      },
+      "revokeConfirm": {
+        "title": "Revoke Discord bot?",
+        "description": "This immediately stops Discord delivery and callbacks for this installation. Pending approvals remain accessible in Z8."
+      },
+      "errors": {
+        "invalidBotTokenFormat": "Enter a valid Discord bot token with no whitespace.",
+        "invalidApplicationIdFormat": "Application ID must be a numeric Discord snowflake ID.",
+        "invalidPublicKeyFormat": "Public key must be a 64-character hexadecimal Ed25519 key.",
+        "invalidBotToken": "Discord rejected the bot token. Check your bot credentials in the Discord Developer Portal.",
+        "applicationIdMismatch": "Application ID does not match the provided bot token.",
+        "publicKeyMismatch": "Public key does not match the Discord application.",
+        "appClaimedByOtherOrg": "This Discord application is already claimed by another Z8 organization.",
+        "dmBlocked50007": "Discord blocked this direct message (error 50007). Share a server with the bot, unblock the bot, and enable server Direct Messages in Discord Privacy Settings, then retry.",
+        "missingAccess50001": "The bot does not share a server with this Discord user (error 50001). Invite the bot to a shared server and retry.",
+        "unknownUser10013": "Discord could not find that user ID (error 10013). Copy your numeric User ID with Discord Developer Mode enabled.",
+        "invalidDiscordUserId": "Enter a valid numeric Discord user ID.",
+        "switchNotEnabled": "Switching to an organization-owned Discord bot is not yet enabled for this organization.",
+        "migrationBlocked": "Resolve migration blockers above before switching Discord bots.",
+        "candidateNotReady": "Complete application identity, signed interaction PING, and private DM verification before switching.",
+        "candidateVerificationExpired": "Candidate verification proofs have expired. Re-verify before switching.",
+        "impactChanged": "Switch impact or installation revisions changed since you reviewed them. Review the updated summary and confirm again.",
+        "unreadyAckRequired": "Acknowledge that some employees still need to connect or verify Discord DMs before switching.",
+        "rotationIdentityMismatch": "The provided token belongs to a different Discord application. Credential rotation requires the exact same Discord application.",
+        "refreshFailed": "Could not refresh Discord lifecycle status.",
+        "prepareFailed": "Could not prepare a replacement Discord bot.",
+        "saveCredentialsFailed": "Could not verify Discord credentials.",
+        "retryCommandsFailed": "Slash command registration failed again. Verify your bot token and permissions, then retry.",
+        "privateTestFailed": "Private Discord DM test failed.",
+        "confirmSwitchFailed": "Could not switch Discord installation.",
+        "rotateFailed": "Could not rotate Discord credentials.",
+        "revokeFailed": "Could not revoke Discord installation.",
+        "prepareRestoreFailed": "Could not start restoring this Discord installation."
+      }
     }
   }
 }

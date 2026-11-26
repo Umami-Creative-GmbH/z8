@@ -25,6 +25,7 @@ vi.mock("@/lib/slack", () => ({
 }));
 vi.mock("@/lib/teams", () => ({
 	getConversationReferenceForUser: async () => ({ conversation: { id: "teams-conversation" } }),
+	resolveTeamsOutboundTransportForOrganization: async () => null,
 	sendProactiveMessage: mocks.teamsSend,
 	sendApprovalCardToManager: vi.fn(),
 }));

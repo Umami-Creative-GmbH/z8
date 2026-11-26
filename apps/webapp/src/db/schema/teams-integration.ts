@@ -11,6 +11,7 @@ import {
 import { currentTimestamp } from "./timestamp";
 import { organization, user } from "../auth-schema";
 import { approvalRequest } from "./approval";
+import { chatInstallation } from "./chat-installations";
 import { employee } from "./organization";
 
 // ============================================
@@ -201,6 +202,11 @@ export const teamsApprovalCard = pgTable(
 		teamsConversationId: text("teams_conversation_id").notNull(),
 		teamsActivityId: text("teams_activity_id").notNull(), // Bot Framework activity ID
 
+		// Originating chat installation (#2043)
+		installationId: uuid("installation_id").references(() => chatInstallation.id, {
+			onDelete: "set null",
+		}),
+
 		// Recipient
 		recipientUserId: text("recipient_user_id")
 			.notNull()
@@ -224,6 +230,7 @@ export const teamsApprovalCard = pgTable(
 		index("teamsApprovalCard_approvalRequestId_idx").on(table.approvalRequestId),
 		index("teamsApprovalCard_recipientUserId_idx").on(table.recipientUserId),
 		index("teamsApprovalCard_status_idx").on(table.status),
+		index("teamsApprovalCard_org_installation_idx").on(table.organizationId, table.installationId),
 		// One card per approval request (can update existing card)
 		uniqueIndex("teamsApprovalCard_approvalRequest_unique_idx").on(table.approvalRequestId),
 	],

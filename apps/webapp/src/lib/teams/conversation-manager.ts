@@ -10,6 +10,12 @@ import { type ConversationReference, TurnContext } from "botbuilder";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { teamsConversation } from "@/db/schema";
+import {
+	type ChatDispatchTargetHint,
+	listInstallationActiveConversations,
+	resolveInstallationConversationForUser,
+	resolveSwitchedActiveChatInstallation,
+} from "@/lib/chat-installations/runtime-target";
 import { createLogger } from "@/lib/logger";
 import type { StoredConversation } from "./types";
 
@@ -91,9 +97,8 @@ export async function saveConversationReference(
 		}
 		if (userId && conversationType === "personal") {
 			// Approval cards waiting for a usable destination can be delivered now.
-			const { rearmApprovalDeliveryForRepairedDestination } = await import(
-				"@/lib/approvals/delivery/recovery"
-			);
+			const { rearmApprovalDeliveryForRepairedDestination } =
+				await import("@/lib/approvals/delivery/recovery");
 			await rearmApprovalDeliveryForRepairedDestination({
 				organizationId,
 				userId,
@@ -115,8 +120,24 @@ export async function saveConversationReference(
 export async function getConversationReferenceForUser(
 	userId: string,
 	organizationId: string,
+	options?: ChatDispatchTargetHint,
 ): Promise<ConversationReference | null> {
 	try {
+		const resolution = await resolveSwitchedActiveChatInstallation(
+			organizationId,
+			"teams",
+			options,
+		);
+		if (resolution.kind === "organization_owned_active") {
+			const conv = await resolveInstallationConversationForUser({
+				organizationId,
+				installationId: resolution.target.installationId,
+				userId,
+				conversationTypes: ["personal", "private"],
+			});
+			return (conv?.conversationReference as unknown as ConversationReference | null) ?? null;
+		}
+
 		const conv = await db.query.teamsConversation.findFirst({
 			where: and(
 				eq(teamsConversation.userId, userId),
@@ -176,12 +197,17 @@ export async function findPersonalConversation(
 export async function findConversationReference(
 	teamsConversationId: string,
 	organizationId: string,
+	expectedTenantId?: string | null,
 ): Promise<ConversationReference | null> {
+	const conditions = [
+		eq(teamsConversation.teamsConversationId, teamsConversationId),
+		eq(teamsConversation.organizationId, organizationId),
+	];
+	if (expectedTenantId) {
+		conditions.push(eq(teamsConversation.teamsTenantId, expectedTenantId));
+	}
 	const conv = await db.query.teamsConversation.findFirst({
-		where: and(
-			eq(teamsConversation.teamsConversationId, teamsConversationId),
-			eq(teamsConversation.organizationId, organizationId),
-		),
+		where: and(...conditions),
 		columns: { conversationReference: true },
 	});
 	return conv ? (JSON.parse(conv.conversationReference) as ConversationReference) : null;
@@ -266,8 +292,28 @@ export async function deactivateConversation(
  */
 export async function getOrganizationPersonalConversations(
 	organizationId: string,
+	options?: ChatDispatchTargetHint,
 ): Promise<Array<{ userId: string; conversationReference: ConversationReference }>> {
 	try {
+		const resolution = await resolveSwitchedActiveChatInstallation(
+			organizationId,
+			"teams",
+			options,
+		);
+		if (resolution.kind === "organization_owned_active") {
+			const conversations = await listInstallationActiveConversations({
+				organizationId,
+				installationId: resolution.target.installationId,
+				conversationTypes: ["personal", "private"],
+			});
+			return conversations
+				.filter((c) => c.conversationReference !== null)
+				.map((c) => ({
+					userId: c.userId,
+					conversationReference: c.conversationReference as unknown as ConversationReference,
+				}));
+		}
+
 		const conversations = await db.query.teamsConversation.findMany({
 			where: and(
 				eq(teamsConversation.organizationId, organizationId),

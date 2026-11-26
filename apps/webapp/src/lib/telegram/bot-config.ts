@@ -7,7 +7,14 @@
 
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { telegramBotConfig } from "@/db/schema";
+import { type ChatInstallationStatus, chatInstallation, telegramBotConfig } from "@/db/schema";
+import {
+	type ChatDispatchTargetHint,
+	listSwitchedActiveChatInstallationsForProvider,
+	readInstallationRevisionSecret,
+	resolveSwitchedActiveChatInstallation,
+	type SwitchedActiveChatInstallation,
+} from "@/lib/chat-installations/runtime-target";
 import { createLogger } from "@/lib/logger";
 import { getOrgSecret } from "@/lib/vault";
 import type { ResolvedTelegramBot } from "./types";
@@ -16,12 +23,56 @@ const logger = createLogger("TelegramBotConfig");
 
 const VAULT_KEY = "telegram/bot_token";
 
-/**
- * Resolve bot config by webhook secret (used in webhook route)
- */
-export async function resolveBotByWebhookSecret(
-	webhookSecret: string,
+async function hydrateSwitchedTelegramBot(
+	target: SwitchedActiveChatInstallation,
 ): Promise<ResolvedTelegramBot | null> {
+	if (!target.credentialRevisionId) return null;
+	const botToken = await readInstallationRevisionSecret({
+		organizationId: target.organizationId,
+		installationId: target.installationId,
+		credentialRevisionId: target.credentialRevisionId,
+		secretKeyNames: ["bot_token"],
+	});
+	if (!botToken) {
+		logger.error(
+			{
+				organizationId: target.organizationId,
+				installationId: target.installationId,
+				credentialRevisionId: target.credentialRevisionId,
+			},
+			"Active organization-owned Telegram bot token not found in secret store",
+		);
+		return null;
+	}
+
+	return {
+		organizationId: target.organizationId,
+		installationId: target.installationId,
+		credentialRevisionId: target.credentialRevisionId,
+		botToken,
+		botUsername: target.externalBotUsername,
+		webhookSecret: target.routeId,
+		setupStatus: "active",
+		...target.effectiveSettings,
+	};
+}
+
+export interface ResolvedLegacyTelegramWebhookBot {
+	bot: ResolvedTelegramBot;
+	installationStatus: ChatInstallationStatus | null;
+	retirementDeadlineAt: Date | null;
+	retiredAt: Date | null;
+	revokedAt: Date | null;
+}
+
+/**
+ * Resolve legacy webhook bot alongside its `chat_installation` lifecycle record
+ * so `/api/telegram/webhook/[token]` keeps servicing eligible legacy installations
+ * (and retiring approval callbacks) while immediately refusing revoked/retired ones.
+ */
+export async function resolveLegacyTelegramWebhookBot(
+	webhookSecret: string,
+): Promise<ResolvedLegacyTelegramWebhookBot | null> {
 	const config = await db.query.telegramBotConfig.findFirst({
 		where: and(
 			eq(telegramBotConfig.webhookSecret, webhookSecret),
@@ -31,15 +82,78 @@ export async function resolveBotByWebhookSecret(
 
 	if (!config) return null;
 
-	return hydrateBot(config);
+	const hydrated = await hydrateBot(config);
+	if (!hydrated) return null;
+
+	if (typeof db.select !== "function") {
+		return {
+			bot: hydrated,
+			installationStatus: null,
+			retirementDeadlineAt: null,
+			retiredAt: null,
+			revokedAt: null,
+		};
+	}
+
+	const [inst] = await db
+		.select({
+			id: chatInstallation.id,
+			status: chatInstallation.status,
+			retirementDeadlineAt: chatInstallation.retirementDeadlineAt,
+			retiredAt: chatInstallation.retiredAt,
+			revokedAt: chatInstallation.revokedAt,
+		})
+		.from(chatInstallation)
+		.where(
+			and(
+				eq(chatInstallation.organizationId, config.organizationId),
+				eq(chatInstallation.provider, "telegram"),
+				eq(chatInstallation.legacyTable, "telegram_bot_config"),
+				eq(chatInstallation.legacyRecordId, config.id),
+			),
+		)
+		.limit(1);
+
+	return {
+		bot: {
+			...hydrated,
+			installationId: inst?.id ?? null,
+		},
+		installationStatus: inst?.status ?? null,
+		retirementDeadlineAt: inst?.retirementDeadlineAt ?? null,
+		retiredAt: inst?.retiredAt ?? null,
+		revokedAt: inst?.revokedAt ?? null,
+	};
 }
 
 /**
- * Get bot config for an organization
+ * Resolve bot config by webhook secret (used in webhook route)
+ */
+export async function resolveBotByWebhookSecret(
+	webhookSecret: string,
+): Promise<ResolvedTelegramBot | null> {
+	const resolved = await resolveLegacyTelegramWebhookBot(webhookSecret);
+	return resolved?.bot ?? null;
+}
+
+/**
+ * Get bot config for an organization.
+ * Prefers a switched active organization-owned chat installation (or explicit
+ * durable dispatch target) and falls back to the legacy bot config.
  */
 export async function getBotConfigByOrganization(
 	organizationId: string,
+	options?: ChatDispatchTargetHint,
 ): Promise<ResolvedTelegramBot | null> {
+	const resolution = await resolveSwitchedActiveChatInstallation(
+		organizationId,
+		"telegram",
+		options,
+	);
+	if (resolution.kind === "organization_owned_active") {
+		return hydrateSwitchedTelegramBot(resolution.target);
+	}
+
 	const config = await db.query.telegramBotConfig.findFirst({
 		where: eq(telegramBotConfig.organizationId, organizationId),
 	});
@@ -53,6 +167,11 @@ export async function getBotConfigByOrganization(
  * Check if Telegram is enabled for an organization
  */
 export async function isTelegramEnabledForOrganization(organizationId: string): Promise<boolean> {
+	const resolution = await resolveSwitchedActiveChatInstallation(organizationId, "telegram");
+	if (resolution.kind === "organization_owned_active") {
+		return true;
+	}
+
 	const config = await db.query.telegramBotConfig.findFirst({
 		where: and(
 			eq(telegramBotConfig.organizationId, organizationId),
@@ -68,12 +187,17 @@ export async function isTelegramEnabledForOrganization(organizationId: string): 
  * Get all active Telegram bot configs (for cron jobs)
  */
 export async function getAllActiveBotConfigs(): Promise<ResolvedTelegramBot[]> {
+	const switchedInstallations = await listSwitchedActiveChatInstallationsForProvider("telegram");
+	const switchedOrgIds = new Set(switchedInstallations.map((inst) => inst.organizationId));
+	const switchedBots = await Promise.all(switchedInstallations.map(hydrateSwitchedTelegramBot));
+
 	const configs = await db.query.telegramBotConfig.findMany({
 		where: eq(telegramBotConfig.setupStatus, "active"),
 	});
+	const legacyConfigs = configs.filter((config) => !switchedOrgIds.has(config.organizationId));
+	const legacyBots = await Promise.all(legacyConfigs.map(hydrateBot));
 
-	const results = await Promise.all(configs.map(hydrateBot));
-	return results.filter((bot): bot is ResolvedTelegramBot => bot !== null);
+	return [...switchedBots, ...legacyBots].filter((bot): bot is ResolvedTelegramBot => bot !== null);
 }
 
 /**

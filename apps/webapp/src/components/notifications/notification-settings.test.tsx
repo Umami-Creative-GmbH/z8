@@ -3,6 +3,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NotificationSettings } from "@/components/notifications/notification-settings";
+import { useMemberChatLinks } from "@/hooks/use-member-chat-links";
 import { useNotificationPreferences } from "@/hooks/use-notification-preferences";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
 import {
@@ -11,6 +12,14 @@ import {
 	type NotificationChannel,
 	type NotificationType,
 } from "@/lib/notifications/types";
+
+vi.mock("@/hooks/use-member-chat-links", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@/hooks/use-member-chat-links")>();
+	return {
+		...actual,
+		useMemberChatLinks: vi.fn(),
+	};
+});
 
 vi.mock("@/hooks/use-notification-preferences", () => ({
 	useNotificationPreferences: vi.fn(),
@@ -30,6 +39,7 @@ vi.mock("@tolgee/react", () => ({
 	}),
 }));
 
+const useMemberChatLinksMock = vi.mocked(useMemberChatLinks);
 const useNotificationPreferencesMock = vi.mocked(useNotificationPreferences);
 const usePushNotificationsMock = vi.mocked(usePushNotifications);
 
@@ -67,32 +77,37 @@ describe("NotificationSettings", () => {
 		render(<NotificationSettings />);
 		for (const channel of ["In-App", "Email", "Push"])
 			expect(
-				screen.getByLabelText(
-					`${channel} notifications for Equipment return reminders`,
-				),
+				screen.getByLabelText(`${channel} notifications for Equipment return reminders`),
 			).toBeTruthy();
 		expect(
-			screen.queryByLabelText(
-				"Slack notifications for Equipment return reminders",
-			),
+			screen.queryByLabelText("Slack notifications for Equipment return reminders"),
 		).toBeNull();
 	});
 	it("explains mandatory automatic clock-out inbox delivery without a disable switch", () => {
 		render(<NotificationSettings />);
-		const row = screen.getByText("Automatic clock-out")
-			.parentElement as HTMLElement;
-		expect(
-			within(row).getByText("Always delivered to your inbox"),
-		).toBeTruthy();
-		expect(
-			screen.queryByLabelText("In-App notifications for Automatic clock-out"),
-		).toBeNull();
-		expect(
-			screen.getByLabelText("Email notifications for Automatic clock-out"),
-		).toBeTruthy();
+		const row = screen.getByText("Automatic clock-out").parentElement as HTMLElement;
+		expect(within(row).getByText("Always delivered to your inbox")).toBeTruthy();
+		expect(screen.queryByLabelText("In-App notifications for Automatic clock-out")).toBeNull();
+		expect(screen.getByLabelText("Email notifications for Automatic clock-out")).toBeTruthy();
 	});
 	beforeEach(() => {
 		vi.clearAllMocks();
+
+		useMemberChatLinksMock.mockReturnValue({
+			hasOrganizationContext: false,
+			channels: [],
+			isLoading: false,
+			error: null,
+			refetch: vi.fn(),
+			isRetrying: false,
+			generatedCodes: {},
+			generatingCodeKey: null,
+			generateLinkCodeAsync: vi.fn(),
+			recheckingDiscordInstallationId: null,
+			recheckDiscordDmAsync: vi.fn(),
+			unlinkAccountAsync: vi.fn(),
+			unlinkingProvider: null,
+		});
 
 		usePushNotificationsMock.mockReturnValue({
 			isSupported: true,
@@ -132,9 +147,9 @@ describe("NotificationSettings", () => {
 			{ matrix: null, error: new Error("load failed"), refetch },
 		);
 		render(<NotificationSettings />);
-		expect(
-			screen.getByRole("alert").textContent,
-		).toContain("Unable to load notification preferences");
+		expect(screen.getByRole("alert").textContent).toContain(
+			"Unable to load notification preferences",
+		);
 		fireEvent.click(screen.getByRole("button", { name: "Retry" }));
 		expect(refetch).toHaveBeenCalledOnce();
 	});
@@ -143,14 +158,10 @@ describe("NotificationSettings", () => {
 		render(<NotificationSettings />);
 		for (const channel of ["In-App", "Push", "Email"]) {
 			expect(
-				screen.getByLabelText(
-					`${channel} notifications for Approved absence cancelled`,
-				),
+				screen.getByLabelText(`${channel} notifications for Approved absence cancelled`),
 			).toBeTruthy();
 			expect(
-				screen.getAllByLabelText(
-					`${channel} notifications for Request approved`,
-				).length,
+				screen.getAllByLabelText(`${channel} notifications for Request approved`).length,
 			).toBeGreaterThan(0);
 		}
 	});
@@ -161,9 +172,7 @@ describe("NotificationSettings", () => {
 		expect(screen.getByText("Push")).toBeTruthy();
 		expect(screen.getByText("Email")).toBeTruthy();
 		expect(screen.queryByText("Slack")).toBeNull();
-		expect(
-			screen.queryByLabelText("Slack notifications for Request submitted"),
-		).toBeNull();
+		expect(screen.queryByLabelText("Slack notifications for Request submitted")).toBeNull();
 	});
 
 	it("always renders baseline channel switches", () => {
@@ -179,15 +188,9 @@ describe("NotificationSettings", () => {
 
 		render(<NotificationSettings />);
 
-		expect(
-			screen.getAllByLabelText("In-App notifications for Request submitted"),
-		).toHaveLength(2);
-		expect(
-			screen.getAllByLabelText("Push notifications for Request submitted"),
-		).toHaveLength(2);
-		expect(
-			screen.getAllByLabelText("Email notifications for Request submitted"),
-		).toHaveLength(2);
+		expect(screen.getAllByLabelText("In-App notifications for Request submitted")).toHaveLength(2);
+		expect(screen.getAllByLabelText("Push notifications for Request submitted")).toHaveLength(2);
+		expect(screen.getAllByLabelText("Email notifications for Request submitted")).toHaveLength(2);
 	});
 
 	it("renders configured third-party channel switches", () => {
@@ -203,37 +206,21 @@ describe("NotificationSettings", () => {
 
 		render(<NotificationSettings />);
 
-		expect(
-			screen.getAllByLabelText("Teams notifications for Request submitted"),
-		).toHaveLength(2);
-		expect(
-			screen.getAllByLabelText("Telegram notifications for Request submitted"),
-		).toHaveLength(2);
-		expect(
-			screen.getAllByLabelText("Discord notifications for Request submitted"),
-		).toHaveLength(2);
-		expect(
-			screen.getAllByLabelText("Slack notifications for Request submitted"),
-		).toHaveLength(2);
+		expect(screen.getAllByLabelText("Teams notifications for Request submitted")).toHaveLength(2);
+		expect(screen.getAllByLabelText("Telegram notifications for Request submitted")).toHaveLength(
+			2,
+		);
+		expect(screen.getAllByLabelText("Discord notifications for Request submitted")).toHaveLength(2);
+		expect(screen.getAllByLabelText("Slack notifications for Request submitted")).toHaveLength(2);
 	});
 
 	it("lets an employee switch individual channels of clocking reminders", () => {
 		render(<NotificationSettings />);
 
-		for (const label of [
-			"Missed clock-in",
-			"Forgotten clock-out",
-			"Break due",
-		]) {
-			expect(
-				screen.getByLabelText(`In-App notifications for ${label}`),
-			).toBeTruthy();
-			expect(
-				screen.getByLabelText(`Push notifications for ${label}`),
-			).toBeTruthy();
-			expect(
-				screen.getByLabelText(`Email notifications for ${label}`),
-			).toBeTruthy();
+		for (const label of ["Missed clock-in", "Forgotten clock-out", "Break due"]) {
+			expect(screen.getByLabelText(`In-App notifications for ${label}`)).toBeTruthy();
+			expect(screen.getByLabelText(`Push notifications for ${label}`)).toBeTruthy();
+			expect(screen.getByLabelText(`Email notifications for ${label}`)).toBeTruthy();
 		}
 	});
 
@@ -246,15 +233,9 @@ describe("NotificationSettings", () => {
 			"Absence deputy dates changed",
 			"Absence cover starts tomorrow",
 		]) {
-			expect(
-				screen.getByLabelText(`In-App notifications for ${label}`),
-			).toBeTruthy();
-			expect(
-				screen.getByLabelText(`Push notifications for ${label}`),
-			).toBeTruthy();
-			expect(
-				screen.getByLabelText(`Email notifications for ${label}`),
-			).toBeTruthy();
+			expect(screen.getByLabelText(`In-App notifications for ${label}`)).toBeTruthy();
+			expect(screen.getByLabelText(`Push notifications for ${label}`)).toBeTruthy();
+			expect(screen.getByLabelText(`Email notifications for ${label}`)).toBeTruthy();
 		}
 	});
 
@@ -262,19 +243,29 @@ describe("NotificationSettings", () => {
 		render(<NotificationSettings />);
 
 		for (const label of ["Skill expires soon", "Skill expires today"]) {
-			expect(
-				screen.getByLabelText(`In-App notifications for ${label}`),
-			).toBeTruthy();
-			expect(
-				screen.getByLabelText(`Push notifications for ${label}`),
-			).toBeTruthy();
-			expect(
-				screen.getByLabelText(`Email notifications for ${label}`),
-			).toBeTruthy();
+			expect(screen.getByLabelText(`In-App notifications for ${label}`)).toBeTruthy();
+			expect(screen.getByLabelText(`Push notifications for ${label}`)).toBeTruthy();
+			expect(screen.getByLabelText(`Email notifications for ${label}`)).toBeTruthy();
 		}
 	});
 
 	it("keeps push switch enabled when browser push is supported but not subscribed", () => {
+		useMemberChatLinksMock.mockReturnValue({
+			hasOrganizationContext: false,
+			channels: [],
+			isLoading: false,
+			error: null,
+			refetch: vi.fn(),
+			isRetrying: false,
+			generatedCodes: {},
+			generatingCodeKey: null,
+			generateLinkCodeAsync: vi.fn(),
+			recheckingDiscordInstallationId: null,
+			recheckDiscordDmAsync: vi.fn(),
+			unlinkAccountAsync: vi.fn(),
+			unlinkingProvider: null,
+		});
+
 		usePushNotificationsMock.mockReturnValue({
 			isSupported: true,
 			permission: "default",
@@ -293,5 +284,46 @@ describe("NotificationSettings", () => {
 				.getAllByLabelText("Push notifications for Request submitted")[0]
 				.hasAttribute("disabled"),
 		).toBe(false);
+	});
+
+	it("shows chat connections card alongside account-wide preferences when organization channels are available", () => {
+		useMemberChatLinksMock.mockReturnValue({
+			hasOrganizationContext: true,
+			channels: [
+				{
+					provider: "telegram",
+					available: true,
+					status: "action_needed",
+					installationId: "inst-tg",
+					installationLabel: "@z8_acme_bot",
+					botUsername: "z8_acme_bot",
+					externalUsername: null,
+					externalDisplayName: null,
+					canGenerateLinkCode: true,
+					canUnlink: false,
+					recoveryHint: "link_required",
+				},
+			],
+			isLoading: false,
+			error: null,
+			refetch: vi.fn(),
+			isRetrying: false,
+			generatedCodes: {},
+			generatingCodeKey: null,
+			generateLinkCodeAsync: vi.fn(),
+			recheckingDiscordInstallationId: null,
+			recheckDiscordDmAsync: vi.fn(),
+			unlinkAccountAsync: vi.fn(),
+			unlinkingProvider: null,
+		});
+
+		render(<NotificationSettings />);
+
+		expect(screen.getByText("Chat connections")).toBeTruthy();
+		expect(screen.getByText("Action needed")).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Generate link code" })).toBeTruthy();
+		expect(
+			screen.getAllByLabelText("Email notifications for Request submitted").length,
+		).toBeGreaterThan(0);
 	});
 });

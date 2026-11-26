@@ -4,7 +4,13 @@ import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { z } from "zod";
 import { notificationPreference } from "@/db/schema";
-import { isDiscordEnabledForOrganization } from "@/lib/discord";
+import {
+	buildAvailableNotificationChannels,
+	getOrganizationChatChannelAvailability,
+} from "@/lib/chat-installations/member-links";
+import { ValidationError } from "@/lib/effect/errors";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { AuthService } from "@/lib/effect/services/auth.service";
 import { type DatabaseClient, DatabaseService } from "@/lib/effect/services/database.service";
 import {
 	isChannelEnabledByDefault,
@@ -14,10 +20,11 @@ import {
 	type NotificationType,
 	type UserPreferencesResponse,
 } from "@/lib/notifications/types";
-import { noInput, organizationAction } from "@/lib/organization-action/organization-action";
-import { isSlackEnabledForOrganization } from "@/lib/slack";
-import { isTeamsEnabledForOrganization } from "@/lib/teams";
-import { isTelegramEnabledForOrganization } from "@/lib/telegram";
+import {
+	loadSettingsAccessFacts,
+	SETTINGS_ACCESS_FACTS_QUERY,
+	settingsAccessOf,
+} from "@/lib/organization-action/settings-access";
 
 const preferenceSchema = z.strictObject({
 	notificationType: z.enum(NOTIFICATION_TYPES, { message: "Invalid notification type" }),
@@ -25,7 +32,23 @@ const preferenceSchema = z.strictObject({
 	enabled: z.boolean({ message: "Invalid enabled value" }),
 });
 
+const bulkPreferencesSchema = z.array(preferenceSchema);
+
 type PreferenceUpdate = z.output<typeof preferenceSchema>;
+
+function parsePreferenceInput<T>(schema: z.ZodType<T>, rawInput: unknown) {
+	const parsed = schema.safeParse(rawInput);
+	if (parsed.success) {
+		return Effect.succeed(parsed.data);
+	}
+	const issue = parsed.error.issues[0];
+	return Effect.fail(
+		new ValidationError({
+			message: issue?.message ?? "Invalid input",
+			field: issue?.path.join(".") || "input",
+		}),
+	);
+}
 
 /** Upserts one of the user's preferences; they are user-level, not organization-specific. */
 async function upsertPreference(
@@ -52,86 +75,122 @@ async function upsertPreference(
 }
 
 /**
- * The signed-in user's notification preferences, and which channels the active
- * organization offers. Preferences are user-level; channel availability is the
- * organization's.
+ * Resolves the active organization ID only when the signed-in user has active
+ * organization access in it; otherwise returns null so account-wide preferences
+ * remain accessible while org-scoped chat channels stay unavailable (ADR 0002).
  */
-export const getNotificationPreferences = organizationAction(
-	{ name: "notifications.getPreferences", requires: "member", schema: noInput },
-	({ actor, organizationId }) =>
-		Effect.gen(function* () {
-			const dbService = yield* DatabaseService;
+function loadEligibleActiveOrganizationId(
+	userId: string,
+	activeOrganizationId: string | null | undefined,
+) {
+	return Effect.gen(function* () {
+		if (!activeOrganizationId) {
+			return null;
+		}
+		const authService = yield* AuthService;
+		const orgSession = yield* authService
+			.getSession(activeOrganizationId)
+			.pipe(Effect.catch(() => Effect.succeed(null)));
+		if (!orgSession) {
+			return null;
+		}
 
-			const preferences = yield* dbService.query("getNotificationPreferences", () =>
-				dbService.db
-					.select()
-					.from(notificationPreference)
-					.where(eq(notificationPreference.userId, actor.userId)),
-			);
+		const dbService = yield* DatabaseService;
+		const facts = yield* dbService.query(SETTINGS_ACCESS_FACTS_QUERY, () =>
+			loadSettingsAccessFacts(dbService.db, {
+				userId,
+				organizationId: activeOrganizationId,
+			}),
+		);
+		return settingsAccessOf(facts) !== null ? activeOrganizationId : null;
+	});
+}
 
-			const [isTeamsAvailable, isTelegramAvailable, isDiscordAvailable, isSlackAvailable] =
-				yield* dbService.query("getNotificationPreferencesChannelAvailability", () =>
-					Promise.all([
-						isTeamsEnabledForOrganization(organizationId),
-						isTelegramEnabledForOrganization(organizationId),
-						isDiscordEnabledForOrganization(organizationId),
-						isSlackEnabledForOrganization(organizationId),
-					]),
-				);
+/**
+ * The signed-in user's account-wide notification preferences, plus which channels
+ * the active organization offers. Absent organization context preserves access to
+ * account preferences while reporting org-scoped chat channels as unavailable (ADR 0002).
+ */
+export async function getNotificationPreferences(): Promise<
+	ServerActionResult<UserPreferencesResponse>
+> {
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
+		const dbService = yield* DatabaseService;
 
-			const availableChannels: Record<NotificationChannel, boolean> = {
-				in_app: true,
-				push: true,
-				email: true,
-				teams: isTeamsAvailable,
-				telegram: isTelegramAvailable,
-				discord: isDiscordAvailable,
-				slack: isSlackAvailable,
-			};
+		const preferences = yield* dbService.query("getNotificationPreferences", () =>
+			dbService.db
+				.select()
+				.from(notificationPreference)
+				.where(eq(notificationPreference.userId, session.user.id)),
+		);
 
-			// Every type x channel at the type's default, overridden by the stored preferences.
-			const matrix = {} as Record<NotificationType, Record<NotificationChannel, boolean>>;
-			for (const type of NOTIFICATION_TYPES) {
-				matrix[type] = {} as Record<NotificationChannel, boolean>;
-				for (const channel of NOTIFICATION_CHANNELS) {
-					matrix[type][channel] = isChannelEnabledByDefault(type, channel);
-				}
+		const eligibleOrganizationId = yield* loadEligibleActiveOrganizationId(
+			session.user.id,
+			session.session.activeOrganizationId,
+		);
+
+		const chatAvailability = yield* dbService.query(
+			"getNotificationPreferencesChannelAvailability",
+			() => getOrganizationChatChannelAvailability(eligibleOrganizationId, { db: dbService.db }),
+		);
+
+		const availableChannels = buildAvailableNotificationChannels(chatAvailability);
+
+		// Every type x channel at the type's default, overridden by the stored preferences.
+		const matrix = {} as Record<NotificationType, Record<NotificationChannel, boolean>>;
+		for (const type of NOTIFICATION_TYPES) {
+			matrix[type] = {} as Record<NotificationChannel, boolean>;
+			for (const channel of NOTIFICATION_CHANNELS) {
+				matrix[type][channel] = isChannelEnabledByDefault(type, channel);
 			}
-			for (const pref of preferences) {
-				if (matrix[pref.notificationType]) {
-					matrix[pref.notificationType][pref.channel] = pref.enabled;
-				}
+		}
+		for (const pref of preferences) {
+			if (matrix[pref.notificationType]) {
+				matrix[pref.notificationType][pref.channel] = pref.enabled;
 			}
+		}
 
-			return { preferences, matrix, availableChannels } satisfies UserPreferencesResponse;
-		}),
-);
+		return { preferences, matrix, availableChannels } satisfies UserPreferencesResponse;
+	});
 
-/** Updates one of the signed-in user's notification preferences. */
-export const updateNotificationPreference = organizationAction(
-	{ name: "notifications.updatePreference", requires: "member", schema: preferenceSchema },
-	({ actor, input }) =>
-		Effect.gen(function* () {
-			const dbService = yield* DatabaseService;
-			yield* dbService.query("updateNotificationPreference", () =>
-				upsertPreference(dbService.db, actor.userId, input),
-			);
-		}),
-);
+	return runServerActionSafe(effect);
+}
 
-/** Updates several of the signed-in user's notification preferences; all are checked first. */
-export const bulkUpdateNotificationPreferences = organizationAction(
-	{
-		name: "notifications.bulkUpdatePreferences",
-		requires: "member",
-		schema: z.array(preferenceSchema),
-	},
-	({ actor, input }) =>
-		Effect.gen(function* () {
-			const dbService = yield* DatabaseService;
-			yield* dbService.query("bulkUpdateNotificationPreferences", () =>
-				Promise.all(input.map((update) => upsertPreference(dbService.db, actor.userId, update))),
-			);
-			return { updated: input.length };
-		}),
-);
+/** Updates one of the signed-in user's account-wide notification preferences (ADR 0002). */
+export async function updateNotificationPreference(
+	rawInput: z.input<typeof preferenceSchema>,
+): Promise<ServerActionResult<void>> {
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
+		const input = yield* parsePreferenceInput(preferenceSchema, rawInput);
+		const dbService = yield* DatabaseService;
+
+		yield* dbService.query("updateNotificationPreference", () =>
+			upsertPreference(dbService.db, session.user.id, input),
+		);
+	});
+
+	return runServerActionSafe(effect);
+}
+
+/** Updates several of the signed-in user's account-wide notification preferences (ADR 0002). */
+export async function bulkUpdateNotificationPreferences(
+	rawInput: z.input<typeof bulkPreferencesSchema>,
+): Promise<ServerActionResult<{ updated: number }>> {
+	const effect = Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
+		const input = yield* parsePreferenceInput(bulkPreferencesSchema, rawInput);
+		const dbService = yield* DatabaseService;
+
+		yield* dbService.query("bulkUpdateNotificationPreferences", () =>
+			Promise.all(input.map((update) => upsertPreference(dbService.db, session.user.id, update))),
+		);
+		return { updated: input.length };
+	});
+
+	return runServerActionSafe(effect);
+}

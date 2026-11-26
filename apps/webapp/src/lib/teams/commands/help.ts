@@ -5,7 +5,19 @@
  */
 
 import { getBotTranslate } from "@/lib/bot-platform/i18n";
-import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
+import type {
+	BotCommand,
+	BotCommandContext,
+	BotCommandResponse,
+	BotPlatform,
+} from "@/lib/bot-platform/types";
+
+const PLATFORM_NAMES: Record<BotPlatform, string> = {
+	teams: "Teams",
+	telegram: "Telegram",
+	slack: "Slack",
+	discord: "Discord",
+};
 
 export const helpCommand: BotCommand = {
 	name: "help",
@@ -30,13 +42,14 @@ export const helpCommand: BotCommand = {
 			return `• **${cmd.name}**${aliases} - ${desc}`;
 		});
 
-		const platformName = ctx.platform === "telegram" ? "Telegram" : "Teams";
+		const platformName = PLATFORM_NAMES[ctx.platform];
 		const response = [
 			`**${t("bot.cmd.help.title", "Z8 Bot Commands")}**`,
 			"",
 			...lines,
 			"",
 			`_${t("bot.cmd.help.footer", "You can also receive approval requests and daily digests directly in {platform}.", { platform: platformName })}_`,
+			`_${t("bot.cmd.help.manageLinks", "Manage your chat links and notification preferences in Z8 under Settings → Notifications.")}_`,
 		].join("\n");
 
 		return {

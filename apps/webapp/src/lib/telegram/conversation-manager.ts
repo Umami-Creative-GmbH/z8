@@ -8,6 +8,13 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { telegramConversation } from "@/db/schema";
+import { upsertInstallationConversation } from "@/lib/chat-installations/inventory";
+import {
+	type ChatDispatchTargetHint,
+	listInstallationActiveConversations,
+	resolveInstallationConversationForUser,
+	resolveSwitchedActiveChatInstallation,
+} from "@/lib/chat-installations/runtime-target";
 import { createLogger } from "@/lib/logger";
 
 const logger = createLogger("TelegramConversationManager");
@@ -15,45 +22,62 @@ const logger = createLogger("TelegramConversationManager");
 /**
  * Save or update a conversation reference.
  * Called on every incoming message to keep chat_id current.
+ * When `options.installationId` is supplied, saves to `chat_installation_conversation`
+ * scoped strictly to that installation without overwriting legacy conversations.
  */
 export async function saveConversation(
 	chatId: string,
 	chatType: string,
 	userId: string,
 	organizationId: string,
+	options?: { installationId?: string | null; externalUserId?: string | null },
 ): Promise<void> {
 	try {
-		const existing = await db.query.telegramConversation.findFirst({
-			where: and(
-				eq(telegramConversation.userId, userId),
-				eq(telegramConversation.organizationId, organizationId),
-				eq(telegramConversation.chatType, chatType),
-			),
-		});
-
-		if (existing) {
-			await db
-				.update(telegramConversation)
-				.set({
-					chatId,
-					isActive: true,
-					lastUsedAt: new Date(),
-				})
-				.where(eq(telegramConversation.id, existing.id));
-		} else {
-			await db.insert(telegramConversation).values({
+		if (options?.installationId) {
+			const now = new Date();
+			await upsertInstallationConversation({
 				organizationId,
+				installationId: options.installationId,
 				userId,
-				chatId,
-				chatType,
-				isActive: true,
+				externalUserId: options.externalUserId ?? null,
+				externalConversationId: chatId,
+				conversationType: chatType,
+				reachabilityStatus: "reachable",
+				verifiedAt: now,
+				lastUsedAt: now,
 			});
+		} else {
+			const existing = await db.query.telegramConversation.findFirst({
+				where: and(
+					eq(telegramConversation.userId, userId),
+					eq(telegramConversation.organizationId, organizationId),
+					eq(telegramConversation.chatType, chatType),
+				),
+			});
+
+			if (existing) {
+				await db
+					.update(telegramConversation)
+					.set({
+						chatId,
+						isActive: true,
+						lastUsedAt: new Date(),
+					})
+					.where(eq(telegramConversation.id, existing.id));
+			} else {
+				await db.insert(telegramConversation).values({
+					organizationId,
+					userId,
+					chatId,
+					chatType,
+					isActive: true,
+				});
+			}
 		}
 		if (chatType === "private") {
 			// Approval cards waiting for a usable destination can be delivered now.
-			const { rearmApprovalDeliveryForRepairedDestination } = await import(
-				"@/lib/approvals/delivery/recovery"
-			);
+			const { rearmApprovalDeliveryForRepairedDestination } =
+				await import("@/lib/approvals/delivery/recovery");
 			await rearmApprovalDeliveryForRepairedDestination({
 				organizationId,
 				userId,
@@ -71,7 +95,23 @@ export async function saveConversation(
 export async function getChatIdForUser(
 	userId: string,
 	organizationId: string,
+	options?: ChatDispatchTargetHint,
 ): Promise<string | null> {
+	const resolution = await resolveSwitchedActiveChatInstallation(
+		organizationId,
+		"telegram",
+		options,
+	);
+	if (resolution.kind === "organization_owned_active") {
+		const conv = await resolveInstallationConversationForUser({
+			organizationId,
+			installationId: resolution.target.installationId,
+			userId,
+			conversationTypes: ["private"],
+		});
+		return conv?.externalConversationId ?? null;
+	}
+
 	const conversation = await db.query.telegramConversation.findFirst({
 		where: and(
 			eq(telegramConversation.userId, userId),
@@ -91,7 +131,25 @@ export async function getChatIdForUser(
  */
 export async function getOrganizationPrivateConversations(
 	organizationId: string,
+	options?: ChatDispatchTargetHint,
 ): Promise<Array<{ userId: string; chatId: string }>> {
+	const resolution = await resolveSwitchedActiveChatInstallation(
+		organizationId,
+		"telegram",
+		options,
+	);
+	if (resolution.kind === "organization_owned_active") {
+		const conversations = await listInstallationActiveConversations({
+			organizationId,
+			installationId: resolution.target.installationId,
+			conversationTypes: ["private"],
+		});
+		return conversations.map((conv) => ({
+			userId: conv.userId,
+			chatId: conv.externalConversationId,
+		}));
+	}
+
 	const conversations = await db.query.telegramConversation.findMany({
 		where: and(
 			eq(telegramConversation.organizationId, organizationId),

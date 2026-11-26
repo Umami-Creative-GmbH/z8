@@ -116,6 +116,18 @@ describe("Telegram bot replies", () => {
 		});
 		await handleTelegramUpdate(message("/link ABC"), bot);
 		expect(lastSent().text).toBe("de:bot.static.linkSuccess");
+		expect(state.claimLinkCode).toHaveBeenLastCalledWith("ABC", "7", "org-1", undefined, "Ann", {
+			botToken: "123:secret",
+			chatId: "42",
+		});
+
+		state.claimLinkCode.mockResolvedValueOnce({ status: "rate_limited" });
+		await handleTelegramUpdate(message("/link ABC"), bot);
+		expect(lastSent().text).toBe("fr:bot.static.linkRateLimited");
+
+		state.claimLinkCode.mockResolvedValueOnce({ status: "ineligible" });
+		await handleTelegramUpdate(message("/link ABC"), bot);
+		expect(lastSent().text).toBe("fr:bot.static.linkIneligible");
 	});
 
 	it("marks only the user's saved language as chosen in /language", async () => {

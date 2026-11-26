@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { ChatCapabilityDisclosureCard } from "@/components/settings/chat-capability-disclosure-card";
 import { DiscordChannelSettings } from "@/components/settings/discord-channel-settings";
 import { NotificationChannelSettings } from "@/components/settings/notification-channel-settings";
 
@@ -9,6 +10,7 @@ import { getTranslate } from "@/tolgee/server";
 import {
 	connectDiscordBot,
 	disconnectDiscordBot,
+	getChatInstallationsInventory,
 	getDiscordNotificationChannelConfig,
 	getSlackNotificationChannelConfig,
 	getTeamsNotificationChannelConfig,
@@ -16,12 +18,49 @@ import {
 	updateSlackNotificationChannelSettings,
 	updateTeamsNotificationChannelSettings,
 } from "./actions";
-import { SlackConnectButton } from "./slack-connect-button";
+import { ChatInstallationInventoryPanel } from "./chat-installation-inventory-panel";
+import { getDiscordLifecycleState } from "./discord-lifecycle-actions";
+import { DiscordLifecycleSection } from "./discord-lifecycle-section";
+import { getSlackRecoveryState } from "./recovery-actions";
+import { SlackPrepareTestSection } from "./slack-prepare-test-section";
+import { SlackRecoverySection } from "./slack-recovery-section";
+import { getSlackCandidateSetup } from "./slack-setup-actions";
+import {
+	getProviderCapabilityDisclosure,
+	getSlackSwitchImpactPreview,
+} from "./slack-switch-actions";
+import { SlackSwitchReviewSection } from "./slack-switch-review-section";
+import { TeamsPrepareTestSection } from "./teams-prepare-test-section";
+import { getTeamsCandidateSetup } from "./teams-setup-actions";
+import { getTeamsSwitchImpactPreview } from "./teams-switch-actions";
+import { TeamsSwitchReviewSection } from "./teams-switch-review-section";
+import { getTelegramLifecycleState } from "./telegram-lifecycle-actions";
+import { TelegramLifecycleSection } from "./telegram-lifecycle-section";
 import { TelegramPanel } from "./telegram-panel";
 
 async function ChatSettingsContent() {
 	const access = requireOrgAdminSettingsAccess();
-	const [{ organizationId }, t, [slack, teams, discord]] = await Promise.all([
+	const [
+		{ organizationId },
+		t,
+		[
+			slack,
+			teams,
+			discord,
+			inventory,
+			slackCandidate,
+			teamsCandidate,
+			slackSwitchPreview,
+			teamsSwitchPreview,
+			slackRecovery,
+			telegramLifecycle,
+			slackCapabilities,
+			teamsCapabilities,
+			telegramCapabilities,
+			discordCapabilities,
+			discordLifecycle,
+		],
+	] = await Promise.all([
 		access,
 		getTranslate(),
 		access.then(() =>
@@ -29,9 +68,31 @@ async function ChatSettingsContent() {
 				getSlackNotificationChannelConfig(),
 				getTeamsNotificationChannelConfig(),
 				getDiscordNotificationChannelConfig(),
+				getChatInstallationsInventory(),
+				getSlackCandidateSetup(),
+				getTeamsCandidateSetup(),
+				getSlackSwitchImpactPreview(),
+				getTeamsSwitchImpactPreview(),
+				getSlackRecoveryState(),
+				getTelegramLifecycleState(),
+				getProviderCapabilityDisclosure({ provider: "slack" }),
+				getProviderCapabilityDisclosure({ provider: "teams" }),
+				getProviderCapabilityDisclosure({ provider: "telegram" }),
+				getProviderCapabilityDisclosure({ provider: "discord" }),
+				getDiscordLifecycleState(),
 			]),
 		),
 	]);
+	const inventoryData = inventory.success ? inventory.data : null;
+	const inventoryLoadFailed = !inventory.success;
+	const slackCandidateData = slackCandidate.success ? slackCandidate.data : null;
+	const teamsCandidateData = teamsCandidate.success ? teamsCandidate.data : null;
+	const slackSwitchPreviewData = slackSwitchPreview.success ? slackSwitchPreview.data : null;
+	const teamsSwitchPreviewData = teamsSwitchPreview.success ? teamsSwitchPreview.data : null;
+	const slackRecoveryData = slackRecovery.success ? slackRecovery.data : null;
+	const telegramLifecycleData = telegramLifecycle.success ? telegramLifecycle.data : null;
+	const discordLifecycleData = discordLifecycle.success ? discordLifecycle.data : null;
+
 	return (
 		<SettingsTabbedPage
 			key={organizationId}
@@ -47,12 +108,34 @@ async function ChatSettingsContent() {
 					),
 					measure: true,
 					panel: (
-						<NotificationChannelSettings
-							channelName="Slack"
-							config={slack.success ? slack.data : null}
-							updateAction={updateSlackNotificationChannelSettings}
-							connectAction={<SlackConnectButton organizationId={organizationId} />}
-						/>
+						<div className="min-w-0 space-y-6">
+							<ChatInstallationInventoryPanel
+								provider="slack"
+								channelName="Slack"
+								initialInventory={inventoryData?.providers.slack ?? null}
+								initialLoadFailed={inventoryLoadFailed}
+							/>
+							<ChatCapabilityDisclosureCard
+								channelName="Slack"
+								disclosure={slackCapabilities.success ? slackCapabilities.data : null}
+							/>
+							<SlackPrepareTestSection initialSetup={slackCandidateData} />
+							<SlackSwitchReviewSection initialPreview={slackSwitchPreviewData} />
+							<SlackRecoverySection initialState={slackRecoveryData} />
+							<NotificationChannelSettings
+								channelName="Slack"
+								config={slack.success ? slack.data : null}
+								updateAction={updateSlackNotificationChannelSettings}
+								connectAction={
+									<p className="text-sm text-muted-foreground">
+										{t(
+											"settings.notifications.slack.orgOwnedConnectHint",
+											"Prepare, verify, and switch to your organization-owned Slack app using the setup workflow above.",
+										)}
+									</p>
+								}
+							/>
+						</div>
 					),
 				},
 				{
@@ -64,19 +147,33 @@ async function ChatSettingsContent() {
 					),
 					measure: true,
 					panel: (
-						<NotificationChannelSettings
-							channelName="Microsoft Teams"
-							config={teams.success ? teams.data : null}
-							updateAction={updateTeamsNotificationChannelSettings}
-							connectAction={
-								<p className="text-sm">
-									{t(
-										"settings.notifications.teams.setupInstructions",
-										"To connect Microsoft Teams, add the Z8 app to your Microsoft 365 tenant. The Z8 bot then sends a setup link that an organization admin opens to link the tenant to this organization.",
-									)}
-								</p>
-							}
-						/>
+						<div className="min-w-0 space-y-6">
+							<ChatInstallationInventoryPanel
+								provider="teams"
+								channelName="Microsoft Teams"
+								initialInventory={inventoryData?.providers.teams ?? null}
+								initialLoadFailed={inventoryLoadFailed}
+							/>
+							<ChatCapabilityDisclosureCard
+								channelName="Microsoft Teams"
+								disclosure={teamsCapabilities.success ? teamsCapabilities.data : null}
+							/>
+							<TeamsPrepareTestSection initialSetup={teamsCandidateData} />
+							<TeamsSwitchReviewSection initialPreview={teamsSwitchPreviewData} />
+							<NotificationChannelSettings
+								channelName="Microsoft Teams"
+								config={teams.success ? teams.data : null}
+								updateAction={updateTeamsNotificationChannelSettings}
+								connectAction={
+									<p className="text-sm text-muted-foreground">
+										{t(
+											"settings.teamsSwitch.orgOwnedConnectHint",
+											"Prepare, verify, and switch to your single-tenant organization-owned Microsoft Teams app using the workflow above.",
+										)}
+									</p>
+								}
+							/>
+						</div>
 					),
 				},
 				{
@@ -87,7 +184,22 @@ async function ChatSettingsContent() {
 						"Configure Telegram bot integration for notifications and commands",
 					),
 					measure: true,
-					panel: <TelegramPanel />,
+					panel: (
+						<div className="min-w-0 space-y-6">
+							<ChatInstallationInventoryPanel
+								provider="telegram"
+								channelName="Telegram"
+								initialInventory={inventoryData?.providers.telegram ?? null}
+								initialLoadFailed={inventoryLoadFailed}
+							/>
+							<ChatCapabilityDisclosureCard
+								channelName="Telegram"
+								disclosure={telegramCapabilities.success ? telegramCapabilities.data : null}
+							/>
+							<TelegramLifecycleSection initialState={telegramLifecycleData} />
+							<TelegramPanel />
+						</div>
+					),
 				},
 				{
 					value: "discord",
@@ -98,12 +210,25 @@ async function ChatSettingsContent() {
 					),
 					measure: true,
 					panel: (
-						<DiscordChannelSettings
-							config={discord.success ? discord.data : null}
-							updateAction={updateDiscordNotificationChannelSettings}
-							connectAction={connectDiscordBot}
-							disconnectAction={disconnectDiscordBot}
-						/>
+						<div className="min-w-0 space-y-6">
+							<ChatInstallationInventoryPanel
+								provider="discord"
+								channelName="Discord"
+								initialInventory={inventoryData?.providers.discord ?? null}
+								initialLoadFailed={inventoryLoadFailed}
+							/>
+							<ChatCapabilityDisclosureCard
+								channelName="Discord"
+								disclosure={discordCapabilities.success ? discordCapabilities.data : null}
+							/>
+							<DiscordLifecycleSection initialState={discordLifecycleData} />
+							<DiscordChannelSettings
+								config={discord.success ? discord.data : null}
+								updateAction={updateDiscordNotificationChannelSettings}
+								connectAction={connectDiscordBot}
+								disconnectAction={disconnectDiscordBot}
+							/>
+						</div>
 					),
 				},
 			]}

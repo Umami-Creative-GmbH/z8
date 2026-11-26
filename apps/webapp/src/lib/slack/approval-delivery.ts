@@ -1,11 +1,18 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { slackUserMapping, slackWorkspaceConfig } from "@/db/schema";
+import { chatInstallationMemberLink, slackUserMapping, slackWorkspaceConfig } from "@/db/schema";
+import {
+	type ChatInstallationOriginRecord,
+	findActiveInstallationConversation,
+	resolveAuthoritativeProviderApprovalSettings,
+	resolveInstallationSecret,
+} from "@/lib/approvals/delivery/installation-origin";
 import type {
 	ApprovalDeliveryAdapter,
 	ApprovalDeliveryFailure,
 } from "@/lib/approvals/delivery/owner";
 import { prepareApprovalPresentation } from "@/lib/approvals/presentation";
+import { upsertInstallationConversation } from "@/lib/chat-installations/inventory";
 import {
 	openConversationWithOutcome,
 	postMessageWithOutcome,
@@ -73,6 +80,31 @@ async function resolveDirectMessage(
 		: deliveryFailure(opened, "open");
 }
 
+async function resolveSlackTokenForInstallation(
+	organizationId: string,
+	installation: ChatInstallationOriginRecord,
+): Promise<{ botAccessToken: string; slackTeamId: string | null } | null> {
+	const fromRevision = await resolveInstallationSecret({
+		installation,
+		candidateKeyNames: ["bot_access_token", "botToken", "slack/bot_access_token"],
+	});
+	if (fromRevision) {
+		return { botAccessToken: fromRevision, slackTeamId: installation.externalSpaceId };
+	}
+	if (installation.legacyTable === "slack_workspace_config") {
+		const legacyBot = await getBotConfigByOrganization(organizationId, {
+			installationId: installation.id,
+		});
+		if (legacyBot) {
+			return {
+				botAccessToken: legacyBot.botAccessToken,
+				slackTeamId: installation.externalSpaceId ?? legacyBot.slackTeamId,
+			};
+		}
+	}
+	return null;
+}
+
 /**
  * Slack mechanics for the approval delivery owner (#294): installation, the
  * recipient's DM, card layout and the Web API calls. Slack has no established
@@ -83,6 +115,11 @@ export const slackApprovalDeliveryAdapter: ApprovalDeliveryAdapter = {
 	provider: "slack",
 
 	async acceptsEscalationDelivery(organizationId) {
+		const authoritative = await resolveAuthoritativeProviderApprovalSettings(
+			organizationId,
+			"slack",
+		);
+		if (authoritative !== null) return authoritative.enableEscalations;
 		const [config] = await db
 			.select({ enableEscalations: slackWorkspaceConfig.enableEscalations })
 			.from(slackWorkspaceConfig)
@@ -92,15 +129,59 @@ export const slackApprovalDeliveryAdapter: ApprovalDeliveryAdapter = {
 	},
 
 	async sendInitial(input) {
-		const bot = await getBotConfigByOrganization(input.organizationId);
-		if (!bot) return { kind: "failed", outcome: "unavailable", reason: "bot_unavailable" };
-		if (bot.setupStatus !== "active") {
-			return { kind: "suppressed", reason: "integration_disabled" };
+		const target = input.targetInstallation ?? null;
+		let botAccessToken: string;
+		let slackTeamId: string;
+		let receiverScope: string;
+
+		if (target) {
+			const creds = await resolveSlackTokenForInstallation(input.organizationId, target);
+			if (!creds) return { kind: "failed", outcome: "unavailable", reason: "bot_unavailable" };
+			const authoritative = await resolveAuthoritativeProviderApprovalSettings(
+				input.organizationId,
+				"slack",
+			);
+			if (authoritative) {
+				if (!authoritative.enableApprovals) {
+					return { kind: "suppressed", reason: "approvals_disabled" };
+				}
+				if (input.purpose === "replacement" && !authoritative.enableEscalations) {
+					return { kind: "suppressed", reason: "escalations_disabled" };
+				}
+			} else if (target.legacyTable === "slack_workspace_config") {
+				const legacy = await getBotConfigByOrganization(input.organizationId, {
+					installationId: target.id,
+				});
+				if (!legacy) return { kind: "failed", outcome: "unavailable", reason: "bot_unavailable" };
+				if (legacy.setupStatus !== "active") {
+					return { kind: "suppressed", reason: "integration_disabled" };
+				}
+				if (!legacy.enableApprovals) return { kind: "suppressed", reason: "approvals_disabled" };
+				if (input.purpose === "replacement" && !legacy.enableEscalations) {
+					return { kind: "suppressed", reason: "escalations_disabled" };
+				}
+			}
+			botAccessToken = creds.botAccessToken;
+			slackTeamId = creds.slackTeamId ?? "";
+			receiverScope = target.receiverScope ?? (slackTeamId ? `slack-team:${slackTeamId}` : "");
+			if (!receiverScope) {
+				return { kind: "failed", outcome: "unavailable", reason: "bot_identity_unknown" };
+			}
+		} else {
+			const bot = await getBotConfigByOrganization(input.organizationId);
+			if (!bot) return { kind: "failed", outcome: "unavailable", reason: "bot_unavailable" };
+			if (bot.setupStatus !== "active") {
+				return { kind: "suppressed", reason: "integration_disabled" };
+			}
+			if (!bot.enableApprovals) return { kind: "suppressed", reason: "approvals_disabled" };
+			if (input.purpose === "replacement" && !bot.enableEscalations) {
+				return { kind: "suppressed", reason: "escalations_disabled" };
+			}
+			botAccessToken = bot.botAccessToken;
+			slackTeamId = bot.slackTeamId;
+			receiverScope = slackReceiverScope(bot);
 		}
-		if (!bot.enableApprovals) return { kind: "suppressed", reason: "approvals_disabled" };
-		if (input.purpose === "replacement" && !bot.enableEscalations) {
-			return { kind: "suppressed", reason: "escalations_disabled" };
-		}
+
 		// Entitlement first: no DM is opened for a recipient who may not see
 		// the request.
 		const card = await prepareApprovalPresentation({
@@ -113,33 +194,134 @@ export const slackApprovalDeliveryAdapter: ApprovalDeliveryAdapter = {
 			summary: { fits: fitsSlackApprovalCard },
 		});
 		if (card.status === "undisclosable") return { kind: "suppressed", reason: "not_entitled" };
-		const destination = await resolveDirectMessage(bot, input);
+
+		let destination: { kind: "ok"; channelId: string } | ApprovalDeliveryFailure;
+		if (target) {
+			const installationConversation = await findActiveInstallationConversation({
+				organizationId: input.organizationId,
+				installationId: target.id,
+				userId: input.recipientUserId,
+				conversationTypes: ["im", "private"],
+			});
+			if (installationConversation?.externalConversationId) {
+				destination = { kind: "ok", channelId: installationConversation.externalConversationId };
+			} else if (target.legacyTable === "slack_workspace_config") {
+				destination = await resolveDirectMessage(
+					{ botAccessToken, slackTeamId } as ResolvedSlackBot,
+					input,
+				);
+			} else if (slackTeamId) {
+				const [memberLink] = await db
+					.select({ externalUserId: chatInstallationMemberLink.externalUserId })
+					.from(chatInstallationMemberLink)
+					.where(
+						and(
+							eq(chatInstallationMemberLink.organizationId, input.organizationId),
+							eq(chatInstallationMemberLink.installationId, target.id),
+							eq(chatInstallationMemberLink.userId, input.recipientUserId),
+							eq(chatInstallationMemberLink.isCandidateEnrollment, false),
+							eq(chatInstallationMemberLink.isActive, true),
+						),
+					)
+					.limit(1);
+
+				let targetSlackUserId: string | null = memberLink?.externalUserId ?? null;
+				if (!targetSlackUserId) {
+					const mapping = await db.query.slackUserMapping.findFirst({
+						where: and(
+							eq(slackUserMapping.userId, input.recipientUserId),
+							eq(slackUserMapping.organizationId, input.organizationId),
+							eq(slackUserMapping.slackTeamId, slackTeamId),
+							eq(slackUserMapping.isActive, true),
+						),
+						columns: { slackUserId: true },
+					});
+					targetSlackUserId = mapping?.slackUserId ?? null;
+				}
+
+				if (!targetSlackUserId) {
+					destination = {
+						kind: "failed",
+						outcome: "destination_invalid",
+						reason: "destination_missing",
+					};
+				} else {
+					const opened = await openConversationWithOutcome(botAccessToken, targetSlackUserId);
+					if (opened.kind === "ok") {
+						await upsertInstallationConversation(
+							{
+								organizationId: input.organizationId,
+								installationId: target.id,
+								userId: input.recipientUserId,
+								externalUserId: targetSlackUserId,
+								externalConversationId: opened.result,
+								conversationType: "private",
+								reachabilityStatus: "reachable",
+								verifiedAt: new Date(),
+							},
+							{ db },
+						);
+						destination = { kind: "ok", channelId: opened.result };
+					} else {
+						destination = deliveryFailure(opened, "open");
+					}
+				}
+			} else {
+				destination = {
+					kind: "failed",
+					outcome: "destination_invalid",
+					reason: "destination_missing",
+				};
+			}
+		} else {
+			destination = await resolveDirectMessage(
+				{ botAccessToken, slackTeamId } as ResolvedSlackBot,
+				input,
+			);
+		}
+
 		if (destination.kind !== "ok") return destination;
 		// Never controls: an actionable card cannot be prepared for Slack, and
 		// the renderer has no approve or reject control either way.
-		const sent = await postMessageWithOutcome(bot.botAccessToken, {
+		const sent = await postMessageWithOutcome(botAccessToken, {
 			channel: destination.channelId,
 			...slackApprovalCard(card),
 		});
 		if (sent.kind !== "ok") return deliveryFailure(sent, "send");
 		return {
 			kind: "accepted",
-			receiverScope: slackReceiverScope(bot),
+			receiverScope,
 			destinationId: sent.result.channel,
 			remoteMessageId: sent.result.ts,
 			bindingId: null,
 			controls: "none",
+			installationId: target?.id ?? null,
+			credentialRevisionId: target?.activeCredentialRevisionId ?? null,
 		};
 	},
 
 	async refresh(input) {
-		const bot = await getBotConfigByOrganization(input.organizationId);
-		if (!bot) return { kind: "failed", outcome: "unavailable", reason: "bot_unavailable" };
-		// Only the installation that sent a message can update it.
-		if (slackReceiverScope(bot) !== input.message.receiverScope) {
-			return { kind: "gone", reason: "workspace_replaced" };
+		const origin = input.originInstallation ?? null;
+		let botAccessToken: string;
+		if (origin) {
+			const creds = await resolveSlackTokenForInstallation(input.organizationId, origin);
+			if (!creds) return { kind: "failed", outcome: "unavailable", reason: "bot_unavailable" };
+			const expectedScope =
+				origin.receiverScope ?? (creds.slackTeamId ? `slack-team:${creds.slackTeamId}` : null);
+			if (expectedScope && expectedScope !== input.message.receiverScope) {
+				return { kind: "gone", reason: "workspace_replaced" };
+			}
+			botAccessToken = creds.botAccessToken;
+		} else {
+			const bot = await getBotConfigByOrganization(input.organizationId);
+			if (!bot) return { kind: "failed", outcome: "unavailable", reason: "bot_unavailable" };
+			// Only the installation that sent a message can update it.
+			if (slackReceiverScope(bot) !== input.message.receiverScope) {
+				return { kind: "gone", reason: "workspace_replaced" };
+			}
+			botAccessToken = bot.botAccessToken;
 		}
-		const updated = await updateMessageWithOutcome(bot.botAccessToken, {
+		const updated = await updateMessageWithOutcome(botAccessToken, {
 			channel: input.message.destinationId,
 			ts: input.message.remoteMessageId,
 			...slackApprovalCard(input.notice),

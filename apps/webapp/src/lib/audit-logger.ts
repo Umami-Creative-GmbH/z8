@@ -413,6 +413,21 @@ export enum AuditAction {
 	// Implementation checklist manual confirmations (#1516)
 	IMPLEMENTATION_CHECKLIST_ITEM_CONFIRMED = "implementation_checklist.item_confirmed",
 	IMPLEMENTATION_CHECKLIST_ITEM_UNCONFIRMED = "implementation_checklist.item_unconfirmed",
+
+	// Organization-owned chat installations (#2037 / #2041 / #2045 / #2046)
+	CHAT_INSTALLATION_CANDIDATE_PREPARED = "chat_installation.candidate_prepared",
+	CHAT_INSTALLATION_CREDENTIALS_STORED = "chat_installation.credentials_stored",
+	CHAT_INSTALLATION_CREDENTIALS_ROTATED = "chat_installation.credentials_rotated",
+	CHAT_INSTALLATION_INBOUND_VERIFIED = "chat_installation.inbound_verified",
+	CHAT_INSTALLATION_TEST_MESSAGE_SENT = "chat_installation.test_message_sent",
+	CHAT_INSTALLATION_VERIFICATION_FAILED = "chat_installation.verification_failed",
+	CHAT_INSTALLATION_SWITCH_CONFIRMED = "chat_installation.switch_confirmed",
+	CHAT_INSTALLATION_RETIRED = "chat_installation.retired",
+	CHAT_INSTALLATION_REVOKED = "chat_installation.revoked",
+	CHAT_INSTALLATION_RESTORE_STARTED = "chat_installation.restore_started",
+	CHAT_INSTALLATION_RESTORED = "chat_installation.restored",
+	CHAT_INSTALLATION_CLEANUP_EXHAUSTED = "chat_installation.cleanup_exhausted",
+	CHAT_INSTALLATION_LEGACY_DISCONNECTED = "chat_installation.legacy_disconnected",
 }
 
 export type ApprovalAuditDecision = TimeRecordApprovalDecision;
@@ -421,9 +436,7 @@ function assertNeverDecision(decision: never): never {
 	throw new Error(`Unhandled approval decision: ${String(decision)}`);
 }
 
-export function getApprovalAuditAction(
-	decision: ApprovalAuditDecision,
-): AuditAction {
+export function getApprovalAuditAction(decision: ApprovalAuditDecision): AuditAction {
 	switch (decision) {
 		case "submit":
 			return AuditAction.APPROVAL_SUBMITTED;
@@ -504,7 +517,8 @@ export interface AuditLogEntry {
 		/** An `employee_departure_task` or `employee_departure_review` of a deactivation. */
 		| "deactivation_follow_up"
 		/** A manual confirmation of an implementation checklist item (#1516). */
-		| "implementation_checklist_item";
+		| "implementation_checklist_item"
+		| "chat_installation";
 	organizationId: string;
 	metadata?: Record<string, unknown>;
 	changes?: Record<string, unknown>; // Before/after changes for updates
@@ -526,8 +540,7 @@ export interface ExternalAuditConfig {
  * Get external audit service configuration from environment
  */
 function getExternalAuditConfig(): ExternalAuditConfig {
-	const service =
-		(env.AUDIT_SERVICE as ExternalAuditConfig["service"]) || "none";
+	const service = (env.AUDIT_SERVICE as ExternalAuditConfig["service"]) || "none";
 	return {
 		service,
 		endpoint: env.AUDIT_ENDPOINT,
@@ -584,10 +597,7 @@ async function sendToExternalService(entry: AuditLogEntry): Promise<void> {
 		});
 	} catch (error) {
 		// Log error but don't fail the operation
-		logger.error(
-			{ error, action: entry.action },
-			"Failed to send audit log to external service",
-		);
+		logger.error({ error, action: entry.action }, "Failed to send audit log to external service");
 	}
 }
 
@@ -603,10 +613,7 @@ export function forwardAuditToExternalService(entry: AuditLogEntry): void {
 			// Already logged in sendToExternalService
 		});
 	} catch (error) {
-		logger.error(
-			{ error, action: entry.action },
-			"Failed to forward audit log",
-		);
+		logger.error({ error, action: entry.action }, "Failed to forward audit log");
 	}
 }
 
@@ -645,10 +652,7 @@ export async function logAudit(entry: AuditLogEntry): Promise<void> {
 		});
 	} catch (error) {
 		// Log error but don't fail the operation - audit logging should not break the app
-		logger.error(
-			{ error, action: entry.action },
-			"Failed to persist audit log to database",
-		);
+		logger.error({ error, action: entry.action }, "Failed to persist audit log to database");
 	}
 
 	// Send to external service (async, fire-and-forget)

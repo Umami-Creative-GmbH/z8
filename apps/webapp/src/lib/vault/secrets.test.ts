@@ -144,4 +144,24 @@ describe("organization secret provider selection", () => {
 		);
 		expect(mockState.vaultSecretProvider.getOrgSecret).not.toHaveBeenCalled();
 	});
+
+	test("getRequiredOrgSecret throws SecretNotFoundError when secret is confirmed missing and propagates SecretStoreUnavailableError on outage", async () => {
+		const { SecretNotFoundError, SecretStoreUnavailableError } = await import("./errors");
+		const { getRequiredOrgSecret } = await import("./secrets");
+
+		mockState.vaultSecretProvider.getOrgSecret.mockResolvedValueOnce(null);
+		await expect(getRequiredOrgSecret("org-1", "slack/bot_token")).rejects.toBeInstanceOf(
+			SecretNotFoundError,
+		);
+
+		mockState.vaultSecretProvider.getOrgSecret.mockRejectedValueOnce(
+			new SecretStoreUnavailableError("Vault unavailable", {
+				provider: "vault",
+				operation: "read",
+			}),
+		);
+		await expect(getRequiredOrgSecret("org-1", "slack/bot_token")).rejects.toBeInstanceOf(
+			SecretStoreUnavailableError,
+		);
+	});
 });

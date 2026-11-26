@@ -2889,6 +2889,44 @@
     "notifications": {
       "approvals": "Approval notifications",
       "approvalsDescription": "Send approval requests and approval status updates.",
+      "chatLinks": {
+        "checkStatus": "Check status",
+        "codeExpired": "Code expired. Generate a new code.",
+        "copiedCommand": "Link command copied to clipboard",
+        "copyCommand": "Copy",
+        "copyFailed": "Couldn't copy link command",
+        "description": "Manage how your account is linked to your organization's chat channels.",
+        "expiresInMinutes": "Expires in {minutes} min",
+        "generateCode": "Generate link code",
+        "generateFailed": "Failed to generate link code",
+        "generateReplacementCode": "Link replacement bot",
+        "hints": {
+          "linkRequired": "Link your account in this chat app to receive notifications and use commands.",
+          "remediation": "Your organization's connection needs attention from an administrator before status can be verified.",
+          "startPrivateChat": "Open a direct message with the bot so Z8 can deliver private notifications.",
+          "telegramLinkRequired": "Generate a short-lived link code and send it to your organization's Telegram bot.",
+          "verificationError": "Connection status could not be verified. Try checking again."
+        },
+        "linkedAs": "Linked as {identity}",
+        "loadFailed": "We couldn't verify your chat connections right now. Your notification preferences below remain available.",
+        "openTelegramBot": "Open @{botUsername}",
+        "replacementEnrolled": "Enrolled",
+        "replacementTelegramEnrolledHint": "You are enrolled for the replacement bot. Your current live Telegram link stays active until your admin completes the switch.",
+        "replacementTelegramHint": "Start and link the replacement Telegram bot ahead of the switch. Your current Telegram notifications stay uninterrupted until the switch.",
+        "replacementTelegramInstructions": "Open the replacement bot in Telegram and send this one-time command:",
+        "replacementTelegramTitle": "Replacement Telegram bot staged",
+        "status": {
+          "actionNeeded": "Action needed",
+          "connected": "Connected",
+          "couldNotVerify": "Couldn't verify"
+        },
+        "telegramInstructions": "Send this one-time command in a private chat with your organization's Telegram bot:",
+        "title": "Chat connections",
+        "unlink": "Unlink",
+        "unlinkAria": "Unlink {provider}",
+        "unlinkedToast": "Chat account unlinked",
+        "unlinkFailed": "Failed to unlink chat account"
+      },
       "commands": "Commands",
       "commandsDescription": "Allow supported workplace commands from this channel.",
       "connectBeforeChanging": "Connect or configure this integration before changing notification settings.",
@@ -2912,8 +2950,10 @@
       "slack": {
         "connect": "Connect Slack",
         "connectFailed": "Slack connection could not be started. Try again.",
+        "connectRetired": "Deployment-managed Slack OAuth has been retired. Set up your organization-owned Slack app above.",
         "connectUnavailable": "Slack is not available on this Z8 installation.",
-        "description": "Configure Slack notifications for your organization."
+        "description": "Configure Slack notifications for your organization.",
+        "orgOwnedConnectHint": "Prepare, verify, and switch to your organization-owned Slack app using the setup workflow above."
       },
       "status": {
         "active": "Active",
@@ -2932,7 +2972,30 @@
       "timeout": "Timeout",
       "timeoutInvalid": "Enter a whole number of hours from 1 to 168.",
       "timezone": "Timezone",
-      "title": "Notification Settings"
+      "title": "Notification Settings",
+      "discordLink": {
+        "title": "Discord direct message linking",
+        "description": "Link your Discord account and verify that Discord privacy controls allow direct messages from Z8.",
+        "currentBot": "Current Discord bot",
+        "replacementBot": "Upcoming replacement Discord bot",
+        "connected": "Connected",
+        "actionNeeded": "Action needed",
+        "linkedAs": "Linked as {username}",
+        "verifyDmButton": "Verify DM delivery",
+        "generateCode": "Generate link code",
+        "unlink": "Unlink",
+        "recoveryShareServer": "Z8 could not open a Discord DM because you do not share a server with this bot. Join a shared server with the bot, enable Direct Messages for that server, and click Verify DM delivery.",
+        "recoveryEnableDms": "Discord privacy settings blocked direct messages from this bot (error 50007). Open your Discord server Privacy Settings, enable Direct Messages, ensure the bot is not blocked, and click Verify DM delivery.",
+        "codeInstructions": "Run this one-time slash command with the Discord bot (Z8 will then verify direct message delivery):",
+        "copy": "Copy",
+        "checkStatus": "Check status",
+        "commandCopied": "Discord link command copied.",
+        "copyFailed": "Could not copy link command.",
+        "generateFailed": "Failed to generate Discord link code.",
+        "dmVerified": "Discord direct message delivery is verified.",
+        "dmRecheckFailed": "Could not verify Discord direct messages.",
+        "unlinked": "Discord account unlinked."
+      }
     },
     "organizations": {
       "description": "Manage organization details and configuration",

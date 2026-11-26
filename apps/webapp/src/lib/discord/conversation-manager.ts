@@ -8,6 +8,12 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { discordConversation, discordUserMapping } from "@/db/schema";
+import {
+	type ChatDispatchTargetHint,
+	listInstallationActiveConversations,
+	resolveInstallationConversationForUser,
+	resolveSwitchedActiveChatInstallation,
+} from "@/lib/chat-installations/runtime-target";
 import { createLogger } from "@/lib/logger";
 import { createDM, type DiscordCallOutcome, openDMChannelWithOutcome } from "./api";
 
@@ -21,24 +27,41 @@ export async function saveConversation(
 	channelId: string,
 	userId: string,
 	organizationId: string,
+	options?: { installationId?: string | null; externalUserId?: string | null },
 ): Promise<void> {
 	try {
-		await db
-			.insert(discordConversation)
-			.values({
+		if (options?.installationId) {
+			const { upsertInstallationConversation } = await import("@/lib/chat-installations/inventory");
+			const now = new Date();
+			await upsertInstallationConversation({
 				organizationId,
+				installationId: options.installationId,
 				userId,
-				channelId,
-				isActive: true,
-			})
-			.onConflictDoUpdate({
-				target: [discordConversation.userId, discordConversation.organizationId],
-				set: {
+				externalUserId: options.externalUserId ?? null,
+				externalConversationId: channelId,
+				conversationType: "private",
+				reachabilityStatus: "reachable",
+				verifiedAt: now,
+				lastUsedAt: now,
+			});
+		} else {
+			await db
+				.insert(discordConversation)
+				.values({
+					organizationId,
+					userId,
 					channelId,
 					isActive: true,
-					lastUsedAt: new Date(),
-				},
-			});
+				})
+				.onConflictDoUpdate({
+					target: [discordConversation.userId, discordConversation.organizationId],
+					set: {
+						channelId,
+						isActive: true,
+						lastUsedAt: new Date(),
+					},
+				});
+		}
 	} catch (error) {
 		logger.error({ error, userId, channelId }, "Failed to save Discord conversation");
 		return;
@@ -46,9 +69,8 @@ export async function saveConversation(
 	try {
 		// The recipient reached the bot again: approval cards waiting for a
 		// usable destination can be delivered now.
-		const { rearmApprovalDeliveryForRepairedDestination } = await import(
-			"@/lib/approvals/delivery/recovery"
-		);
+		const { rearmApprovalDeliveryForRepairedDestination } =
+			await import("@/lib/approvals/delivery/recovery");
 		await rearmApprovalDeliveryForRepairedDestination({
 			organizationId,
 			userId,
@@ -88,7 +110,22 @@ export async function resolveApprovalDMChannel(
 export async function getChannelIdForUser(
 	userId: string,
 	organizationId: string,
+	options?: ChatDispatchTargetHint,
 ): Promise<string | null> {
+	const resolution = await resolveSwitchedActiveChatInstallation(
+		organizationId,
+		"discord",
+		options,
+	);
+	if (resolution.kind === "organization_owned_active") {
+		const conv = await resolveInstallationConversationForUser({
+			organizationId,
+			installationId: resolution.target.installationId,
+			userId,
+		});
+		return conv?.externalConversationId ?? null;
+	}
+
 	const conversation = await db.query.discordConversation.findFirst({
 		where: and(
 			eq(discordConversation.userId, userId),
@@ -134,7 +171,24 @@ export async function getOrCreateDMChannel(
  */
 export async function getOrganizationConversations(
 	organizationId: string,
+	options?: ChatDispatchTargetHint,
 ): Promise<Array<{ userId: string; channelId: string }>> {
+	const resolution = await resolveSwitchedActiveChatInstallation(
+		organizationId,
+		"discord",
+		options,
+	);
+	if (resolution.kind === "organization_owned_active") {
+		const conversations = await listInstallationActiveConversations({
+			organizationId,
+			installationId: resolution.target.installationId,
+		});
+		return conversations.map((conv) => ({
+			userId: conv.userId,
+			channelId: conv.externalConversationId,
+		}));
+	}
+
 	const conversations = await db.query.discordConversation.findMany({
 		where: and(
 			eq(discordConversation.organizationId, organizationId),

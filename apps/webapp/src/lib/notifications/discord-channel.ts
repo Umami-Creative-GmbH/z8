@@ -9,6 +9,14 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { approvalRequest, employee } from "@/db/schema";
 import { isApprovalNotificationDeliveredByOwner } from "@/lib/approvals/delivery/store";
+import {
+	DurableDispatchConfirmedUnsentError,
+	DurableDispatchUncertainError,
+	extractRedactedErrorDiagnostics,
+	isConfirmedUnsentError,
+	isUncertainDispatchError,
+} from "@/lib/chat-installations/durable-dispatch";
+import type { ChatDispatchTargetHint } from "@/lib/chat-installations/runtime-target";
 import { createLogger } from "@/lib/logger";
 import { localizeOutboundNotification } from "./outbound-localization";
 import type { NotificationType } from "./types";
@@ -39,10 +47,7 @@ export async function isDiscordAvailable(
 		return await isDiscordEnabledForOrganization(organizationId);
 	} catch (error) {
 		if (options.throwOnError) throw error;
-		logger.debug(
-			{ error, organizationId },
-			"Discord availability check failed",
-		);
+		logger.debug({ error, organizationId }, "Discord availability check failed");
 		return false;
 	}
 }
@@ -52,8 +57,9 @@ export async function isDiscordAvailable(
  */
 export async function sendDiscordNotification(
 	params: DiscordNotificationParams,
-	options: { durable?: boolean } = {},
+	options: { durable?: boolean; dispatchTarget?: ChatDispatchTargetHint } = {},
 ): Promise<undefined | "unavailable"> {
+	let providerCallStarted = false;
 	try {
 		const {
 			getChannelIdForUser,
@@ -63,7 +69,12 @@ export async function sendDiscordNotification(
 		} = await import("@/lib/discord");
 		const { buildNotificationEmbed } = await import("@/lib/discord/formatters");
 
-		const botConfig = await getBotConfigByOrganization(params.organizationId);
+		const hasTarget = Boolean(
+			options.dispatchTarget?.installationId || options.dispatchTarget?.credentialRevisionId,
+		);
+		const botConfig = hasTarget
+			? await getBotConfigByOrganization(params.organizationId, options.dispatchTarget)
+			: await getBotConfigByOrganization(params.organizationId);
 		if (!botConfig) return options.durable ? "unavailable" : undefined;
 
 		// One owner per delivery effect: where the approval delivery owner has
@@ -77,10 +88,7 @@ export async function sendDiscordNotification(
 		}
 
 		// Handle approval-related notifications specially
-		if (
-			params.type === "approval_request_submitted" &&
-			params.entityType === "approval_request"
-		) {
+		if (params.type === "approval_request_submitted" && params.entityType === "approval_request") {
 			const approval = await db.query.approvalRequest.findFirst({
 				where: and(
 					eq(approvalRequest.id, params.entityId || ""),
@@ -98,6 +106,7 @@ export async function sendDiscordNotification(
 				});
 
 				if (emp) {
+					providerCallStarted = true;
 					await sendApprovalMessageToManager(
 						approval.id,
 						emp.id,
@@ -112,10 +121,9 @@ export async function sendDiscordNotification(
 		}
 
 		// For other notifications, send a simple embed
-		const channelId = await getChannelIdForUser(
-			params.userId,
-			params.organizationId,
-		);
+		const channelId = hasTarget
+			? await getChannelIdForUser(params.userId, params.organizationId, options.dispatchTarget)
+			: await getChannelIdForUser(params.userId, params.organizationId);
 		if (!channelId) {
 			logger.debug(
 				{ userId: params.userId, organizationId: params.organizationId },
@@ -138,15 +146,34 @@ export async function sendDiscordNotification(
 			params.actionUrl ? { url: params.actionUrl, label: localized.actionLabel } : undefined,
 		);
 
+		providerCallStarted = true;
 		const acknowledgement = await sendMessage(botConfig.botToken, channelId, { embeds });
-		if (options.durable && !acknowledgement) throw new Error("discord_delivery_unacknowledged");
+		if (options.durable && !acknowledgement) {
+			throw new DurableDispatchUncertainError("discord_delivery_unacknowledged", {
+				reason: "provider_unacknowledged",
+			});
+		}
 
-		logger.debug(
-			{ userId: params.userId, type: params.type },
-			"Discord notification sent",
-		);
+		logger.debug({ userId: params.userId, type: params.type }, "Discord notification sent");
 	} catch (error) {
-		if (options.durable) throw error;
+		if (options.durable) {
+			if (isConfirmedUnsentError(error) || isUncertainDispatchError(error)) {
+				throw error;
+			}
+			const message = error instanceof Error ? error.message : "discord_delivery_failed";
+			if (!providerCallStarted) {
+				throw new DurableDispatchConfirmedUnsentError(
+					message,
+					extractRedactedErrorDiagnostics(error, "discord_preflight_failed"),
+					error,
+				);
+			}
+			throw new DurableDispatchUncertainError(
+				message,
+				extractRedactedErrorDiagnostics(error, "discord_provider_call_uncertain"),
+				{ classification: "provider_error", causeError: error },
+			);
+		}
 		logger.error({ error, params }, "Failed to send Discord notification");
 		throw error;
 	}

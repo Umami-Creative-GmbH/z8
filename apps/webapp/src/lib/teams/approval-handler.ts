@@ -3,6 +3,10 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { teamsApprovalCard } from "@/db/schema";
 import { env } from "@/env";
+import {
+	checkInboundApprovalCardInstallationEligibility,
+	resolveLegacyCardInstallationId,
+} from "@/lib/approvals/delivery/installation-origin";
 import { kickApprovalDelivery } from "@/lib/approvals/delivery/kick";
 import {
 	type ApprovalDeliveryMessageRecord,
@@ -60,6 +64,32 @@ export async function handleApprovalAction(
 ): Promise<void> {
 	const recipient = { userId: user.userId, organizationId: tenant.organizationId };
 	try {
+		const effectiveAppId = tenant.microsoftAppId ?? env.MICROSOFT_APP_ID;
+		const tenantId = context.activity ? teamsActivityTenant(context.activity) : null;
+		const receiverScope = tenantId ? teamsReceiverScope(effectiveAppId, tenantId) : null;
+		const tracked =
+			context.activity?.replyToId && db.query?.teamsApprovalCard?.findFirst
+				? await db.query.teamsApprovalCard.findFirst({
+						where: and(
+							eq(teamsApprovalCard.organizationId, tenant.organizationId),
+							eq(teamsApprovalCard.approvalRequestId, approvalId),
+							eq(teamsApprovalCard.recipientUserId, user.userId),
+							eq(teamsApprovalCard.teamsActivityId, context.activity.replyToId),
+						),
+					})
+				: null;
+		const eligibility = await checkInboundApprovalCardInstallationEligibility({
+			organizationId: tenant.organizationId,
+			provider: "teams",
+			incomingInstallationId: tenant.installationId ?? null,
+			incomingReceiverScope: receiverScope,
+			messageInstallationId: tracked?.installationId ?? null,
+			messageReceiverScope: receiverScope,
+		});
+		if (!eligibility.allowed) {
+			await context.sendActivity(await approvalUnavailableReply(recipient));
+			return;
+		}
 		const { attemptBotApproval } = await import("@/lib/bot-platform/approval-decision");
 		const result = await attemptBotApproval({
 			approvalId,
@@ -222,7 +252,34 @@ export async function handleBoundApprovalInvoke(
 		return reviewRequiredMessage(recipient);
 	}
 	let result: BoundBotApprovalResult = { status: "review_required" };
+	const effectiveAppId = tenant.microsoftAppId ?? env.MICROSOFT_APP_ID;
 	if (invoke.kind === "action" && user.organizationId === tenant.organizationId) {
+		const activity = context.activity;
+		const conversationId = activity.conversation?.id;
+		const cardActivityId = activity.replyToId;
+		const tenantId = teamsActivityTenant(activity);
+		const receiverScope = tenantId ? teamsReceiverScope(effectiveAppId, tenantId) : null;
+		const deliveredBeforeDecision =
+			conversationId && cardActivityId && receiverScope
+				? await findApprovalDeliveryMessageByRemoteIdentity({
+						organizationId: tenant.organizationId,
+						provider: "teams",
+						receiverScope,
+						destinationId: conversationId,
+						remoteMessageId: cardActivityId,
+					})
+				: null;
+		const eligibility = await checkInboundApprovalCardInstallationEligibility({
+			organizationId: tenant.organizationId,
+			provider: "teams",
+			incomingInstallationId: tenant.installationId ?? null,
+			incomingReceiverScope: receiverScope,
+			messageInstallationId: deliveredBeforeDecision?.installationId ?? null,
+			messageReceiverScope: deliveredBeforeDecision?.receiverScope ?? null,
+		});
+		if (!eligibility.allowed) {
+			return reviewRequiredMessage(recipient);
+		}
 		try {
 			const { attemptBoundBotApproval } = await import("@/lib/bot-platform/approval-decision");
 			result = await attemptBoundBotApproval({
@@ -232,7 +289,7 @@ export async function handleBoundApprovalInvoke(
 				bindingId: invoke.bindingId,
 				action: invoke.action,
 				platform: "teams",
-				invocation: teamsInvocationEnvelope(context.activity, env.MICROSOFT_APP_ID),
+				invocation: teamsInvocationEnvelope(context.activity, effectiveAppId),
 			});
 		} catch (error) {
 			// Outcome unknown: claim nothing. A retry of this recorded activity
@@ -288,7 +345,8 @@ async function updatePressedCard(
 	const tenantId = teamsActivityTenant(activity);
 	if (!conversationId || !cardActivityId || tenantId !== tenant.tenantId) return null;
 	const recipient = { userId: user.userId, organizationId: tenant.organizationId };
-	const receiverScope = teamsReceiverScope(env.MICROSOFT_APP_ID, tenantId);
+	const effectiveAppId = tenant.microsoftAppId ?? env.MICROSOFT_APP_ID;
+	const receiverScope = teamsReceiverScope(effectiveAppId, tenantId);
 	const delivered = receiverScope
 		? await findApprovalDeliveryMessageByRemoteIdentity({
 				organizationId: tenant.organizationId,
@@ -380,6 +438,7 @@ export async function sendApprovalCardToManager(
 	approvalId: string,
 	approverId: string,
 	organizationId: string,
+	options?: { installationId?: string | null; credentialRevisionId?: string | null },
 ): Promise<void> {
 	try {
 		if (await deliveredByApprovalOwner(approvalId, organizationId)) return;
@@ -391,20 +450,45 @@ export async function sendApprovalCardToManager(
 			fits: fitsTeamsCard,
 		});
 		if (notice.status === "undisclosable") return;
-		const { sendProactiveMessage } = await import("./bot-adapter");
+		const { resolveTeamsOutboundTransportForOrganization, sendProactiveMessage } =
+			await import("./bot-adapter");
 		const { getConversationReferenceForUser } = await import("./conversation-manager");
 		const conversation = await getConversationReferenceForUser(
 			notice.recipientUserId,
 			organizationId,
+			options,
 		);
 		if (!conversation?.conversation?.id) return;
-		const activityId = await sendProactiveMessage(
-			conversation,
+		const transport =
+			typeof resolveTeamsOutboundTransportForOrganization === "function"
+				? await resolveTeamsOutboundTransportForOrganization(organizationId, options)
+				: null;
+		if (transport && transport.kind !== "ok") {
+			logger.warn(
+				{ organizationId, approvalId, reason: transport.reason },
+				"Teams outbound transport unavailable for approval card",
+			);
+			return;
+		}
+		const activity =
 			notice.status === "actionable"
 				? teamsActionableActivity(notice)
-				: teamsNoticeActivity(notice),
-		);
-		if (activityId)
+				: teamsNoticeActivity(notice);
+		const activityId =
+			transport?.kind === "ok" && transport.source === "organization_owned"
+				? await sendProactiveMessage(conversation, activity, {
+						adapter: transport.adapter,
+						appId: transport.appId,
+					})
+				: await sendProactiveMessage(conversation, activity);
+		if (activityId) {
+			const installationId =
+				(transport?.kind === "ok" ? transport.installationId : null) ??
+				(await resolveLegacyCardInstallationId({
+					organizationId,
+					provider: "teams",
+					tenantId: conversation.conversation.tenantId ?? null,
+				}));
 			await db.insert(teamsApprovalCard).values({
 				approvalRequestId: approvalId,
 				organizationId,
@@ -412,8 +496,10 @@ export async function sendApprovalCardToManager(
 				teamsConversationId: conversation.conversation.id,
 				teamsActivityId: activityId,
 				teamsMessageId: activityId,
+				installationId,
 				status: "sent",
 			});
+		}
 	} catch (error) {
 		logger.error({ error, approvalId }, "Failed to send Teams approval notice");
 	}

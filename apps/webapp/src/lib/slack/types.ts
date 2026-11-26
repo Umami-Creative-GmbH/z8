@@ -23,6 +23,8 @@ export type {
 
 export interface ResolvedSlackBot {
 	organizationId: string;
+	/** Originating or active chat_installation.id when resolved via installations (#2043). */
+	installationId?: string | null;
 	botAccessToken: string;
 	slackTeamId: string;
 	slackTeamName: string | null;

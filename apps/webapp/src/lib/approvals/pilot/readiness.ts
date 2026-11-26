@@ -125,7 +125,9 @@ const LEGACY_TIME_ADMISSION = Object.fromEntries(
 	]),
 ) as PilotAdmission;
 
-type PilotAuthority = "canonical" | "legacy";
+export type PilotAuthority = "canonical" | "legacy";
+
+export type PilotAdmissionMode = "actionable" | "review_only" | "unverified";
 
 /**
  * The authorities whose lifecycles a kind's cards decide: absence cards bind
@@ -147,6 +149,17 @@ function admissionOf(workflowType: PilotWorkflowType, authority: PilotAuthority)
 		return LEGACY_TIME_ADMISSION;
 	}
 	return PILOT_ADMISSION[workflowType];
+}
+
+/**
+ * Read-only lookup into the approval pilot admission matrix for UI capability disclosures.
+ */
+export function getApprovalPilotAdmission(
+	workflowType: PilotWorkflowType,
+	authority: PilotAuthority,
+	provider: ApprovalDeliveryProvider,
+): PilotAdmissionMode {
+	return admissionOf(workflowType, authority)[provider];
 }
 
 export type PilotFindingCode =
@@ -306,6 +319,15 @@ async function loadConfiguredProviders(
 					where organization_id = ${organizationId} and setup_status = 'active' and enable_approvals
 				union all select 'discord', enable_escalations from discord_bot_config
 					where organization_id = ${organizationId} and setup_status = 'active' and enable_approvals
+				union all select s.provider, s.enable_escalations
+					from chat_provider_settings s
+					join chat_installation i
+						on i.id = s.active_installation_id
+						and i.organization_id = s.organization_id
+					where s.organization_id = ${organizationId}
+						and s.is_authoritative = true
+						and s.enable_approvals = true
+						and i.status = 'active'
 			) integration
 			group by provider
 		`),
