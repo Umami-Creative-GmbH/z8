@@ -2,6 +2,7 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { organizationSecret, organizationSecretKey } from "@/db/schema";
 import { env } from "@/env";
+import { SecretStoreUnavailableError } from "./errors";
 import { ScalewayKeyManagerClient } from "./scaleway-key-manager-client";
 import {
 	isCompatibleScalewayKey,
@@ -78,17 +79,24 @@ async function verifyLocalKey(organizationId: string, scalewayKeyId: string) {
 	try {
 		remoteKey = await client.getKey(scalewayKeyId);
 	} catch (error) {
-		throw new Error(`Configured Scaleway organization key ${scalewayKeyId} is not usable`, {
-			cause: error,
-		});
+		throw new SecretStoreUnavailableError(
+			`Configured Scaleway organization key ${scalewayKeyId} is not usable`,
+			{ provider: "scaleway", operation: "provision", cause: error },
+		);
 	}
 
 	if (!isEnabledScalewayKey(remoteKey)) {
-		throw new Error(`Scaleway organization key ${scalewayKeyId} is not enabled`);
+		throw new SecretStoreUnavailableError(
+			`Scaleway organization key ${scalewayKeyId} is not enabled`,
+			{ provider: "scaleway", operation: "provision" },
+		);
 	}
 
 	if (!isCompatibleScalewayKey(remoteKey, organizationId)) {
-		throw new Error(`Scaleway organization key ${scalewayKeyId} is not compatible`);
+		throw new SecretStoreUnavailableError(
+			`Scaleway organization key ${scalewayKeyId} is not compatible`,
+			{ provider: "scaleway", operation: "provision" },
+		);
 	}
 
 	return scalewayKeyId;
@@ -118,14 +126,23 @@ async function provisionOrganizationKey(organizationId: string) {
 		const createdKey = await client.createOrganizationKey(organizationId);
 		if (!isEnabledScalewayKey(createdKey)) {
 			if (isKeyWithId(createdKey)) {
-				throw new Error(`Created Scaleway organization key ${createdKey.id} is not enabled`);
+				throw new SecretStoreUnavailableError(
+					`Created Scaleway organization key ${createdKey.id} is not enabled`,
+					{ provider: "scaleway", operation: "provision" },
+				);
 			}
-			throw new Error("Created Scaleway organization key response did not include an id");
+			throw new SecretStoreUnavailableError(
+				"Created Scaleway organization key response did not include an id",
+				{ provider: "scaleway", operation: "provision" },
+			);
 		}
 		const createdKeyId = createdKey.id;
 
 		if (!isCompatibleScalewayKey(createdKey, organizationId)) {
-			throw new Error(`Created Scaleway organization key ${createdKeyId} is not compatible`);
+			throw new SecretStoreUnavailableError(
+				`Created Scaleway organization key ${createdKeyId} is not compatible`,
+				{ provider: "scaleway", operation: "provision" },
+			);
 		}
 
 		return persistOrganizationKey(organizationId, createdKeyId, tx as SecretStoreDb);
@@ -160,67 +177,125 @@ async function invalidateStatusCache(organizationId: string) {
 export const scalewaySecretProvider: OrganizationSecretProvider = {
 	async storeOrgSecret(organizationId, key, value) {
 		const scalewayKeyId = await ensureOrganizationKey(organizationId);
-		const ciphertext = await client.encrypt(
-			scalewayKeyId,
-			value,
-			associatedData(organizationId, key),
-		);
+		let ciphertext: string;
+		try {
+			ciphertext = await client.encrypt(scalewayKeyId, value, associatedData(organizationId, key));
+		} catch (error) {
+			if (error instanceof SecretStoreUnavailableError) {
+				throw error;
+			}
+			throw new SecretStoreUnavailableError("Scaleway Key Manager failed to encrypt secret", {
+				provider: "scaleway",
+				operation: "write",
+				cause: error,
+			});
+		}
 
-		await db
-			.insert(organizationSecret)
-			.values({
-				organizationId,
-				key,
-				provider: PROVIDER,
-				kmsKeyId: scalewayKeyId,
-				ciphertext,
-			})
-			.onConflictDoUpdate({
-				target: [organizationSecret.organizationId, organizationSecret.key],
-				set: {
+		try {
+			await db
+				.insert(organizationSecret)
+				.values({
+					organizationId,
+					key,
 					provider: PROVIDER,
 					kmsKeyId: scalewayKeyId,
 					ciphertext,
-				},
+				})
+				.onConflictDoUpdate({
+					target: [organizationSecret.organizationId, organizationSecret.key],
+					set: {
+						provider: PROVIDER,
+						kmsKeyId: scalewayKeyId,
+						ciphertext,
+					},
+				});
+		} catch (error) {
+			throw new SecretStoreUnavailableError("Failed to persist encrypted organization secret", {
+				provider: "scaleway",
+				operation: "write",
+				cause: error,
 			});
+		}
 		await invalidateStatusCache(organizationId);
 	},
 	async getOrgSecret(organizationId, key) {
-		const row = await db.query.organizationSecret.findFirst({
-			where: and(
-				eq(organizationSecret.organizationId, organizationId),
-				eq(organizationSecret.key, key),
-				eq(organizationSecret.provider, PROVIDER),
-			),
-		});
+		let row:
+			| {
+					kmsKeyId: string;
+					ciphertext: string;
+			  }
+			| undefined;
+		try {
+			row = await db.query.organizationSecret.findFirst({
+				where: and(
+					eq(organizationSecret.organizationId, organizationId),
+					eq(organizationSecret.key, key),
+					eq(organizationSecret.provider, PROVIDER),
+				),
+			});
+		} catch (error) {
+			throw new SecretStoreUnavailableError("Failed to read organization secret metadata", {
+				provider: "scaleway",
+				operation: "read",
+				cause: error,
+			});
+		}
 
 		if (!row) {
 			return null;
 		}
 
-		return client.decrypt(row.kmsKeyId, row.ciphertext, associatedData(organizationId, key));
+		try {
+			return await client.decrypt(
+				row.kmsKeyId,
+				row.ciphertext,
+				associatedData(organizationId, key),
+			);
+		} catch (error) {
+			throw new SecretStoreUnavailableError("Scaleway Key Manager failed to decrypt secret", {
+				provider: "scaleway",
+				operation: "read",
+				cause: error,
+			});
+		}
 	},
 	async deleteOrgSecret(organizationId, key) {
-		await db
-			.delete(organizationSecret)
-			.where(
-				and(
-					eq(organizationSecret.organizationId, organizationId),
-					eq(organizationSecret.key, key),
-					eq(organizationSecret.provider, PROVIDER),
-				),
-			);
+		try {
+			await db
+				.delete(organizationSecret)
+				.where(
+					and(
+						eq(organizationSecret.organizationId, organizationId),
+						eq(organizationSecret.key, key),
+						eq(organizationSecret.provider, PROVIDER),
+					),
+				);
+		} catch (error) {
+			throw new SecretStoreUnavailableError("Failed to delete organization secret", {
+				provider: "scaleway",
+				operation: "delete",
+				cause: error,
+			});
+		}
 		await invalidateStatusCache(organizationId);
 	},
 	async deleteAllOrgSecrets(organizationId) {
-		await db
-			.delete(organizationSecret)
-			.where(
-				and(
-					eq(organizationSecret.organizationId, organizationId),
-					eq(organizationSecret.provider, PROVIDER),
-				),
-			);
+		try {
+			await db
+				.delete(organizationSecret)
+				.where(
+					and(
+						eq(organizationSecret.organizationId, organizationId),
+						eq(organizationSecret.provider, PROVIDER),
+					),
+				);
+		} catch (error) {
+			throw new SecretStoreUnavailableError("Failed to delete organization secrets", {
+				provider: "scaleway",
+				operation: "delete",
+				cause: error,
+			});
+		}
 		await invalidateStatusCache(organizationId);
 	},
 };

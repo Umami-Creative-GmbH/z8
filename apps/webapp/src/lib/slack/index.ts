@@ -5,7 +5,16 @@
  */
 
 // API
-export { authTest, exchangeOAuthCode, openConversation, postMessage, updateMessage } from "./api";
+export {
+	authTest,
+	exchangeOAuthCode,
+	openConversation,
+	postMessage,
+	updateMessage,
+	type VerifiedSlackBotIdentity,
+	type VerifySlackBotMetadataResult,
+	verifySlackBotMetadata,
+} from "./api";
 // Approval handling
 export { handleApprovalAction, sendApprovalMessageToManager } from "./approval-handler";
 // Bot config

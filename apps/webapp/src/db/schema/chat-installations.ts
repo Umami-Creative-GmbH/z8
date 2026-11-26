@@ -105,8 +105,10 @@ export interface ChatVerificationEvidence {
 	source: "legacy_metadata" | "verified_setup";
 	configuredAt?: string | null;
 	workspaceId?: string | null;
+	workspaceName?: string | null;
 	tenantId?: string | null;
 	applicationId?: string | null;
+	botId?: string | null;
 	botUserId?: string | null;
 	botUsername?: string | null;
 	numericBotId?: string | null;
@@ -115,9 +117,23 @@ export interface ChatVerificationEvidence {
 	serviceUrlRecorded?: boolean;
 	deploymentBotConfigured?: boolean;
 	secretStoreStatus?: "available" | "missing" | "unavailable" | "not_applicable";
+	identityVerifiedAt?: string | null;
+	identityRevisionId?: string | null;
 	signedEventVerifiedAt?: string | null;
+	signedEventRevisionId?: string | null;
+	signedEventType?: string | null;
+	signedEventExpiresAt?: string | null;
 	privateDeliveryVerifiedAt?: string | null;
+	privateDeliveryRevisionId?: string | null;
+	privateDeliveryTargetUserId?: string | null;
+	privateDeliveryChannelId?: string | null;
+	privateDeliveryExpiresAt?: string | null;
 	commandsRegisteredAt?: string | null;
+	lastFailureStep?: "credentials" | "identity" | "signed_event" | "private_test" | null;
+	lastFailureCode?: string | null;
+	lastFailureAt?: string | null;
+	enrollmentProofCount?: number;
+	lastEnrollmentProofAt?: string | null;
 }
 
 /**
