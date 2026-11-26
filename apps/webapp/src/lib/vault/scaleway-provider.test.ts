@@ -169,19 +169,19 @@ describe("scalewaySecretProvider", () => {
 		expect(mocks.onConflictDoUpdate).not.toHaveBeenCalled();
 	});
 
-	test.each([
-		null,
-		{ state: "enabled" },
-	])("rejects created key responses without an id and does not throw a property access error", async (createdKey) => {
-		mocks.client.createOrganizationKey.mockResolvedValue(createdKey);
-		const { scalewaySecretProvider } = await import("./scaleway-provider");
+	test.each([null, { state: "enabled" }])(
+		"rejects created key responses without an id and does not throw a property access error",
+		async (createdKey) => {
+			mocks.client.createOrganizationKey.mockResolvedValue(createdKey);
+			const { scalewaySecretProvider } = await import("./scaleway-provider");
 
-		await expect(
-			scalewaySecretProvider.storeOrgSecret("org-1", "email/api_key", "secret-value"),
-		).rejects.toThrow("Created Scaleway organization key response did not include an id");
-		expect(mocks.client.encrypt).not.toHaveBeenCalled();
-		expect(mocks.onConflictDoUpdate).not.toHaveBeenCalled();
-	});
+			await expect(
+				scalewaySecretProvider.storeOrgSecret("org-1", "email/api_key", "secret-value"),
+			).rejects.toThrow("Created Scaleway organization key response did not include an id");
+			expect(mocks.client.encrypt).not.toHaveBeenCalled();
+			expect(mocks.onConflictDoUpdate).not.toHaveBeenCalled();
+		},
+	);
 
 	test("shares same-process organization key provisioning for simultaneous first writes", async () => {
 		let resolveCreatedKey: (value: { id: string; state: string }) => void = () => undefined;
@@ -457,5 +457,35 @@ describe("scalewaySecretProvider", () => {
 		warnSpy.mockRestore();
 		errorSpy.mockRestore();
 		logSpy.mockRestore();
+	});
+
+	test("getOrgSecret throws SecretStoreUnavailableError on KMS decrypt outage, distinct from missing row null", async () => {
+		mocks.db.query.organizationSecret.findFirst.mockResolvedValue({
+			organizationId: "org-1",
+			key: "chat/slack/installations/inst-1/revisions/v1/bot_token",
+			provider: "scaleway",
+			kmsKeyId: "key-local",
+			ciphertext: "stored-ciphertext",
+		});
+		mocks.client.decrypt.mockRejectedValueOnce(new Error("Scaleway KMS 503 unavailable"));
+		const { SecretStoreUnavailableError } = await import("./errors");
+		const { scalewaySecretProvider } = await import("./scaleway-provider");
+
+		await expect(
+			scalewaySecretProvider.getOrgSecret(
+				"org-1",
+				"chat/slack/installations/inst-1/revisions/v1/bot_token",
+			),
+		).rejects.toBeInstanceOf(SecretStoreUnavailableError);
+	});
+
+	test("deleteOrgSecret throws SecretStoreUnavailableError when database delete fails", async () => {
+		mocks.deleteWhere.mockRejectedValueOnce(new Error("connection reset"));
+		const { SecretStoreUnavailableError } = await import("./errors");
+		const { scalewaySecretProvider } = await import("./scaleway-provider");
+
+		await expect(
+			scalewaySecretProvider.deleteOrgSecret("org-1", "slack/bot_token"),
+		).rejects.toBeInstanceOf(SecretStoreUnavailableError);
 	});
 });

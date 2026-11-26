@@ -19,24 +19,29 @@ import {
 } from "./actions";
 import { ChatInstallationInventoryPanel } from "./chat-installation-inventory-panel";
 import { SlackConnectButton } from "./slack-connect-button";
+import { SlackPrepareTestSection } from "./slack-prepare-test-section";
+import { getSlackCandidateSetup } from "./slack-setup-actions";
 import { TelegramPanel } from "./telegram-panel";
 
 async function ChatSettingsContent() {
 	const access = requireOrgAdminSettingsAccess();
-	const [{ organizationId }, t, [slack, teams, discord, inventory]] = await Promise.all([
-		access,
-		getTranslate(),
-		access.then(() =>
-			Promise.all([
-				getSlackNotificationChannelConfig(),
-				getTeamsNotificationChannelConfig(),
-				getDiscordNotificationChannelConfig(),
-				getChatInstallationsInventory(),
-			]),
-		),
-	]);
+	const [{ organizationId }, t, [slack, teams, discord, inventory, slackCandidate]] =
+		await Promise.all([
+			access,
+			getTranslate(),
+			access.then(() =>
+				Promise.all([
+					getSlackNotificationChannelConfig(),
+					getTeamsNotificationChannelConfig(),
+					getDiscordNotificationChannelConfig(),
+					getChatInstallationsInventory(),
+					getSlackCandidateSetup(),
+				]),
+			),
+		]);
 	const inventoryData = inventory.success ? inventory.data : null;
 	const inventoryLoadFailed = !inventory.success;
+	const slackCandidateData = slackCandidate.success ? slackCandidate.data : null;
 
 	return (
 		<SettingsTabbedPage
@@ -60,6 +65,7 @@ async function ChatSettingsContent() {
 								initialInventory={inventoryData?.providers.slack ?? null}
 								initialLoadFailed={inventoryLoadFailed}
 							/>
+							<SlackPrepareTestSection initialSetup={slackCandidateData} />
 							<NotificationChannelSettings
 								channelName="Slack"
 								config={slack.success ? slack.data : null}

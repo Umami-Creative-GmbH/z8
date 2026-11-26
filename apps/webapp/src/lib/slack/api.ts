@@ -230,3 +230,137 @@ export async function authTest(
 		return null;
 	}
 }
+
+export interface VerifiedSlackBotIdentity {
+	appId: string;
+	teamId: string;
+	teamName: string;
+	botId: string;
+	botUserId: string;
+	botUsername: string | null;
+}
+
+export type VerifySlackBotMetadataResult =
+	| { kind: "ok"; identity: VerifiedSlackBotIdentity }
+	| { kind: "invalid_token"; slackError: string }
+	| { kind: "missing_scope"; slackError: string }
+	| { kind: "identity_mismatch"; reason: string }
+	| { kind: "unavailable"; reason: string };
+
+const INVALID_SLACK_TOKEN_ERRORS = new Set([
+	"invalid_auth",
+	"not_authed",
+	"token_revoked",
+	"token_expired",
+	"account_inactive",
+	"invalid_arguments",
+]);
+
+function extractSlackErrorCode(error: unknown): string | null {
+	if (!error || typeof error !== "object") {
+		return null;
+	}
+	const dataError = (error as { data?: { error?: unknown } }).data?.error;
+	return typeof dataError === "string" ? dataError : null;
+}
+
+/**
+ * Verifies a Slack organization-owned bot token using `auth.test` and `bots.info`,
+ * confirming the authoritative app_id, team_id, bot_id, and bot_user_id metadata.
+ */
+export async function verifySlackBotMetadata(
+	botToken: string,
+): Promise<VerifySlackBotMetadataResult> {
+	const client = createDeliveryClient(botToken);
+
+	let authResult: Awaited<ReturnType<WebClient["auth"]["test"]>>;
+	try {
+		authResult = await client.auth.test();
+	} catch (error) {
+		const code = extractSlackErrorCode(error);
+		if (code && INVALID_SLACK_TOKEN_ERRORS.has(code)) {
+			return { kind: "invalid_token", slackError: code };
+		}
+		if (code === "missing_scope") {
+			return { kind: "missing_scope", slackError: code };
+		}
+		logger.warn({ slackError: code }, "Slack auth.test failed during candidate verification");
+		return { kind: "unavailable", reason: code ?? "slack_api_unavailable" };
+	}
+
+	if (!authResult.ok) {
+		const code = authResult.error ?? "invalid_auth";
+		if (INVALID_SLACK_TOKEN_ERRORS.has(code)) {
+			return { kind: "invalid_token", slackError: code };
+		}
+		if (code === "missing_scope") {
+			return { kind: "missing_scope", slackError: code };
+		}
+		return { kind: "unavailable", reason: code };
+	}
+
+	const teamId = authResult.team_id?.trim() ?? "";
+	const botUserId = authResult.user_id?.trim() ?? "";
+	const botId = authResult.bot_id?.trim() ?? "";
+	const teamName = authResult.team?.trim() ?? "";
+	const botUsername = authResult.user?.trim() || null;
+
+	if (!teamId || !botUserId || !botId) {
+		return { kind: "identity_mismatch", reason: "missing_auth_metadata" };
+	}
+
+	let botInfoResult: Awaited<ReturnType<WebClient["bots"]["info"]>>;
+	try {
+		botInfoResult = await client.bots.info({ bot: botId });
+	} catch (error) {
+		const code = extractSlackErrorCode(error);
+		if (code && INVALID_SLACK_TOKEN_ERRORS.has(code)) {
+			return { kind: "invalid_token", slackError: code };
+		}
+		if (code === "missing_scope") {
+			return { kind: "missing_scope", slackError: code };
+		}
+		if (code === "bot_not_found") {
+			return { kind: "identity_mismatch", reason: "bot_not_found" };
+		}
+		logger.warn({ slackError: code }, "Slack bots.info failed during candidate verification");
+		return { kind: "unavailable", reason: code ?? "slack_api_unavailable" };
+	}
+
+	if (!botInfoResult.ok || !botInfoResult.bot) {
+		const code = botInfoResult.error ?? "bot_not_found";
+		if (code === "missing_scope") {
+			return { kind: "missing_scope", slackError: code };
+		}
+		return { kind: "identity_mismatch", reason: code };
+	}
+
+	const botMeta = botInfoResult.bot;
+	const appId = botMeta.app_id?.trim() ?? "";
+	if (!appId || botMeta.deleted) {
+		return {
+			kind: "identity_mismatch",
+			reason: botMeta.deleted ? "bot_deleted" : "missing_app_id",
+		};
+	}
+
+	if (botMeta.id && botMeta.id !== botId) {
+		return { kind: "identity_mismatch", reason: "bot_id_mismatch" };
+	}
+
+	if (botMeta.user_id && botMeta.user_id !== botUserId) {
+		return { kind: "identity_mismatch", reason: "bot_user_id_mismatch" };
+	}
+
+	return {
+		kind: "ok",
+		identity: {
+			appId,
+			teamId,
+			teamName,
+			botId,
+			botUserId,
+			botUsername: botMeta.name?.trim() || botUsername,
+		},
+	};
+}

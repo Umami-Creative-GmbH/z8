@@ -19,9 +19,14 @@ export function verifySlackSignature(
 	rawBody: string,
 	signature: string,
 ): boolean {
-	// Reject old requests (> 5 minutes) to prevent replay attacks
+	// Reject malformed or old requests (> 5 minutes) to prevent replay attacks
+	if (!/^\d+$/.test(timestamp)) {
+		logger.warn({ timestamp }, "Invalid Slack request timestamp");
+		return false;
+	}
+	const parsedTimestamp = Number.parseInt(timestamp, 10);
 	const now = Math.floor(Date.now() / 1000);
-	if (Math.abs(now - Number.parseInt(timestamp, 10)) > 60 * 5) {
+	if (Number.isNaN(parsedTimestamp) || Math.abs(now - parsedTimestamp) > 60 * 5) {
 		logger.warn({ timestamp }, "Slack request too old");
 		return false;
 	}
