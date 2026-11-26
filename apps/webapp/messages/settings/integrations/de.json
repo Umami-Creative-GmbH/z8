@@ -527,6 +527,111 @@
       "switchedAnnouncement": "Auf Ihre organisationseigene Slack-App umgestellt. Bestehende Genehmigungskarten werden während der Auslaufphase weiter betreut.",
       "title": "Auswirkungen prüfen & Slack-App wechseln"
     },
+    "recovery": {
+      "appIdLabel": "App-ID",
+      "cleanup": {
+        "credentialKind": "Bereinigung von Zugangsdaten-Revisionen",
+        "endpointKind": "Bereinigung des Anbieter-Endpunkts",
+        "heading": "Hintergrund-Bereinigungswarteschlange"
+      },
+      "deploymentManagedLabel": "Vom Deployment verwaltete App",
+      "description": "Rotieren Sie Zugangsdaten für dieselbe App-Identität, widerrufen Sie die lokale Autorisierung sofort oder prüfen und stellen Sie eine frühere Installation wieder her.",
+      "endpointState": {
+        "uncertain": "Endpunktstatus unklar"
+      },
+      "errors": {
+        "candidateNotReady": "Schließen Sie alle neuen Prüfschritte ab, bevor Sie die Wiederherstellung bestätigen.",
+        "candidateVerificationExpired": "Prüfnachweise sind abgelaufen. Prüfen Sie erneut, bevor Sie die Wiederherstellung bestätigen.",
+        "confirmRestoreFailed": "Wiederherstellung der Installation konnte nicht bestätigt werden.",
+        "credentialsRequired": "Geben Sie neue Zugangsdaten ein, um diese Installation vor der Wiederherstellung erneut zu prüfen.",
+        "credentialWriteFailed": "Zugangsdaten konnten nicht sicher gespeichert werden. Bestehende Zugangsdaten bleiben unverändert.",
+        "deploymentManagedNotRestorable": "Vom Deployment verwaltete Verbindungen können nicht als organisationseigener Ersatz wiederhergestellt werden.",
+        "deploymentManagedNotRotatable": "Vom Deployment verwaltete Verbindungen können hier nicht rotiert werden. Bereiten Sie stattdessen eine organisationseigene App vor.",
+        "endpointReconciliationRequired": "Der Endpunktstatus ist nach einer Zeitüberschreitung unklar. Gleichen Sie den Endpunkt vor der Wiederherstellung ab.",
+        "externalIdentityMismatch": "Die Zugangsdaten gehören zu einer anderen App oder einem anderen Workspace. Für eine Rotation ist dieselbe externe Identität erforderlich; nutzen Sie zum App-Wechsel den App-Ersatz.",
+        "impactChanged": "Auswirkungen oder Revisionen haben sich seit Ihrer Prüfung geändert. Prüfen Sie die aktualisierte Übersicht und bestätigen Sie erneut.",
+        "installationNotFound": "Die ausgewählte Chat-Installation wurde nicht gefunden.",
+        "installationNotRestorable": "Nur auslaufende, stillgelegte oder widerrufene Installationen können wiederhergestellt werden.",
+        "installationNotRotatable": "Für diese Installation können Zugangsdaten im aktuellen Zustand nicht rotiert werden.",
+        "invalidBotToken": "Slack hat den Bot-Token abgelehnt. Prüfen Sie Ihr Bot-User-OAuth-Token und versuchen Sie es erneut.",
+        "invalidBotTokenFormat": "Das Bot-Token muss mit xoxb- beginnen.",
+        "invalidSigningSecretFormat": "Das Signing Secret muss mindestens 16 Zeichen ohne Leerzeichen enthalten.",
+        "invalidSlackUserId": "Geben Sie eine gültige Slack-Mitglieds-ID ein (z. B. U01234567).",
+        "missingSlackScope": "Dem Bot-Token fehlen erforderliche Slack-Berechtigungen (einschließlich users:read).",
+        "prepareRestoreFailed": "Wiederherstellung dieser Installation konnte nicht gestartet werden.",
+        "privateDeliveryFailed": "Die synthetische private Testnachricht konnte nicht gesendet werden. Prüfen Sie die Bot-Berechtigungen und versuchen Sie es erneut.",
+        "providerUnavailable": "Die Chat-Anbieter-API ist vorübergehend nicht erreichbar. Bitte versuchen Sie es erneut.",
+        "refreshFailed": "Wiederherstellungsstatus konnte nicht aktualisiert werden.",
+        "revokeFailed": "Chat-Installation konnte nicht widerrufen werden.",
+        "rotateFailed": "Zugangsdaten der Installation konnten nicht rotiert werden.",
+        "secretStoreUnavailable": "Der Secret Store der Organisation ist derzeit nicht erreichbar. Bestehende Zugangsdaten bleiben aktiv.",
+        "switchNotEnabled": "Wechsel oder Wiederherstellung einer organisationseigenen App ist für diese Organisation noch nicht freigeschaltet.",
+        "unreadyAckRequired": "Bestätigen Sie, dass einige Mitarbeitende nach der Wiederherstellung noch Direktnachrichten verknüpfen oder prüfen müssen.",
+        "verifyRestoreFailed": "Installation konnte für die Wiederherstellung nicht geprüft werden."
+      },
+      "fields": {
+        "botToken": "Bot-User-OAuth-Token (nur schreibend)",
+        "signingSecret": "Signing Secret (nur schreibend)",
+        "writeOnlyHint": "Wird in einer neuen unveränderlichen Revision gespeichert und nie wieder angezeigt."
+      },
+      "guidance": {
+        "heading": "Hinweise zu anbieterbedingten Unterbrechungen & Wiederherstellung"
+      },
+      "refresh": "Aktualisieren",
+      "refreshedAnnouncement": "Wiederherstellungsstatus für {channel} aktualisiert.",
+      "restore": {
+        "acknowledgeUnready": "Ich bestätige, dass {count} Mitarbeitende nach der Wiederherstellung dieser Installation noch verknüpfen oder Direktnachrichten prüfen müssen.",
+        "confirmButton": "Wiederherstellung bestätigen",
+        "confirmedAnnouncement": "Vorherige Installation geprüft und wieder als aktiv hergestellt.",
+        "impactHeading": "Aktuelle Auswirkungsprüfung für die Wiederherstellung",
+        "listDescription": "Die Wiederherstellung einer früheren Installation erfordert eine neue Zugangsdaten- und Zustellungsprüfung sowie eine aktuelle Auswirkungsprüfung vor der Aktivierung.",
+        "listHeading": "Vorherige Installationen zur Wiederherstellung",
+        "metrics": {
+          "approvals": "Offene Genehmigungskarten",
+          "reachable": "Verifiziert erreichbar",
+          "unready": "Mitarbeitende mit Handlungsbedarf / unbekannt"
+        },
+        "pendingBadge": "Prüfung erforderlich",
+        "readyBadge": "Bereit zur Wiederherstellungsbestätigung",
+        "retiredAt": "Stillgelegt: {timestamp}",
+        "revokedAt": "Widerrufen: {timestamp}",
+        "slackUserIdLabel": "Slack-Mitglieds-ID für synthetischen DM-Test (optional)",
+        "snapshot": "Stand: {timestamp}",
+        "startButton": "Wiederherstellung & Prüfung starten",
+        "startedAnnouncement": "Wiederherstellung gestartet. Führen Sie eine neue Prüfung und Auswirkungsprüfung vor der Reaktivierung durch.",
+        "uncertainWarning": "Die Endpunktbereinigung lief in eine Zeitüberschreitung; ein Endpunktabgleich ist vor der Wiederherstellung erforderlich.",
+        "verifyButton": "Zugangsdaten prüfen & Test-DM senden",
+        "verifyDescription": "Prüfen Sie Zugangsdaten erneut, empfangen Sie ein frisches signiertes Slack-Ereignis und senden Sie eine synthetische private Test-DM vor der Bestätigung.",
+        "verifiedReadyAnnouncement": "Neue Wiederherstellungsprüfung abgeschlossen. Prüfen Sie die Auswirkungen und bestätigen Sie die Wiederherstellung.",
+        "verifiedStepAnnouncement": "Prüfschritt für die Wiederherstellung gespeichert. Schließen Sie die übrigen Prüfungen ab.",
+        "verifyHeading": "Installation vor der Wiederherstellung prüfen"
+      },
+      "revoke": {
+        "confirmButton": "Sofortigen Widerruf bestätigen",
+        "dialogDescription": "Der Widerruf beendet die lokale Autorisierung für diese Installation sofort. Die asynchrone Bereinigung entfernt nur Zugangsdaten dieser Organisation und lässt geteilte Deployment-Zugangsdaten sowie andere Organisationen unberührt. Ausstehende Genehmigungen bleiben im Z8-Posteingang verfügbar.",
+        "dialogTitle": "{channel}-Zugriff sofort widerrufen?",
+        "openButton": "Zugriff sofort widerrufen",
+        "successAnnouncement": "Installation sofort widerrufen. Ausstehende Genehmigungen bleiben im Z8-Posteingang verfügbar."
+      },
+      "rotate": {
+        "dialogDescription": "Geben Sie neue Zugangsdaten für genau dieselbe App und denselben Workspace ein. Bestehende DM-Unterhaltungen, Mitarbeiterverknüpfungen und offene Genehmigungskarten bleiben erhalten.",
+        "dialogTitle": "{channel}-Zugangsdaten rotieren",
+        "interruptionTitle": "Anbieterbedingte Unterbrechung",
+        "openButton": "Zugangsdaten rotieren",
+        "postRotationHeading": "Zugangsdaten auf Revision v{revision} rotiert — Wiederherstellung prüfen",
+        "submitButton": "Identität prüfen & rotieren",
+        "successAnnouncement": "Zugangsdaten auf Revision v{revision} rotiert. Folgen Sie den Prüfschritten unten, um die Wiederherstellung zu bestätigen."
+      },
+      "status": {
+        "active": "Aktiv",
+        "legacyActive": "Legacy aktiv"
+      },
+      "title": "{channel}-Zugangsdatenrotation, Widerruf & Wiederherstellung",
+      "validation": {
+        "botTokenRequired": "Bot-Token ist erforderlich.",
+        "signingSecretRequired": "Signing Secret ist erforderlich."
+      }
+    },
     "teamsNotifications": {
       "title": "Microsoft Teams"
     },

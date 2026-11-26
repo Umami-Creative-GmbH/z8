@@ -488,4 +488,56 @@ describe("scalewaySecretProvider", () => {
 			scalewaySecretProvider.deleteOrgSecret("org-1", "slack/bot_token"),
 		).rejects.toBeInstanceOf(SecretStoreUnavailableError);
 	});
+
+	test("deleteAllOrgSecrets throws SecretStoreUnavailableError on outage and scopes recursive deletion to the organization (#2046)", async () => {
+		mocks.deleteWhere.mockRejectedValueOnce(new Error("db connection timeout"));
+		const { SecretStoreUnavailableError } = await import("./errors");
+		const { scalewaySecretProvider } = await import("./scaleway-provider");
+
+		await expect(scalewaySecretProvider.deleteAllOrgSecrets("org-1")).rejects.toBeInstanceOf(
+			SecretStoreUnavailableError,
+		);
+		expect(mocks.invalidateSecretStoreStatusCache).not.toHaveBeenCalled();
+
+		// Retry succeeds: deletes all org-1 scaleway rows (including nested chat/.../revisions/vN/*) and invalidates cache
+		await scalewaySecretProvider.deleteAllOrgSecrets("org-1");
+		expect(mocks.drizzle.eq).toHaveBeenCalledWith(
+			mocks.tables.organizationSecret.organizationId,
+			"org-1",
+		);
+		expect(mocks.drizzle.eq).toHaveBeenCalledWith(
+			mocks.tables.organizationSecret.provider,
+			"scaleway",
+		);
+		expect(mocks.invalidateSecretStoreStatusCache).toHaveBeenCalledWith("org-1");
+	});
+
+	test("encrypts each revision with revision-scoped associatedData so v1 and v2 stay isolated (#2046)", async () => {
+		mocks.db.query.organizationSecretKey.findFirst.mockResolvedValue(localKey);
+		const { scalewaySecretProvider } = await import("./scaleway-provider");
+
+		await scalewaySecretProvider.storeOrgSecret(
+			"org-1",
+			"chat/slack/installations/inst-1/revisions/v1/bot_token",
+			"xoxb-v1",
+		);
+		await scalewaySecretProvider.storeOrgSecret(
+			"org-1",
+			"chat/slack/installations/inst-1/revisions/v2/bot_token",
+			"xoxb-v2",
+		);
+
+		expect(mocks.client.encrypt).toHaveBeenNthCalledWith(
+			1,
+			"key-local",
+			"xoxb-v1",
+			"organizationId=org-1;key=chat/slack/installations/inst-1/revisions/v1/bot_token;version=1",
+		);
+		expect(mocks.client.encrypt).toHaveBeenNthCalledWith(
+			2,
+			"key-local",
+			"xoxb-v2",
+			"organizationId=org-1;key=chat/slack/installations/inst-1/revisions/v2/bot_token;version=1",
+		);
+	});
 });

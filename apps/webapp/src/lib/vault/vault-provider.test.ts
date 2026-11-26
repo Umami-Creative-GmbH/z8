@@ -170,4 +170,81 @@ describe("vaultSecretProvider", () => {
 			"secret/metadata/organizations/org-1/slack/bot_token",
 		);
 	});
+
+	test("keeps revisioned secrets isolated across organizations and never leaks secret values in logs (#2046)", async () => {
+		await vaultSecretProvider.storeOrgSecret(
+			"org-1",
+			"chat/slack/installations/inst-1/revisions/v1/bot_token",
+			"xoxb-org1-v1-supersecret",
+		);
+		await vaultSecretProvider.storeOrgSecret(
+			"org-1",
+			"chat/slack/installations/inst-1/revisions/v2/bot_token",
+			"xoxb-org1-v2-supersecret",
+		);
+		await vaultSecretProvider.storeOrgSecret(
+			"org-2",
+			"chat/slack/installations/inst-1/revisions/v1/bot_token",
+			"xoxb-org2-v1-supersecret",
+		);
+
+		expect(mocks.vaultClient.write).toHaveBeenCalledWith(
+			"secret/data/organizations/org-1/chat/slack/installations/inst-1/revisions/v1/bot_token",
+			{ data: { value: "xoxb-org1-v1-supersecret" } },
+		);
+		expect(mocks.vaultClient.write).toHaveBeenCalledWith(
+			"secret/data/organizations/org-1/chat/slack/installations/inst-1/revisions/v2/bot_token",
+			{ data: { value: "xoxb-org1-v2-supersecret" } },
+		);
+		expect(mocks.vaultClient.write).toHaveBeenCalledWith(
+			"secret/data/organizations/org-2/chat/slack/installations/inst-1/revisions/v1/bot_token",
+			{ data: { value: "xoxb-org2-v1-supersecret" } },
+		);
+
+		// Deleting org-1 secrets only lists and deletes under org-1 prefix, never org-2
+		mocks.vaultClient.list.mockImplementation(async (path: string) => {
+			if (path === "secret/metadata/organizations/org-1") return { data: { keys: ["chat/"] } };
+			if (path === "secret/metadata/organizations/org-1/chat")
+				return { data: { keys: ["slack/"] } };
+			if (path === "secret/metadata/organizations/org-1/chat/slack") {
+				return { data: { keys: ["installations/"] } };
+			}
+			if (path === "secret/metadata/organizations/org-1/chat/slack/installations") {
+				return { data: { keys: ["inst-1/"] } };
+			}
+			if (path === "secret/metadata/organizations/org-1/chat/slack/installations/inst-1") {
+				return { data: { keys: ["revisions/"] } };
+			}
+			if (
+				path === "secret/metadata/organizations/org-1/chat/slack/installations/inst-1/revisions"
+			) {
+				return { data: { keys: ["v1/", "v2/"] } };
+			}
+			if (path.endsWith("/v1") || path.endsWith("/v2")) {
+				return { data: { keys: ["bot_token", "signing_secret"] } };
+			}
+			throw new Error("Status 404");
+		});
+
+		await vaultSecretProvider.deleteAllOrgSecrets("org-1");
+
+		const deletedPaths = mocks.vaultClient.delete.mock.calls.map(([p]) => String(p));
+		expect(deletedPaths.every((p) => p.includes("/organizations/org-1/"))).toBe(true);
+		expect(deletedPaths.some((p) => p.includes("/organizations/org-2/"))).toBe(false);
+		expect(deletedPaths).toContain(
+			"secret/metadata/organizations/org-1/chat/slack/installations/inst-1/revisions/v1/bot_token",
+		);
+		expect(deletedPaths).toContain(
+			"secret/metadata/organizations/org-1/chat/slack/installations/inst-1/revisions/v2/signing_secret",
+		);
+
+		const serializedLogs = JSON.stringify([
+			...mocks.logger.info.mock.calls,
+			...mocks.logger.warn.mock.calls,
+			...mocks.logger.error.mock.calls,
+		]);
+		expect(serializedLogs).not.toContain("xoxb-org1-v1-supersecret");
+		expect(serializedLogs).not.toContain("xoxb-org1-v2-supersecret");
+		expect(serializedLogs).not.toContain("xoxb-org2-v1-supersecret");
+	});
 });

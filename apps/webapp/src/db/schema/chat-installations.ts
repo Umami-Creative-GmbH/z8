@@ -91,6 +91,9 @@ export const CHAT_CONVERSATION_REACHABILITY_STATUSES = [
 export type ChatConversationReachabilityStatus =
 	(typeof CHAT_CONVERSATION_REACHABILITY_STATUSES)[number];
 
+export const CHAT_INSTALLATION_ENDPOINT_STATES = ["synced", "uncertain", "removed"] as const;
+export type ChatInstallationEndpointState = (typeof CHAT_INSTALLATION_ENDPOINT_STATES)[number];
+
 export interface ChatRemediationDetails {
 	missingField?: string;
 	legacyStatus?: string;
@@ -134,6 +137,10 @@ export interface ChatVerificationEvidence {
 	lastFailureAt?: string | null;
 	enrollmentProofCount?: number;
 	lastEnrollmentProofAt?: string | null;
+	rotatedAt?: string | null;
+	rotatedRevisionId?: string | null;
+	endpointReconciledAt?: string | null;
+	endpointReconciledGeneration?: number | null;
 }
 
 /**
@@ -235,6 +242,10 @@ export const chatInstallation = pgTable(
 		retiredAt: timestamp("retired_at", { withTimezone: true }),
 		revokedAt: timestamp("revoked_at", { withTimezone: true }),
 		endpointGeneration: integer("endpoint_generation").default(0).notNull(),
+		endpointState: text("endpoint_state")
+			.$type<ChatInstallationEndpointState>()
+			.default("synced")
+			.notNull(),
 		createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
 		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 		updatedAt: timestamp("updated_at", { withTimezone: true })
@@ -297,6 +308,10 @@ export const chatInstallation = pgTable(
 			sql`${table.remediationReason} IS NULL OR ${table.remediationReason} IN ('duplicate_external_identity', 'unknown_bot_identity', 'unexpected_legacy_status', 'secret_store_unavailable')`,
 		),
 		check("chat_installation_endpoint_generation_check", sql`${table.endpointGeneration} >= 0`),
+		check(
+			"chat_installation_endpoint_state_check",
+			sql`${table.endpointState} IN ('synced', 'uncertain', 'removed')`,
+		),
 		check("chat_installation_route_id_check", sql`length(btrim(${table.routeId})) > 0`),
 	],
 );

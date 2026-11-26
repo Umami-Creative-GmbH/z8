@@ -4,6 +4,11 @@ import {
 	type DurableDispatchDb,
 } from "@/lib/chat-installations/durable-dispatch";
 import {
+	type ChatRecoveryDb,
+	type ProcessChatInstallationCleanupResult,
+	processChatInstallationCleanupJobs,
+} from "@/lib/chat-installations/recovery-lifecycle";
+import {
 	type ChatSwitchDb,
 	type RetireSettledChatInstallationsResult,
 	retireSettledChatInstallations,
@@ -13,6 +18,7 @@ import { type Clock, dateFromInstant, systemClock } from "@/lib/datetime/tempora
 export interface DurableChatDispatchMaintenanceResult extends CloseExpiredUncertainDurableDispatchesResult {
 	ranAt: string;
 	retiredInstallations: RetireSettledChatInstallationsResult;
+	cleanupJobs: ProcessChatInstallationCleanupResult;
 }
 
 /**
@@ -21,6 +27,8 @@ export interface DurableChatDispatchMaintenanceResult extends CloseExpiredUncert
  *    with an explicit `closed_unknown` outcome (#2044).
  * 2) Automatically retiring `retiring` chat installations whose eligible approval cards and
  *    work have settled to 0 or whose 30-day retirement deadline has been reached (#2045).
+ * 3) Running asynchronous retryable credential-revision and generation-fenced provider
+ *    endpoint cleanup jobs (#2046).
  */
 export async function runDurableChatDispatchMaintenance(deps?: {
 	db?: DurableDispatchDb;
@@ -29,7 +37,7 @@ export async function runDurableChatDispatchMaintenance(deps?: {
 }): Promise<DurableChatDispatchMaintenanceResult> {
 	const clock = deps?.clock ?? systemClock;
 	const now = dateFromInstant(clock.nowInstant());
-	const [result, retiredInstallations] = await Promise.all([
+	const [result, retiredInstallations, cleanupJobs] = await Promise.all([
 		closeExpiredUncertainDurableDispatches(now, {
 			db: deps?.db,
 			organizationId: deps?.organizationId,
@@ -38,10 +46,20 @@ export async function runDurableChatDispatchMaintenance(deps?: {
 			db: deps?.db as ChatSwitchDb | undefined,
 			organizationId: deps?.organizationId,
 		}),
+		processChatInstallationCleanupJobs(
+			{
+				now,
+				organizationId: deps?.organizationId,
+			},
+			{
+				db: deps?.db as ChatRecoveryDb | undefined,
+			},
+		),
 	]);
 	return {
 		...result,
 		retiredInstallations,
+		cleanupJobs,
 		ranAt: now.toISOString(),
 	};
 }

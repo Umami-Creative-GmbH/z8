@@ -527,6 +527,111 @@
       "switchedAnnouncement": "Switched to your organization-owned Slack app. Previous approval cards remain serviced during retirement.",
       "title": "Review impact & switch Slack app"
     },
+    "recovery": {
+      "appIdLabel": "App ID",
+      "cleanup": {
+        "credentialKind": "Credential revision cleanup",
+        "endpointKind": "Provider endpoint cleanup",
+        "heading": "Background cleanup queue"
+      },
+      "deploymentManagedLabel": "Deployment-managed app",
+      "description": "Rotate credentials for the same app identity, revoke local authorization immediately, or re-verify and restore a previous installation.",
+      "endpointState": {
+        "uncertain": "Endpoint uncertain"
+      },
+      "errors": {
+        "candidateNotReady": "Complete all fresh verification steps before confirming restore.",
+        "candidateVerificationExpired": "Verification proofs have expired. Re-verify before confirming restore.",
+        "confirmRestoreFailed": "Could not confirm installation restore.",
+        "credentialsRequired": "Enter fresh credentials to re-verify this installation before restoring.",
+        "credentialWriteFailed": "Failed to store credentials securely. Existing credentials remain unchanged.",
+        "deploymentManagedNotRestorable": "Deployment-managed connections cannot be restored as organization-owned replacements.",
+        "deploymentManagedNotRotatable": "Deployment-managed connections cannot rotate credentials here. Prepare and switch to an organization-owned app instead.",
+        "endpointReconciliationRequired": "Provider endpoint state is uncertain after a timed-out cleanup. Reconcile endpoint state before restoring.",
+        "externalIdentityMismatch": "The credentials belong to a different app or workspace. Rotation requires the exact same external identity; use app replacement to switch apps.",
+        "impactChanged": "Impact or revisions changed since your review. Review the updated summary and confirm again.",
+        "installationNotFound": "The selected chat installation could not be found.",
+        "installationNotRestorable": "Only retiring, retired, or revoked installations can be restored.",
+        "installationNotRotatable": "This installation cannot rotate credentials in its current state.",
+        "invalidBotToken": "Slack rejected the bot token. Check your Bot User OAuth Token and try again.",
+        "invalidBotTokenFormat": "Bot token must start with xoxb-.",
+        "invalidSigningSecretFormat": "Signing secret must be at least 16 characters with no spaces.",
+        "invalidSlackUserId": "Enter a valid Slack member ID (for example, U01234567).",
+        "missingSlackScope": "The bot token is missing required Slack scopes (including users:read).",
+        "prepareRestoreFailed": "Could not start restoring this installation.",
+        "privateDeliveryFailed": "Could not send the synthetic private test message. Check bot permissions and retry.",
+        "providerUnavailable": "The chat provider API is temporarily unavailable. Please retry.",
+        "refreshFailed": "Could not refresh recovery state.",
+        "revokeFailed": "Could not revoke chat installation.",
+        "rotateFailed": "Could not rotate installation credentials.",
+        "secretStoreUnavailable": "The organization secret store is currently unavailable. Existing credentials remain active.",
+        "switchNotEnabled": "Switching or restoring an organization-owned app is not enabled for this organization yet.",
+        "unreadyAckRequired": "Acknowledge that some employees still need to connect or verify direct messages before restoring.",
+        "verifyRestoreFailed": "Could not verify the installation for restore."
+      },
+      "fields": {
+        "botToken": "Bot User OAuth Token (write-only)",
+        "signingSecret": "Signing Secret (write-only)",
+        "writeOnlyHint": "Stored in a new immutable revision and never displayed again."
+      },
+      "guidance": {
+        "heading": "Provider interruption & recovery guidance"
+      },
+      "refresh": "Refresh",
+      "refreshedAnnouncement": "{channel} recovery state refreshed.",
+      "restore": {
+        "acknowledgeUnready": "I acknowledge that {count} employees still need to connect or verify direct messages after restoring this installation.",
+        "confirmButton": "Confirm restore",
+        "confirmedAnnouncement": "Previous installation verified and restored as active.",
+        "impactHeading": "Fresh restore impact review",
+        "listDescription": "Restoring a previous installation requires fresh credential and delivery verification plus a fresh impact review before it becomes active.",
+        "listHeading": "Previous installations available to restore",
+        "metrics": {
+          "approvals": "Outstanding approval cards",
+          "reachable": "Verified reachable",
+          "unready": "Employees needing action / unknown"
+        },
+        "pendingBadge": "Verification required",
+        "readyBadge": "Ready to confirm restore",
+        "retiredAt": "Retired: {timestamp}",
+        "revokedAt": "Revoked: {timestamp}",
+        "slackUserIdLabel": "Slack Member ID for synthetic DM test (optional)",
+        "snapshot": "Snapshot: {timestamp}",
+        "startButton": "Start restore & verify",
+        "startedAnnouncement": "Restore started. Complete fresh verification and review impact before reactivating.",
+        "uncertainWarning": "Endpoint cleanup timed out; endpoint reconciliation is required before restoring.",
+        "verifyButton": "Verify credentials & test DM",
+        "verifyDescription": "Re-verify credentials, receive a fresh signed Slack event, and send a synthetic private DM test before confirming restore.",
+        "verifiedReadyAnnouncement": "Fresh restore verification complete. Review impact and confirm restore.",
+        "verifiedStepAnnouncement": "Restore verification step recorded. Complete remaining checks before confirming.",
+        "verifyHeading": "Verify installation before restoring"
+      },
+      "revoke": {
+        "confirmButton": "Confirm immediate revocation",
+        "dialogDescription": "Revocation immediately ends local authorization for this installation. Asynchronous cleanup removes only this organization's credentials and leaves shared deployment credentials and unrelated organizations unaffected. Pending approvals remain available in the Z8 inbox.",
+        "dialogTitle": "Revoke {channel} access immediately?",
+        "openButton": "Revoke access immediately",
+        "successAnnouncement": "Installation revoked immediately. Pending approvals remain accessible in the Z8 inbox."
+      },
+      "rotate": {
+        "dialogDescription": "Enter new credentials for the exact same app and workspace. Existing DM conversations, employee links, and open approval cards are preserved.",
+        "dialogTitle": "Rotate {channel} credentials",
+        "interruptionTitle": "Provider-imposed interruption",
+        "openButton": "Rotate credentials",
+        "postRotationHeading": "Credentials rotated to revision v{revision} — verify recovery",
+        "submitButton": "Verify identity & rotate",
+        "successAnnouncement": "Credentials rotated to revision v{revision}. Follow the verification steps below to confirm recovery."
+      },
+      "status": {
+        "active": "Active",
+        "legacyActive": "Legacy active"
+      },
+      "title": "{channel} credential rotation, revocation & recovery",
+      "validation": {
+        "botTokenRequired": "Bot token is required.",
+        "signingSecretRequired": "Signing secret is required."
+      }
+    },
     "teamsNotifications": {
       "title": "Microsoft Teams"
     },

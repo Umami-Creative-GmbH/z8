@@ -11,6 +11,7 @@ import * as authSchema from "@/db/auth-schema";
 import { employee, pushDeviceToken, pushSubscription } from "@/db/schema";
 import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { createLogger } from "@/lib/logger";
+import { deleteAllOrgSecrets, invalidateSecretStoreStatusCache } from "@/lib/vault";
 import { ORGANIZATION_RECOVERY_WINDOW_HOURS } from "./organization-recovery-window";
 
 const logger = createLogger("organization-cleanup");
@@ -64,8 +65,7 @@ export async function runOrganizationCleanup(): Promise<OrganizationCleanupResul
 					);
 					return { success: true as const };
 				} catch (error) {
-					const errorMessage =
-						error instanceof Error ? error.message : "Unknown error";
+					const errorMessage = error instanceof Error ? error.message : "Unknown error";
 					logger.error(
 						{ error: errorMessage, organizationId: org.id },
 						"Failed to permanently delete organization",
@@ -78,12 +78,8 @@ export async function runOrganizationCleanup(): Promise<OrganizationCleanupResul
 			}),
 		);
 
-		result.organizationsDeleted = deletionResults.filter(
-			(item) => item.success,
-		).length;
-		result.errors.push(
-			...deletionResults.flatMap((item) => (item.success ? [] : [item.error])),
-		);
+		result.organizationsDeleted = deletionResults.filter((item) => item.success).length;
+		result.errors.push(...deletionResults.flatMap((item) => (item.success ? [] : [item.error])));
 
 		if (result.errors.length > 0) {
 			result.success = false;
@@ -91,8 +87,7 @@ export async function runOrganizationCleanup(): Promise<OrganizationCleanupResul
 
 		return result;
 	} catch (error) {
-		const errorMessage =
-			error instanceof Error ? error.message : "Unknown error";
+		const errorMessage = error instanceof Error ? error.message : "Unknown error";
 		logger.error({ error: errorMessage }, "Organization cleanup job failed");
 		result.success = false;
 		result.errors.push(errorMessage);
@@ -131,13 +126,14 @@ export async function runOrganizationCleanup(): Promise<OrganizationCleanupResul
  * transaction. A fresh manual submission therefore commits before the tenant
  * disappears or waits and finds it gone.
  */
-async function permanentlyDeleteOrganization(
-	organizationId: string,
-): Promise<void> {
-	logger.info(
-		{ organizationId },
-		"Starting permanent deletion of organization",
-	);
+async function permanentlyDeleteOrganization(organizationId: string): Promise<void> {
+	logger.info({ organizationId }, "Starting permanent deletion of organization");
+
+	// Recursively delete all organization-scoped secrets (Vault or Scaleway) BEFORE
+	// removing the organization row in PostgreSQL. If the secret store is temporarily
+	// unavailable, this throws and leaves the soft-deleted organization eligible for
+	// retry on the next cleanup run rather than orphaning external secrets (#2046).
+	await deleteAllOrgSecrets(organizationId);
 
 	let employeeUserIds: string[] = [];
 	await withAuthorizationMutation(
@@ -195,9 +191,7 @@ async function permanentlyDeleteOrganization(
 					await tx
 						.delete(pushSubscription)
 						.where(inArray(pushSubscription.userId, departingUserIds));
-					await tx
-						.delete(pushDeviceToken)
-						.where(inArray(pushDeviceToken.userId, departingUserIds));
+					await tx.delete(pushDeviceToken).where(inArray(pushDeviceToken.userId, departingUserIds));
 				}
 			}
 
@@ -220,8 +214,16 @@ async function permanentlyDeleteOrganization(
 		db,
 	);
 
-	logger.info(
-		{ organizationId },
-		"Organization and all related data permanently deleted",
-	);
+	// Invalidate cached Scaleway secret-store status after permanent deletion so no
+	// stale status survives in Redis.
+	try {
+		await invalidateSecretStoreStatusCache(organizationId);
+	} catch (error) {
+		logger.warn(
+			{ error, organizationId },
+			"Failed to invalidate secret store status cache after organization deletion",
+		);
+	}
+
+	logger.info({ organizationId }, "Organization and all related data permanently deleted");
 }

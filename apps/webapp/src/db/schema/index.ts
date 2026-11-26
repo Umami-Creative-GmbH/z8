@@ -38,6 +38,8 @@ export * from "./calendar-sync";
 export * from "./change-policy";
 // Organization-owned chat installations foundation (#2037 / #2040)
 export * from "./chat-installations";
+// Async generation-fenced chat installation cleanup queue (#2037 / #2046)
+export * from "./chat-installation-cleanup";
 // Installation-scoped chat link proofs & member links (#2037 / #2042)
 export * from "./chat-installation-link-proof";
 // Durable chat notification dispatch ledger (#2037 / #2044)
