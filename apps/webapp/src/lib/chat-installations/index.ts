@@ -142,4 +142,38 @@ export {
 	type SlackVerificationStepView,
 	sendSlackCandidateTestMessage,
 } from "./slack-setup";
+export {
+	handleTeamsCandidateHealthRequest,
+	handleTeamsCandidateMessageRequest,
+	type TeamsCandidateHttpResponse,
+	type TeamsCandidateMessageRequestInput,
+} from "./teams-candidate-routes";
+export {
+	buildTeamsAppPackageZip,
+	buildTeamsCandidateSetupView,
+	type ConfigureTeamsCredentialsResult,
+	computeTeamsCandidateSetupStatus,
+	configureTeamsCandidateCredentials,
+	type GeneratedTeamsAppPackage,
+	generateTeamsAppPackage,
+	getTeamsCandidateSetupView,
+	prepareTeamsCandidateInstallation,
+	type ProvenSameTenantMember,
+	type SendTeamsCandidateProactiveTestResult,
+	type StoredCandidatePersonalConversation,
+	sendTeamsCandidateProactiveTestMessage,
+	TEAMS_MANIFEST_SCHEMA_URL,
+	TEAMS_MANIFEST_VERSION,
+	TEAMS_PLACEHOLDER_APP_ID,
+	TEAMS_VERIFICATION_FRESHNESS_MS,
+	type TeamsAdminRolloutStep,
+	type TeamsAppManifestDocument,
+	type TeamsCandidateInstallationRecord,
+	type TeamsCandidateSetupView,
+	type TeamsSetupAuditEvent,
+	type TeamsSetupRepository,
+	type TeamsSetupRuntimeDeps,
+	type TeamsVerificationStepStatus,
+	type TeamsVerificationStepView,
+} from "./teams-setup";
 export * from "./types";

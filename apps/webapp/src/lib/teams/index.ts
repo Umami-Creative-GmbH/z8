@@ -7,10 +7,14 @@
 export { handleApprovalAction, sendApprovalCardToManager } from "./approval-handler";
 // Bot and messaging
 export {
+	evictTeamsInstallationBotAdapter,
 	getBotAdapter,
+	getTeamsInstallationBotAdapter,
 	isBotConfigured,
 	sendAdaptiveCard,
 	sendProactiveMessage,
+	sendTeamsProactiveTestMessage,
+	type TeamsInstallationBotAdapterConfig,
 	updateMessage,
 } from "./bot-adapter";
 export { handleBotActivity } from "./bot-handler";

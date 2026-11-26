@@ -21,8 +21,153 @@ import { TeamsError } from "./types";
 
 const logger = createLogger("TeamsBotAdapter");
 
-// Singleton adapter instance
+// Legacy deployment-managed singleton adapter instance (for untouched legacy tenants only)
 let adapterInstance: CloudAdapter | null = null;
+
+/**
+ * Installation-and-revision-scoped adapter cache for organization-owned single-tenant Teams apps.
+ * Keyed strictly by `${installationId}:${credentialRevisionId}` so credentials are never mixed
+ * across installations or credential revisions.
+ */
+const installationAdapterCache = new Map<string, CloudAdapter>();
+
+export interface TeamsInstallationBotAdapterConfig {
+	installationId: string;
+	credentialRevisionId: string;
+	appId: string;
+	appPassword: string;
+	tenantId: string;
+}
+
+function installationAdapterCacheKey(installationId: string, credentialRevisionId: string): string {
+	return `${installationId}:${credentialRevisionId}`;
+}
+
+/**
+ * Get or create an installation-and-revision-scoped Bot Framework CloudAdapter
+ * configured exclusively for SingleTenant authentication against the organization's Entra tenant.
+ */
+export function getTeamsInstallationBotAdapter(
+	config: TeamsInstallationBotAdapterConfig,
+): CloudAdapter {
+	const installationId = config.installationId.trim();
+	const credentialRevisionId = config.credentialRevisionId.trim();
+	const appId = config.appId.trim();
+	const appPassword = config.appPassword;
+	const tenantId = config.tenantId.trim();
+
+	if (!installationId || !credentialRevisionId || !appId || !appPassword || !tenantId) {
+		throw new TeamsError(
+			"Single-tenant Teams installation adapter requires installationId, credentialRevisionId, appId, appPassword, and tenantId.",
+			"BOT_ERROR",
+		);
+	}
+
+	const cacheKey = installationAdapterCacheKey(installationId, credentialRevisionId);
+	const cached = installationAdapterCache.get(cacheKey);
+	if (cached) {
+		return cached;
+	}
+
+	const credentialsFactory = new ConfigurationServiceClientCredentialFactory({
+		MicrosoftAppId: appId,
+		MicrosoftAppPassword: appPassword,
+		MicrosoftAppType: "SingleTenant",
+		MicrosoftAppTenantId: tenantId,
+	});
+
+	const botFrameworkAuth = new ConfigurationBotFrameworkAuthentication({}, credentialsFactory);
+	const adapter = new CloudAdapter(botFrameworkAuth);
+
+	adapter.onTurnError = async (context: TurnContext, error: Error) => {
+		logger.error(
+			{
+				error: error.message,
+				installationId,
+				credentialRevisionId,
+				activityId: context.activity.id,
+				conversationType: context.activity.conversation?.conversationType,
+			},
+			"Single-tenant Teams bot turn error",
+		);
+	};
+
+	installationAdapterCache.set(cacheKey, adapter);
+
+	logger.info(
+		{ installationId, credentialRevisionId, appId, tenantId, appType: "SingleTenant" },
+		"Initialized installation-scoped single-tenant Teams bot adapter",
+	);
+
+	return adapter;
+}
+
+/**
+ * Evicts cached installation-scoped Teams bot adapters during credential rotation or revocation.
+ * When `credentialRevisionId` is omitted, evicts all revisions for `installationId`.
+ */
+export function evictTeamsInstallationBotAdapter(
+	installationId: string,
+	credentialRevisionId?: string,
+): number {
+	const trimmedInstallationId = installationId.trim();
+	if (!trimmedInstallationId) return 0;
+
+	if (credentialRevisionId !== undefined) {
+		const key = installationAdapterCacheKey(trimmedInstallationId, credentialRevisionId.trim());
+		return installationAdapterCache.delete(key) ? 1 : 0;
+	}
+
+	const prefix = `${trimmedInstallationId}:`;
+	let evicted = 0;
+	for (const key of installationAdapterCache.keys()) {
+		if (key.startsWith(prefix)) {
+			installationAdapterCache.delete(key);
+			evicted += 1;
+		}
+	}
+	return evicted;
+}
+
+/**
+ * Sends a synthetic proactive private test message scoped strictly to the supplied
+ * installation-and-revision CloudAdapter, appId, and stored personal conversation reference.
+ */
+export async function sendTeamsProactiveTestMessage(
+	adapter: CloudAdapter,
+	appId: string,
+	conversationReference: ConversationReference,
+	message: string,
+): Promise<TeamsSendResult> {
+	const trimmedAppId = appId.trim();
+	if (!trimmedAppId) {
+		return { kind: "failed", status: 400, code: "missing_app_id" };
+	}
+
+	try {
+		let activityId: string | null = null;
+		await withinTimeout(
+			adapter.continueConversationAsync(
+				trimmedAppId,
+				conversationReference,
+				async (turnContext) => {
+					const response = await turnContext.sendActivity({
+						type: "message",
+						text: message,
+					});
+					activityId = response?.id ?? null;
+				},
+			),
+		);
+		return { kind: "ok", activityId };
+	} catch (error) {
+		logger.warn(
+			{ error, appId: trimmedAppId, conversationId: conversationReference.conversation?.id },
+			"Teams proactive private test message failed",
+		);
+		return teamsCallFailureFromError(error);
+	}
+}
 
 /**
  * Get or create the Bot Framework adapter
