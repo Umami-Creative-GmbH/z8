@@ -2388,6 +2388,13 @@
       "when": 1814284800000,
       "tag": "0342_approval_delivery_installation_origin",
       "breakpoints": true
+    },
+    {
+      "idx": 343,
+      "version": "7",
+      "when": 1814371200000,
+      "tag": "0343_durable_chat_notification_dispatch",
+      "breakpoints": true
     }
   ]
 }

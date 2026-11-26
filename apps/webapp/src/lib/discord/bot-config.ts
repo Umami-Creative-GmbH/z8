@@ -8,6 +8,13 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { discordBotConfig } from "@/db/schema";
+import {
+	type ChatDispatchTargetHint,
+	listSwitchedActiveChatInstallationsForProvider,
+	readInstallationRevisionSecret,
+	resolveSwitchedActiveChatInstallation,
+	type SwitchedActiveChatInstallation,
+} from "@/lib/chat-installations/runtime-target";
 import { createLogger } from "@/lib/logger";
 import { getOrgSecret } from "@/lib/vault";
 import type { ResolvedDiscordBot } from "./types";
@@ -15,6 +22,39 @@ import type { ResolvedDiscordBot } from "./types";
 const logger = createLogger("DiscordBotConfig");
 
 const VAULT_KEY = "discord/bot_token";
+
+async function hydrateSwitchedDiscordBot(
+	target: SwitchedActiveChatInstallation,
+): Promise<ResolvedDiscordBot | null> {
+	if (!target.credentialRevisionId) return null;
+	const botToken = await readInstallationRevisionSecret({
+		organizationId: target.organizationId,
+		installationId: target.installationId,
+		credentialRevisionId: target.credentialRevisionId,
+		secretKeyNames: ["bot_token"],
+	});
+	if (!botToken) {
+		logger.error(
+			{
+				organizationId: target.organizationId,
+				installationId: target.installationId,
+				credentialRevisionId: target.credentialRevisionId,
+			},
+			"Active organization-owned Discord bot token not found in secret store",
+		);
+		return null;
+	}
+
+	return {
+		organizationId: target.organizationId,
+		botToken,
+		applicationId: target.externalAppId ?? "",
+		publicKey: "",
+		webhookSecret: target.routeId,
+		setupStatus: "active",
+		...target.effectiveSettings,
+	};
+}
 
 /**
  * Resolve bot config by webhook secret (used in interaction route)
@@ -35,11 +75,23 @@ export async function resolveBotByWebhookSecret(
 }
 
 /**
- * Get bot config for an organization
+ * Get bot config for an organization.
+ * Prefers a switched active organization-owned chat installation (or explicit
+ * durable dispatch target) and falls back to the legacy bot config.
  */
 export async function getBotConfigByOrganization(
 	organizationId: string,
+	options?: ChatDispatchTargetHint,
 ): Promise<ResolvedDiscordBot | null> {
+	const resolution = await resolveSwitchedActiveChatInstallation(
+		organizationId,
+		"discord",
+		options,
+	);
+	if (resolution.kind === "organization_owned_active") {
+		return hydrateSwitchedDiscordBot(resolution.target);
+	}
+
 	const config = await db.query.discordBotConfig.findFirst({
 		where: eq(discordBotConfig.organizationId, organizationId),
 	});
@@ -53,6 +105,11 @@ export async function getBotConfigByOrganization(
  * Check if Discord is enabled for an organization
  */
 export async function isDiscordEnabledForOrganization(organizationId: string): Promise<boolean> {
+	const resolution = await resolveSwitchedActiveChatInstallation(organizationId, "discord");
+	if (resolution.kind === "organization_owned_active") {
+		return true;
+	}
+
 	const config = await db.query.discordBotConfig.findFirst({
 		where: and(
 			eq(discordBotConfig.organizationId, organizationId),
@@ -68,12 +125,17 @@ export async function isDiscordEnabledForOrganization(organizationId: string): P
  * Get all active Discord bot configs (for cron jobs)
  */
 export async function getAllActiveBotConfigs(): Promise<ResolvedDiscordBot[]> {
+	const switchedInstallations = await listSwitchedActiveChatInstallationsForProvider("discord");
+	const switchedOrgIds = new Set(switchedInstallations.map((inst) => inst.organizationId));
+	const switchedBots = await Promise.all(switchedInstallations.map(hydrateSwitchedDiscordBot));
+
 	const configs = await db.query.discordBotConfig.findMany({
 		where: eq(discordBotConfig.setupStatus, "active"),
 	});
+	const legacyConfigs = configs.filter((config) => !switchedOrgIds.has(config.organizationId));
+	const legacyBots = await Promise.all(legacyConfigs.map(hydrateBot));
 
-	const results = await Promise.all(configs.map(hydrateBot));
-	return results.filter((bot): bot is ResolvedDiscordBot => bot !== null);
+	return [...switchedBots, ...legacyBots].filter((bot): bot is ResolvedDiscordBot => bot !== null);
 }
 
 /**

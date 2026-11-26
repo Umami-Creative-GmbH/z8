@@ -43,6 +43,7 @@ export type AutoClockOutTaskClaim = {
 	employeeId: string;
 	operationId: string;
 	kind: AutoClockOutTaskKind;
+	dedupeKey?: string;
 	payload: Record<string, unknown>;
 	claimToken: string;
 	attemptCount: number;

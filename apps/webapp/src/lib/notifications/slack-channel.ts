@@ -9,6 +9,14 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { approvalRequest, employee } from "@/db/schema";
 import { isApprovalNotificationDeliveredByOwner } from "@/lib/approvals/delivery/store";
+import {
+	DurableDispatchConfirmedUnsentError,
+	DurableDispatchUncertainError,
+	extractRedactedErrorDiagnostics,
+	isConfirmedUnsentError,
+	isUncertainDispatchError,
+} from "@/lib/chat-installations/durable-dispatch";
+import type { ChatDispatchTargetHint } from "@/lib/chat-installations/runtime-target";
 import { createLogger } from "@/lib/logger";
 import { localizeOutboundNotification } from "./outbound-localization";
 import type { NotificationType } from "./types";
@@ -49,8 +57,9 @@ export async function isSlackAvailable(
  */
 export async function sendSlackNotification(
 	params: SlackNotificationParams,
-	options: { durable?: boolean } = {},
+	options: { durable?: boolean; dispatchTarget?: ChatDispatchTargetHint } = {},
 ): Promise<undefined | "unavailable"> {
+	let providerCallStarted = false;
 	try {
 		const {
 			getChannelIdForUser,
@@ -59,7 +68,12 @@ export async function sendSlackNotification(
 			getBotConfigByOrganization,
 		} = await import("@/lib/slack");
 
-		const botConfig = await getBotConfigByOrganization(params.organizationId);
+		const hasTarget = Boolean(
+			options.dispatchTarget?.installationId || options.dispatchTarget?.credentialRevisionId,
+		);
+		const botConfig = hasTarget
+			? await getBotConfigByOrganization(params.organizationId, options.dispatchTarget)
+			: await getBotConfigByOrganization(params.organizationId);
 		if (!botConfig) return options.durable ? "unavailable" : undefined;
 
 		// One owner per delivery effect (#294): where the approval delivery owner
@@ -73,10 +87,7 @@ export async function sendSlackNotification(
 		}
 
 		// Handle approval-related notifications specially
-		if (
-			params.type === "approval_request_submitted" &&
-			params.entityType === "approval_request"
-		) {
+		if (params.type === "approval_request_submitted" && params.entityType === "approval_request") {
 			const approval = await db.query.approvalRequest.findFirst({
 				where: and(
 					eq(approvalRequest.id, params.entityId || ""),
@@ -94,6 +105,7 @@ export async function sendSlackNotification(
 				});
 
 				if (emp) {
+					providerCallStarted = true;
 					await sendApprovalMessageToManager(
 						approval.id,
 						emp.id,
@@ -108,10 +120,9 @@ export async function sendSlackNotification(
 		}
 
 		// For other notifications, send a simple message
-		const channelId = await getChannelIdForUser(
-			params.userId,
-			params.organizationId,
-		);
+		const channelId = hasTarget
+			? await getChannelIdForUser(params.userId, params.organizationId, options.dispatchTarget)
+			: await getChannelIdForUser(params.userId, params.organizationId);
 		if (!channelId) {
 			logger.debug(
 				{ userId: params.userId, organizationId: params.organizationId },
@@ -133,18 +144,37 @@ export async function sendSlackNotification(
 			text += `\n\n<${params.actionUrl}|${localized.actionLabel}>`;
 		}
 
+		providerCallStarted = true;
 		const acknowledgement = await postMessage(botConfig.botAccessToken, {
 			channel: channelId,
 			text,
 		});
-		if (options.durable && !acknowledgement) throw new Error("slack_delivery_unacknowledged");
+		if (options.durable && !acknowledgement) {
+			throw new DurableDispatchUncertainError("slack_delivery_unacknowledged", {
+				reason: "provider_unacknowledged",
+			});
+		}
 
-		logger.debug(
-			{ userId: params.userId, type: params.type },
-			"Slack notification sent",
-		);
+		logger.debug({ userId: params.userId, type: params.type }, "Slack notification sent");
 	} catch (error) {
-		if (options.durable) throw error;
+		if (options.durable) {
+			if (isConfirmedUnsentError(error) || isUncertainDispatchError(error)) {
+				throw error;
+			}
+			const message = error instanceof Error ? error.message : "slack_delivery_failed";
+			if (!providerCallStarted) {
+				throw new DurableDispatchConfirmedUnsentError(
+					message,
+					extractRedactedErrorDiagnostics(error, "slack_preflight_failed"),
+					error,
+				);
+			}
+			throw new DurableDispatchUncertainError(
+				message,
+				extractRedactedErrorDiagnostics(error, "slack_provider_call_uncertain"),
+				{ classification: "provider_error", causeError: error },
+			);
+		}
 		logger.error({ error, params }, "Failed to send Slack notification");
 		throw error;
 	}
