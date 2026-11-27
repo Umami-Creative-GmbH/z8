@@ -50,8 +50,8 @@ export async function POST(request: NextRequest) {
 
 		const payload = JSON.parse(payloadStr) as SlackInteractionPayload;
 
-		// Look up bot config
-		const bot = await getBotConfigByTeamId(payload.team.id);
+		// Look up eligible legacy bot config (including retiring installations for old approval cards)
+		const bot = await getBotConfigByTeamId(payload.team.id, { allowRetiring: true });
 		if (!bot) {
 			logger.warn({ teamId: payload.team.id }, "No bot config for team");
 			return NextResponse.json({ ok: true });

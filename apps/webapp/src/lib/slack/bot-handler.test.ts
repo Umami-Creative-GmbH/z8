@@ -10,6 +10,15 @@ const state = vi.hoisted(() => ({
 	getUserLocale: vi.fn(),
 }));
 
+vi.mock("@/db", () => ({
+	db: {
+		select: () => ({
+			from: () => ({
+				where: () => ({ orderBy: async () => [] }),
+			}),
+		}),
+	},
+}));
 vi.mock("@/lib/bot-platform/command-registry", () => ({
 	executeCommand: state.executeCommand,
 	parseCommand: (text: string) => ({ command: text.replace(/^\//, ""), args: [] }),
@@ -92,7 +101,7 @@ describe("Slack bot replies", () => {
 		expect(state.executeCommand).not.toHaveBeenCalled();
 	});
 
-	it("answers a link code in the organization's default, and a success in the user's language", async () => {
+	it("answers a legacy link code in the organization's default, and a success in the user's language", async () => {
 		state.claimLinkCode.mockResolvedValueOnce({ status: "invalid_code" });
 		await expect(handleSlashCommand(slash("link ABC"), bot)).resolves.toEqual({
 			text: "fr:bot.static.linkInvalid",

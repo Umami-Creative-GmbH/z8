@@ -1,3 +1,5 @@
+/* @vitest-environment jsdom */
+
 /**
  * #1666 (spec #1664): email invitation acceptance and organization creation
  * join inside the auth transaction that writes the membership.
@@ -14,6 +16,10 @@ import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { betterAuth } from "better-auth/minimal";
 import { bearer } from "better-auth/plugins/bearer";
 import { organization } from "better-auth/plugins/organization";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { createElement } from "react";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { integrationAdminPool } from "@/test/integration-database";
 
@@ -25,6 +31,7 @@ const harness = vi.hoisted(() => ({
 		memberCommitted: boolean;
 	}[],
 	notices: [] as unknown[],
+	getSession: vi.fn(),
 	// oxlint-disable-next-line typescript/no-explicit-any -- the admin pool, assigned below.
 	admin: null as any,
 }));
@@ -36,6 +43,19 @@ vi.mock("next/server", async (importOriginal) =>
 vi.mock("next/cache", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextCache(importOriginal),
 );
+
+vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("@/lib/auth", () => ({ auth: { api: { getSession: harness.getSession } } }));
+vi.mock("@/lib/organization-mfa/organization-access", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/organization-mfa/organization-access")>()),
+	canAccessOrganization: async () => true,
+}));
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+}));
+vi.mock("@/hooks/use-display-context", () => ({
+	useDisplayContext: () => ({ locale: "en-US", timezone: "UTC", hour12: false }),
+}));
 
 vi.mock("@/lib/billing/seat-sync-trigger", () => ({
 	reconcileBillingSeatsForOrganization: async () => undefined,
@@ -67,14 +87,16 @@ vi.mock("@/lib/notifications/notification-service", async (importOriginal) => ({
 
 const { db } = await import("@/db");
 const { captureAuthTransactions } = await import("@/lib/auth/auth-transaction");
-const { createCoordinatedOrganizationHooks, handleCoordinatedAuthRequest } = await import(
-	"@/lib/auth/auth-mutation-coordination"
-);
+const { createCoordinatedOrganizationHooks, handleCoordinatedAuthRequest } =
+	await import("@/lib/auth/auth-mutation-coordination");
 const { AUTH_ORGANIZATION_SCHEMA } = await import("@/lib/auth/auth-schema-options");
-const { joinOnAcceptedInvitation, joinOnAddedMember } = await import(
-	"@/lib/auth/organization-joining-hooks"
-);
+const { joinOnAcceptedInvitation, joinOnAddedMember } =
+	await import("@/lib/auth/organization-joining-hooks");
 const { authDatabaseSchema } = await import("@/lib/auth-database-schema");
+const { getContractorCompensation } =
+	await import("@/app/[locale]/(app)/settings/contracts/contractor-compensation-actions");
+const { ContractorCompensationCard } =
+	await import("@/components/settings/contracts/contractor-compensation-card");
 
 const origin = "http://localhost:3000";
 const organizationId = "t1666-org";
@@ -179,6 +201,7 @@ describe("joining inside the auth transaction (#1666)", () => {
 		draftTeamId = rows.find((row) => row.name === "Draft team")?.id as string;
 		harness.seatSignals.length = 0;
 		harness.notices.length = 0;
+		harness.getSession.mockReset();
 	}
 
 	async function invite(
@@ -297,6 +320,68 @@ describe("joining inside the auth transaction (#1666)", () => {
 	afterAll(cleanup);
 
 	describe("email invitation acceptance", () => {
+		it("lets an admin set a first rate after a contractor accepts an invitation without a rate (#2015)", async () => {
+			const { invitationId } = await invite("member", { draftRole: "employee" });
+			await admin.query(
+				`update employee_invitation_draft set engagement_kind = 'contractor'
+				 where organization_id = $1 and invitation_id = $2`,
+				[organizationId, invitationId],
+			);
+
+			expect((await accept(invitationId)).status).toBe(200);
+			const {
+				rows: [joined],
+			} = await admin.query<{ id: string }>(
+				"select id from employee where organization_id = $1 and user_id = $2",
+				[organizationId, inviteeUser],
+			);
+			harness.getSession.mockResolvedValue({
+				user: { id: ownerUser, role: "user" },
+				session: {
+					id: `${ownerUser}-session`,
+					userId: ownerUser,
+					activeOrganizationId: organizationId,
+				},
+			});
+			const before = await getContractorCompensation({ employeeId: joined.id });
+			expect(before).toMatchObject({
+				success: true,
+				data: { contractorEngagementId: expect.any(String), history: [] },
+			});
+			if (!before.success) throw new Error("Expected a contractor compensation record");
+
+			const user = userEvent.setup();
+			const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+			const view = render(
+				createElement(
+					QueryClientProvider,
+					{ client },
+					createElement(ContractorCompensationCard, { employeeId: joined.id }),
+				),
+			);
+			try {
+				expect(await screen.findByText("External Contractor compensation")).toBeTruthy();
+				await user.click(screen.getByRole("button", { name: "Set rate" }));
+				await user.type(screen.getByLabelText("Daily rate"), "720");
+				await user.click(screen.getByRole("button", { name: "Save rate" }));
+				expect(await screen.findByRole("button", { name: "End rate" })).toBeTruthy();
+				expect(await getContractorCompensation({ employeeId: joined.id })).toMatchObject({
+					success: true,
+					data: {
+						history: [
+							{
+								employmentPeriodId: before.data.contractorEngagementId,
+								compensation: { compensationBasis: "daily", rateAmount: "720.00" },
+							},
+						],
+					},
+				});
+			} finally {
+				view.unmount();
+				client.clear();
+			}
+		});
+
 		it("commits the membership and its employee together, placed in the invitation's team", async () => {
 			const { invitationId } = await invite("member", { canCreateOrganizations: true });
 

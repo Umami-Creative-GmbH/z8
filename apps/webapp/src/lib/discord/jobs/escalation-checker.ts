@@ -10,13 +10,17 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import {
 	approvalRequest,
+	chatInstallationMemberLink,
 	discordEscalation,
 	discordUserMapping,
 	employeeManagers,
 } from "@/db/schema";
 import { currentRosterEmployees } from "@/lib/bot-platform/current-roster-team";
 import { createLogger } from "@/lib/logger";
-import { getLegacyEscalationSuppression, type LegacyEscalationSuppression } from "@/lib/approvals/escalation/legacy-execution";
+import {
+	getLegacyEscalationSuppression,
+	type LegacyEscalationSuppression,
+} from "@/lib/approvals/escalation/legacy-execution";
 import { sendApprovalMessageToManager } from "../approval-handler";
 import { getAllActiveBotConfigs } from "../bot-config";
 
@@ -87,6 +91,7 @@ export async function runDiscordEscalationCheckerJob(): Promise<DiscordEscalatio
 
 async function processBotEscalations(bot: {
 	organizationId: string;
+	installationId?: string | null;
 	botToken: string;
 	escalationTimeoutHours: number;
 }): Promise<number> {
@@ -127,72 +132,88 @@ async function processBotEscalations(bot: {
 			if (alreadyEscalated.has(approval.id)) return 0;
 
 			try {
-			// Find a backup manager (next manager up the chain)
-			const managers = await db.query.employeeManagers.findMany({
-				where: eq(employeeManagers.employeeId, approval.approverId),
-			});
+				// Find a backup manager (next manager up the chain)
+				const managers = await db.query.employeeManagers.findMany({
+					where: eq(employeeManagers.employeeId, approval.approverId),
+				});
 
-			// Find the first backup manager in manager order who has Discord linked.
-			const candidateManagerIds = managers.flatMap((manager) =>
-				manager.managerId !== approval.approverId ? [manager.managerId] : [],
-			);
-			// Only managers on the organization's current roster (#1438).
-			const managerEmployees = await currentRosterEmployees(db, {
-				organizationId: bot.organizationId,
-				employeeIds: candidateManagerIds,
-			});
-			const userIds = managerEmployees.flatMap((emp) => (emp.userId ? [emp.userId] : []));
-			const discordMappings =
-				userIds.length > 0
-					? await db.query.discordUserMapping.findMany({
+				// Find the first backup manager in manager order who has Discord linked.
+				const candidateManagerIds = managers.flatMap((manager) =>
+					manager.managerId !== approval.approverId ? [manager.managerId] : [],
+				);
+				// Only managers on the organization's current roster (#1438).
+				const managerEmployees = await currentRosterEmployees(db, {
+					organizationId: bot.organizationId,
+					employeeIds: candidateManagerIds,
+				});
+				const userIds = managerEmployees.flatMap((emp) => (emp.userId ? [emp.userId] : []));
+				const mappedUserIds = new Set<string>();
+				if (userIds.length > 0) {
+					if (bot.installationId && typeof db.select === "function") {
+						const instLinks = await db
+							.select({ userId: chatInstallationMemberLink.userId })
+							.from(chatInstallationMemberLink)
+							.where(
+								and(
+									inArray(chatInstallationMemberLink.userId, userIds),
+									eq(chatInstallationMemberLink.organizationId, bot.organizationId),
+									eq(chatInstallationMemberLink.installationId, bot.installationId),
+									eq(chatInstallationMemberLink.isCandidateEnrollment, false),
+									eq(chatInstallationMemberLink.isActive, true),
+								),
+							);
+						for (const link of instLinks) mappedUserIds.add(link.userId);
+					} else {
+						const discordMappings = await db.query.discordUserMapping.findMany({
 							where: and(
 								inArray(discordUserMapping.userId, userIds),
 								eq(discordUserMapping.organizationId, bot.organizationId),
 								eq(discordUserMapping.isActive, true),
 							),
-						})
-					: [];
-			const employeesById = new Map(managerEmployees.map((emp) => [emp.id, emp]));
-			const mappedUserIds = new Set(discordMappings.map((mapping) => mapping.userId));
-			const backupManagerId =
-				candidateManagerIds.find((managerId) => {
-					const userId = employeesById.get(managerId)?.userId;
-					return userId ? mappedUserIds.has(userId) : false;
-				}) ?? null;
+						});
+						for (const mapping of discordMappings) mappedUserIds.add(mapping.userId);
+					}
+				}
+				const employeesById = new Map(managerEmployees.map((emp) => [emp.id, emp]));
+				const backupManagerId =
+					candidateManagerIds.find((managerId) => {
+						const userId = employeesById.get(managerId)?.userId;
+						return userId ? mappedUserIds.has(userId) : false;
+					}) ?? null;
 
-			if (!backupManagerId) return 0;
+				if (!backupManagerId) return 0;
 
-			// Record the escalation
-			await db.insert(discordEscalation).values({
-				organizationId: bot.organizationId,
-				approvalRequestId: approval.id,
-				originalApproverId: approval.approverId,
-				escalatedToApproverId: backupManagerId,
-				timeoutHours: bot.escalationTimeoutHours,
-			});
+				// Record the escalation
+				await db.insert(discordEscalation).values({
+					organizationId: bot.organizationId,
+					approvalRequestId: approval.id,
+					originalApproverId: approval.approverId,
+					escalatedToApproverId: backupManagerId,
+					timeoutHours: bot.escalationTimeoutHours,
+				});
 
-			// Send approval card to backup manager
-			await sendApprovalMessageToManager(
-				approval.id,
-				backupManagerId,
-				bot.organizationId,
-				bot.botToken,
-			);
+				// Send approval card to backup manager
+				await sendApprovalMessageToManager(
+					approval.id,
+					backupManagerId,
+					bot.organizationId,
+					bot.botToken,
+				);
 
-			logger.info(
-				{
-					approvalId: approval.id,
-					originalApprover: approval.approverId,
-					backupManager: backupManagerId,
-				},
-				"Escalated approval via Discord",
-			);
+				logger.info(
+					{
+						approvalId: approval.id,
+						originalApprover: approval.approverId,
+						backupManager: backupManagerId,
+					},
+					"Escalated approval via Discord",
+				);
 
-			return 1;
-		} catch (error) {
-			logger.warn({ error, approvalId: approval.id }, "Failed to escalate approval");
-			return 0;
-		}
+				return 1;
+			} catch (error) {
+				logger.warn({ error, approvalId: approval.id }, "Failed to escalate approval");
+				return 0;
+			}
 		}),
 	);
 

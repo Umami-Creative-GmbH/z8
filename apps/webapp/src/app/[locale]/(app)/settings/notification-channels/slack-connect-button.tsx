@@ -59,15 +59,20 @@ export function SlackConnectButton({
 				return;
 			}
 			toast.error(
-				response.status === 503
+				response.status === 410
 					? t(
-							"settings.notifications.slack.connectUnavailable",
-							"Slack is not available on this Z8 installation.",
+							"settings.notifications.slack.connectRetired",
+							"Deployment-managed Slack OAuth has been retired. Set up your organization-owned Slack app above.",
 						)
-					: t(
-							"settings.notifications.slack.connectFailed",
-							"Slack connection could not be started. Try again.",
-						),
+					: response.status === 503
+						? t(
+								"settings.notifications.slack.connectUnavailable",
+								"Slack is not available on this Z8 installation.",
+							)
+						: t(
+								"settings.notifications.slack.connectFailed",
+								"Slack connection could not be started. Try again.",
+							),
 			);
 		} catch {
 			toast.error(

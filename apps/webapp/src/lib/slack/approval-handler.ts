@@ -1,6 +1,10 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { slackApprovalMessage, slackUserMapping } from "@/db/schema";
+import {
+	checkInboundApprovalCardInstallationEligibility,
+	resolveLegacyCardInstallationId,
+} from "@/lib/approvals/delivery/installation-origin";
 import { prepareApprovalPresentation } from "@/lib/approvals/presentation";
 import { approvalAttemptNotice } from "@/lib/bot-platform/approval-notice";
 import { createLogger } from "@/lib/logger";
@@ -26,26 +30,13 @@ export async function handleApprovalAction(
 	slackUserId: string,
 	bot: ResolvedSlackBot,
 ): Promise<void> {
-	if (
-		!action.value ||
-		!["approval_approve", "approval_reject"].includes(action.action_id)
-	)
-		return;
-	const user = await resolveSlackUser(slackUserId, bot.slackTeamId);
+	if (!action.value || !["approval_approve", "approval_reject"].includes(action.action_id)) return;
+	const user = await resolveSlackUser(slackUserId, bot.slackTeamId, undefined, {
+		organizationId: bot.organizationId,
+		installationId: bot.installationId,
+	});
 	if (user.status !== "found") return;
 	try {
-		const { attemptBotApproval } = await import(
-			"@/lib/bot-platform/approval-decision"
-		);
-		const result = await attemptBotApproval({
-			approvalId: action.value,
-			actorEmployeeId: user.user.employeeId,
-			organizationId: bot.organizationId,
-			action: action.action_id === "approval_approve" ? "approve" : "reject",
-			platform: "slack",
-		});
-		if (result.status !== "review_required" && result.status !== "historical")
-			return;
 		if (!payload.channel || !payload.message) return;
 		const tracked = await db.query.slackApprovalMessage.findFirst({
 			where: and(
@@ -57,6 +48,23 @@ export async function handleApprovalAction(
 			),
 		});
 		if (!tracked) return;
+		const eligibility = await checkInboundApprovalCardInstallationEligibility({
+			organizationId: bot.organizationId,
+			provider: "slack",
+			incomingInstallationId: bot.installationId ?? null,
+			messageInstallationId: tracked.installationId ?? null,
+			messageReceiverScope: `slack-team:${bot.slackTeamId}`,
+		});
+		if (!eligibility.allowed) return;
+		const { attemptBotApproval } = await import("@/lib/bot-platform/approval-decision");
+		const result = await attemptBotApproval({
+			approvalId: action.value,
+			actorEmployeeId: user.user.employeeId,
+			organizationId: bot.organizationId,
+			action: action.action_id === "approval_approve" ? "approve" : "reject",
+			platform: "slack",
+		});
+		if (result.status !== "review_required" && result.status !== "historical") return;
 		const notice = await approvalAttemptNotice(
 			result,
 			{ userId: user.user.userId, organizationId: bot.organizationId },
@@ -69,10 +77,7 @@ export async function handleApprovalAction(
 			...slackApprovalCard(notice),
 		});
 	} catch (error) {
-		logger.error(
-			{ error, approvalId: action.value },
-			"Failed to review Slack approval card",
-		);
+		logger.error({ error, approvalId: action.value }, "Failed to review Slack approval card");
 	}
 }
 
@@ -89,10 +94,7 @@ export async function sendApprovalMessageToManager(
 			organizationId,
 		});
 		if (notice.status === "undisclosable") return;
-		let channelId = await getChannelIdForUser(
-			notice.recipientUserId,
-			organizationId,
-		);
+		let channelId = await getChannelIdForUser(notice.recipientUserId, organizationId);
 		if (!channelId) {
 			const mapping = await db.query.slackUserMapping.findFirst({
 				where: and(
@@ -101,25 +103,28 @@ export async function sendApprovalMessageToManager(
 					eq(slackUserMapping.isActive, true),
 				),
 			});
-			if (mapping)
-				channelId = await openConversation(botAccessToken, mapping.slackUserId);
+			if (mapping) channelId = await openConversation(botAccessToken, mapping.slackUserId);
 		}
 		if (!channelId) return;
 		const sent = await postMessage(botAccessToken, {
 			channel: channelId,
 			...slackApprovalCard(notice),
 		});
-		if (sent)
-			await db
-				.insert(slackApprovalMessage)
-				.values({
-					approvalRequestId: approvalId,
-					organizationId,
-					recipientUserId: notice.recipientUserId,
-					channelId,
-					messageTs: sent.ts,
-					status: "sent",
-				});
+		if (sent) {
+			const installationId = await resolveLegacyCardInstallationId({
+				organizationId,
+				provider: "slack",
+			});
+			await db.insert(slackApprovalMessage).values({
+				approvalRequestId: approvalId,
+				organizationId,
+				recipientUserId: notice.recipientUserId,
+				channelId,
+				messageTs: sent.ts,
+				installationId,
+				status: "sent",
+			});
+		}
 	} catch (error) {
 		logger.error({ error, approvalId }, "Failed to send Slack approval notice");
 	}

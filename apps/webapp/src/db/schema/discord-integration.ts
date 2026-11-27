@@ -11,6 +11,7 @@ import {
 import { currentTimestamp } from "./timestamp";
 import { organization, user } from "../auth-schema";
 import { approvalRequest } from "./approval";
+import { chatInstallation } from "./chat-installations";
 import { employee } from "./organization";
 
 // ============================================
@@ -227,6 +228,11 @@ export const discordApprovalMessage = pgTable(
 		channelId: text("channel_id").notNull(),
 		messageId: text("message_id").notNull(), // Discord message ID
 
+		// Originating chat installation (#2043)
+		installationId: uuid("installation_id").references(() => chatInstallation.id, {
+			onDelete: "set null",
+		}),
+
 		// Recipient
 		recipientUserId: text("recipient_user_id")
 			.notNull()
@@ -246,6 +252,10 @@ export const discordApprovalMessage = pgTable(
 		index("discordApprovalMessage_approvalRequestId_idx").on(table.approvalRequestId),
 		index("discordApprovalMessage_recipientUserId_idx").on(table.recipientUserId),
 		index("discordApprovalMessage_status_idx").on(table.status),
+		index("discordApprovalMessage_org_installation_idx").on(
+			table.organizationId,
+			table.installationId,
+		),
 		uniqueIndex("discordApprovalMessage_approvalRequest_recipient_unique_idx").on(
 			table.approvalRequestId,
 			table.recipientUserId,

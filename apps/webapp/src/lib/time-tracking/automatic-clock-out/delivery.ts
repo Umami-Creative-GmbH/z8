@@ -1,7 +1,25 @@
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import type { db } from "@/db";
-import { automaticClockOutExecution, automaticClockOutTask, timeEntry } from "@/db/schema";
+import {
+	automaticClockOutExecution,
+	automaticClockOutTask,
+	type ChatInstallationProvider,
+	type ChatNotificationDispatchRedactedDiagnostics,
+	chatInstallation,
+	timeEntry,
+} from "@/db/schema";
+import {
+	extractRedactedErrorDiagnostics,
+	isChatInstallationProvider,
+	isConfirmedUnsentError,
+	isUncertainDispatchError,
+	markDurableDispatchConfirmedUnsent,
+	markDurableDispatchSent,
+	markDurableDispatchUncertain,
+	type RecordDurableDispatchIntentResult,
+	recordDurableDispatchIntent,
+} from "@/lib/chat-installations/durable-dispatch";
 import {
 	type Clock,
 	compareInstants,
@@ -69,14 +87,170 @@ const closureSchema = z.object({
 	endCapture: capture,
 });
 
+export type AutoClockOutChatDispatchContext = {
+	attemptId: string;
+	installationId: string | null;
+	credentialRevisionId: string | null;
+};
+
 export type AutoClockOutNotificationTransport = {
 	preferences(userId: string): Promise<Record<NotificationChannel, boolean>>;
 	insertInApp(params: CreateNotificationParams): Promise<unknown>;
 	deliver(
 		channel: Exclude<NotificationChannel, "in_app">,
 		params: CreateNotificationParams,
+		dispatchContext?: AutoClockOutChatDispatchContext,
 	): Promise<"sent" | "unavailable">;
 };
+
+export type AutoClockOutDurableChatDispatchGuard = {
+	recordIntent: (input: {
+		organizationId: string;
+		provider: ChatInstallationProvider;
+		sourceRefId: string;
+		dedupeKey: string;
+	}) => Promise<RecordDurableDispatchIntentResult>;
+	markSent: (input: { organizationId: string; attemptId: string }) => Promise<unknown>;
+	markConfirmedUnsent: (input: {
+		organizationId: string;
+		attemptId: string;
+		diagnostics?: ChatNotificationDispatchRedactedDiagnostics;
+	}) => Promise<unknown>;
+	markUncertain: (input: {
+		organizationId: string;
+		attemptId: string;
+		classification?: "ambiguous" | "worker_lost" | "provider_error";
+		diagnostics?: ChatNotificationDispatchRedactedDiagnostics;
+	}) => Promise<unknown>;
+	hasActiveInstallation: (
+		organizationId: string,
+		provider: ChatInstallationProvider,
+	) => Promise<boolean>;
+};
+
+export type DurableChatChannelOutcome =
+	| "sent"
+	| "unavailable"
+	| "reconciliation_required"
+	| "closed_unknown";
+
+/**
+ * Executes a persistent chat notification channel delivery through the durable dispatch
+ * ledger: commits the selected installation + credential revision intent BEFORE invoking
+ * `deliver`, quarantines uncertain/crashed outcomes to `reconciliation_required` without
+ * resending, and allows safe rerouting only after an explicit `confirmed_unsent` failure.
+ */
+export async function executeDurableChatChannelDelivery(input: {
+	organizationId: string;
+	provider: ChatInstallationProvider;
+	sourceRefId: string;
+	dedupeKey: string;
+	notification: CreateNotificationParams;
+	deliver: AutoClockOutNotificationTransport["deliver"];
+	guard: AutoClockOutDurableChatDispatchGuard;
+}): Promise<{
+	outcome: DurableChatChannelOutcome;
+	dispatchAttemptId: string;
+	installationId: string | null;
+}> {
+	const intent = await input.guard.recordIntent({
+		organizationId: input.organizationId,
+		provider: input.provider,
+		sourceRefId: input.sourceRefId,
+		dedupeKey: input.dedupeKey,
+	});
+
+	if (intent.kind === "already_sent") {
+		return {
+			outcome: "sent",
+			dispatchAttemptId: intent.attempt.id,
+			installationId: intent.attempt.installationId,
+		};
+	}
+
+	if (intent.kind === "reconciliation_required") {
+		return {
+			outcome: "reconciliation_required",
+			dispatchAttemptId: intent.attempt.id,
+			installationId: intent.attempt.installationId,
+		};
+	}
+
+	if (intent.kind === "closed_unknown") {
+		return {
+			outcome: "closed_unknown",
+			dispatchAttemptId: intent.attempt.id,
+			installationId: intent.attempt.installationId,
+		};
+	}
+
+	const { attempt } = intent;
+	try {
+		const deliveryOutcome = await input.deliver(input.provider, input.notification, {
+			attemptId: attempt.id,
+			installationId: attempt.installationId,
+			credentialRevisionId: attempt.credentialRevisionId,
+		});
+
+		if (deliveryOutcome === "sent") {
+			await input.guard.markSent({
+				organizationId: input.organizationId,
+				attemptId: attempt.id,
+			});
+			return {
+				outcome: "sent",
+				dispatchAttemptId: attempt.id,
+				installationId: attempt.installationId,
+			};
+		}
+
+		await input.guard.markConfirmedUnsent({
+			organizationId: input.organizationId,
+			attemptId: attempt.id,
+			diagnostics: { reason: "channel_or_destination_unavailable" },
+		});
+		return {
+			outcome: "unavailable",
+			dispatchAttemptId: attempt.id,
+			installationId: attempt.installationId,
+		};
+	} catch (error) {
+		if (isConfirmedUnsentError(error)) {
+			await input.guard.markConfirmedUnsent({
+				organizationId: input.organizationId,
+				attemptId: attempt.id,
+				diagnostics: extractRedactedErrorDiagnostics(error, "confirmed_unsent_preflight_error"),
+			});
+			throw error;
+		}
+
+		const shouldQuarantine =
+			isUncertainDispatchError(error) ||
+			attempt.installationId !== null ||
+			(await input.guard.hasActiveInstallation(input.organizationId, input.provider));
+
+		if (shouldQuarantine) {
+			await input.guard.markUncertain({
+				organizationId: input.organizationId,
+				attemptId: attempt.id,
+				classification: isUncertainDispatchError(error) ? error.classification : "ambiguous",
+				diagnostics: extractRedactedErrorDiagnostics(error, "provider_delivery_uncertain"),
+			});
+			return {
+				outcome: "reconciliation_required",
+				dispatchAttemptId: attempt.id,
+				installationId: attempt.installationId,
+			};
+		}
+
+		await input.guard.markConfirmedUnsent({
+			organizationId: input.organizationId,
+			attemptId: attempt.id,
+			diagnostics: extractRedactedErrorDiagnostics(error, "pre_installation_transport_error"),
+		});
+		throw error;
+	}
+}
 
 /** Whether the execution's clock-out entry ended the work at `end`, in its tenant. */
 async function isClockOutEntryAt(
@@ -181,10 +355,45 @@ export function createAutoClockOutDelivery(deps: {
 	clock: Clock;
 	effects: AutoClockOutFollowUpEffects;
 	transport: AutoClockOutNotificationTransport;
+	durableChatDispatch?: AutoClockOutDurableChatDispatchGuard;
 }) {
 	const outbox = createAutoClockOutTaskOutbox(deps.database);
 	const resolveRecipients = (userId: string, organizationId: string) =>
 		resolveNotificationRecipients(deps.database, { userId, organizationId });
+	const dispatchDeps = {
+		db: deps.database,
+		now: () => dateFromInstant(deps.clock.nowInstant()),
+	};
+	const durableChatDispatch: AutoClockOutDurableChatDispatchGuard = deps.durableChatDispatch ?? {
+		recordIntent: (input) =>
+			recordDurableDispatchIntent(
+				{
+					organizationId: input.organizationId,
+					provider: input.provider,
+					sourceKind: "persistent_notification",
+					sourceRefId: input.sourceRefId,
+					dedupeKey: input.dedupeKey,
+				},
+				dispatchDeps,
+			),
+		markSent: (input) => markDurableDispatchSent(input, dispatchDeps),
+		markConfirmedUnsent: (input) => markDurableDispatchConfirmedUnsent(input, dispatchDeps),
+		markUncertain: (input) => markDurableDispatchUncertain(input, dispatchDeps),
+		hasActiveInstallation: async (organizationId, provider) => {
+			const [row] = await deps.database
+				.select({ id: chatInstallation.id })
+				.from(chatInstallation)
+				.where(
+					and(
+						eq(chatInstallation.organizationId, organizationId),
+						eq(chatInstallation.provider, provider),
+						eq(chatInstallation.status, "active"),
+					),
+				)
+				.limit(1);
+			return Boolean(row);
+		},
+	};
 	return async (limit: number): Promise<AutoClockOutDeliveryResult> => {
 		if (!Number.isSafeInteger(limit) || limit < 1 || limit > 1000)
 			throw new Error("invalid_task_limit");
@@ -265,7 +474,15 @@ export function createAutoClockOutDelivery(deps: {
 								: !recipients.userIds.includes(recipientUserId)
 						)
 							throw new Error("invalid_notification_recipient");
-						if (!["sent", "unavailable", "suppressed"].includes(String(claim.payload.outcome))) {
+						if (
+							![
+								"sent",
+								"unavailable",
+								"suppressed",
+								"reconciliation_required",
+								"closed_unknown",
+							].includes(String(claim.payload.outcome))
+						) {
 							const preferences =
 								channel === "in_app" ? null : await deps.transport.preferences(recipientUserId);
 							if (preferences && !preferences[channel])
@@ -284,6 +501,24 @@ export function createAutoClockOutDelivery(deps: {
 								if (channel === "in_app") {
 									await deps.transport.insertInApp(notification);
 									await recordProgress({ outcome: "sent" });
+								} else if (isChatInstallationProvider(channel)) {
+									const dedupeKey =
+										claim.dedupeKey ??
+										`notification:${claim.operationId}:${recipientUserId}:${channel}`;
+									const dispatchOutcome = await executeDurableChatChannelDelivery({
+										organizationId: claim.organizationId,
+										provider: channel,
+										sourceRefId: claim.id,
+										dedupeKey,
+										notification,
+										deliver: deps.transport.deliver,
+										guard: durableChatDispatch,
+									});
+									await recordProgress({
+										outcome: dispatchOutcome.outcome,
+										dispatchAttemptId: dispatchOutcome.dispatchAttemptId,
+										installationId: dispatchOutcome.installationId,
+									});
 								} else
 									await recordProgress({
 										outcome: await deps.transport.deliver(channel, notification),
@@ -342,8 +577,18 @@ export async function runAutoClockOutDelivery(deps: {
 			preferences: (userId) =>
 				service.loadNotificationChannelPreferences(userId, "automatic_clock_out"),
 			insertInApp: service.insertInAppNotification,
-			deliver: (channel, params) =>
-				service.deliverNotificationToChannel(channel, params, null, { durable: true }),
+			deliver: (channel, params, dispatchContext) =>
+				service.deliverNotificationToChannel(channel, params, null, {
+					durable: true,
+					...(dispatchContext
+						? {
+								dispatchTarget: {
+									installationId: dispatchContext.installationId,
+									credentialRevisionId: dispatchContext.credentialRevisionId,
+								},
+							}
+						: {}),
+				}),
 		},
 	})(deps.limit);
 }

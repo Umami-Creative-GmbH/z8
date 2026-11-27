@@ -6,7 +6,6 @@ import {
 	RestPeriodBlocker,
 } from "@/components/compliance/compliance-alert-banner";
 import { ExceptionRequestDialog } from "@/components/compliance/exception-request-dialog";
-import { DrivingAuthorizationAdvisory } from "@/components/driving-licence/operational-status";
 import { ClockCaptureControls } from "@/components/offline/offline-capture-actions";
 import {
 	BreakConnectionNote,
@@ -344,9 +343,6 @@ export function ClockInOutWidget({
 							show={widget.isOffline && widget.isClockedIn}
 							t={widget.t}
 						/>
-					</div>
-					<div className="col-span-full">
-						<DrivingAuthorizationAdvisory />
 					</div>
 				</div>
 			</CardContent>

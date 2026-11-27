@@ -51,6 +51,143 @@
       "title": "Kalendersynchronisierung",
       "titleTemplatePlaceholder": "Abwesend – {categoryName}"
     },
+    "capabilities": {
+      "approvalKind": {
+        "absence": "Abwesenheiten",
+        "manualTimeSubmission": "Manuelle Zeiterfassungen",
+        "policyClockOut": "Automatisches Ausstempeln",
+        "timeCorrection": "Zeitkorrekturen",
+        "travelExpense": "Reisekosten"
+      },
+      "approvalKindsHeading": "Unterstützung nach Genehmigungsart",
+      "delivery": {
+        "active": "Zustellung für diese Genehmigungsart aktiviert",
+        "inactive": "Wird im Z8-Posteingang bearbeitet, sofern die Zustellung nicht aktiviert ist"
+      },
+      "description": "Funktionsverfügbarkeit und Verhalten von Genehmigungskarten werden getrennt von der Verbindungsbereitschaft angezeigt.",
+      "escalationDeliveryOnlyNote": "Steuert nur die Kanalzustellung; die Frist wird über die Eskalationsrichtlinie verwaltet.",
+      "escalationPolicyOwnsTiming": "Die Genehmigungs-Eskalationsrichtlinie Ihrer Organisation bestimmt den Eskalationszeitpunkt ({hours} Std. Reaktionsfenster). Die {channelName}-Eskalationseinstellung steuert nur die Zustellung über diesen Kanal.",
+      "feature": {
+        "approvals": "Genehmigungen",
+        "commands": "Befehle",
+        "dailyDigest": "Tägliche Zusammenfassung",
+        "escalations": "Eskalationen",
+        "notifications": "Benachrichtigungen"
+      },
+      "featuresHeading": "Kanalfunktionen",
+      "mode": {
+        "inChatDecision": "Entscheidung im Chat",
+        "reviewInZ8": "In Z8 prüfen",
+        "unverified": "Nicht verifiziert"
+      },
+      "slackReviewNote": "Slack-Genehmigungskarten verweisen für eine authentifizierte Prüfung und Entscheidung auf Z8.",
+      "state": {
+        "disabled": "Deaktiviert",
+        "enabled": "Aktiviert"
+      },
+      "title": "{channelName}-Funktionen & Genehmigungsunterstützung"
+    },
+    "chatInstallations": {
+      "blockers": {
+        "duplicateIdentity": {
+          "nextAction": "Trennen oder ersetzen Sie den doppelten externen Bot, sodass nur eine Organisation diese App beansprucht, bevor Sie wechseln.",
+          "title": "Doppelte externe App- oder Bot-Identität"
+        },
+        "heading": "Migrationsblocker",
+        "nextActionLabel": "Nächster Schritt:",
+        "secretStoreUnavailable": {
+          "nextAction": "Versuchen Sie es erneut, sobald der Secret-Store der Organisation erreichbar ist. Die bestehende Konfiguration wurde nicht verändert.",
+          "title": "Secret-Store vorübergehend nicht erreichbar"
+        },
+        "teamsDisagreement": {
+          "nextAction": "Prüfen Sie die abweichenden Mandanteneinstellungen unten und bestätigen Sie die Zieleinstellungen für Ihre organisations­eigene Teams-App.",
+          "title": "Abweichende Einstellungen zwischen bestehenden Teams-Mandanten"
+        },
+        "trafficPreserved": "Wechsel und Endpunktänderungen sind bis zur Klärung blockiert. Der laufende Betrieb bleibt unverändert auf dem bestehenden Weg.",
+        "unexpectedLegacyStatus": {
+          "nextAction": "Prüfen Sie diese historische Verbindung und entscheiden Sie vor dem Wechsel, ob sie stillgelegt oder neu verbunden werden soll.",
+          "title": "Unerwarteter historischer Status: {status}"
+        },
+        "unknownBotIdentity": {
+          "nextAction": "Überprüfen Sie die externen Bot-Zugangsdaten und Metadaten, bevor Sie einen Wechsel oder eine Endpunktänderung vornehmen.",
+          "title": "Unbekannte Bot-Identität"
+        },
+        "unknownBotIdentityField": {
+          "title": "Unbekannte Bot-Identität ({field} fehlt)"
+        }
+      },
+      "credentialSource": {
+        "deploymentManaged": "Plattformverwaltet",
+        "organizationOwned": "Organisationseigen"
+      },
+      "description": "Prüfen Sie externe App-Identität, Zugangsdaten-Eigentum, Verifizierungsnachweise und Migrationsbereitschaft, bevor Sie die Live-Zustellung ändern.",
+      "disconnectedDescription": "Für diese Organisation ist keine aktive {channelName}-Installation verbunden.",
+      "evidence": {
+        "configuredAt": "Konfiguriert: {timestamp}",
+        "interactionEndpointPending": "Interaktions-Endpunkt nicht bestätigt",
+        "interactionEndpointReady": "Interaktions-Endpunkt konfiguriert",
+        "lastVerified": "Zuletzt verifiziert: {timestamp}",
+        "noneRecorded": "Noch kein Verifizierungszeitpunkt erfasst.",
+        "secretMissing": "Gespeicherte Zugangsdaten fehlen im Secret-Store",
+        "secretStoreUnavailable": "Secret-Store während der Prüfung nicht erreichbar",
+        "serviceUrlMissing": "Noch keine Service-URL erfasst",
+        "serviceUrlRecorded": "Service-URL erfasst",
+        "webhookNotRegistered": "Webhook nicht registriert",
+        "webhookRegistered": "Webhook registriert"
+      },
+      "identity": {
+        "appId": "App-ID: {id}",
+        "botId": "Bot-ID: {id}",
+        "spaceId": "Workspace / Mandant: {id}",
+        "unidentified": "Nicht identifizierte Installation"
+      },
+      "loadErrorActionHint": "Laden Sie erneut, um Zugangsdaten-Eigentum, Verifizierungsnachweise und Migrationsblocker anzuzeigen.",
+      "loadErrorDescription": "Der aktuelle Installationsstatus konnte nicht geladen werden. Die bestehende Zustellung bleibt unverändert.",
+      "loadErrorTitle": "{channelName}-Installation konnte nicht geladen werden",
+      "reloaded": "{channelName}-Installationsstatus aktualisiert.",
+      "retry": "Erneut versuchen",
+      "retrying": "{channelName}-Installationsstatus wird neu geladen…",
+      "state": {
+        "connected": "Verbunden",
+        "disconnected": "Getrennt",
+        "loadFailed": "Laden fehlgeschlagen",
+        "remediationRequired": "Klärung erforderlich",
+        "unknownReadiness": "Bereitschaft unbekannt"
+      },
+      "teams": {
+        "disagreementsHeading": "Abweichende Mandanteneinstellungen",
+        "disagreementsHelp": "Prüfen Sie diese Unterschiede, um vor dem Wechsel einheitliche Zieleinstellungen zu bestätigen.",
+        "disagreementsTitle": "Abweichende Einstellungen zwischen bestehenden Teams-Mandanten",
+        "discoveredTenants": "Gefundene bestehende Teams-Mandanten ({count})",
+        "discoveredTenantsDescription": "Jeder mit dieser Organisation verknüpfte Microsoft-365-Mandant behält seine wirksamen Einstellungen bis zum organisationsweiten Wechsel.",
+        "fields": {
+          "digestTime": "Uhrzeit der Zusammenfassung",
+          "digestTimezone": "Zeitzone der Zusammenfassung",
+          "enableApprovals": "Genehmigungsbenachrichtigungen",
+          "enableCommands": "Befehle",
+          "enableDailyDigest": "Tägliche Zusammenfassung",
+          "enableEscalations": "Eskalationen",
+          "escalationTimeoutHours": "Eskalations-Timeout"
+        },
+        "unexpectedStatus": "Unerwarteter Status: {status}"
+      },
+      "title": "Aktuelle {channelName}-Installation",
+      "unknownReadinessDescription": "Prüfen Sie den Secret-Store Ihrer Organisation oder die Plattform-Zugangsdaten und versuchen Sie es vor einem Wechsel erneut.",
+      "unknownReadinessTitle": "Verifizierungs- und Zugangsdatenbereitschaft konnten nicht bestätigt werden",
+      "values": {
+        "disabled": "Deaktiviert",
+        "enabled": "Aktiviert",
+        "hours": "{hours} Std."
+      },
+      "verification": {
+        "expired": "Verifizierung abgelaufen",
+        "failed": "Verifizierung fehlgeschlagen",
+        "pending": "Verifizierung ausstehend",
+        "unverified": "Nicht verifiziert",
+        "unverifiedLegacy": "Nicht verifiziert (Bestand)",
+        "verified": "Verifiziert"
+      }
+    },
     "clockinImport": {
       "credentials": {
         "connect": "Verbinden & Vorschau",
@@ -242,10 +379,501 @@
       }
     },
     "slack": {
+      "orgOwned": {
+        "badge": {
+          "candidate": "Kandidaten-Einrichtung",
+          "ready": "Bereit für Wechselprüfung"
+        },
+        "copiedAnnouncement": "{label} kopiert.",
+        "copyFailed": "Automatisches Kopieren fehlgeschlagen. Markieren Sie den Text und kopieren Sie ihn manuell.",
+        "credentials": {
+          "botToken": "Bot User OAuth Token",
+          "botTokenHelp": "Nach der Installation Ihrer Slack-App unter „OAuth & Permissions“ zu finden.",
+          "description": "Zugangsdaten werden in einer unveränderlichen organisationsbezogenen Revision gespeichert und nach dem Speichern nie wieder angezeigt.",
+          "heading": "2. Zugangsdaten eingeben (nur schreibend)",
+          "saveButton": "Prüfen & Zugangsdaten speichern",
+          "signingSecret": "Signing Secret",
+          "signingSecretHelp": "In Slack unter „Basic Information → App Credentials“ zu finden.",
+          "storedBadge": "Gespeichert (Revision v{revision})",
+          "updateButton": "Prüfen & neue Zugangsdaten-Revision speichern"
+        },
+        "credentialsSavedAnnouncement": "Slack-Bot-Identität bestätigt und Zugangsdaten in Revision {revision} gespeichert.",
+        "description": "Erstellen und prüfen Sie eine eigene Slack-App Ihrer Organisation, ohne die laufende Slack-Zustellung zu unterbrechen. Der Wechsel erfolgt erst nach erfolgreicher Prüfung.",
+        "emptyPrompt": "Erstellen Sie ein dediziertes Slack-App-Manifest mit organisationsbezogenen Prüf-URLs. Ihre bestehende Slack-Verbindung liefert während der gesamten Einrichtung weiter aus.",
+        "errors": {
+          "appClaimed": "Diese Slack-App ist bereits von einer anderen Z8-Organisation beansprucht.",
+          "candidateNotFound": "Kandidaten-Slack-Einrichtung nicht gefunden. Laden Sie die Seite neu und bereiten Sie die App erneut vor.",
+          "credentialsMissing": "Gespeicherte Zugangsdaten wurden nicht gefunden. Geben Sie Bot-Token und Signing Secret erneut ein und prüfen Sie sie.",
+          "credentialsNotConfigured": "Speichern und prüfen Sie zuerst Ihre Slack-Zugangsdaten, bevor Sie eine Testnachricht senden.",
+          "identityMismatch": "Slack hat unvollständige oder widersprüchliche App- und Bot-Metadaten zurückgegeben. Prüfen Sie die Zugangsdaten und versuchen Sie es erneut.",
+          "invalidBotToken": "Slack hat das Bot-Token abgelehnt. Prüfen Sie Ihr Bot User OAuth Token und versuchen Sie es erneut.",
+          "invalidBotTokenFormat": "Das Bot-Token muss mit xoxb- beginnen.",
+          "invalidSigningSecretFormat": "Das Signing Secret muss mindestens 16 Zeichen ohne Leerzeichen enthalten.",
+          "invalidSlackUserId": "Geben Sie eine gültige Slack-Mitglieder-ID ein (z. B. U01234567).",
+          "missingScope": "Dem Bot-Token fehlen erforderliche Slack-Berechtigungen (einschließlich users:read). Installieren Sie die App erneut über das generierte Manifest.",
+          "prepareFailed": "Organisationseigene Slack-App konnte nicht vorbereitet werden.",
+          "privateTestFailed": "Die synthetische private Testnachricht konnte nicht gesendet werden.",
+          "refreshFailed": "Der Slack-Prüfstatus konnte nicht aktualisiert werden.",
+          "saveCredentialsFailed": "Slack-Zugangsdaten konnten nicht geprüft und gespeichert werden.",
+          "workspaceClaimed": "Dieser Slack-Workspace ist bereits mit einer anderen Z8-Organisation verbunden."
+        },
+        "manifestDownloaded": "Slack-App-Manifest heruntergeladen.",
+        "prepare": {
+          "commandsUrl": "Slash-Command-URL",
+          "copyManifest": "Manifest kopieren",
+          "copyUrl": "Kopieren",
+          "downloadManifest": "Herunterladen",
+          "eventsUrl": "Event-Subscriptions-URL",
+          "heading": "1. Slack-App vorbereiten",
+          "instructions": "Wählen Sie unter Slack API (api.slack.com/apps) „Create New App → From an app manifest“, fügen Sie dieses Manifest ein und installieren Sie die App in Ihrem Workspace.",
+          "interactionsUrl": "Interactivity-Request-URL",
+          "manifestLabel": "Slack-App-Manifest"
+        },
+        "prepareButton": "Slack-App-Manifest generieren",
+        "preparedAnnouncement": "Manifest für organisationseigene Slack-App generiert.",
+        "privateTestSentAnnouncement": "Synthetische private Testnachricht an Slack gesendet.",
+        "readyAnnouncement": "Slack-App-Prüfung abgeschlossen. Bereit für die Wechselprüfung.",
+        "readyBanner": "Ihre organisationseigene Slack-App hat Identitätsprüfung, signiertes Eingangsereignis und private Testzustellung bestanden. Der laufende Slack-Verkehr bleibt bis zur bestätigten Umstellung auf Ihrer bestehenden Verbindung.",
+        "refreshedAnnouncement": "Slack-Prüfstatus aktualisiert.",
+        "status": {
+          "expired": "Abgelaufen",
+          "failed": "Handlung erforderlich",
+          "passed": "Bestanden",
+          "pending": "Ausstehend"
+        },
+        "stepExpiredAt": "Zuletzt geprüft am {timestamp}. Der Nachweis ist abgelaufen und muss erneuert werden.",
+        "stepFailureCode": "Letzte Prüfung fehlgeschlagen ({code}). Beheben Sie den Schritt und versuchen Sie es erneut.",
+        "steps": {
+          "identity": {
+            "description": "Über Slack-Bot-Metadaten (auth.test und bots.info) bestätigt und an Ihre Organisation gebunden.",
+            "title": "App- & Workspace-Identität"
+          },
+          "privateTest": {
+            "description": "Senden Sie eine private Prüf-Direktnachricht an Ihre Slack-Mitglieder-ID (im Slack-Profil → Mitglieder-ID kopieren).",
+            "title": "Synthetische private Testnachricht"
+          },
+          "signedEvent": {
+            "description": "Aktivieren Sie nach dem Speichern der Zugangsdaten Event Subscriptions in Slack, senden Sie Ihrer Kandidaten-App eine Direktnachricht oder @Erwähnung und aktualisieren Sie den Status.",
+            "retry": "Signiertes Ereignis erneut prüfen",
+            "title": "Aktuelles signiertes App- und Workspace-Ereignis"
+          }
+        },
+        "stepVerifiedAt": "Geprüft: {timestamp}",
+        "test": {
+          "description": "Kandidatentests führen niemals Produktivbefehle, Genehmigungsaktionen oder Live-Benachrichtigungen aus.",
+          "heading": "3. Kandidaten-App testen & prüfen",
+          "refreshStatus": "Status aktualisieren",
+          "retryPrivateTest": "Privaten Test wiederholen",
+          "sendPrivateTest": "Test-DM senden",
+          "slackUserIdLabel": "Ihre Slack-Mitglieder-ID"
+        },
+        "title": "Organisationseigene Slack-App vorbereiten & testen",
+        "validation": {
+          "botTokenRequired": "Bot User OAuth Token ist erforderlich.",
+          "signingSecretRequired": "Signing Secret ist erforderlich.",
+          "slackUserIdRequired": "Slack-Mitglieder-ID ist erforderlich."
+        }
+      },
       "title": "Slack"
+    },
+    "slackSwitch": {
+      "acknowledgeUnready": "Mir ist bekannt, dass {count} aktive Mitarbeiter noch ihre Verbindung oder Direktnachrichten für die neue Slack-App bestätigen müssen, und ich möchte jetzt wechseln.",
+      "completeVerificationFirst": "Schließen Sie zuerst alle oben genannten Prüfungsschritte ab, bevor Sie den Wechsel bestätigen.",
+      "confirmButton": "Wechsel zur verifizierten Slack-App bestätigen",
+      "description": "Prüfen Sie Erreichbarkeit der Mitarbeiter, offene Genehmigungskarten und laufende Benachrichtigungen, bevor Sie Ihre verifizierte organisationseigene Slack-App aktivieren.",
+      "errors": {
+        "alreadySwitched": "Diese Slack-Installation ist bereits aktiv.",
+        "candidateNotFound": "Es wurde keine Kandidaten-Slack-Installation gefunden. Bereiten Sie zuerst eine vor und prüfen Sie sie.",
+        "candidateNotReady": "Schließen Sie alle Prüfungsschritte der Slack-App vor dem Wechsel ab.",
+        "candidateVerificationExpired": "Die Prüfnachweise der Kandidaten-Slack-App sind abgelaufen. Bitte erneut verifizieren.",
+        "confirmFailed": "Slack-Installation konnte nicht gewechselt werden.",
+        "impactChanged": "Auswirkungen oder Installationsrevisionen haben sich seit Ihrer Prüfung geändert. Prüfen Sie die aktualisierte Übersicht und bestätigen Sie erneut.",
+        "migrationBlocked": "Beheben Sie zuerst die oben genannten Migrationsblocker, bevor Sie wechseln.",
+        "refreshFailed": "Auswirkungsübersicht für den Slack-Wechsel konnte nicht aktualisiert werden.",
+        "switchNotEnabled": "Der Wechsel zu einer organisationseigenen Slack-App ist für diese Organisation noch nicht freigeschaltet.",
+        "unreadyAckRequired": "Bestätigen Sie zuerst, dass einige Mitarbeiter ihre Verbindung oder Direktnachrichten noch einrichten müssen."
+      },
+      "gate": {
+        "disabled": "Wechsel gesperrt",
+        "enabled": "Wechsel freigeschaltet"
+      },
+      "gateDisabledNotice": "Der Wechsel zu einer organisationseigenen Slack-App ist für diese Organisation noch nicht freigeschaltet. Sie können die App bereits vorbereiten, prüfen und Auswirkungen ansehen; die Aktivierung wird freigeschaltet, sobald Ihre Organisation aktiviert ist.",
+      "generatedAt": "Stand: {timestamp}",
+      "metrics": {
+        "actionNeeded": "Mitarbeiter-Aktion erforderlich",
+        "actionNeededHint": "Muss in Einstellungen → Benachrichtigungen verknüpfen oder DM öffnen",
+        "carryForwardHint": "{count} Identitäten aus demselben Workspace werden übernommen; DM-Erreichbarkeit wird bei erster Nutzung geprüft",
+        "inFlightNotifications": "Laufende Benachrichtigungen",
+        "inFlightNotificationsHint": "Bleiben ohne doppeltes Senden an die ursprüngliche Installation gebunden",
+        "outstandingApprovals": "Offene Genehmigungskarten",
+        "outstandingApprovalsHint": "{refresh} Aktualisierungen ausstehend; alte Karten behalten ihre Z8-Prüflinks",
+        "unknownReachability": "Erreichbarkeit unbekannt",
+        "unknownReachabilityHint": "Verknüpfte Identität, deren DM für die neue App noch nicht geprüft wurde",
+        "verifiedReachable": "Verifiziert erreichbar",
+        "verifiedReachableHint": "Direktnachrichten mit der neuen App bestätigt"
+      },
+      "readyToConfirmHint": "Neue Slack-Benachrichtigungen, Befehle und tägliche Zusammenfassungen nutzen sofort nach dem Wechsel Ihre organisationseigene Slack-App.",
+      "refresh": "Auswirkungen aktualisieren",
+      "refreshedAnnouncement": "Auswirkungsübersicht für den Slack-Wechsel aktualisiert.",
+      "retirement": {
+        "deadline": "Frist für automatische Stilllegung: {deadline}",
+        "description": "Auslaufende Installationen aktualisieren ihre bestehenden Genehmigungskarten weiter, bis alle offenen Karten erledigt sind oder das 30-Tage-Limit erreicht ist. Ausstehende Genehmigungen bleiben jederzeit im Z8-Posteingang verfügbar.",
+        "noDeadline": "Wird stillgelegt, sobald offene Karten erledigt sind",
+        "outstandingCount": "{count} offene Karten / Aufgaben",
+        "previousApp": "Vorherige Slack-App",
+        "title": "Auslaufende Slack-Installationen"
+      },
+      "summaryHeading": "Übersicht der Wechselauswirkungen",
+      "switchedAnnouncement": "Auf Ihre organisationseigene Slack-App umgestellt. Bestehende Genehmigungskarten werden während der Auslaufphase weiter betreut.",
+      "title": "Auswirkungen prüfen & Slack-App wechseln"
+    },
+    "recovery": {
+      "appIdLabel": "App-ID",
+      "cleanup": {
+        "credentialKind": "Bereinigung von Zugangsdaten-Revisionen",
+        "endpointKind": "Bereinigung des Anbieter-Endpunkts",
+        "heading": "Hintergrund-Bereinigungswarteschlange"
+      },
+      "deploymentManagedLabel": "Vom Deployment verwaltete App",
+      "description": "Rotieren Sie Zugangsdaten für dieselbe App-Identität, widerrufen Sie die lokale Autorisierung sofort oder prüfen und stellen Sie eine frühere Installation wieder her.",
+      "endpointState": {
+        "uncertain": "Endpunktstatus unklar"
+      },
+      "errors": {
+        "candidateNotReady": "Schließen Sie alle neuen Prüfschritte ab, bevor Sie die Wiederherstellung bestätigen.",
+        "candidateVerificationExpired": "Prüfnachweise sind abgelaufen. Prüfen Sie erneut, bevor Sie die Wiederherstellung bestätigen.",
+        "confirmRestoreFailed": "Wiederherstellung der Installation konnte nicht bestätigt werden.",
+        "credentialsRequired": "Geben Sie neue Zugangsdaten ein, um diese Installation vor der Wiederherstellung erneut zu prüfen.",
+        "credentialWriteFailed": "Zugangsdaten konnten nicht sicher gespeichert werden. Bestehende Zugangsdaten bleiben unverändert.",
+        "deploymentManagedNotRestorable": "Vom Deployment verwaltete Verbindungen können nicht als organisationseigener Ersatz wiederhergestellt werden.",
+        "deploymentManagedNotRotatable": "Vom Deployment verwaltete Verbindungen können hier nicht rotiert werden. Bereiten Sie stattdessen eine organisationseigene App vor.",
+        "endpointReconciliationRequired": "Der Endpunktstatus ist nach einer Zeitüberschreitung unklar. Gleichen Sie den Endpunkt vor der Wiederherstellung ab.",
+        "externalIdentityMismatch": "Die Zugangsdaten gehören zu einer anderen App oder einem anderen Workspace. Für eine Rotation ist dieselbe externe Identität erforderlich; nutzen Sie zum App-Wechsel den App-Ersatz.",
+        "impactChanged": "Auswirkungen oder Revisionen haben sich seit Ihrer Prüfung geändert. Prüfen Sie die aktualisierte Übersicht und bestätigen Sie erneut.",
+        "installationNotFound": "Die ausgewählte Chat-Installation wurde nicht gefunden.",
+        "installationNotRestorable": "Nur auslaufende, stillgelegte oder widerrufene Installationen können wiederhergestellt werden.",
+        "installationNotRotatable": "Für diese Installation können Zugangsdaten im aktuellen Zustand nicht rotiert werden.",
+        "invalidBotToken": "Slack hat den Bot-Token abgelehnt. Prüfen Sie Ihr Bot-User-OAuth-Token und versuchen Sie es erneut.",
+        "invalidBotTokenFormat": "Das Bot-Token muss mit xoxb- beginnen.",
+        "invalidSigningSecretFormat": "Das Signing Secret muss mindestens 16 Zeichen ohne Leerzeichen enthalten.",
+        "invalidSlackUserId": "Geben Sie eine gültige Slack-Mitglieds-ID ein (z. B. U01234567).",
+        "missingSlackScope": "Dem Bot-Token fehlen erforderliche Slack-Berechtigungen (einschließlich users:read).",
+        "prepareRestoreFailed": "Wiederherstellung dieser Installation konnte nicht gestartet werden.",
+        "privateDeliveryFailed": "Die synthetische private Testnachricht konnte nicht gesendet werden. Prüfen Sie die Bot-Berechtigungen und versuchen Sie es erneut.",
+        "providerUnavailable": "Die Chat-Anbieter-API ist vorübergehend nicht erreichbar. Bitte versuchen Sie es erneut.",
+        "refreshFailed": "Wiederherstellungsstatus konnte nicht aktualisiert werden.",
+        "revokeFailed": "Chat-Installation konnte nicht widerrufen werden.",
+        "rotateFailed": "Zugangsdaten der Installation konnten nicht rotiert werden.",
+        "secretStoreUnavailable": "Der Secret Store der Organisation ist derzeit nicht erreichbar. Bestehende Zugangsdaten bleiben aktiv.",
+        "switchNotEnabled": "Wechsel oder Wiederherstellung einer organisationseigenen App ist für diese Organisation noch nicht freigeschaltet.",
+        "unreadyAckRequired": "Bestätigen Sie, dass einige Mitarbeitende nach der Wiederherstellung noch Direktnachrichten verknüpfen oder prüfen müssen.",
+        "verifyRestoreFailed": "Installation konnte für die Wiederherstellung nicht geprüft werden."
+      },
+      "fields": {
+        "botToken": "Bot-User-OAuth-Token (nur schreibend)",
+        "signingSecret": "Signing Secret (nur schreibend)",
+        "writeOnlyHint": "Wird in einer neuen unveränderlichen Revision gespeichert und nie wieder angezeigt."
+      },
+      "guidance": {
+        "heading": "Hinweise zu anbieterbedingten Unterbrechungen & Wiederherstellung"
+      },
+      "refresh": "Aktualisieren",
+      "refreshedAnnouncement": "Wiederherstellungsstatus für {channel} aktualisiert.",
+      "restore": {
+        "acknowledgeUnready": "Ich bestätige, dass {count} Mitarbeitende nach der Wiederherstellung dieser Installation noch verknüpfen oder Direktnachrichten prüfen müssen.",
+        "confirmButton": "Wiederherstellung bestätigen",
+        "confirmedAnnouncement": "Vorherige Installation geprüft und wieder als aktiv hergestellt.",
+        "impactHeading": "Aktuelle Auswirkungsprüfung für die Wiederherstellung",
+        "listDescription": "Die Wiederherstellung einer früheren Installation erfordert eine neue Zugangsdaten- und Zustellungsprüfung sowie eine aktuelle Auswirkungsprüfung vor der Aktivierung.",
+        "listHeading": "Vorherige Installationen zur Wiederherstellung",
+        "metrics": {
+          "approvals": "Offene Genehmigungskarten",
+          "reachable": "Verifiziert erreichbar",
+          "unready": "Mitarbeitende mit Handlungsbedarf / unbekannt"
+        },
+        "pendingBadge": "Prüfung erforderlich",
+        "readyBadge": "Bereit zur Wiederherstellungsbestätigung",
+        "retiredAt": "Stillgelegt: {timestamp}",
+        "revokedAt": "Widerrufen: {timestamp}",
+        "slackUserIdLabel": "Slack-Mitglieds-ID für synthetischen DM-Test (optional)",
+        "snapshot": "Stand: {timestamp}",
+        "startButton": "Wiederherstellung & Prüfung starten",
+        "startedAnnouncement": "Wiederherstellung gestartet. Führen Sie eine neue Prüfung und Auswirkungsprüfung vor der Reaktivierung durch.",
+        "uncertainWarning": "Die Endpunktbereinigung lief in eine Zeitüberschreitung; ein Endpunktabgleich ist vor der Wiederherstellung erforderlich.",
+        "verifyButton": "Zugangsdaten prüfen & Test-DM senden",
+        "verifyDescription": "Prüfen Sie Zugangsdaten erneut, empfangen Sie ein frisches signiertes Slack-Ereignis und senden Sie eine synthetische private Test-DM vor der Bestätigung.",
+        "verifiedReadyAnnouncement": "Neue Wiederherstellungsprüfung abgeschlossen. Prüfen Sie die Auswirkungen und bestätigen Sie die Wiederherstellung.",
+        "verifiedStepAnnouncement": "Prüfschritt für die Wiederherstellung gespeichert. Schließen Sie die übrigen Prüfungen ab.",
+        "verifyHeading": "Installation vor der Wiederherstellung prüfen"
+      },
+      "revoke": {
+        "confirmButton": "Sofortigen Widerruf bestätigen",
+        "dialogDescription": "Der Widerruf beendet die lokale Autorisierung für diese Installation sofort. Die asynchrone Bereinigung entfernt nur Zugangsdaten dieser Organisation und lässt geteilte Deployment-Zugangsdaten sowie andere Organisationen unberührt. Ausstehende Genehmigungen bleiben im Z8-Posteingang verfügbar.",
+        "dialogTitle": "{channel}-Zugriff sofort widerrufen?",
+        "openButton": "Zugriff sofort widerrufen",
+        "successAnnouncement": "Installation sofort widerrufen. Ausstehende Genehmigungen bleiben im Z8-Posteingang verfügbar."
+      },
+      "rotate": {
+        "dialogDescription": "Geben Sie neue Zugangsdaten für genau dieselbe App und denselben Workspace ein. Bestehende DM-Unterhaltungen, Mitarbeiterverknüpfungen und offene Genehmigungskarten bleiben erhalten.",
+        "dialogTitle": "{channel}-Zugangsdaten rotieren",
+        "interruptionTitle": "Anbieterbedingte Unterbrechung",
+        "openButton": "Zugangsdaten rotieren",
+        "postRotationHeading": "Zugangsdaten auf Revision v{revision} rotiert — Wiederherstellung prüfen",
+        "submitButton": "Identität prüfen & rotieren",
+        "successAnnouncement": "Zugangsdaten auf Revision v{revision} rotiert. Folgen Sie den Prüfschritten unten, um die Wiederherstellung zu bestätigen."
+      },
+      "status": {
+        "active": "Aktiv",
+        "legacyActive": "Legacy aktiv"
+      },
+      "title": "{channel}-Zugangsdatenrotation, Widerruf & Wiederherstellung",
+      "validation": {
+        "botTokenRequired": "Bot-Token ist erforderlich.",
+        "signingSecretRequired": "Signing Secret ist erforderlich."
+      }
     },
     "teamsNotifications": {
       "title": "Microsoft Teams"
+    },
+    "teamsPrepare": {
+      "badge": {
+        "candidate": "Kandidaten-Einrichtung",
+        "ready": "Bereit zur Wechselprüfung"
+      },
+      "copiedAnnouncement": "{label} kopiert.",
+      "copyFailed": "Automatisches Kopieren fehlgeschlagen. Markieren Sie den Text und kopieren Sie ihn manuell.",
+      "credentials": {
+        "appId": "Microsoft-App-ID (GUID)",
+        "appIdHelp": "Anwendungs-ID (Client) Ihrer Single-Tenant-Azure-Bot-Registrierung.",
+        "appPassword": "Microsoft-App-Passwort (Client-Secret)",
+        "appPasswordHelp": "Nur schreibendes Client-Secret aus „Zertifikate & Geheimnisse“ in Microsoft Entra ID.",
+        "description": "Das Client-Secret wird in einer unveränderlichen organisationsbezogenen Revision gespeichert und nach dem Speichern nie wieder angezeigt. Bestehende Legacy-Teams-Mandanten bleiben aktiv.",
+        "heading": "2. Single-Tenant-Zugangsdaten eingeben (nur schreibend)",
+        "saveButton": "Single-Tenant-Zugangsdaten speichern",
+        "storedBadge": "Gespeichert (Revision v{revision})",
+        "tenantDisplayName": "Mandanten-Anzeigename (optional)",
+        "tenantDisplayNameHelp": "Anzeigename für die Prüfung und die Wechselübersicht.",
+        "tenantId": "Microsoft-Entra-Mandanten-ID (GUID)",
+        "tenantIdHelp": "Verzeichnis-ID (Mandant) Ihres Microsoft-365-Mandanten. Sie können einen Ersatz im selben Mandanten wie Ihre laufende Teams-Verbindung vorbereiten.",
+        "updateButton": "Neue Zugangsdaten-Revision speichern"
+      },
+      "credentialsSavedAnnouncement": "Single-Tenant-Teams-Zugangsdaten in Revision {revision} gespeichert.",
+      "description": "Bereiten Sie eine organisationseigene Single-Tenant-Microsoft-Teams-App vor und prüfen Sie sie, ohne aktive Teams-Mandanten zu unterbrechen. Der Wechsel erfolgt erst nach bestandener Prüfung.",
+      "emptyPrompt": "Erstellen Sie ein dediziertes Single-Tenant-Teams-App-Paket, einen Messaging-Endpunkt sowie Anleitungen für das Microsoft Teams Admin Center. Ihre bestehende Teams-Bereitstellung verarbeitet während der Einrichtung weiter alle Anfragen.",
+      "errors": {
+        "appClaimed": "Diese Microsoft-Teams-App-ID ist bereits von einer anderen Z8-Organisation beansprucht.",
+        "candidateNotFound": "Kandidaten-Teams-Einrichtung nicht gefunden. Laden Sie die Seite neu und bereiten Sie die App erneut vor.",
+        "credentialsMissing": "Gespeicherte Zugangsdaten wurden nicht gefunden. Geben Sie Ihre Single-Tenant-Zugangsdaten erneut ein und speichern Sie sie.",
+        "credentialsNotConfigured": "Speichern Sie zuerst Ihre Single-Tenant-Teams-Zugangsdaten, bevor Sie den proaktiven Test ausführen.",
+        "invalidAppIdFormat": "Die Microsoft-App-ID muss eine gültige GUID sein.",
+        "invalidAppPasswordFormat": "Das Microsoft-App-Passwort (Client-Secret) muss mindestens 8 Zeichen enthalten.",
+        "invalidTenantIdFormat": "Die Microsoft-Entra-Mandanten-ID muss eine gültige GUID sein.",
+        "missingPrivateReachability": "Für diese Kandidaten-Teams-App wurde noch kein privater Chat erfasst. Senden Sie dem Kandidaten-Bot zuerst eine 1:1-Nachricht in Microsoft Teams und versuchen Sie es erneut.",
+        "prepareFailed": "Single-Tenant-Teams-App konnte nicht vorbereitet werden.",
+        "proactiveTestFailed": "Die proaktive private Testnachricht konnte nicht gesendet werden.",
+        "refreshFailed": "Der Teams-Prüfstatus konnte nicht aktualisiert werden.",
+        "saveCredentialsFailed": "Single-Tenant-Teams-Zugangsdaten konnten nicht gespeichert werden.",
+        "tenantClaimed": "Dieser Microsoft-Teams-Mandant ist bereits mit einer anderen Z8-Organisation verbunden.",
+        "tenantMismatch": "Die erfasste Unterhaltung gehört zu einem anderen Microsoft-Teams-Mandanten. Schreiben Sie dem Kandidaten-Bot aus dem konfigurierten Mandanten und versuchen Sie es erneut."
+      },
+      "manifestDownloaded": "Teams-App-Manifest heruntergeladen.",
+      "packageDownloaded": "Single-Tenant-Teams-App-Paket (.zip) heruntergeladen.",
+      "packageDownloadFailed": "Teams-App-Paket (.zip) konnte nicht erstellt werden.",
+      "prepare": {
+        "copyManifest": "Manifest kopieren",
+        "copyUrl": "Kopieren",
+        "downloadManifest": "manifest.json herunterladen",
+        "downloadPackage": "App-Paket herunterladen (.zip)",
+        "heading": "1. Single-Tenant-Teams-App & Admin-Rollout vorbereiten",
+        "instructions": "Konfigurieren Sie Ihren Single-Tenant-Azure-Bot mit dem dedizierten Messaging-Endpunkt unten, speichern Sie Ihre Zugangsdaten und laden Sie anschließend das App-Paket im Microsoft Teams Admin Center hoch.",
+        "manifestLabel": "Teams-App-Manifest",
+        "messagingEndpointLabel": "Dedizierter Messaging-Endpunkt",
+        "placeholderAppIdNote": "Speichern Sie unten Ihre Microsoft-App-ID, damit die App-ID vor dem Hochladen im Microsoft Teams Admin Center in manifest.json eingetragen wird."
+      },
+      "prepareButton": "Single-Tenant-Teams-App vorbereiten",
+      "preparedAnnouncement": "Single-Tenant-Teams-App-Paket und Messaging-Endpunkt generiert.",
+      "proactiveTestSentAnnouncement": "Synthetische proaktive private Testnachricht an Microsoft Teams zugestellt.",
+      "readyAnnouncement": "Prüfung der Single-Tenant-Teams-App abgeschlossen. Bereit für die Wechselprüfung.",
+      "readyBanner": "Ihre Single-Tenant-Microsoft-Teams-App hat Zugangsdaten-, authentifizierte Eingangsaktivitäts- und proaktive private Zustellungsprüfungen bestanden. Bestehende Legacy-Teams-Mandanten bleiben bis zur bestätigten Umstellung aktiv.",
+      "refreshedAnnouncement": "Teams-Prüfstatus aktualisiert.",
+      "rollout": {
+        "heading": "Rollout-Anleitung für das Microsoft Teams Admin Center",
+        "steps": {
+          "azure_bot_registration": {
+            "summary": "Erstellen Sie im Azure-Portal einen Azure Bot mit Typ = Single Tenant im Microsoft-Entra-ID-Mandanten Ihrer Organisation, aktivieren Sie den Microsoft-Teams-Kanal und erstellen Sie ein Client-Secret.",
+            "title": "Single-Tenant-Azure-Bot & Entra-App-Registrierung erstellen"
+          },
+          "configure_messaging_endpoint": {
+            "summary": "Tragen Sie als Azure-Bot-Messaging-Endpunkt {endpointUrl} ein. Diese Installationsroute ist ausschließlich Ihrer Organisation zugeordnet.",
+            "title": "Dedizierten Z8-Messaging-Endpunkt konfigurieren"
+          },
+          "save_credentials_in_z8": {
+            "summary": "Geben Sie unten Microsoft-App-ID (GUID), Microsoft-Entra-Mandanten-ID (GUID) und Client-Secret ein. Z8 speichert das Secret in einer unveränderlichen Zugangsdaten-Revision und aktualisiert Ihr App-Paket-Manifest mit Ihrer App-ID.",
+            "title": "Single-Tenant-Zugangsdaten in Z8 speichern (nur schreibend)"
+          },
+          "upload_teams_admin_center": {
+            "summary": "Laden Sie das Single-Tenant-Teams-App-Paket (.zip) herunter, öffnen Sie das Microsoft Teams Admin Center (admin.teams.microsoft.com) → Teams-Apps → Apps verwalten → Neue App hochladen und weisen Sie sie über Ihre App-Einrichtungsrichtlinie zu.",
+            "title": "App-Paket im Microsoft Teams Admin Center hochladen"
+          },
+          "verify_private_chat": {
+            "summary": "Öffnen Sie einen 1:1-Privatchat mit Ihrem neuen Teams-Bot und senden Sie eine Nachricht (z. B. „verify“). Kehren Sie anschließend hierher zurück, aktualisieren Sie den Status und senden Sie die proaktive private Testnachricht.",
+            "title": "Authentifizierte Eingangsaktivität & proaktive private Zustellung prüfen"
+          }
+        }
+      },
+      "status": {
+        "expired": "Abgelaufen",
+        "failed": "Handlung erforderlich",
+        "passed": "Bestanden",
+        "pending": "Ausstehend"
+      },
+      "stepExpiredAt": "Zuletzt geprüft am {timestamp}. Der Nachweis ist abgelaufen und muss erneuert werden.",
+      "stepFailureCode": "Letzte Prüfung fehlgeschlagen ({code}). Beheben Sie den Schritt und versuchen Sie es erneut.",
+      "steps": {
+        "credentials": {
+          "description": "Microsoft-App-ID, Entra-Mandanten-ID und nur schreibendes Client-Secret in einer unveränderlichen organisationsbezogenen Revision gespeichert.",
+          "title": "Single-Tenant-Zugangsdaten & Mandanteneigentum"
+        },
+        "inboundProof": {
+          "description": "Öffnen Sie einen 1:1-Privatchat mit Ihrem Kandidaten-Teams-Bot und senden Sie eine Nachricht (z. B. „verify“), damit Z8 Bot-Framework-Token, App-ID, Mandanten-ID und private Erreichbarkeit bestätigt.",
+          "retry": "Eingangsaktivität erneut prüfen",
+          "title": "Authentifizierte Eingangsaktivität (passende App & Mandant)"
+        },
+        "privateTest": {
+          "descriptionMissing": "Wartet auf eine 1:1-Privatnachricht an den Kandidaten-Bot in Microsoft Teams, um Ihre Unterhaltungsreferenz vor dem proaktiven Test zu erfassen.",
+          "descriptionReady": "Die private Unterhaltungsreferenz ist für diese Kandidaten-App erfasst. Senden Sie eine synthetische proaktive Testnachricht über den installationsbezogenen Adapter.",
+          "title": "Proaktive private Testnachricht"
+        }
+      },
+      "stepVerifiedAt": "Geprüft: {timestamp}",
+      "test": {
+        "description": "Kandidatenprüfungen führen niemals Produktivbefehle, Genehmigungskarten oder Live-Benachrichtigungen aus. Mitarbeitende mit nachgewiesener Entra-Identität im selben Mandanten können den Bot direkt anschreiben; andere verknüpfen sich per Code unter Einstellungen → Benachrichtigungen.",
+        "heading": "3. Single-Tenant-Teams-App testen & prüfen",
+        "refreshStatus": "Status aktualisieren",
+        "retryProactiveTest": "Proaktiven privaten Test wiederholen",
+        "sendProactiveTest": "Proaktiven privaten Test senden"
+      },
+      "title": "Single-Tenant-Microsoft-Teams-App vorbereiten & testen",
+      "validation": {
+        "appIdRequired": "Microsoft-App-ID ist erforderlich.",
+        "appPasswordRequired": "Microsoft-App-Passwort ist erforderlich.",
+        "tenantIdRequired": "Microsoft-Entra-Mandanten-ID ist erforderlich."
+      }
+    },
+    "teamsSwitch": {
+      "acknowledgeUnready": "Mir ist bekannt, dass {count} aktive Mitarbeitende sich noch mit der neuen Teams-App verbinden oder Direktnachrichten prüfen müssen, und ich möchte jetzt wechseln.",
+      "affectedTenantsHeading": "Betroffene aktive Teams-Mandanten ({count})",
+      "completeVerificationFirst": "Schließen Sie oben alle Single-Tenant-Teams-Prüfschritte ab, bevor Sie den Wechsel bestätigen.",
+      "confirmButton": "Alle geprüften Teams-Mandanten gemeinsam umstellen",
+      "description": "Prüfen Sie alle betroffenen Microsoft-Teams-Mandanten, lösen Sie abweichende Einstellungen auf und stellen Sie die Organisation in einer atomaren Transaktion um, während auslaufende Mandanten ihre offenen Genehmigungskarten weiter bedienen.",
+      "disagreements": {
+        "confirmCheckbox": "Ich bestätige, dass diese Ersatzeinstellungen verbindlich für Microsoft Teams in dieser Organisation gelten sollen.",
+        "description": "Prüfen Sie die Unterschiede unten und bestätigen Sie die gemeinsamen Einstellungen für Ihre organisationseigene Teams-App.",
+        "heading": "Legacy-Teams-Mandanten haben abweichende Einstellungen"
+      },
+      "errors": {
+        "alreadySwitched": "Diese Microsoft-Teams-Installation ist bereits aktiv.",
+        "candidateNotFound": "Keine Kandidaten-Microsoft-Teams-Installation gefunden. Bereiten Sie zuerst eine vor und prüfen Sie sie.",
+        "candidateNotReady": "Schließen Sie alle Single-Tenant-Microsoft-Teams-Prüfschritte vor dem Wechsel ab.",
+        "candidateVerificationExpired": "Prüfnachweise für die Kandidaten-Teams-App sind abgelaufen. Prüfen Sie sie vor dem Wechsel erneut.",
+        "confirmFailed": "Microsoft-Teams-Installation konnte nicht umgestellt werden.",
+        "endpointReconciliationRequired": "Der Endpunktstatus ist nach einer Zeitüberschreitung unklar. Gleichen Sie ihn vor der Aktivierung ab.",
+        "externalIdentityMismatch": "Die angegebene Microsoft-App-ID oder Entra-Mandanten-ID stimmt nicht mit dieser Teams-Installation überein.",
+        "impactChanged": "Betroffene Teams-Mandanten, Einstellungen, Revisionen oder Zahlen haben sich seit Ihrer Prüfung geändert. Prüfen Sie die aktualisierte Übersicht und bestätigen Sie erneut.",
+        "installationNotFound": "Die ausgewählte Microsoft-Teams-Installation wurde nicht gefunden.",
+        "invalidCredentials": "Prüfen Sie Microsoft-App-ID, Entra-Mandanten-ID und Client-Secret und versuchen Sie es erneut.",
+        "invalidReplacementSettings": "Prüfen Sie die Ersatzeinstellungen für Teams (Uhrzeit, Zeitzone und Eskalations-Timeout) und versuchen Sie es erneut.",
+        "migrationBlocked": "Beheben Sie Migrationsblocker für Microsoft Teams vor dem Wechsel.",
+        "missingPrivateReachability": "Senden Sie diesem Teams-Bot zuerst eine 1:1-Privatnachricht, damit Z8 die Erreichbarkeit vor dem Test erfassen kann.",
+        "prepareRestoreFailed": "Wiederherstellung dieser Microsoft-Teams-Installation konnte nicht gestartet werden.",
+        "refreshFailed": "Wechselvorschau für Microsoft Teams konnte nicht aktualisiert werden.",
+        "revokeFailed": "Microsoft-Teams-Installation konnte nicht widerrufen werden.",
+        "rotateFailed": "Microsoft-Teams-Zugangsdaten konnten nicht rotiert werden.",
+        "secretStoreUnavailable": "Der Secret Store der Organisation ist derzeit nicht erreichbar. Bestehende Verbindungen bleiben unverändert.",
+        "settingsConfirmationRequired": "Ihre Legacy-Teams-Mandanten haben abweichende Einstellungen. Bestätigen Sie unten ausdrücklich die Ersatzeinstellungen vor dem Wechsel.",
+        "switchNotEnabled": "Der Wechsel zu einer organisationseigenen Microsoft-Teams-App ist für diese Organisation noch nicht freigeschaltet.",
+        "unreadyAckRequired": "Bestätigen Sie, dass einige Mitarbeitende vor dem Wechsel noch Direktnachrichten verbinden oder prüfen müssen.",
+        "verifyRestoreFailed": "Wiederherstellung für Microsoft Teams konnte nicht geprüft werden."
+      },
+      "gate": {
+        "disabled": "Wechsel gesperrt",
+        "enabled": "Wechsel freigegeben"
+      },
+      "gateDisabledNotice": "Der Wechsel zu einer organisationseigenen Microsoft-Teams-App ist für diese Organisation noch nicht freigeschaltet. Sie können alle betroffenen Mandanten prüfen und Ihre Single-Tenant-App jetzt testen; die Aktivierung wird nach Freigabe entsperrt.",
+      "generatedAt": "Stand: {timestamp}",
+      "metrics": {
+        "actionNeeded": "Handlungsbedarf bei Mitarbeitenden",
+        "actionNeededHint": "Muss den Bot anschreiben oder unter Einstellungen → Benachrichtigungen verknüpfen",
+        "carryForwardHint": "{count} Entra-Identitäten im selben Mandanten werden übernommen",
+        "inFlightNotifications": "Laufende Benachrichtigungen",
+        "inFlightNotificationsHint": "Bleiben ohne doppelten Versand an die ursprüngliche Installation gebunden",
+        "outstandingApprovals": "Offene Genehmigungskarten gesamt",
+        "outstandingApprovalsHint": "Über alle betroffenen Mandanten; jeder auslaufende Mandant bedient seine eigenen Karten",
+        "unknownReachability": "Unbekannte Erreichbarkeit",
+        "unknownReachabilityHint": "Verknüpfte Identität, deren Privatchat noch nicht bestätigt ist",
+        "verifiedReachable": "Verifiziert erreichbar",
+        "verifiedReachableHint": "Privatchats mit der neuen Teams-App bestätigt"
+      },
+      "noLiveTenants": "Durch diesen Wechsel werden keine laufenden Legacy-Teams-Mandanten stillgelegt.",
+      "optionalAppPasswordPlaceholder": "Optionales neues Microsoft-App-Passwort (leer lassen zum Beibehalten)",
+      "orgOwnedConnectHint": "Bereiten Sie Ihre organisationseigene Single-Tenant-Microsoft-Teams-App oben vor, prüfen Sie sie und stellen Sie darauf um.",
+      "readyToConfirmHint": "Neue Teams-Benachrichtigungen, Genehmigungen, Befehle, Zusammenfassungen und Eskalationen nutzen direkt nach dem Wechsel Ihre organisationseigene Teams-App.",
+      "recovery": {
+        "activeBadge": "Aktiv (organisationseigen)",
+        "description": "Rotieren Sie Ihr Single-Tenant-Entra-Client-Secret ohne Ausfallzeit, widerrufen Sie den Zugriff sofort oder prüfen und stellen Sie eine frühere organisationseigene Teams-Installation wieder her.",
+        "restorableHeading": "Frühere organisationseigene Teams-Installationen",
+        "revokeButton": "Zugriff sofort widerrufen",
+        "rotateButton": "Zugangsdaten rotieren",
+        "rotatedBanner": "Zugangsdaten auf Revision v{revision} rotiert. Zwischengespeicherte Teams-Adapter wurden sofort geleert.",
+        "startRestoreButton": "Wiederherstellung & Prüfung starten",
+        "title": "Microsoft-Teams-Zugangsdatenrotation, Widerruf & Wiederherstellung"
+      },
+      "refresh": "Auswirkungen aktualisieren",
+      "refreshedAnnouncement": "Auswirkungen des Microsoft-Teams-Wechsels aktualisiert.",
+      "restoreStartedAnnouncement": "Wiederherstellung gestartet. Prüfen Sie Zugangsdaten, Eingangsaktivität und proaktive private Zustellung vor der Bestätigung.",
+      "restoreVerifiedReadyAnnouncement": "Wiederherstellungsprüfung bestanden. Prüfen Sie die Auswirkungen und bestätigen Sie die Rückumstellung.",
+      "restoreVerifiedStepAnnouncement": "Zugangsdaten für die Wiederherstellung geprüft. Senden Sie dem Teams-Bot eine 1:1-Nachricht und führen Sie den proaktiven Test aus.",
+      "restoreVerifyHint": "Müssen Sie Zugangsdaten erneut prüfen oder einen frischen proaktiven privaten Test für diese Kandidaten-Teams-App auslösen?",
+      "restoredAnnouncement": "Geprüfte Microsoft-Teams-App wieder als aktiv hergestellt.",
+      "retirement": {
+        "deadline": "Automatische Stilllegungsfrist: {deadline}",
+        "description": "Jeder auslaufende Teams-Mandant bedient seine offenen Genehmigungskarten weiter, bis alle Karten abgeschlossen sind oder die 30-Tage-Frist erreicht wird. Sie können einzelne Mandanten sofort widerrufen, ohne andere Mandanten oder Ihre aktive Teams-App zu beeinträchtigen.",
+        "noDeadline": "Läuft aus, sobald offene Karten abgeschlossen sind",
+        "outstandingCount": "{count} offene Karten / Jobs",
+        "previousTenant": "Früherer Teams-Mandant",
+        "title": "Auslaufende Microsoft-Teams-Mandanten"
+      },
+      "revokeDialog": {
+        "confirm": "Sofortigen Widerruf bestätigen",
+        "description": "Der Widerruf von {label} beendet die lokale Autorisierung sofort nur für diese Installation. Andere auslaufende Mandanten, Ihre aktive Teams-App, geteilte Deployment-Zugangsdaten und ausstehende Genehmigungen im Z8-Posteingang bleiben unberührt.",
+        "title": "Microsoft-Teams-Installation widerrufen?"
+      },
+      "revokeTenantButton": "Mandant widerrufen",
+      "revokedAnnouncement": "Ausgewählte Microsoft-Teams-Installation sofort widerrufen. Andere Mandanten und Z8-Posteingangsgenehmigungen bleiben unberührt.",
+      "rotateDialog": {
+        "appId": "Microsoft-App-ID (GUID)",
+        "appPassword": "Neues Microsoft-App-Passwort (nur schreibend)",
+        "description": "Geben Sie das neue Microsoft-Entra-Client-Secret für exakt dieselbe Microsoft-App-ID und Entra-Mandanten-ID ein. Unterhaltungen, Mitarbeiterverknüpfungen und offene Genehmigungskarten bleiben erhalten.",
+        "submit": "Identität prüfen & rotieren",
+        "tenantId": "Microsoft-Entra-Mandanten-ID (GUID)",
+        "title": "Microsoft-Teams-Zugangsdaten rotieren"
+      },
+      "rotatedAnnouncement": "Microsoft-Teams-Zugangsdaten auf Revision v{revision} rotiert.",
+      "settingsField": {
+        "digestTime": "Digest-Uhrzeit",
+        "digestTimezone": "Digest-Zeitzone",
+        "enableApprovals": "Genehmigungen",
+        "enableCommands": "Bot-Befehle",
+        "enableDailyDigest": "Tägliche Zusammenfassung",
+        "enableEscalations": "Eskalationen",
+        "escalationTimeoutHours": "Eskalations-Timeout (Stunden)"
+      },
+      "summaryHeading": "Auswirkungsübersicht für den Multi-Mandanten-Wechsel",
+      "switchedAnnouncement": "Auf Ihre organisationseigene Microsoft-Teams-App umgestellt. Alle geprüften Legacy-Mandanten laufen nun aus.",
+      "tenantOpenCards": "{count} offene Karten / Jobs",
+      "tenantSettingsSummary": "Genehmigungen: {approvals} · Befehle: {commands} · Digest: {digest} ({time} {tz}) · Eskalationen: {escalations} ({hours}h)",
+      "title": "Legacy-Teams-Mandanten prüfen & Organisation umstellen",
+      "verifyRestoreButton": "Erneut prüfen & Test senden"
     },
     "telegram": {
       "bot": {
@@ -313,6 +941,192 @@
       "unlinkError": "Entknüpfen des Telegram-Kontos fehlgeschlagen",
       "webhookActive": "Webhook registriert",
       "webhookPending": "Webhook ausstehend"
+    },
+    "telegramLifecycle": {
+      "acknowledgeUnready": "Ich bestätige, dass {count} Mitarbeitende den neuen Telegram-Bot noch unter Einstellungen -> Benachrichtigungen starten und verknüpfen müssen.",
+      "botTokenLabel": "BotFather-Token (nur zum Schreiben)",
+      "commandsRetried": "Alle 11 Telegram-Bot-Befehle wurden registriert.",
+      "confirmRestoreButton": "Wiederherstellung bestätigen",
+      "confirmSwitchButton": "Wechsel bestätigen",
+      "credentialsSaved": "Telegram-Bot-Identität verifiziert und neue Zugangsdaten-Revision gespeichert.",
+      "errors": {
+        "impactChanged": "Die Auswirkungen oder Installation-Revisionen haben sich seit Ihrer Prüfung geändert. Prüfen Sie die aktualisierte Übersicht und bestätigen Sie erneut."
+      },
+      "metrics": {
+        "actionNeeded": "Aktion erforderlich",
+        "inFlight": "Laufende Zustellungen",
+        "openCards": "Offene Genehmigungskarten",
+        "reachable": "Verifiziert erreichbar",
+        "uncertain": "Abgleich erforderlich",
+        "unknown": "Unbekannte Erreichbarkeit"
+      },
+      "prepareButton": "Ersatz-Telegram-Bot vorbereiten",
+      "prepared": "Einen vorbereiteten Ersatz-Telegram-Bot angelegt.",
+      "prepareDescription": "Bereiten Sie einen organisationseigenen Telegram-Bot vor und prüfen Sie Bot-Identität, authentifizierten Webhook-Empfang, Befehlsregistrierung und private Zustellung, während Ihr aktueller Bot offene Genehmigungen weiter bedient.",
+      "prepareTitle": "Ersatz-Telegram-Bot vorbereiten & prüfen",
+      "privateTestSent": "Synthetische private Testnachricht über Telegram zugestellt.",
+      "recoveryTitle": "Zugangsdaten-Rotation, Widerruf & Wiederherstellung",
+      "refresh": "Aktualisieren",
+      "refreshed": "Status der Telegram-Installation aktualisiert.",
+      "restoreButton": "Verifizierte Wiederherstellung starten",
+      "restored": "Verifizierte Telegram-Bot-Installation wiederhergestellt.",
+      "restoreListTitle": "Vorherige organisationseigene Telegram-Bots",
+      "restoreMeta": "Status: {status} · Endpunkt: {endpointState} · Gen {generation}",
+      "restoreStarted": "Wiederherstellung vorbereitet. Führen Sie eine erneute Prüfung und Auswirkungsübersicht vor der Reaktivierung durch.",
+      "retiringBadge": "Wird abgelöst",
+      "retiringDeadline": "Frist: {date}",
+      "retiringDescription": "Abgelöste Bots bedienen bereits gesendete offene Genehmigungskarten weiter, bis alle offenen Karten abgeschlossen sind oder die 30-Tage-Frist erreicht ist.",
+      "retiringStats": "Offene Karten/Aufgaben: {count}",
+      "retiringTitle": "Abzulösende Telegram-Bots",
+      "retryCommandsButton": "Befehlsregistrierung wiederholen",
+      "retryWebhookButton": "Webhook-Registrierung wiederholen",
+      "revokeButton": "Zugriff widerrufen",
+      "revoked": "Telegram-Installation sofort widerrufen. Offene Genehmigungen bleiben in Z8 verfügbar.",
+      "revokeDescription": "Beendet die lokale Autorisierung sofort und plant eine generationsgesicherte Webhook-Bereinigung. Offene Genehmigungen bleiben in Z8 zugänglich.",
+      "revokeTitle": "Aktiven Telegram-Bot widerrufen",
+      "rotateButton": "Token rotieren",
+      "rotated": "Telegram-Bot-Token rotiert; Installation, Konversationen und Webhook-Route bleiben erhalten.",
+      "rotateTitle": "BotFather-Token rotieren (gleiche Bot-Identität)",
+      "rotateTokenLabel": "Neuer BotFather-Token",
+      "sendPrivateTestButton": "Privaten Test senden",
+      "step": {
+        "expired": "Abgelaufen",
+        "failed": "Prüfung erforderlich",
+        "passed": "Verifiziert",
+        "pending": "Ausstehend"
+      },
+      "steps": {
+        "commandsHint": "Registriert die 11 Z8-Befehle unabhängig, sodass Fehler ohne Änderung der Zugangsdaten erneut versucht werden können.",
+        "commandsPassed": "Alle 11 Z8-Befehle im Telegram-Bot-Menü registriert.",
+        "commandsTitle": "3. Befehlsregistrierung",
+        "identityHint": "Prüft die numerische Telegram-Bot-ID und sichert den Eigentumsanspruch vor jeder Webhook-Änderung.",
+        "identityTitle": "1. Bot-Identität",
+        "privateDeliveryHint": "Sendet eine synthetische private Testnachricht an Ihren Kandidaten-Chat (niemals produktive Benachrichtigungen oder Genehmigungen).",
+        "privateDeliveryTitle": "4. Private Zustellung",
+        "webhookReceiptAwaiting": "Webhook registriert. Senden Sie /start an Ihren neuen Bot in Telegram, um den authentifizierten Empfang zu bestätigen.",
+        "webhookReceiptPassed": "Bestätigt durch einen authentifizierten eingehenden Telegram-Webhook für diese Installation.",
+        "webhookReceiptPending": "Registriert den installationsspezifischen Webhook und wartet auf ein authentifiziertes Telegram-Update.",
+        "webhookReceiptTitle": "2. Authentifizierter Webhook-Empfang"
+      },
+      "switchDescription": "Prüfen Sie die Erreichbarkeit der Mitarbeitenden, offene Genehmigungskarten und laufende Zustellungen vor dem Wechsel. Bestehende offene Karten bleiben während der 30-tägigen Ablösephase über den bisherigen Bot bedienbar.",
+      "switched": "Auf den verifizierten organisationseigenen Telegram-Bot umgestellt. Bestehende offene Genehmigungskarten bleiben während der Ablösephase bedienbar.",
+      "switchGateDisabled": "Der Telegram-Wechsel ist für diese Organisation noch nicht freigeschaltet. Schließen Sie die Prüfung oben ab, um bereit zu sein.",
+      "switchTitle": "Auswirkungen prüfen & Telegram-Bot wechseln",
+      "testChatIdLabel": "Kandidaten-Telegram-Chat-ID (optional wenn verknüpft)",
+      "testChatIdPlaceholder": "Chat-ID (optional wenn verknüpft)",
+      "verifyTokenButton": "Bot prüfen & Webhook konfigurieren",
+      "webhookEndpointLabel": "Dedizierte Webhook-Route:",
+      "webhookRetried": "Telegram-Webhook registriert. Senden Sie eine private Nachricht an den neuen Bot, um den authentifizierten Empfang zu bestätigen."
+    },
+    "discordLifecycle": {
+      "prepareTitle": "Ersatz-Discord-Bot vorbereiten & prüfen",
+      "prepareDescription": "Prüfen Sie App-Identität, signierte Interaktionen, Slash-Befehle und private Direktnachrichten, während Ihr aktueller Discord-Bot weiterläuft.",
+      "refresh": "Status aktualisieren",
+      "prepareButton": "Ersatz-Bot vorbereiten",
+      "interactionEndpointUrl": "Interaction-Endpoint-URL des Kandidaten",
+      "copied": "Kopiert",
+      "copy": "Kopieren",
+      "endpointHelp": "Speichern Sie zuerst unten die Zugangsdaten und tragen Sie diese URL dann im Discord Developer Portal ein, damit Discord einen signierten PING sendet.",
+      "retryCommands": "Befehle erneut registrieren",
+      "credentialsFormTitle": "Kandidaten-Zugangsdaten prüfen & speichern",
+      "botTokenLabel": "Bot-Token (nur zum Schreiben)",
+      "applicationIdLabel": "Application ID",
+      "publicKeyLabel": "Ed25519 Public Key",
+      "saveCredentialsButton": "Zugangsdaten prüfen & speichern",
+      "dmTestLabel": "Private Direktnachricht testen (Discord-Benutzer-ID)",
+      "dmTestHelp": "Geben Sie Ihre numerische Discord-Benutzer-ID ein. Bei Fehler 50007 prüfen Sie einen gemeinsamen Server und aktivieren Sie Direktnachrichten in den Server-Datenschutzeinstellungen.",
+      "sendTestDmButton": "Test-DM senden",
+      "switchTitle": "Auswirkungen prüfen & Discord-Bot wechseln",
+      "switchDescription": "Prüfen Sie die verifizierte DM-Erreichbarkeit, offene Genehmigungskarten und laufende Benachrichtigungen vor dem Wechsel.",
+      "gateDisabledNotice": "Der Wechsel auf einen organisationseigenen Discord-Bot ist für diese Organisation noch nicht freigeschaltet. Sie können den Bot bereits vorbereiten und testen.",
+      "impactSummaryHeading": "Zusammenfassung der Wechsel-Auswirkungen",
+      "ackUnreadyLabel": "Ich bestätige, dass {count} Mitarbeitende ihren Discord-Account oder Direktnachrichten noch mit dem Ersatz-Bot verknüpfen bzw. prüfen müssen.",
+      "confirmSwitchButton": "Discord-Wechsel bestätigen",
+      "confirmRestoreButton": "Discord-Wiederherstellung bestätigen",
+      "retiringTitle": "Auslaufende Discord-Bots",
+      "retiringDescription": "Auslaufende Bots bedienen ihre bereits gesendeten Genehmigungskarten weiter, bis alle Aufgaben abgeschlossen sind oder die 30-Tage-Frist endet.",
+      "retiringMeta": "Offene Karten & Aufgaben: {count} · Frist: {deadline}",
+      "recoveryTitle": "Zugangsdaten rotieren, widerrufen & wiederherstellen",
+      "rotateHeading": "Discord-Bot-Token rotieren",
+      "rotateTokenLabel": "Neues Bot-Token (gleiche Discord-App)",
+      "rotateButton": "Token rotieren",
+      "revokeHeading": "Aktiven Discord-Bot widerrufen",
+      "revokeHelp": "Beendet sofort die Discord-Autorisierung. Offene Genehmigungen bleiben im Z8-Posteingang verfügbar.",
+      "revokeButton": "Bot widerrufen",
+      "restoreHeading": "Früheren Discord-Bot wiederherstellen",
+      "restoreMeta": "Status: {status}",
+      "restoreButton": "Geprüfte Wiederherstellung starten",
+      "refreshedAnnouncement": "Discord-Lebenszyklusstatus aktualisiert.",
+      "preparedAnnouncement": "Ersatz-Discord-Bot vorbereitet. Kopieren Sie die Interaction-Endpoint-URL und speichern Sie Ihre Zugangsdaten.",
+      "credentialsSaved": "Discord-Zugangsdaten verifiziert und Slash-Befehle registriert. Konfigurieren Sie nun die Interaction-Endpoint-URL und testen Sie eine private DM.",
+      "credentialsSavedCommandsFailed": "Discord-Zugangsdaten verifiziert, aber die Registrierung der Slash-Befehle ist fehlgeschlagen. Sie können die Registrierung unten ohne erneute Eingabe wiederholen.",
+      "commandsRetriedSuccess": "Discord-Slash-Befehle erfolgreich registriert.",
+      "privateTestSucceeded": "Synthetische private DM erfolgreich zugestellt und verifiziert.",
+      "switchedAnnouncement": "Auf den verifizierten organisationseigenen Discord-Bot gewechselt. Bestehende Genehmigungskarten bleiben während der Übergangsfrist nutzbar.",
+      "rotatedAnnouncement": "Discord-Bot-Token erfolgreich rotiert. Unterhaltungen und Genehmigungskarten bleiben erhalten.",
+      "revokedAnnouncement": "Discord-Installation sofort widerrufen. Offene Genehmigungen bleiben im Z8-Posteingang zugänglich.",
+      "restoreStartedAnnouncement": "Wiederherstellung gestartet. Führen Sie eine neue Endpunkt- und DM-Prüfung durch, bevor Sie den Rückwechsel bestätigen.",
+      "endpointCopied": "Interaction-Endpoint-URL kopiert.",
+      "endpointCopyFailed": "URL konnte nicht kopiert werden. Bitte manuell markieren und kopieren.",
+      "gate": {
+        "enabled": "Wechsel aktiviert",
+        "disabled": "Wechsel gesperrt"
+      },
+      "stepStatus": {
+        "passed": "Verifiziert",
+        "pending": "Ausstehend",
+        "failed": "Handlung nötig",
+        "expired": "Abgelaufen"
+      },
+      "steps": {
+        "identityTitle": "1. App-Identität & Zugangsdaten",
+        "identityDesc": "Prüft Bot-Token, Application ID und Ed25519 Public Key über die Discord-API und speichert eine unveränderliche Revision.",
+        "signedEndpointTitle": "2. Signierter Interaktions-Endpunkt (PING)",
+        "signedEndpointDesc": "Bestätigt Ed25519-signierten Datenverkehr für diese Application ID. Ein signierter PING allein beweist noch keine private DM-Erreichbarkeit.",
+        "commandsTitle": "3. Slash-Befehlsregistrierung",
+        "commandsDesc": "Wird getrennt verfolgt, damit Fehler ohne erneute Eingabe von Zugangsdaten wiederholt werden können.",
+        "privateDmTitle": "4. Prüfung privater Direktnachrichten (erforderlich)",
+        "privateDmDesc": "Sendet eine synthetische private DM an Ihre Discord-Benutzer-ID, um die reale Zustellung zu bestätigen."
+      },
+      "metrics": {
+        "reachable": "Per DM erreichbar",
+        "actionNeeded": "Handlung nötig",
+        "unknown": "Unbekannt",
+        "openCards": "Offene Genehmigungen & Aufgaben"
+      },
+      "revokeConfirm": {
+        "title": "Discord-Bot widerrufen?",
+        "description": "Beendet sofort Discord-Zustellung und Rückrufe für diese Installation. Offene Genehmigungen bleiben in Z8 zugänglich."
+      },
+      "errors": {
+        "invalidBotTokenFormat": "Bitte geben Sie ein gültiges Discord-Bot-Token ohne Leerzeichen ein.",
+        "invalidApplicationIdFormat": "Die Application ID muss eine numerische Discord-Snowflake-ID sein.",
+        "invalidPublicKeyFormat": "Der Public Key muss eine 64-stellige hexadezimale Ed25519-Zeichenkette sein.",
+        "invalidBotToken": "Discord hat das Bot-Token abgelehnt. Prüfen Sie Ihre Zugangsdaten im Discord Developer Portal.",
+        "applicationIdMismatch": "Die Application ID stimmt nicht mit dem angegebenen Bot-Token überein.",
+        "publicKeyMismatch": "Der Public Key stimmt nicht mit der Discord-Anwendung überein.",
+        "appClaimedByOtherOrg": "Diese Discord-Anwendung ist bereits mit einer anderen Z8-Organisation verknüpft.",
+        "dmBlocked50007": "Discord hat diese Direktnachricht blockiert (Fehler 50007). Teilen Sie einen Server mit dem Bot, heben Sie eventuelle Blockierungen auf und aktivieren Sie Server-Direktnachrichten in den Discord-Datenschutzeinstellungen.",
+        "missingAccess50001": "Der Bot teilt keinen Server mit diesem Discord-Benutzer (Fehler 50001). Laden Sie den Bot auf einen gemeinsamen Server ein und versuchen Sie es erneut.",
+        "unknownUser10013": "Discord konnte diese Benutzer-ID nicht finden (Fehler 10013). Kopieren Sie Ihre numerische Benutzer-ID im Discord-Entwicklermodus.",
+        "invalidDiscordUserId": "Bitte geben Sie eine gültige numerische Discord-Benutzer-ID ein.",
+        "switchNotEnabled": "Der Wechsel auf einen organisationseigenen Discord-Bot ist für diese Organisation noch nicht aktiviert.",
+        "migrationBlocked": "Beheben Sie zuerst die oben genannten Migrationsblocker.",
+        "candidateNotReady": "Schließen Sie App-Identität, signierten PING und privaten DM-Test ab, bevor Sie wechseln.",
+        "candidateVerificationExpired": "Die Verifizierungsnachweise des Kandidaten sind abgelaufen. Bitte erneut prüfen.",
+        "impactChanged": "Auswirkungen oder Revisionen haben sich seit Ihrer Prüfung geändert. Prüfen Sie die aktualisierte Zusammenfassung und bestätigen Sie erneut.",
+        "unreadyAckRequired": "Bestätigen Sie vor dem Wechsel, dass einige Mitarbeitende Discord noch verknüpfen oder DMs prüfen müssen.",
+        "rotationIdentityMismatch": "Das angegebene Token gehört zu einer anderen Discord-Anwendung. Für eine Rotation ist exakt dieselbe App erforderlich.",
+        "refreshFailed": "Discord-Lebenszyklusstatus konnte nicht aktualisiert werden.",
+        "prepareFailed": "Ersatz-Discord-Bot konnte nicht vorbereitet werden.",
+        "saveCredentialsFailed": "Discord-Zugangsdaten konnten nicht geprüft werden.",
+        "retryCommandsFailed": "Registrierung der Slash-Befehle erneut fehlgeschlagen. Prüfen Sie Bot-Token und Berechtigungen.",
+        "privateTestFailed": "Privater Discord-DM-Test fehlgeschlagen.",
+        "confirmSwitchFailed": "Discord-Installation konnte nicht gewechselt werden.",
+        "rotateFailed": "Discord-Zugangsdaten konnten nicht rotiert werden.",
+        "revokeFailed": "Discord-Installation konnte nicht widerrufen werden.",
+        "prepareRestoreFailed": "Wiederherstellung dieser Discord-Installation konnte nicht gestartet werden."
+      }
     }
   }
 }

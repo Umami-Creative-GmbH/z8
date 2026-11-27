@@ -93,7 +93,11 @@ async function handleSlashCommand(
 	);
 
 	// Resolve user
-	const userResult = await resolveDiscordUser(discordUserId, bot.organizationId, discordUsername);
+	const userResult = bot.installationId
+		? await resolveDiscordUser(discordUserId, bot.organizationId, discordUsername, {
+				installationId: bot.installationId,
+			})
+		: await resolveDiscordUser(discordUserId, bot.organizationId, discordUsername);
 
 	if (userResult.status !== "found") {
 		const { t } = await getReplyTranslate({ userId: null, organizationId: bot.organizationId });
@@ -111,9 +115,16 @@ async function handleSlashCommand(
 		organizationId: bot.organizationId,
 	});
 
-	// Save conversation for proactive messaging (if in DM)
-	if (interaction.channel_id) {
-		await saveConversation(interaction.channel_id, userResult.user.userId, bot.organizationId);
+	// Save conversation for proactive messaging ONLY when invoked in a DM (never a guild server channel).
+	if (interaction.channel_id && !interaction.guild_id) {
+		await saveConversation(
+			interaction.channel_id,
+			userResult.user.userId,
+			bot.organizationId,
+			bot.installationId
+				? { installationId: bot.installationId, externalUserId: discordUserId }
+				: undefined,
+		);
 	}
 
 	// Build shared command context

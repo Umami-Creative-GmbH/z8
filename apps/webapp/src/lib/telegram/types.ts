@@ -98,12 +98,24 @@ export interface TelegramApiResponse<T = unknown> {
 	error_code?: number;
 }
 
+export interface TelegramWebhookInfo {
+	url: string;
+	has_custom_certificate?: boolean;
+	pending_update_count: number;
+	last_error_date?: number;
+	last_error_message?: string;
+}
+
 // ============================================
 // TELEGRAM BOT CONFIG
 // ============================================
 
 export interface ResolvedTelegramBot {
 	organizationId: string;
+	/** Originating or active chat_installation.id when resolved via installations (#2043). */
+	installationId?: string | null;
+	/** Active immutable credential revision ID when resolved via org-owned installation (#2047). */
+	credentialRevisionId?: string | null;
 	botToken: string;
 	botUsername: string | null;
 	webhookSecret: string;

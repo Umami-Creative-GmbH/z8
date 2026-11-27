@@ -4,16 +4,25 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as authSchema from "@/db/auth-schema";
 import * as schema from "@/db/schema";
 
+import { SecretStoreUnavailableError } from "@/lib/vault/errors";
+
 const mocks = vi.hoisted(() => ({
 	db: {
 		query: { organization: { findMany: vi.fn() } },
 		transaction: vi.fn(),
 	},
+	deleteAllOrgSecrets: vi.fn(),
+	invalidateSecretStoreStatusCache: vi.fn(),
+	logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },
 }));
 
 vi.mock("@/db", () => ({ db: mocks.db }));
 vi.mock("@/lib/logger", () => ({
-	createLogger: () => ({ error: vi.fn(), info: vi.fn() }),
+	createLogger: () => mocks.logger,
+}));
+vi.mock("@/lib/vault", () => ({
+	deleteAllOrgSecrets: mocks.deleteAllOrgSecrets,
+	invalidateSecretStoreStatusCache: mocks.invalidateSecretStoreStatusCache,
 }));
 
 import { runOrganizationCleanup } from "./organization-cleanup";
@@ -85,6 +94,8 @@ function deletedUserIds(where: SQL | undefined) {
 describe("organization cleanup topology", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mocks.deleteAllOrgSecrets.mockResolvedValue(undefined);
+		mocks.invalidateSecretStoreStatusCache.mockResolvedValue(undefined);
 		mocks.db.query.organization.findMany.mockResolvedValue([
 			{
 				id: "org-1",
@@ -95,10 +106,7 @@ describe("organization cleanup topology", () => {
 	});
 
 	it("deletes the organization in one transaction and lets its cascade remove tenant data", async () => {
-		const { deleteFrom, events, tx } = createTransaction([
-			{ userId: "user-1" },
-			{ userId: null },
-		]);
+		const { deleteFrom, events, tx } = createTransaction([{ userId: "user-1" }, { userId: null }]);
 		mocks.db.transaction.mockImplementation(async (run) => run(tx));
 
 		const result = await runOrganizationCleanup();
@@ -183,5 +191,53 @@ describe("organization cleanup topology", () => {
 			organizationsDeleted: 0,
 			errors: ["Failed to delete org org-1: violates foreign key constraint"],
 		});
+	});
+
+	it("recursively deletes organization secrets and invalidates secret store status cache (#2046)", async () => {
+		const { tx } = createTransaction();
+		mocks.db.transaction.mockImplementation(async (run) => run(tx));
+
+		const result = await runOrganizationCleanup();
+
+		expect(result.success).toBe(true);
+		expect(mocks.deleteAllOrgSecrets).toHaveBeenCalledTimes(1);
+		expect(mocks.deleteAllOrgSecrets).toHaveBeenCalledWith("org-1");
+		expect(mocks.invalidateSecretStoreStatusCache).toHaveBeenCalledTimes(1);
+		expect(mocks.invalidateSecretStoreStatusCache).toHaveBeenCalledWith("org-1");
+	});
+
+	it("aborts organization deletion when secret-store recursive cleanup fails so deletion stays retryable (#2046)", async () => {
+		const { tx } = createTransaction();
+		mocks.db.transaction.mockImplementation(async (run) => run(tx));
+		mocks.deleteAllOrgSecrets.mockRejectedValueOnce(
+			new SecretStoreUnavailableError("Vault is temporarily sealed", {
+				provider: "vault",
+				operation: "delete",
+			}),
+		);
+
+		const result = await runOrganizationCleanup();
+
+		expect(result).toEqual({
+			success: false,
+			organizationsDeleted: 0,
+			errors: ["Failed to delete org org-1: Vault is temporarily sealed"],
+		});
+		expect(mocks.db.transaction).not.toHaveBeenCalled();
+	});
+
+	it("does not fail committed deletion if Redis status cache invalidation throws (#2046)", async () => {
+		const { tx } = createTransaction();
+		mocks.db.transaction.mockImplementation(async (run) => run(tx));
+		mocks.invalidateSecretStoreStatusCache.mockRejectedValueOnce(new Error("redis timeout"));
+
+		const result = await runOrganizationCleanup();
+
+		expect(result).toEqual({
+			success: true,
+			organizationsDeleted: 1,
+			errors: [],
+		});
+		expect(mocks.logger.warn).toHaveBeenCalled();
 	});
 });

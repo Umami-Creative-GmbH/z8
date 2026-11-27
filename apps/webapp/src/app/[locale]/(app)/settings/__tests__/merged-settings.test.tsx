@@ -58,9 +58,13 @@ vi.mock("@/db", () => ({
 		}),
 	},
 }));
-vi.mock("@/lib/auth-domain-config", () => ({
-	getOrganizationPlatformOrigins: () => ["https://org-1.example.com"],
-}));
+vi.mock("@/lib/auth-domain-config", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@/lib/auth-domain-config")>();
+	return {
+		...actual,
+		getOrganizationPlatformOrigins: () => ["https://org-1.example.com"],
+	};
+});
 vi.mock("@/lib/app-url", () => ({ getOrganizationBaseUrl: mocks.organizationBaseUrl }));
 vi.mock("@/lib/timezone/load-organization-timezone", () => ({
 	loadOrganizationTimezone: mocks.organizationTimezone,
@@ -95,14 +99,64 @@ vi.mock("../notification-channels/actions", () => ({
 	getSlackNotificationChannelConfig: mocks.slack,
 	getTeamsNotificationChannelConfig: mocks.teams,
 	getDiscordNotificationChannelConfig: mocks.discord,
+	getChatInstallationsInventory: vi.fn(async () => ({ success: true, data: null })),
 	updateSlackNotificationChannelSettings: vi.fn(),
 	updateTeamsNotificationChannelSettings: vi.fn(),
 	updateDiscordNotificationChannelSettings: vi.fn(),
 	connectDiscordBot: vi.fn(),
 	disconnectDiscordBot: vi.fn(),
 }));
+vi.mock("../notification-channels/chat-installation-inventory-panel", () => ({
+	ChatInstallationInventoryPanel: () => null,
+}));
+vi.mock("../notification-channels/discord-lifecycle-actions", () => ({
+	getDiscordLifecycleState: vi.fn(async () => ({ success: true, data: null })),
+}));
+vi.mock("../notification-channels/discord-lifecycle-section", () => ({
+	DiscordLifecycleSection: () => null,
+}));
+vi.mock("../notification-channels/recovery-actions", () => ({
+	getSlackRecoveryState: vi.fn(async () => ({ success: true, data: null })),
+}));
+vi.mock("../notification-channels/slack-prepare-test-section", () => ({
+	SlackPrepareTestSection: () => null,
+}));
+vi.mock("../notification-channels/slack-recovery-section", () => ({
+	SlackRecoverySection: () => null,
+}));
+vi.mock("../notification-channels/slack-setup-actions", () => ({
+	getSlackCandidateSetup: vi.fn(async () => ({ success: true, data: null })),
+}));
+vi.mock("../notification-channels/slack-switch-actions", () => ({
+	getProviderCapabilityDisclosure: vi.fn(async () => ({ success: true, data: null })),
+	getSlackSwitchImpactPreview: vi.fn(async () => ({ success: true, data: null })),
+}));
+vi.mock("../notification-channels/slack-switch-review-section", () => ({
+	SlackSwitchReviewSection: () => null,
+}));
+vi.mock("../notification-channels/teams-prepare-test-section", () => ({
+	TeamsPrepareTestSection: () => null,
+}));
+vi.mock("../notification-channels/teams-setup-actions", () => ({
+	getTeamsCandidateSetup: vi.fn(async () => ({ success: true, data: null })),
+}));
+vi.mock("../notification-channels/teams-switch-actions", () => ({
+	getTeamsSwitchImpactPreview: vi.fn(async () => ({ success: true, data: null })),
+}));
+vi.mock("../notification-channels/teams-switch-review-section", () => ({
+	TeamsSwitchReviewSection: () => null,
+}));
+vi.mock("../notification-channels/telegram-lifecycle-actions", () => ({
+	getTelegramLifecycleState: vi.fn(async () => ({ success: true, data: null })),
+}));
+vi.mock("../notification-channels/telegram-lifecycle-section", () => ({
+	TelegramLifecycleSection: () => null,
+}));
 vi.mock("../notification-channels/telegram-panel", () => ({
 	TelegramPanel: () => null,
+}));
+vi.mock("@/components/settings/chat-capability-disclosure-card", () => ({
+	ChatCapabilityDisclosureCard: () => null,
 }));
 vi.mock("../payroll-export/actions", () => ({
 	getDatevConfigAction: mocks.datev,

@@ -329,6 +329,15 @@ describe("joining an organization (#1665)", () => {
 					org_wide_permissions: expected.writes && role === "admin" ? 1 : 0,
 				});
 
+				if (expected.kind === "joined") {
+					const { rows: periods } = await fixture.pool.query(
+						`select status, engagement_kind from employee_employment_period
+						 where organization_id = $1 and employee_id = $2`,
+						[fixture.organizationId, row?.id],
+					);
+					expect(periods).toEqual([{ status: "open", engagement_kind: "employee" }]);
+				}
+
 				expect(joined.afterCommit.seatSignal).toEqual({
 					organizationId: fixture.organizationId,
 					memberId: person.memberId,

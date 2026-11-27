@@ -15,6 +15,7 @@ import { normalizePersonnelNumber } from "@/lib/organization/personnel-number";
 import { placeArrivingEmployee } from "@/lib/organization/team-placement/team-placement";
 import { acquireExclusiveUserConfigurationAccessGuards } from "@/lib/time-tracking/work-transaction";
 import { onCurrentRoster } from "../current-roster";
+import { resolveCurrentEmploymentPeriod } from "../employment-periods";
 import { reactivateOnReturn } from "../reactivation";
 import {
 	applyContractorDraft,
@@ -337,10 +338,16 @@ async function joinAsNewEmployee(context: JoiningContext): Promise<JoiningOutcom
 	);
 	if (!created) throw new Error("Joining did not create the employee");
 
-	return {
-		kind: "joined",
-		employee: await settleArrivingEmployee(context, created, { dropped, outcome: "created" }),
-	};
+	const settled = await settleArrivingEmployee(context, created, { dropped, outcome: "created" });
+	// Initial terms can already have opened the period. Joiners without terms
+	// need the same first period before their membership commits.
+	const period = await resolveCurrentEmploymentPeriod(tx, {
+		organizationId,
+		employeeId: settled.id,
+	});
+	if (period?.status !== "open") throw new Error("Joining did not open an employment period");
+
+	return { kind: "joined", employee: settled };
 }
 
 /**

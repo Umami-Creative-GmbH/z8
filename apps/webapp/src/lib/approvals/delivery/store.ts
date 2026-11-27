@@ -5,7 +5,9 @@ import {
 	type ApprovalDeliveryEffect,
 	type ApprovalDeliveryLifecycle,
 	type ApprovalDeliveryProvider,
+	type ApprovalDeliveryReconciliationContext,
 	type ApprovalDeliveryStatus,
+	type ApprovalDispatchAttemptState,
 	absenceEntry,
 	approvalDeliveryControl,
 	approvalDeliveryMessage,
@@ -246,7 +248,10 @@ export async function isApprovalNotificationDeliveredByOwner(input: {
 		return delivered !== undefined;
 	}
 	const absence = await db.query.absenceEntry.findFirst({
-		where: and(eq(absenceEntry.id, absenceId), eq(absenceEntry.organizationId, input.organizationId)),
+		where: and(
+			eq(absenceEntry.id, absenceId),
+			eq(absenceEntry.organizationId, input.organizationId),
+		),
 		columns: { approvalWorkflowId: true },
 	});
 	return Boolean(absence?.approvalWorkflowId);
@@ -338,7 +343,6 @@ function deputyLegacyInitialDedupeKey(
 ): string {
 	return `approval-delivery:v1:deputy-legacy-initial:${approvalRequestId}:${deputyId}:${provider}`;
 }
-
 
 /**
  * A legacy-authoritative lifecycle (#296): a source and its legacy requests,
@@ -479,7 +483,6 @@ function legacyLifecycleRowsSql(
 		}`;
 }
 
-
 /**
  * Plans every effect the workflow's current state requires: an initial card
  * per still-pending assignment and owned provider (each at most once), the
@@ -550,7 +553,9 @@ async function planWorkflowEffects(
 						{
 							key: text(assignment.id, "assignment"),
 							approverId: text(assignment.approver_employee_id, "approver"),
-							assignedAt: instantFromDate(decodeApprovalDatabaseTimestamptz(assignment.assigned_at)),
+							assignedAt: instantFromDate(
+								decodeApprovalDatabaseTimestamptz(assignment.assigned_at),
+							),
 							requesterEmployeeId: nullableText(assignment.requester_employee_id),
 						},
 					]
@@ -593,6 +598,7 @@ async function planWorkflowEffects(
 				eq(approvalDeliveryWork.workflowId, input.workflowId),
 				eq(approvalDeliveryWork.effect, "initial"),
 				inArray(approvalDeliveryWork.status, ["pending", "awaiting_repair", "exhausted", "failed"]),
+				sql`coalesce(${approvalDeliveryWork.dispatchAttemptState}, 'none') not in ('uncertain_across_switch', 'closed_unknown')`,
 				stillPending.length > 0
 					? sql`${approvalDeliveryWork.assignmentId} <> all(${sql.param(stillPending)}::uuid[])`
 					: sql`true`,
@@ -710,6 +716,7 @@ async function planLegacyLifecycleEffects(
 			where ${legacyLifecycleRowsSql("d", input.organizationId, lifecycle)}
 				and d.effect = 'initial'
 				and d.status in ('pending', 'awaiting_repair', 'exhausted', 'failed')
+				and coalesce(d.dispatch_attempt_state, 'none') not in ('uncertain_across_switch', 'closed_unknown')
 				${
 					stillPending.length > 0
 						? sql`and d.legacy_approval_request_id <> all(${sql.param(stillPending)}::uuid[])`
@@ -744,6 +751,7 @@ export async function planApprovalMessageRefreshes(
 	const stale = rows(
 		await executor.execute(sql`
 			select m.id, m.provider, m.assignment_id, m.recipient_employee_id,
+				m.installation_id, m.credential_revision_id,
 				w.version
 			from approval_delivery_message m
 			join approval_workflow w
@@ -771,21 +779,24 @@ export async function planApprovalMessageRefreshes(
 			assignmentId: text(message.assignment_id, "assignment"),
 			recipientEmployeeId: text(message.recipient_employee_id, "recipient"),
 			messageId,
+			installationId: nullableText(message.installation_id),
+			credentialRevisionId: nullableText(message.credential_revision_id),
 			escalationTransferId: input.escalationTransferId ?? null,
 			dedupeKey: refreshDedupeKey(messageId, version),
 		});
 		const target = [approvalDeliveryWork.organizationId, approvalDeliveryWork.dedupeKey];
-		const inserted = await (input.escalationTransferId
-			? // Escalation owns the retirement of its transfer's cards: it adopts
-				// the same refresh when the delivery owner planned it first and no
-				// worker has claimed it yet (a claim moves it out of `pending`).
-				planned.onConflictDoUpdate({
-					target,
-					set: { escalationTransferId: input.escalationTransferId },
-					setWhere: sql`${approvalDeliveryWork.escalationTransferId} is null
+		const inserted = await (
+			input.escalationTransferId
+				? // Escalation owns the retirement of its transfer's cards: it adopts
+					// the same refresh when the delivery owner planned it first and no
+					// worker has claimed it yet (a claim moves it out of `pending`).
+					planned.onConflictDoUpdate({
+						target,
+						set: { escalationTransferId: input.escalationTransferId },
+						setWhere: sql`${approvalDeliveryWork.escalationTransferId} is null
 						and ${approvalDeliveryWork.status} = 'pending'`,
-				})
-			: planned.onConflictDoNothing({ target })
+					})
+				: planned.onConflictDoNothing({ target })
 		).returning({ id: approvalDeliveryWork.id });
 		created += inserted.length;
 	}
@@ -816,6 +827,7 @@ async function planLegacyMessageRefreshes(
 	const stale = rows(
 		await executor.execute(sql`
 			select m.id, m.provider, m.legacy_approval_request_id, m.recipient_employee_id,
+				m.installation_id, m.credential_revision_id,
 				${legacyLifecycleVersionSql(input.organizationId, lifecycle)} as version
 			from approval_delivery_message m
 			left join approval_request r
@@ -853,18 +865,21 @@ async function planLegacyMessageRefreshes(
 			legacyApprovalRequestId: text(message.legacy_approval_request_id, "legacy request"),
 			recipientEmployeeId: text(message.recipient_employee_id, "recipient"),
 			messageId,
+			installationId: nullableText(message.installation_id),
+			credentialRevisionId: nullableText(message.credential_revision_id),
 			escalationTransferId: input.escalationTransferId ?? null,
 			dedupeKey: refreshDedupeKey(messageId, version),
 		});
 		const target = [approvalDeliveryWork.organizationId, approvalDeliveryWork.dedupeKey];
-		const inserted = await (input.escalationTransferId
-			? planned.onConflictDoUpdate({
-					target,
-					set: { escalationTransferId: input.escalationTransferId },
-					setWhere: sql`${approvalDeliveryWork.escalationTransferId} is null
+		const inserted = await (
+			input.escalationTransferId
+				? planned.onConflictDoUpdate({
+						target,
+						set: { escalationTransferId: input.escalationTransferId },
+						setWhere: sql`${approvalDeliveryWork.escalationTransferId} is null
 						and ${approvalDeliveryWork.status} = 'pending'`,
-				})
-			: planned.onConflictDoNothing({ target })
+					})
+				: planned.onConflictDoNothing({ target })
 		).returning({ id: approvalDeliveryWork.id });
 		created += inserted.length;
 	}
@@ -1070,6 +1085,7 @@ export async function cancelObsoleteReplacementDeliveryWork(input: {
 				${input.workflowId ? sql`and d.workflow_id = ${input.workflowId}::uuid` : sql``}
 				and d.effect = 'replacement'
 				and d.status in ('pending', 'awaiting_repair', 'exhausted', 'failed')
+				and coalesce(d.dispatch_attempt_state, 'none') not in ('uncertain_across_switch', 'closed_unknown')
 				and a.id = d.assignment_id and a.organization_id = d.organization_id
 				and w.id = d.workflow_id and w.organization_id = d.organization_id
 				and (a.status <> 'pending' or w.status <> 'pending')
@@ -1087,6 +1103,7 @@ export async function cancelObsoleteReplacementDeliveryWork(input: {
 						and d.lifecycle = 'legacy'
 						and d.effect = 'replacement'
 						and d.status in ('pending', 'awaiting_repair', 'exhausted', 'failed')
+						and coalesce(d.dispatch_attempt_state, 'none') not in ('uncertain_across_switch', 'closed_unknown')
 						and (
 							not exists (
 								select 1 from approval_request r
@@ -1330,6 +1347,14 @@ export interface ClaimedApprovalDeliveryWork {
 	claimToken: string;
 	retryCount: number;
 	attemptCount: number;
+	/** Originating or previously attempted chat installation (#2043). */
+	installationId: string | null;
+	/** Credential revision selected for the prior or current attempt (#2043). */
+	credentialRevisionId: string | null;
+	/** Timestamp recorded right before the last provider call, if any (#2043). */
+	dispatchIntentAt: Instant | null;
+	/** Durable dispatch state of this work row (#2043). */
+	dispatchAttemptState: ApprovalDispatchAttemptState | null;
 }
 
 /** Which executor a work row belongs to: escalation owns transfer-linked work. */
@@ -1417,7 +1442,9 @@ export async function claimApprovalDeliveryWork(input: {
 					d.effect, d.provider, d.assignment_id, d.legacy_source_type,
 					d.legacy_source_id, d.legacy_approval_request_id, d.legacy_cycle_id,
 					d.recipient_employee_id, d.acting_for_employee_id,
-					d.message_id, d.escalation_transfer_id, d.retry_count, d.attempt_count
+					d.message_id, d.escalation_transfer_id, d.retry_count, d.attempt_count,
+					d.installation_id, d.credential_revision_id, d.dispatch_intent_at,
+					d.dispatch_attempt_state
 			`),
 		);
 		return claimed
@@ -1450,6 +1477,14 @@ export async function claimApprovalDeliveryWork(input: {
 					claimToken,
 					retryCount: Number(row.retry_count),
 					attemptCount: Number(row.attempt_count),
+					installationId: nullableText(row.installation_id),
+					credentialRevisionId: nullableText(row.credential_revision_id),
+					dispatchIntentAt: row.dispatch_intent_at
+						? instantFromDate(decodeApprovalDatabaseTimestamptz(row.dispatch_intent_at))
+						: null,
+					dispatchAttemptState: nullableText(
+						row.dispatch_attempt_state,
+					) as ApprovalDispatchAttemptState | null,
 				};
 			})
 			.sort((left, right) => ids.indexOf(left.id) - ids.indexOf(right.id));
@@ -1707,6 +1742,125 @@ export async function renewApprovalDeliveryLease(input: {
 }
 
 /**
+ * Re-checks and extends the claim lease AND records the target installation,
+ * credential revision, and pre-dispatch intent right before calling a provider
+ * adapter (#2043). Returns false if the lease was already lost.
+ */
+export async function recordApprovalDeliveryDispatchIntent(input: {
+	work: Pick<ClaimedApprovalDeliveryWork, "id" | "organizationId" | "claimToken">;
+	installationId: string | null;
+	credentialRevisionId: string | null;
+	now: Instant;
+	leaseMs?: number;
+}): Promise<boolean> {
+	const updated = await db
+		.update(approvalDeliveryWork)
+		.set({
+			leaseExpiresAt: dateFromInstant(
+				input.now.add({ milliseconds: input.leaseMs ?? APPROVAL_DELIVERY_LEASE_MS }),
+			),
+			installationId: input.installationId,
+			credentialRevisionId: input.credentialRevisionId,
+			dispatchIntentAt: dateFromInstant(input.now),
+			dispatchAttemptState: "intent_recorded",
+		})
+		.where(
+			and(
+				eq(approvalDeliveryWork.id, input.work.id),
+				eq(approvalDeliveryWork.organizationId, input.work.organizationId),
+				eq(approvalDeliveryWork.claimToken, input.work.claimToken),
+				eq(approvalDeliveryWork.status, "processing"),
+				gt(approvalDeliveryWork.leaseExpiresAt, dateFromInstant(input.now)),
+			),
+		)
+		.returning({ id: approvalDeliveryWork.id });
+	return updated.length === 1;
+}
+
+/**
+ * Quarantines an approval delivery work row whose outcome is uncertain after
+ * an installation switch (#2043). Preserves the attempted installation and
+ * credential revision, keeps the row out of automatic retry and destination
+ * repair, and records redacted context for operator reconciliation.
+ */
+export async function quarantineApprovalDeliveryWorkAcrossSwitch(
+	executor: ApprovalDeliveryExecutor,
+	input: {
+		work: Pick<ClaimedApprovalDeliveryWork, "id" | "organizationId" | "claimToken">;
+		context: ApprovalDeliveryReconciliationContext;
+		now: Instant;
+	},
+): Promise<boolean> {
+	const nowDate = dateFromInstant(input.now);
+	const updated = await executor
+		.update(approvalDeliveryWork)
+		.set({
+			status: "failed",
+			lastOutcome: "uncertain_across_switch",
+			dispatchAttemptState: "uncertain_across_switch",
+			reconciliationRequiredAt: nowDate,
+			reconciliationContext: input.context,
+			claimToken: null,
+			leaseExpiresAt: null,
+			processedAt: nowDate,
+		})
+		.where(
+			and(
+				eq(approvalDeliveryWork.id, input.work.id),
+				eq(approvalDeliveryWork.organizationId, input.work.organizationId),
+				eq(approvalDeliveryWork.claimToken, input.work.claimToken),
+				eq(approvalDeliveryWork.status, "processing"),
+			),
+		)
+		.returning({ id: approvalDeliveryWork.id });
+	return updated.length === 1;
+}
+
+export interface ClosedUnknownApprovalDeliveryWorkRow {
+	id: string;
+	organizationId: string;
+	provider: ApprovalDeliveryProvider;
+	installationId: string | null;
+}
+
+/**
+ * Transitions unresolved `uncertain_across_switch` work whose reconciliation
+ * timestamp is at or before `cutoff` (7 days prior to `now`) to an explicit
+ * `closed_unknown` outcome with Z8 inbox fallback (#2043).
+ */
+export async function closeExpiredUncertainApprovalDeliveryWork(input: {
+	organizationId?: string;
+	cutoff: Instant;
+	now: Instant;
+}): Promise<ClosedUnknownApprovalDeliveryWorkRow[]> {
+	const cutoffDate = dateFromInstant(input.cutoff);
+	const nowDate = dateFromInstant(input.now);
+	const nowIso = input.now.toString();
+	const closed = rows(
+		await db.execute(sql`
+			update approval_delivery_work
+			set dispatch_attempt_state = 'closed_unknown',
+				last_outcome = 'unknown_closed',
+				unknown_closed_at = ${nowDate},
+				reconciliation_context = coalesce(reconciliation_context, '{}'::jsonb)
+					|| jsonb_build_object('closedUnknownAt', ${nowIso}::text, 'fallback', 'z8_inbox'),
+				updated_at = ${nowDate}
+			where dispatch_attempt_state = 'uncertain_across_switch'
+				and unknown_closed_at is null
+				and reconciliation_required_at <= ${cutoffDate}
+				${input.organizationId ? sql`and organization_id = ${input.organizationId}` : sql``}
+			returning id, organization_id, provider, installation_id
+		`),
+	);
+	return closed.map((row) => ({
+		id: text(row.id, "work"),
+		organizationId: text(row.organization_id, "organization"),
+		provider: text(row.provider, "provider") as ApprovalDeliveryProvider,
+		installationId: nullableText(row.installation_id),
+	}));
+}
+
+/**
  * Completes a claim only while its lease token still holds. A worker whose
  * lease was taken over changes nothing (returns false); the remote message it
  * may have produced is still recorded separately.
@@ -1719,6 +1873,7 @@ export async function finishApprovalDeliveryWork(
 		outcome: string;
 		availableAt?: Instant;
 		retryCount?: number;
+		dispatchAttemptState?: ApprovalDispatchAttemptState;
 	},
 ): Promise<boolean> {
 	const terminal = input.status !== "pending";
@@ -1732,6 +1887,9 @@ export async function finishApprovalDeliveryWork(
 			processedAt: terminal ? new Date() : null,
 			...(input.availableAt ? { availableAt: dateFromInstant(input.availableAt) } : {}),
 			...(input.retryCount !== undefined ? { retryCount: input.retryCount } : {}),
+			...(input.dispatchAttemptState !== undefined
+				? { dispatchAttemptState: input.dispatchAttemptState }
+				: {}),
 		})
 		.where(
 			and(
@@ -1756,6 +1914,10 @@ interface DeliveredMessageRemote {
 	receiverScope: string;
 	destinationId: string;
 	remoteMessageId: string;
+	/** Originating chat installation (#2043). */
+	installationId?: string | null;
+	/** Credential revision used to dispatch this card (#2043). */
+	credentialRevisionId?: string | null;
 	bindingId: string | null;
 	originWorkId: string | null;
 	controls: "actionable" | "none";
@@ -1783,7 +1945,7 @@ export type RecordDeliveredMessageResult =
 class LegacyLifecyclePurgedError extends Error {}
 
 function isForeignKeyViolation(error: unknown): boolean {
-	for (let current = error; current && typeof current === "object"; ) {
+	for (let current = error; current && typeof current === "object";) {
 		if ("code" in current && current.code === "23503") return true;
 		current = "cause" in current ? current.cause : undefined;
 	}
@@ -2118,12 +2280,12 @@ export async function planDeputyCardRetirements(input: {
 					organization_id, lifecycle, workflow_id, effect, provider, assignment_id,
 					workflow_type, legacy_source_type, legacy_source_id, legacy_approval_request_id,
 					legacy_cycle_id, recipient_employee_id, acting_for_employee_id, message_id,
-					dedupe_key
+					installation_id, credential_revision_id, dedupe_key
 				)
 				select m.organization_id, m.lifecycle, m.workflow_id, 'refresh', m.provider,
 					m.assignment_id, m.workflow_type, m.legacy_source_type, m.legacy_source_id,
 					m.legacy_approval_request_id, m.legacy_cycle_id, m.recipient_employee_id,
-					m.acting_for_employee_id, m.id,
+					m.acting_for_employee_id, m.id, m.installation_id, m.credential_revision_id,
 					'approval-delivery:v1:deputy-retire:' || m.id::text
 				from approval_delivery_message m
 				where m.organization_id = ${input.organizationId}
@@ -2207,6 +2369,7 @@ export async function rearmApprovalDeliveryWork(input: {
 	const filters = [
 		eq(approvalDeliveryWork.organizationId, input.organizationId),
 		inArray(approvalDeliveryWork.status, ["awaiting_repair", "exhausted", "failed"]),
+		sql`coalesce(${approvalDeliveryWork.dispatchAttemptState}, 'none') not in ('uncertain_across_switch', 'closed_unknown')`,
 	];
 	if (input.workIds) filters.push(inArray(approvalDeliveryWork.id, input.workIds));
 	if (input.assignmentId) filters.push(eq(approvalDeliveryWork.assignmentId, input.assignmentId));

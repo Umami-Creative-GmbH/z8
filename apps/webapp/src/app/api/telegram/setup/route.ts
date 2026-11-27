@@ -20,12 +20,8 @@ import { auth } from "@/lib/auth";
 import { runActiveOrganizationActionActorCheck as requireActiveOrganizationActionActor } from "@/lib/auth/organization-action-authorization";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import { createLogger } from "@/lib/logger";
-import {
-	checkRateLimit,
-	createRateLimitResponse,
-	getClientIp,
-} from "@/lib/rate-limit";
-import { deleteOrgSecret, storeOrgSecret } from "@/lib/vault";
+import { checkRateLimit, createRateLimitResponse, getClientIp } from "@/lib/rate-limit";
+import { storeOrgSecret } from "@/lib/vault";
 
 const logger = createLogger("TelegramSetup");
 
@@ -60,8 +56,7 @@ export async function POST(request: NextRequest) {
 				userId: session.user.id,
 				organizationId,
 				requiredRole: "admin",
-				message:
-					"Only active approved admins and owners can configure Telegram",
+				message: "Only active approved admins and owners can configure Telegram",
 				resource: "telegramIntegration",
 				action: "create",
 			});
@@ -73,12 +68,7 @@ export async function POST(request: NextRequest) {
 		const [membership] = await db
 			.select()
 			.from(member)
-			.where(
-				and(
-					eq(member.userId, session.user.id),
-					eq(member.organizationId, organizationId),
-				),
-			)
+			.where(and(eq(member.userId, session.user.id), eq(member.organizationId, organizationId)))
 			.limit(1);
 
 		if (
@@ -87,6 +77,17 @@ export async function POST(request: NextRequest) {
 				!hasOrganizationRole(membership.role, "owner"))
 		) {
 			return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+		}
+
+		// Route legacy setup mutations through the authorized installation lifecycle guard
+		const { checkLegacyTelegramSetupMutationAllowed, TELEGRAM_BOT_COMMANDS } =
+			await import("@/lib/chat-installations/telegram-setup");
+		const guard = await checkLegacyTelegramSetupMutationAllowed(organizationId);
+		if (!guard.allowed) {
+			return NextResponse.json(
+				{ error: guard.message, code: guard.code },
+				{ status: guard.status },
+			);
 		}
 
 		// Verify the bot token with Telegram
@@ -148,11 +149,7 @@ export async function POST(request: NextRequest) {
 		const appUrl = env.APP_URL || "https://z8-time.app";
 		const webhookUrl = `${appUrl}/api/telegram/webhook/${webhookSecret}`;
 
-		const webhookRegistered = await setWebhook(
-			botToken,
-			webhookUrl,
-			webhookSecret,
-		);
+		const webhookRegistered = await setWebhook(botToken, webhookUrl, webhookSecret);
 
 		if (webhookRegistered) {
 			await db
@@ -161,22 +158,7 @@ export async function POST(request: NextRequest) {
 				.where(eq(telegramBotConfig.organizationId, organizationId));
 
 			// Register command menu with Telegram
-			await setMyCommands(botToken, [
-				{
-					command: "status",
-					description: "Check your current clock-in status",
-				},
-				{ command: "clockin", description: "Clock in to start tracking time" },
-				{ command: "clockout", description: "Clock out to stop tracking time" },
-				{ command: "clockedin", description: "See who's currently clocked in" },
-				{ command: "whosout", description: "See who's currently out/on leave" },
-				{ command: "pending", description: "See pending approval requests" },
-				{ command: "coverage", description: "View staffing coverage" },
-				{ command: "openshifts", description: "View open shifts" },
-				{ command: "compliance", description: "View compliance issues" },
-				{ command: "language", description: "Change your language" },
-				{ command: "help", description: "Show available commands" },
-			]);
+			await setMyCommands(botToken, [...TELEGRAM_BOT_COMMANDS]);
 		}
 
 		logger.info(
@@ -196,10 +178,7 @@ export async function POST(request: NextRequest) {
 		});
 	} catch (error) {
 		logger.error({ error }, "Telegram setup failed");
-		return NextResponse.json(
-			{ error: "Internal server error" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 	}
 }
 
@@ -222,18 +201,14 @@ export async function DELETE(request: NextRequest) {
 		const organizationId = searchParams.get("organizationId");
 
 		if (!organizationId) {
-			return NextResponse.json(
-				{ error: "organizationId is required" },
-				{ status: 400 },
-			);
+			return NextResponse.json({ error: "organizationId is required" }, { status: 400 });
 		}
 		try {
 			await requireActiveOrganizationActionActor({
 				userId: session.user.id,
 				organizationId,
 				requiredRole: "admin",
-				message:
-					"Only active approved admins and owners can disconnect Telegram",
+				message: "Only active approved admins and owners can disconnect Telegram",
 				resource: "telegramIntegration",
 				action: "delete",
 			});
@@ -245,12 +220,7 @@ export async function DELETE(request: NextRequest) {
 		const [membership] = await db
 			.select()
 			.from(member)
-			.where(
-				and(
-					eq(member.userId, session.user.id),
-					eq(member.organizationId, organizationId),
-				),
-			)
+			.where(and(eq(member.userId, session.user.id), eq(member.organizationId, organizationId)))
 			.limit(1);
 
 		if (
@@ -261,42 +231,17 @@ export async function DELETE(request: NextRequest) {
 			return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 		}
 
-		const config = await db.query.telegramBotConfig.findFirst({
-			where: eq(telegramBotConfig.organizationId, organizationId),
+		const { disconnectLegacyTelegramInstallation } =
+			await import("@/lib/chat-installations/telegram-setup");
+		const disconnectResult = await disconnectLegacyTelegramInstallation({
+			organizationId,
+			actorUserId: session.user.id,
 		});
-
-		if (config) {
-			// Fetch bot token from Vault (fall back to DB for pre-migration configs)
-			const { deleteWebhook } = await import("@/lib/telegram");
-			const { getOrgSecret } = await import("@/lib/vault");
-			const vaultToken = await getOrgSecret(
-				config.organizationId,
-				"telegram/bot_token",
+		if (disconnectResult.kind === "refused") {
+			return NextResponse.json(
+				{ error: disconnectResult.message, code: disconnectResult.code },
+				{ status: disconnectResult.status },
 			);
-			const tokenForCleanup =
-				vaultToken ||
-				(config.botToken !== "vault:managed" ? config.botToken : null);
-
-			if (tokenForCleanup) {
-				await deleteWebhook(tokenForCleanup);
-			}
-
-			// Remove bot token from Vault
-			await deleteOrgSecret(organizationId, "telegram/bot_token");
-
-			// Mark as disconnected
-			await db
-				.update(telegramBotConfig)
-				.set({
-					setupStatus: "disconnected",
-					webhookRegistered: false,
-				})
-				.where(
-					and(
-						eq(telegramBotConfig.id, config.id),
-						eq(telegramBotConfig.organizationId, organizationId),
-					),
-				);
 		}
 
 		logger.info({ organizationId }, "Telegram bot disconnected");
@@ -304,9 +249,6 @@ export async function DELETE(request: NextRequest) {
 		return NextResponse.json({ success: true });
 	} catch (error) {
 		logger.error({ error }, "Telegram disconnect failed");
-		return NextResponse.json(
-			{ error: "Internal server error" },
-			{ status: 500 },
-		);
+		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 	}
 }

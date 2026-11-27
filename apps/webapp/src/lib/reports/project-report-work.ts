@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, gte, inArray, isNotNull, isNull, lt } from "drizzle-orm";
+import { and, eq, gte, inArray, isNotNull, isNull, lt, ne } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
 import type { db } from "@/db";
 import { invoicedWork, project, timeEntry, workPeriod } from "@/db/schema";
@@ -71,10 +71,10 @@ export function instantWindow(range: ReportDayRange) {
 export type ReportedProjectWork = ReportedWork & { taskId: string | null; missingTask?: true };
 
 /**
- * The work a project report counts (#794, #902): completed, non-deleted work of
- * the given projects in the organization whose employee-local start day (at the
- * offset captured on its start entry) falls in the range. Live work never
- * counts. Each row carries the project's current active customer, whether a
+ * The work a project report counts: completed, non-deleted and non-rejected
+ * work of the given projects in the organization whose employee-local start
+ * day (at the offset captured on its start entry) falls in the range.
+ * Each row carries the project's current active customer, whether a
  * correction or submission for it is pending, and whether it is invoiced work
  * (in an unreleased invoice draft, #903) with its frozen rates.
  */
@@ -128,6 +128,7 @@ export async function loadReportedProjectWork(
 				eq(workPeriod.organizationId, organizationId),
 				inArray(workPeriod.projectId, [...scope.projectIds]),
 				completedWorkPeriodCondition(),
+				ne(workPeriod.approvalStatus, "rejected"),
 				isNotNull(workPeriod.endTime),
 				isNotNull(workPeriod.durationMinutes),
 				gte(workPeriod.startTime, window.start),
@@ -173,9 +174,8 @@ export async function loadReportedProjectWork(
  * External Contractors' cost from their terms (#1999): the contractor pricing
  * engine prices every local day of the range once, from all of the people's
  * completed work that day (any project, billable or not), and the report reads
- * each work period's allocated part. Rejected work is never priced (its cost is
- * unknown); work awaiting approval is, because margin reads the work as
- * currently recorded, like the report's revenue. Contractor Time & Fee
+ * each work period's allocated part. Reports count work awaiting approval as
+ * recorded and exclude rejected work from both revenue and cost. Contractor Time & Fee
  * Statements verify approved work only. Only people with a contractor engagement
  * in the window are priced. Queries run one after another, like the rest of
  * the report (`reader` may be a transaction).

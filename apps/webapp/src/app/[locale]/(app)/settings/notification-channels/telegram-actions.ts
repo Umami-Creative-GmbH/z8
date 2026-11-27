@@ -4,8 +4,17 @@ import { randomBytes } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { z } from "zod";
-import { telegramBotConfig, telegramUserMapping } from "@/db/schema";
+import {
+	chatInstallation,
+	chatProviderSettings,
+	telegramBotConfig,
+	telegramUserMapping,
+} from "@/db/schema";
 import { env } from "@/env";
+import {
+	checkLegacyTelegramSetupMutationAllowed,
+	disconnectLegacyTelegramInstallation,
+} from "@/lib/chat-installations/telegram-setup";
 import { ExternalServiceError, ValidationError } from "@/lib/effect/errors";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { createLogger } from "@/lib/logger";
@@ -88,29 +97,63 @@ export const getTelegramConfig = organizationAction(
 	({ organizationId }) =>
 		Effect.gen(function* () {
 			const dbService = yield* DatabaseService;
-			const config = yield* dbService.query("telegram.getConfig", () =>
-				dbService.db.query.telegramBotConfig.findFirst({
+			return yield* dbService.query("telegram.getConfig", async () => {
+				const authoritative = await dbService.db.query?.chatProviderSettings?.findFirst({
+					where: and(
+						eq(chatProviderSettings.organizationId, organizationId),
+						eq(chatProviderSettings.provider, "telegram"),
+						eq(chatProviderSettings.isAuthoritative, true),
+					),
+				});
+				if (authoritative) {
+					const activeInst = authoritative.activeInstallationId
+						? await dbService.db.query?.chatInstallation?.findFirst({
+								where: and(
+									eq(chatInstallation.id, authoritative.activeInstallationId),
+									eq(chatInstallation.organizationId, organizationId),
+								),
+							})
+						: undefined;
+					if (!activeInst || activeInst.status !== "active") {
+						return null;
+					}
+					return {
+						botUsername: activeInst.externalBotUsername,
+						botDisplayName: activeInst.externalDisplayName,
+						setupStatus: "active",
+						webhookRegistered: activeInst.endpointState === "synced",
+						enableApprovals: authoritative.enableApprovals,
+						enableCommands: authoritative.enableCommands,
+						enableDailyDigest: authoritative.enableDailyDigest,
+						enableEscalations: authoritative.enableEscalations,
+						digestTime: authoritative.digestTime,
+						digestTimezone: authoritative.digestTimezone,
+						escalationTimeoutHours: authoritative.escalationTimeoutHours,
+					} satisfies TelegramConfig;
+				}
+
+				const config = await dbService.db.query.telegramBotConfig.findFirst({
 					where: eq(telegramBotConfig.organizationId, organizationId),
-				}),
-			);
+				});
 
-			if (!config || config.setupStatus === "disconnected") {
-				return null;
-			}
+				if (!config || config.setupStatus === "disconnected") {
+					return null;
+				}
 
-			return {
-				botUsername: config.botUsername,
-				botDisplayName: config.botDisplayName,
-				setupStatus: config.setupStatus,
-				webhookRegistered: config.webhookRegistered,
-				enableApprovals: config.enableApprovals,
-				enableCommands: config.enableCommands,
-				enableDailyDigest: config.enableDailyDigest,
-				enableEscalations: config.enableEscalations,
-				digestTime: config.digestTime,
-				digestTimezone: config.digestTimezone,
-				escalationTimeoutHours: config.escalationTimeoutHours,
-			} satisfies TelegramConfig;
+				return {
+					botUsername: config.botUsername,
+					botDisplayName: config.botDisplayName,
+					setupStatus: config.setupStatus,
+					webhookRegistered: config.webhookRegistered,
+					enableApprovals: config.enableApprovals,
+					enableCommands: config.enableCommands,
+					enableDailyDigest: config.enableDailyDigest,
+					enableEscalations: config.enableEscalations,
+					digestTime: config.digestTime,
+					digestTimezone: config.digestTimezone,
+					escalationTimeoutHours: config.escalationTimeoutHours,
+				} satisfies TelegramConfig;
+			});
 		}),
 );
 
@@ -125,6 +168,19 @@ export const setupTelegramBot = organizationAction(
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
 			const dbService = yield* DatabaseService;
+			if (typeof dbService.db.select === "function") {
+				const guard = yield* dbService.query("telegram.setupBot.checkLifecycle", () =>
+					checkLegacyTelegramSetupMutationAllowed(organizationId, { db: dbService.db }),
+				);
+				if (!guard.allowed) {
+					return yield* Effect.fail(
+						new ValidationError({
+							message: guard.message,
+							refusal: guard.code,
+						}),
+					);
+				}
+			}
 			const { getMe, setWebhook } = yield* Effect.promise(() => import("@/lib/telegram"));
 
 			// Verify the bot token with Telegram
@@ -203,28 +259,70 @@ export const updateTelegramSettings = organizationAction(
 	({ organizationId, input }) =>
 		Effect.gen(function* () {
 			const dbService = yield* DatabaseService;
-			yield* dbService.query("telegram.updateSettings", () =>
-				dbService.db
+			const settingsValues = {
+				enableApprovals: input.enableApprovals,
+				enableCommands: input.enableCommands,
+				enableDailyDigest: input.enableDailyDigest,
+				enableEscalations: input.enableEscalations,
+				digestTime: input.digestTime,
+				digestTimezone: input.digestTimezone,
+				escalationTimeoutHours: input.escalationTimeoutHours,
+			};
+			yield* dbService.query("telegram.updateSettings", async () => {
+				const authoritative = await dbService.db.query?.chatProviderSettings?.findFirst({
+					where: and(
+						eq(chatProviderSettings.organizationId, organizationId),
+						eq(chatProviderSettings.provider, "telegram"),
+						eq(chatProviderSettings.isAuthoritative, true),
+					),
+				});
+				if (authoritative) {
+					await dbService.db
+						.update(chatProviderSettings)
+						.set(settingsValues)
+						.where(
+							and(
+								eq(chatProviderSettings.id, authoritative.id),
+								eq(chatProviderSettings.organizationId, organizationId),
+							),
+						);
+					return;
+				}
+				await dbService.db
 					.update(telegramBotConfig)
-					.set({
-						enableApprovals: input.enableApprovals,
-						enableCommands: input.enableCommands,
-						enableDailyDigest: input.enableDailyDigest,
-						enableEscalations: input.enableEscalations,
-						digestTime: input.digestTime,
-						digestTimezone: input.digestTimezone,
-						escalationTimeoutHours: input.escalationTimeoutHours,
-					})
-					.where(eq(telegramBotConfig.organizationId, organizationId)),
-			);
+					.set(settingsValues)
+					.where(eq(telegramBotConfig.organizationId, organizationId));
+			});
 		}),
 );
 
 export const disconnectTelegramBot = organizationAction(
 	{ name: "telegram.disconnectBot", requires: "orgAdmin", schema: noInput },
-	({ organizationId }) =>
+	({ actor, organizationId }) =>
 		Effect.gen(function* () {
 			const dbService = yield* DatabaseService;
+			if (typeof dbService.db.select === "function") {
+				const disconnectResult = yield* dbService.query("telegram.disconnectBot.lifecycle", () =>
+					disconnectLegacyTelegramInstallation(
+						{
+							organizationId,
+							actorUserId: actor.userId,
+						},
+						{ db: dbService.db },
+					),
+				);
+				if (disconnectResult.kind === "refused") {
+					return yield* Effect.fail(
+						new ValidationError({
+							message: disconnectResult.message,
+							refusal: disconnectResult.code,
+						}),
+					);
+				}
+				logger.info({ organizationId }, "Telegram bot disconnected via lifecycle service");
+				return;
+			}
+
 			const config = yield* dbService.query("telegram.getConfig", () =>
 				dbService.db.query.telegramBotConfig.findFirst({
 					where: eq(telegramBotConfig.organizationId, organizationId),

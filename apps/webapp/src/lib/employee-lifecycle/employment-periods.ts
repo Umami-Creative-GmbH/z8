@@ -47,7 +47,7 @@ type CurrentEmploymentPeriod = {
 
 /**
  * The employee's current employment period, or null once a departure ended it.
- * Employees created after migration 0071 are backfilled lazily. For legacy
+ * Employee records without a first period are backfilled lazily. For legacy
  * compatibility, a period the migration could only classify as legacy_unknown
  * (the employee was inactive then) still counts while no departure ended the
  * employment: it is reopened in place, dates untouched, when the employee is

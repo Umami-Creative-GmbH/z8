@@ -9,6 +9,17 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { approvalRequest, employee } from "@/db/schema";
 import { isApprovalNotificationDeliveredByOwner } from "@/lib/approvals/delivery/store";
+import {
+	DurableDispatchConfirmedUnsentError,
+	DurableDispatchUncertainError,
+	extractRedactedErrorDiagnostics,
+	isConfirmedUnsentError,
+	isUncertainDispatchError,
+} from "@/lib/chat-installations/durable-dispatch";
+import {
+	type ChatDispatchTargetHint,
+	resolveSwitchedActiveChatInstallation,
+} from "@/lib/chat-installations/runtime-target";
 import { createLogger } from "@/lib/logger";
 import { localizeOutboundNotification } from "./outbound-localization";
 import type { NotificationType } from "./types";
@@ -28,24 +39,29 @@ interface TeamsNotificationParams {
 }
 
 /**
- * Check if Teams is available for an organization
+ * Check if Teams is available for an organization.
+ * Organization-owned active Teams installations operate independently of deployment
+ * env vars (`MICROSOFT_APP_ID` / `MICROSOFT_APP_PASSWORD`).
  */
 export async function isTeamsAvailable(
 	organizationId: string,
 	options: { throwOnError?: boolean } = {},
 ): Promise<boolean> {
 	try {
-		// Dynamically import to avoid circular dependencies
-		const { isTeamsEnabledForOrganization, isBotConfigured } = await import(
-			"@/lib/teams"
-		);
+		const switched = await resolveSwitchedActiveChatInstallation(organizationId, "teams");
+		if (switched.kind === "organization_owned_active") {
+			return true;
+		}
 
-		// Bot must be configured at the system level
+		// Dynamically import to avoid circular dependencies
+		const { isTeamsEnabledForOrganization, isBotConfigured } = await import("@/lib/teams");
+
+		// Legacy deployment-managed bot must be configured at the system level
 		if (!isBotConfigured()) {
 			return false;
 		}
 
-		// Organization must have Teams enabled
+		// Organization must have legacy Teams enabled
 		return await isTeamsEnabledForOrganization(organizationId, options);
 	} catch (error) {
 		if (options.throwOnError) throw error;
@@ -62,12 +78,14 @@ export async function isTeamsAvailable(
  */
 export async function sendTeamsNotification(
 	params: TeamsNotificationParams,
-	options: { durable?: boolean } = {},
+	options: { durable?: boolean; dispatchTarget?: ChatDispatchTargetHint } = {},
 ): Promise<undefined | "unavailable"> {
+	let providerCallStarted = false;
 	try {
 		// Dynamically import Teams module to avoid circular dependencies
 		const {
 			getConversationReferenceForUser,
+			resolveTeamsOutboundTransportForOrganization,
 			sendProactiveMessage,
 			sendApprovalCardToManager,
 		} = await import("@/lib/teams");
@@ -83,10 +101,7 @@ export async function sendTeamsNotification(
 		}
 
 		// Handle approval-related notifications specially
-		if (
-			params.type === "approval_request_submitted" &&
-			params.entityType === "approval_request"
-		) {
+		if (params.type === "approval_request_submitted" && params.entityType === "approval_request") {
 			// Get the approval request details
 			const approval = await db.query.approvalRequest.findFirst({
 				where: and(
@@ -107,10 +122,12 @@ export async function sendTeamsNotification(
 
 				if (emp) {
 					// Send approval card
+					providerCallStarted = true;
 					await sendApprovalCardToManager(
 						approval.id,
 						emp.id,
 						params.organizationId,
+						options.dispatchTarget,
 					);
 					return options.durable ? "unavailable" : undefined;
 				}
@@ -120,10 +137,16 @@ export async function sendTeamsNotification(
 		}
 
 		// For other notifications, send a simple message
-		const conversationRef = await getConversationReferenceForUser(
-			params.userId,
-			params.organizationId,
+		const hasTarget = Boolean(
+			options.dispatchTarget?.installationId || options.dispatchTarget?.credentialRevisionId,
 		);
+		const conversationRef = hasTarget
+			? await getConversationReferenceForUser(
+					params.userId,
+					params.organizationId,
+					options.dispatchTarget,
+				)
+			: await getConversationReferenceForUser(params.userId, params.organizationId);
 
 		if (!conversationRef) {
 			logger.debug(
@@ -131,6 +154,28 @@ export async function sendTeamsNotification(
 				"No Teams conversation found for user",
 			);
 			return options.durable ? "unavailable" : undefined;
+		}
+
+		const transport =
+			typeof resolveTeamsOutboundTransportForOrganization === "function"
+				? await resolveTeamsOutboundTransportForOrganization(
+						params.organizationId,
+						options.dispatchTarget,
+					)
+				: null;
+
+		if (transport && transport.kind !== "ok") {
+			if (options.durable) {
+				throw new DurableDispatchConfirmedUnsentError(
+					`teams_transport_unavailable:${transport.reason}`,
+					{ reason: transport.reason },
+				);
+			}
+			logger.warn(
+				{ organizationId: params.organizationId, reason: transport.reason },
+				"Teams outbound transport unavailable",
+			);
+			return undefined;
 		}
 
 		const localized = await localizeOutboundNotification({
@@ -146,18 +191,44 @@ export async function sendTeamsNotification(
 			text += `\n\n[${localized.actionLabel}](${params.actionUrl})`;
 		}
 
-		const acknowledgement = await sendProactiveMessage(conversationRef, {
-			type: "message",
-			text,
-		});
-		if (options.durable && !acknowledgement) throw new Error("teams_delivery_unacknowledged");
+		providerCallStarted = true;
+		const acknowledgement =
+			transport?.kind === "ok" && transport.source === "organization_owned"
+				? await sendProactiveMessage(
+						conversationRef,
+						{ type: "message", text },
+						{ adapter: transport.adapter, appId: transport.appId },
+					)
+				: await sendProactiveMessage(conversationRef, {
+						type: "message",
+						text,
+					});
+		if (options.durable && !acknowledgement) {
+			throw new DurableDispatchUncertainError("teams_delivery_unacknowledged", {
+				reason: "provider_unacknowledged",
+			});
+		}
 
-		logger.debug(
-			{ userId: params.userId, type: params.type },
-			"Teams notification sent",
-		);
+		logger.debug({ userId: params.userId, type: params.type }, "Teams notification sent");
 	} catch (error) {
-		if (options.durable) throw error;
+		if (options.durable) {
+			if (isConfirmedUnsentError(error) || isUncertainDispatchError(error)) {
+				throw error;
+			}
+			const message = error instanceof Error ? error.message : "teams_delivery_failed";
+			if (!providerCallStarted) {
+				throw new DurableDispatchConfirmedUnsentError(
+					message,
+					extractRedactedErrorDiagnostics(error, "teams_preflight_failed"),
+					error,
+				);
+			}
+			throw new DurableDispatchUncertainError(
+				message,
+				extractRedactedErrorDiagnostics(error, "teams_provider_call_uncertain"),
+				{ classification: "provider_error", causeError: error },
+			);
+		}
 		logger.error({ error, params }, "Failed to send Teams notification");
 		throw error;
 	}

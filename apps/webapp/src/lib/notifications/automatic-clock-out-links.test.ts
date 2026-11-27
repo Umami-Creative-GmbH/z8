@@ -40,6 +40,7 @@ vi.mock("@/lib/teams", () => ({
 	isBotConfigured: () => true,
 	isTeamsEnabledForOrganization: async () => true,
 	getConversationReferenceForUser: async () => "recipient",
+	resolveTeamsOutboundTransportForOrganization: async () => null,
 	sendProactiveMessage: mocks.teams,
 	sendApprovalCardToManager: vi.fn(),
 }));

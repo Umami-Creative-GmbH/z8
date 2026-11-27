@@ -1,6 +1,10 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { discordApprovalMessage } from "@/db/schema";
+import {
+	checkInboundApprovalCardInstallationEligibility,
+	resolveLegacyCardInstallationId,
+} from "@/lib/approvals/delivery/installation-origin";
 import { kickApprovalDelivery } from "@/lib/approvals/delivery/kick";
 import {
 	type ApprovalDeliveryMessageRecord,
@@ -23,12 +27,7 @@ import {
 } from "@/lib/bot-platform/approval-notice";
 import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import { createLogger } from "@/lib/logger";
-import {
-	createFollowupMessage,
-	createInteractionResponse,
-	editMessage,
-	sendMessage,
-} from "./api";
+import { createFollowupMessage, createInteractionResponse, editMessage, sendMessage } from "./api";
 import { discordActionableCard, fitsDiscordMessage } from "./approval-card";
 import { discordInvocationEnvelope, discordReceiverScope } from "./bound-approval";
 import { resolveApprovalDMChannel } from "./conversation-manager";
@@ -52,7 +51,11 @@ export async function handleApprovalButtonClick(
 	discordUserId: string,
 	bot: ResolvedDiscordBot,
 ): Promise<void> {
-	const user = await resolveDiscordUser(discordUserId, bot.organizationId);
+	const user = bot.installationId
+		? await resolveDiscordUser(discordUserId, bot.organizationId, undefined, {
+				installationId: bot.installationId,
+			})
+		: await resolveDiscordUser(discordUserId, bot.organizationId);
 	if (user.status !== "found") {
 		await createInteractionResponse(
 			interaction.id,
@@ -64,9 +67,39 @@ export async function handleApprovalButtonClick(
 	}
 	const recipient = { userId: user.user.userId, organizationId: bot.organizationId };
 	try {
-		const { attemptBotApproval } = await import(
-			"@/lib/bot-platform/approval-decision"
-		);
+		const receiverScope = discordReceiverScope(bot.applicationId);
+		const tracked =
+			interaction.message?.id && db.query?.discordApprovalMessage?.findFirst
+				? await db.query.discordApprovalMessage.findFirst({
+						where: and(
+							eq(discordApprovalMessage.organizationId, bot.organizationId),
+							eq(discordApprovalMessage.approvalRequestId, data.id),
+							eq(discordApprovalMessage.recipientUserId, user.user.userId),
+							eq(discordApprovalMessage.messageId, interaction.message.id),
+						),
+					})
+				: null;
+		const eligibility = await checkInboundApprovalCardInstallationEligibility({
+			organizationId: bot.organizationId,
+			provider: "discord",
+			incomingInstallationId: bot.installationId ?? null,
+			incomingReceiverScope: receiverScope,
+			messageInstallationId: tracked?.installationId ?? null,
+			messageReceiverScope: receiverScope,
+		});
+		if (!eligibility.allowed) {
+			await createInteractionResponse(
+				interaction.id,
+				interaction.token,
+				InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+				{
+					content: escapeDiscordMarkdown(await approvalUnavailableReply(recipient)),
+					flags: EPHEMERAL,
+				},
+			);
+			return;
+		}
+		const { attemptBotApproval } = await import("@/lib/bot-platform/approval-decision");
 		const result = await attemptBotApproval({
 			approvalId: data.id,
 			actorEmployeeId: user.user.employeeId,
@@ -93,10 +126,7 @@ export async function handleApprovalButtonClick(
 			{ ...content, flags: EPHEMERAL },
 		);
 	} catch (error) {
-		logger.error(
-			{ error, approvalId: data.id },
-			"Failed to review Discord approval card",
-		);
+		logger.error({ error, approvalId: data.id }, "Failed to review Discord approval card");
 	}
 }
 
@@ -143,17 +173,53 @@ async function decideBoundInteraction(
 ): Promise<DiscordMessagePayload> {
 	const discordUserId = interaction.member?.user?.id ?? interaction.user?.id;
 	const user = discordUserId
-		? await resolveDiscordUser(discordUserId, bot.organizationId)
+		? bot.installationId
+			? await resolveDiscordUser(discordUserId, bot.organizationId, undefined, {
+					installationId: bot.installationId,
+				})
+			: await resolveDiscordUser(discordUserId, bot.organizationId)
 		: null;
 	if (user?.status !== "found") {
 		return { content: await notLinkedReply(bot.organizationId) };
 	}
 	const recipient = { userId: user.user.userId, organizationId: bot.organizationId };
+	const messageId = interaction.message?.id;
+	const channelId = interaction.message?.channel_id ?? interaction.channel_id;
+	const receiverScope = discordReceiverScope(bot.applicationId);
+	const deliveredBeforeDecision =
+		messageId && channelId && receiverScope
+			? await findApprovalDeliveryMessageByRemoteIdentity({
+					organizationId: bot.organizationId,
+					provider: "discord",
+					receiverScope,
+					destinationId: channelId,
+					remoteMessageId: messageId,
+				})
+			: null;
+	const eligibility = await checkInboundApprovalCardInstallationEligibility({
+		organizationId: bot.organizationId,
+		provider: "discord",
+		incomingInstallationId: bot.installationId ?? null,
+		incomingReceiverScope: receiverScope,
+		messageInstallationId: deliveredBeforeDecision?.installationId ?? null,
+		messageReceiverScope: deliveredBeforeDecision?.receiverScope ?? null,
+	});
+	if (!eligibility.allowed) {
+		const reference = deliveredBeforeDecision
+			? approvalDeliveryMessageReviewReference(deliveredBeforeDecision)
+			: null;
+		const notice = reference
+			? await boundDecisionNotice({ status: "review_required" }, recipient, reference).catch(
+					() => null,
+				)
+			: null;
+		return notice
+			? discordApprovalNotice(notice)
+			: { content: escapeDiscordMarkdown(await approvalUnavailableReply(recipient)) };
+	}
 	let result: BoundBotApprovalResult;
 	try {
-		const { attemptBoundBotApproval } = await import(
-			"@/lib/bot-platform/approval-decision"
-		);
+		const { attemptBoundBotApproval } = await import("@/lib/bot-platform/approval-decision");
 		result = await attemptBoundBotApproval({
 			organizationId: bot.organizationId,
 			actorEmployeeId: user.user.employeeId,
@@ -360,21 +426,22 @@ export async function sendApprovalMessageToManager(
 				? discordActionableCard(notice)
 				: discordApprovalNotice(notice),
 		);
-		if (sent)
-			await db
-				.insert(discordApprovalMessage)
-				.values({
-					approvalRequestId: approvalId,
-					organizationId,
-					recipientUserId: notice.recipientUserId,
-					channelId,
-					messageId: sent.id,
-					status: "sent",
-				});
+		if (sent) {
+			const installationId = await resolveLegacyCardInstallationId({
+				organizationId,
+				provider: "discord",
+			});
+			await db.insert(discordApprovalMessage).values({
+				approvalRequestId: approvalId,
+				organizationId,
+				recipientUserId: notice.recipientUserId,
+				channelId,
+				messageId: sent.id,
+				installationId,
+				status: "sent",
+			});
+		}
 	} catch (error) {
-		logger.error(
-			{ error, approvalId },
-			"Failed to send Discord approval notice",
-		);
+		logger.error({ error, approvalId }, "Failed to send Discord approval notice");
 	}
 }

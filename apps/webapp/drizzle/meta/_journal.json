@@ -2367,6 +2367,55 @@
       "when": 1813852800000,
       "tag": "0337_jarbschg_minor_contractors",
       "breakpoints": true
+    },
+    {
+      "idx": 338,
+      "version": "7",
+      "when": 1813939200000,
+      "tag": "0338_backfill_current_employment_periods",
+      "breakpoints": true
+    },
+    {
+      "idx": 339,
+      "version": "7",
+      "when": 1814025600000,
+      "tag": "0339_chat_installations_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 340,
+      "version": "7",
+      "when": 1814198400000,
+      "tag": "0340_chat_installation_link_proof",
+      "breakpoints": true
+    },
+    {
+      "idx": 341,
+      "version": "7",
+      "when": 1814284800000,
+      "tag": "0341_approval_delivery_installation_origin",
+      "breakpoints": true
+    },
+    {
+      "idx": 342,
+      "version": "7",
+      "when": 1814371200000,
+      "tag": "0342_durable_chat_notification_dispatch",
+      "breakpoints": true
+    },
+    {
+      "idx": 343,
+      "version": "7",
+      "when": 1814457600000,
+      "tag": "0343_chat_installation_recovery_cleanup",
+      "breakpoints": true
+    },
+    {
+      "idx": 344,
+      "version": "7",
+      "when": 1814544000000,
+      "tag": "0344_telegram_digest_installation_dispatch",
+      "breakpoints": true
     }
   ]
 }

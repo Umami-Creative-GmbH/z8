@@ -193,9 +193,8 @@ async function loadActivePeriod(
 }
 
 /**
- * Creates the employee's first employment period if it is still missing:
- * employees created after migration 0071 (a contractor who just joined) get
- * it lazily, as `resolveCurrentEmploymentPeriod` does before reading it.
+ * Creates the first employment period for records that did not get one through
+ * joining, as `resolveCurrentEmploymentPeriod` does before reading it.
  */
 async function backfillEmploymentPeriod(
 	tx: Transaction,

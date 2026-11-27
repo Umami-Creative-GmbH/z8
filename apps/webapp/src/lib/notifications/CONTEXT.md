@@ -12,6 +12,21 @@ _Avoid_: alert, message, event
 One way a notification reaches its recipient: in-app, email, push, Telegram, Slack, Teams, Discord or webhook.
 _Avoid_: transport, provider, medium
 
+**Organization-owned chat app**:
+The Slack app or Teams, Telegram, or Discord bot that an organization owns and whose credentials its admins manage in Z8.
+
+**Deployment-managed chat app**:
+The shared Slack app or Teams bot whose app credentials Z8 manages for existing organization connections.
+
+**Chat installation**:
+An organization's connection to a particular chat app or bot in its external workspace or tenant, where applicable.
+
+**Credential rotation**:
+Updating the credentials of an existing chat installation while keeping the same external app or bot identity.
+
+**App replacement**:
+Switching the organization to a different chat installation for new delivery. The previous installation can continue to service the approval cards it already sent during retirement.
+
 **Recipient language**:
 The language an outbound message is written in: the recipient's saved language, then (for sign-in emails only) the language of the page that sent the request, then the organization's default language, then English. Recipients without a Z8 user, such as approved external recipients and billing contacts, get the organization's default language.
 _Avoid_: viewer locale, user language, browser language

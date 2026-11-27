@@ -162,11 +162,6 @@ vi.mock("@/components/time-tracking/use-available-work-categories", () => ({
 	}),
 }));
 
-// Operational status has its own pending/failure and clock-availability smoke tests.
-vi.mock("@/components/driving-licence/operational-status", () => ({
-	DrivingAuthorizationAdvisory: () => null,
-}));
-
 // Vehicle use off; clock-vehicle-use.test.tsx covers the vehicle use the clock asks (#1122).
 vi.mock("@/components/time-tracking/clock-vehicle-use", async () =>
 	(await import("./clock-vehicle-use.test-stub")).vehicleUseOffModule(),

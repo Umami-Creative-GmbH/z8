@@ -25,17 +25,14 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
+import { useMemberChatLinks } from "@/hooks/use-member-chat-links";
 import { useNotificationPreferences } from "@/hooks/use-notification-preferences";
 import { usePushNotifications } from "@/hooks/use-push-notifications";
+import type { ChatLinkProofPurpose } from "@/app/[locale]/(app)/settings/notifications/chat-link-actions";
+import type { ChatInstallationProvider } from "@/db/schema/chat-installations";
 import type { AbsenceDeputyNotificationType } from "@/lib/absences/deputy-notification-types";
 import {
 	hasMandatoryInbox,
@@ -43,8 +40,47 @@ import {
 	type NotificationChannel,
 	type NotificationType,
 } from "@/lib/notifications/types";
+import {
+	actionErrorMessage,
+	type RefusalMessages,
+} from "@/lib/organization-action/action-error-message";
 import type { ClockingReminderType } from "@/lib/time-tracking/clocking-reminders/occasion";
+import { ChatConnectionsCard } from "./chat-connections-card";
 import { PushPermissionModal } from "./push-permission-modal";
+
+const CHAT_LINK_REFUSALS = {
+	chat_link_unavailable: [
+		"settings.notifications.chatLinks.errors.unavailable",
+		"This chat channel is not available for linking in your organization.",
+	],
+	chat_link_rate_limited: [
+		"settings.notifications.chatLinks.errors.rateLimited",
+		"Too many link code requests. Please wait a few minutes and try again.",
+	],
+	installation_unavailable: [
+		"settings.notifications.chatLinks.errors.unavailable",
+		"This chat channel is not available for linking in your organization.",
+	],
+	not_linked: [
+		"settings.notifications.chatLinks.errors.notLinked",
+		"Link your chat account with a link code first.",
+	],
+	credentials_missing: [
+		"settings.notifications.chatLinks.errors.credentialsMissing",
+		"Bot credentials are currently unavailable. Contact your administrator.",
+	],
+	secret_store_unavailable: [
+		"settings.notifications.chatLinks.errors.secretStoreUnavailable",
+		"The organization secret store is temporarily unavailable. Try again shortly.",
+	],
+} satisfies RefusalMessages<
+	| "chat_link_unavailable"
+	| "chat_link_rate_limited"
+	| "installation_unavailable"
+	| "not_linked"
+	| "credentials_missing"
+	| "secret_store_unavailable"
+>;
 
 // Group notification types by category for better UX
 const NOTIFICATION_CATEGORIES = [
@@ -52,10 +88,8 @@ const NOTIFICATION_CATEGORIES = [
 		id: "approvals",
 		titleKey: "common:notifications.preferences.categories.approvals.title",
 		titleFallback: "Approvals",
-		descriptionKey:
-			"common:notifications.preferences.categories.approvals.description",
-		descriptionFallback:
-			"Notifications about approval requests and their status",
+		descriptionKey: "common:notifications.preferences.categories.approvals.description",
+		descriptionFallback: "Notifications about approval requests and their status",
 		icon: IconCheck,
 		types: [
 			"approval_request_submitted",
@@ -70,8 +104,7 @@ const NOTIFICATION_CATEGORIES = [
 		id: "time",
 		titleKey: "common:notifications.preferences.categories.time.title",
 		titleFallback: "Time Corrections",
-		descriptionKey:
-			"common:notifications.preferences.categories.time.description",
+		descriptionKey: "common:notifications.preferences.categories.time.description",
 		descriptionFallback: "Notifications about time tracking corrections",
 		icon: IconClock,
 		types: [
@@ -92,8 +125,7 @@ const NOTIFICATION_CATEGORIES = [
 		id: "absences",
 		titleKey: "common:notifications.preferences.categories.absences.title",
 		titleFallback: "Absences",
-		descriptionKey:
-			"common:notifications.preferences.categories.absences.description",
+		descriptionKey: "common:notifications.preferences.categories.absences.description",
 		descriptionFallback: "Notifications about absence requests",
 		icon: IconCalendar,
 		types: [
@@ -110,11 +142,9 @@ const NOTIFICATION_CATEGORIES = [
 	},
 	{
 		id: "travelExpenses",
-		titleKey:
-			"common:notifications.preferences.categories.travelExpenses.title",
+		titleKey: "common:notifications.preferences.categories.travelExpenses.title",
 		titleFallback: "Travel Expenses",
-		descriptionKey:
-			"common:notifications.preferences.categories.travelExpenses.description",
+		descriptionKey: "common:notifications.preferences.categories.travelExpenses.description",
 		descriptionFallback:
 			"Notifications about reimbursements and recoveries of your travel expenses",
 		icon: IconReceipt,
@@ -130,10 +160,8 @@ const NOTIFICATION_CATEGORIES = [
 		id: "personnelFile",
 		titleKey: "common:notifications.preferences.categories.personnelFile.title",
 		titleFallback: "Personnel File",
-		descriptionKey:
-			"common:notifications.preferences.categories.personnelFile.description",
-		descriptionFallback:
-			"Notifications about documents shared with you in your personnel file",
+		descriptionKey: "common:notifications.preferences.categories.personnelFile.description",
+		descriptionFallback: "Notifications about documents shared with you in your personnel file",
 		icon: IconFileText,
 		types: [
 			"personnel_file_document_shared",
@@ -152,8 +180,7 @@ const NOTIFICATION_CATEGORIES = [
 		id: "team",
 		titleKey: "common:notifications.preferences.categories.team.title",
 		titleFallback: "Team",
-		descriptionKey:
-			"common:notifications.preferences.categories.team.description",
+		descriptionKey: "common:notifications.preferences.categories.team.description",
 		descriptionFallback: "Notifications about team membership changes",
 		icon: IconUsers,
 		types: [
@@ -169,8 +196,7 @@ const NOTIFICATION_CATEGORIES = [
 		id: "security",
 		titleKey: "common:notifications.preferences.categories.security.title",
 		titleFallback: "Security",
-		descriptionKey:
-			"common:notifications.preferences.categories.security.description",
+		descriptionKey: "common:notifications.preferences.categories.security.description",
 		descriptionFallback: "Important security notifications",
 		icon: IconShield,
 		types: [
@@ -186,8 +212,7 @@ const NOTIFICATION_CATEGORIES = [
 		id: "reminders",
 		titleKey: "common:notifications.preferences.categories.reminders.title",
 		titleFallback: "Reminders",
-		descriptionKey:
-			"common:notifications.preferences.categories.reminders.description",
+		descriptionKey: "common:notifications.preferences.categories.reminders.description",
 		descriptionFallback: "Helpful reminders and alerts",
 		icon: IconBell,
 		types: [
@@ -211,8 +236,7 @@ const NOTIFICATION_CATEGORIES = [
 		id: "scheduling",
 		titleKey: "common:notifications.preferences.categories.scheduling.title",
 		titleFallback: "Shift Scheduling",
-		descriptionKey:
-			"common:notifications.preferences.categories.scheduling.description",
+		descriptionKey: "common:notifications.preferences.categories.scheduling.description",
 		descriptionFallback: "Notifications about shift assignments and swaps",
 		icon: IconCalendarEvent,
 		types: [
@@ -259,10 +283,7 @@ type StaticallyLabelledType =
 	| "former_employee_needs_rehire";
 
 // Human-readable labels for the other notification types, looked up by a computed key.
-const TYPE_LABELS: Record<
-	Exclude<NotificationType, StaticallyLabelledType>,
-	string
-> = {
+const TYPE_LABELS: Record<Exclude<NotificationType, StaticallyLabelledType>, string> = {
 	organization_mfa_notice: "Required organization authentication",
 	automatic_clock_out: "Automatic clock-out",
 	approval_request_submitted: "Request submitted",
@@ -319,8 +340,7 @@ const TYPE_LABELS: Record<
 	travel_expense_partially_reimbursed: "Expense partially reimbursed",
 	travel_expense_recovery_recorded: "Expense recovery recorded",
 	// Reimbursement work arriving for expense officers
-	travel_expense_ready_for_reimbursement:
-		"Ready for reimbursement (expense officers)",
+	travel_expense_ready_for_reimbursement: "Ready for reimbursement (expense officers)",
 	travel_expense_payroll_run_awaiting_confirmation:
 		"Payroll run awaiting confirmation (expense officers)",
 	// An employee document became visible to the employee
@@ -331,8 +351,7 @@ const TYPE_LABELS: Record<
 	personnel_file_expiry_upcoming: "Document expires soon",
 	personnel_file_expired_today: "Document expires today",
 	// Employee documents newly due for deletion (personnel file officers)
-	personnel_file_due_for_deletion:
-		"Documents due for deletion (personnel file officers)",
+	personnel_file_due_for_deletion: "Documents due for deletion (personnel file officers)",
 
 	// Closed months (#762)
 	month_closed_automatically: "Month closed automatically",
@@ -398,6 +417,95 @@ function useNotificationSettingsViewModel() {
 		isRefetching: isRetryingLoad,
 	} = useNotificationPreferences();
 
+	const chatLinks = useMemberChatLinks();
+
+	const handleGenerateLinkCode = async (input: {
+		provider: ChatInstallationProvider;
+		purpose: ChatLinkProofPurpose;
+		installationId?: string;
+	}) => {
+		try {
+			const res = await chatLinks.generateLinkCodeAsync(input);
+			if (!res.success) {
+				toast.error(
+					actionErrorMessage(t, res, CHAT_LINK_REFUSALS, [
+						"settings.notifications.chatLinks.generateFailed",
+						"Failed to generate link code",
+					]),
+				);
+			}
+		} catch {
+			toast.error(
+				t("settings.notifications.chatLinks.generateFailed", "Failed to generate link code"),
+			);
+		}
+	};
+
+	const handleRecheckDiscordDm = async (installationId: string) => {
+		try {
+			const res = await chatLinks.recheckDiscordDmAsync(installationId);
+			if (!res.success) {
+				toast.error(
+					actionErrorMessage(t, res, CHAT_LINK_REFUSALS, [
+						"settings.notifications.chatLinks.dmRecheckFailed",
+						"Could not verify Discord direct messages.",
+					]),
+				);
+				return;
+			}
+			if (res.data.kind === "reachable") {
+				toast.success(
+					t(
+						"settings.notifications.chatLinks.dmVerified",
+						"Discord direct message delivery is verified.",
+					),
+				);
+				return;
+			}
+			toast.warning(
+				res.data.code === "discord_missing_access"
+					? t(
+							"settings.notifications.chatLinks.hints.discordShareServer",
+							"Z8 could not open a Discord DM because you do not share a server with this bot. Join a shared server with the bot, enable Direct Messages for that server, and click Verify DM delivery.",
+						)
+					: t(
+							"settings.notifications.chatLinks.hints.discordEnableDms",
+							"Discord privacy settings blocked direct messages from this bot (error 50007). Open your Discord server Privacy Settings, enable Direct Messages, ensure the bot is not blocked, and click Verify DM delivery.",
+						),
+			);
+		} catch {
+			toast.error(
+				t(
+					"settings.notifications.chatLinks.dmRecheckFailed",
+					"Could not verify Discord direct messages.",
+				),
+			);
+		}
+	};
+
+	const handleUnlinkChatAccount = async (
+		provider: ChatInstallationProvider,
+		installationId?: string,
+	) => {
+		try {
+			const res = await chatLinks.unlinkAccountAsync({ provider, installationId });
+			if (!res.success) {
+				toast.error(
+					actionErrorMessage(t, res, CHAT_LINK_REFUSALS, [
+						"settings.notifications.chatLinks.unlinkFailed",
+						"Failed to unlink chat account",
+					]),
+				);
+				return;
+			}
+			toast.success(t("settings.notifications.chatLinks.unlinkedToast", "Chat account unlinked"));
+		} catch {
+			toast.error(
+				t("settings.notifications.chatLinks.unlinkFailed", "Failed to unlink chat account"),
+			);
+		}
+	};
+
 	const {
 		isSupported: isPushSupported,
 		permission: pushPermission,
@@ -408,10 +516,7 @@ function useNotificationSettingsViewModel() {
 	} = usePushNotifications({
 		onSubscribe: () => {
 			toast.success(
-				t(
-					"common:notifications.preferences.push.enabledToast",
-					"Push notifications enabled",
-				),
+				t("common:notifications.preferences.push.enabledToast", "Push notifications enabled"),
 				{
 					description: t(
 						"common:notifications.preferences.push.enabledToastDescription",
@@ -422,10 +527,7 @@ function useNotificationSettingsViewModel() {
 		},
 		onError: (error) => {
 			toast.error(
-				t(
-					"common:notifications.preferences.push.errorToast",
-					"Push notification error",
-				),
+				t("common:notifications.preferences.push.errorToast", "Push notification error"),
 				{
 					description: error.message,
 					id: "push-notification-error",
@@ -436,26 +538,15 @@ function useNotificationSettingsViewModel() {
 
 	useEffect(() => {
 		if (!pushError) return;
-		toast.error(
-			t(
-				"common:notifications.preferences.push.errorToast",
-				"Push notification error",
-			),
-			{
-				description: pushError.message,
-				id: "push-notification-error",
-			},
-		);
+		toast.error(t("common:notifications.preferences.push.errorToast", "Push notification error"), {
+			description: pushError.message,
+			id: "push-notification-error",
+		});
 	}, [pushError, t]);
 
-	const visibleChannels = NOTIFICATION_CHANNELS.filter(
-		(channel) => availableChannels[channel],
-	);
+	const visibleChannels = NOTIFICATION_CHANNELS.filter((channel) => availableChannels[channel]);
 	const getChannelLabel = (channel: NotificationChannel) =>
-		t(
-			`common:notifications.preferences.channels.${channel}.label`,
-			CHANNEL_CONFIG[channel].label,
-		);
+		t(`common:notifications.preferences.channels.${channel}.label`, CHANNEL_CONFIG[channel].label);
 	const getChannelDescription = (channel: NotificationChannel) =>
 		t(
 			`common:notifications.preferences.channels.${channel}.description`,
@@ -479,10 +570,7 @@ function useNotificationSettingsViewModel() {
 					"Forgotten clock-out",
 				);
 			case "break_due_reminder":
-				return t(
-					"common:notifications.preferences.types.break_due_reminder",
-					"Break due",
-				);
+				return t("common:notifications.preferences.types.break_due_reminder", "Break due");
 			case "driving_licence_reminder":
 				return t(
 					"common:notifications.preferences.types.driving_licence_reminder",
@@ -649,10 +737,7 @@ function useNotificationSettingsViewModel() {
 					"Personal data exported by an administrator",
 				);
 			default:
-				return t(
-					`common:notifications.preferences.types.${type}`,
-					TYPE_LABELS[type],
-				);
+				return t(`common:notifications.preferences.types.${type}`, TYPE_LABELS[type]);
 		}
 	};
 
@@ -691,22 +776,13 @@ function useNotificationSettingsViewModel() {
 					onSuccess: () => {
 						toast.success(
 							enabled
-								? t(
-										"common:notifications.preferences.enabled",
-										"Notification enabled",
-									)
-								: t(
-										"common:notifications.preferences.disabled",
-										"Notification disabled",
-									),
+								? t("common:notifications.preferences.enabled", "Notification enabled")
+								: t("common:notifications.preferences.disabled", "Notification disabled"),
 						);
 					},
 					onError: () => {
 						toast.error(
-							t(
-								"common:notifications.preferences.updateFailed",
-								"Failed to update preference",
-							),
+							t("common:notifications.preferences.updateFailed", "Failed to update preference"),
 						);
 					},
 					onSettled: () => {
@@ -720,11 +796,15 @@ function useNotificationSettingsViewModel() {
 	};
 
 	return {
+		chatLinks,
 		getChannelDescription,
 		getChannelLabel,
 		getTypeLabel,
+		handleGenerateLinkCode,
+		handleRecheckDiscordDm,
 		handleRequestPermission,
 		handleToggle,
+		handleUnlinkChatAccount,
 		isLoading,
 		isPushLoading,
 		isPushSubscribed,
@@ -748,11 +828,15 @@ function NotificationSettingsView({
 	viewModel: ReturnType<typeof useNotificationSettingsViewModel>;
 }) {
 	const {
+		chatLinks,
 		getChannelDescription,
 		getChannelLabel,
 		getTypeLabel,
+		handleGenerateLinkCode,
+		handleRecheckDiscordDm,
 		handleRequestPermission,
 		handleToggle,
+		handleUnlinkChatAccount,
 		isLoading,
 		isPushLoading,
 		isPushSubscribed,
@@ -783,15 +867,9 @@ function NotificationSettingsView({
 							"Unable to load notification preferences",
 						)}
 					</p>
-					<Button
-						variant="outline"
-						onClick={() => void retryLoad()}
-						disabled={isRetryingLoad}
-					>
+					<Button variant="outline" onClick={() => void retryLoad()} disabled={isRetryingLoad}>
 						<IconRefresh
-							className={
-								isRetryingLoad ? "size-4 motion-safe:animate-spin" : "size-4"
-							}
+							className={isRetryingLoad ? "size-4 motion-safe:animate-spin" : "size-4"}
 							aria-hidden="true"
 						/>
 						{t("common.retry", "Retry")}
@@ -808,10 +886,7 @@ function NotificationSettingsView({
 				<Card className="border-primary/30 bg-primary/5">
 					<CardHeader className="pb-3">
 						<div className="flex items-center gap-2">
-							<IconDeviceMobile
-								className="size-5 shrink-0 text-primary"
-								aria-hidden="true"
-							/>
+							<IconDeviceMobile className="size-5 shrink-0 text-primary" aria-hidden="true" />
 							<CardTitle className="text-base">
 								{t(
 									"common:notifications.preferences.push.enableTitle",
@@ -827,21 +902,11 @@ function NotificationSettingsView({
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<Button
-							onClick={() => setShowPermissionModal(true)}
-							disabled={isPushLoading}
-							size="sm"
-						>
+						<Button onClick={() => setShowPermissionModal(true)} disabled={isPushLoading} size="sm">
 							{isPushLoading && (
-								<IconLoader2
-									className="mr-2 size-4 animate-spin"
-									aria-hidden="true"
-								/>
+								<IconLoader2 className="mr-2 size-4 animate-spin" aria-hidden="true" />
 							)}
-							{t(
-								"common:notifications.preferences.push.enableButton",
-								"Enable Push Notifications",
-							)}
+							{t("common:notifications.preferences.push.enableButton", "Enable Push Notifications")}
 						</Button>
 					</CardContent>
 				</Card>
@@ -881,10 +946,7 @@ function NotificationSettingsView({
 			{/* Push enabled indicator */}
 			{isPushSubscribed && (
 				<div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/30 p-3">
-					<IconDeviceMobile
-						className="size-4 shrink-0 text-primary"
-						aria-hidden="true"
-					/>
+					<IconDeviceMobile className="size-4 shrink-0 text-primary" aria-hidden="true" />
 					<span className="text-sm">
 						{t(
 							"common:notifications.preferences.push.enabledIndicator",
@@ -907,6 +969,25 @@ function NotificationSettingsView({
 				isLoading={isPushLoading}
 			/>
 
+			{/* Organization-scoped employee chat connections */}
+			<ChatConnectionsCard
+				hasOrganizationContext={chatLinks.hasOrganizationContext}
+				channels={chatLinks.channels}
+				isLoading={chatLinks.isLoading}
+				error={chatLinks.error}
+				isRetrying={chatLinks.isRetrying}
+				onRetry={() => void chatLinks.refetch()}
+				generatedCodes={chatLinks.generatedCodes}
+				generatingCodeKey={chatLinks.generatingCodeKey}
+				onGenerateLinkCode={(input) => void handleGenerateLinkCode(input)}
+				recheckingDiscordInstallationId={chatLinks.recheckingDiscordInstallationId}
+				onRecheckDiscordDm={(installationId) => void handleRecheckDiscordDm(installationId)}
+				unlinkingProvider={chatLinks.unlinkingProvider}
+				onUnlink={(provider, installationId) =>
+					void handleUnlinkChatAccount(provider, installationId)
+				}
+			/>
+
 			{/* Channel legend */}
 			<div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
 				{visibleChannels.map((channel) => {
@@ -925,10 +1006,7 @@ function NotificationSettingsView({
 				<Card key={category.id}>
 					<CardHeader className="pb-3">
 						<div className="flex items-center gap-2">
-							<category.icon
-								className="size-5 text-muted-foreground"
-								aria-hidden="true"
-							/>
+							<category.icon className="size-5 text-muted-foreground" aria-hidden="true" />
 							<CardTitle className="text-base">
 								{t(category.titleKey, category.titleFallback)}
 							</CardTitle>
@@ -944,9 +1022,7 @@ function NotificationSettingsView({
 									key={type}
 									className="flex flex-col gap-3 rounded-lg border bg-muted/30 p-3 sm:flex-row sm:items-center sm:justify-between"
 								>
-									<span className="text-sm font-medium">
-										{getTypeLabel(type)}
-									</span>
+									<span className="text-sm font-medium">{getTypeLabel(type)}</span>
 									<div className="flex max-w-full flex-wrap items-center gap-3">
 										{visibleChannels
 											.filter(
@@ -959,10 +1035,7 @@ function NotificationSettingsView({
 											.map((channel) => {
 												if (hasMandatoryInbox(type) && channel === "in_app") {
 													return (
-														<span
-															key={channel}
-															className="text-xs text-muted-foreground"
-														>
+														<span key={channel} className="text-xs text-muted-foreground">
 															{t(
 																"common:notifications.preferences.mandatoryInbox",
 																"Always delivered to your inbox",
@@ -978,9 +1051,7 @@ function NotificationSettingsView({
 												const typeLabel = getTypeLabel(type);
 
 												const isDisabled =
-													isPending ||
-													isUpdating ||
-													(channel === "push" && !isPushSupported);
+													isPending || isUpdating || (channel === "push" && !isPushSupported);
 
 												return (
 													<div
@@ -994,9 +1065,7 @@ function NotificationSettingsView({
 														/>
 														<Switch
 															checked={isEnabled}
-															onCheckedChange={(checked) =>
-																handleToggle(type, channel, checked)
-															}
+															onCheckedChange={(checked) => handleToggle(type, channel, checked)}
 															disabled={isDisabled}
 															aria-label={t(
 																"common:notifications.preferences.toggleAria",

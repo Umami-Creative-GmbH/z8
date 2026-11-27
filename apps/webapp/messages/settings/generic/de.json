@@ -2889,6 +2889,44 @@
     "notifications": {
       "approvals": "Genehmigungsbenachrichtigungen",
       "approvalsDescription": "Genehmigungsanfragen und Status-Updates zu Genehmigungen senden.",
+      "chatLinks": {
+        "checkStatus": "Status prüfen",
+        "codeExpired": "Code abgelaufen. Erstellen Sie einen neuen Code.",
+        "copiedCommand": "Verknüpfungsbefehl in die Zwischenablage kopiert",
+        "copyCommand": "Kopieren",
+        "copyFailed": "Verknüpfungsbefehl konnte nicht kopiert werden",
+        "description": "Verwalten Sie, wie Ihr Konto mit den Chat-Kanälen Ihrer Organisation verknüpft ist.",
+        "expiresInMinutes": "Läuft in {minutes} Min. ab",
+        "generateCode": "Verknüpfungscode erstellen",
+        "generateFailed": "Verknüpfungscode konnte nicht erstellt werden",
+        "generateReplacementCode": "Ersatz-Bot verknüpfen",
+        "hints": {
+          "linkRequired": "Verknüpfen Sie Ihr Konto in dieser Chat-App, um Benachrichtigungen zu erhalten und Befehle zu nutzen.",
+          "remediation": "Die Verbindung Ihrer Organisation erfordert die Prüfung durch einen Administrator, bevor der Status überprüft werden kann.",
+          "startPrivateChat": "Öffnen Sie eine Direktnachricht mit dem Bot, damit Z8 private Benachrichtigungen zustellen kann.",
+          "telegramLinkRequired": "Erstellen Sie einen kurzlebigen Verknüpfungscode und senden Sie ihn an den Telegram-Bot Ihrer Organisation.",
+          "verificationError": "Der Verbindungsstatus konnte nicht überprüft werden. Versuchen Sie es erneut."
+        },
+        "linkedAs": "Verknüpft als {identity}",
+        "loadFailed": "Ihre Chat-Verbindungen konnten derzeit nicht überprüft werden. Ihre Benachrichtigungseinstellungen unten bleiben verfügbar.",
+        "openTelegramBot": "@{botUsername} öffnen",
+        "replacementEnrolled": "Registriert",
+        "replacementTelegramEnrolledHint": "Sie sind für den Ersatz-Bot registriert. Ihre aktuelle Telegram-Verknüpfung bleibt aktiv, bis Ihr Administrator den Wechsel abschließt.",
+        "replacementTelegramHint": "Starten und verknüpfen Sie den Ersatz-Telegram-Bot vor dem Wechsel. Ihre aktuellen Telegram-Benachrichtigungen laufen bis dahin unverändert weiter.",
+        "replacementTelegramInstructions": "Öffnen Sie den Ersatz-Bot in Telegram und senden Sie diesen Einmal-Befehl:",
+        "replacementTelegramTitle": "Ersatz-Telegram-Bot vorbereitet",
+        "status": {
+          "actionNeeded": "Aktion erforderlich",
+          "connected": "Verbunden",
+          "couldNotVerify": "Überprüfung fehlgeschlagen"
+        },
+        "telegramInstructions": "Senden Sie diesen Einmal-Befehl in einem privaten Chat an den Telegram-Bot Ihrer Organisation:",
+        "title": "Chat-Verbindungen",
+        "unlink": "Verknüpfung aufheben",
+        "unlinkAria": "{provider}-Verknüpfung aufheben",
+        "unlinkedToast": "Chat-Konto getrennt",
+        "unlinkFailed": "Chat-Konto konnte nicht getrennt werden"
+      },
       "commands": "Befehle",
       "commandsDescription": "Unterstützte Arbeitsplatzbefehle über diesen Kanal erlauben.",
       "connectBeforeChanging": "Verbinden oder konfigurieren Sie diese Integration, bevor Sie Benachrichtigungseinstellungen ändern.",
@@ -2912,8 +2950,10 @@
       "slack": {
         "connect": "Slack verbinden",
         "connectFailed": "Die Slack-Verbindung konnte nicht gestartet werden. Versuchen Sie es erneut.",
+        "connectRetired": "Das zentral verwaltete Slack-OAuth wurde eingestellt. Richten Sie oben Ihre organisationseigene Slack-App ein.",
         "connectUnavailable": "Slack ist auf dieser Z8-Installation nicht verfügbar.",
-        "description": "Konfigurieren Sie Slack-Benachrichtigungen für Ihre Organisation."
+        "description": "Konfigurieren Sie Slack-Benachrichtigungen für Ihre Organisation.",
+        "orgOwnedConnectHint": "Bereiten Sie Ihre organisationseigene Slack-App über den Einrichtungsablauf oben vor, prüfen Sie sie und wechseln Sie dann."
       },
       "status": {
         "active": "Aktiv",
@@ -2932,7 +2972,30 @@
       "timeout": "Zeitüberschreitung",
       "timeoutInvalid": "Geben Sie eine ganze Zahl an Stunden von 1 bis 168 ein.",
       "timezone": "Zeitzone",
-      "title": "Benachrichtigungseinstellungen"
+      "title": "Benachrichtigungseinstellungen",
+      "discordLink": {
+        "title": "Discord-Direktnachrichten verknüpfen",
+        "description": "Verknüpfen Sie Ihr Discord-Konto und prüfen Sie, ob Ihre Discord-Datenschutzeinstellungen Direktnachrichten von Z8 zulassen.",
+        "currentBot": "Aktueller Discord-Bot",
+        "replacementBot": "Geplanter Ersatz-Discord-Bot",
+        "connected": "Verbunden",
+        "actionNeeded": "Handlung nötig",
+        "linkedAs": "Verknüpft als {username}",
+        "verifyDmButton": "DM-Zustellung prüfen",
+        "generateCode": "Verknüpfungscode erzeugen",
+        "unlink": "Trennen",
+        "recoveryShareServer": "Z8 konnte keine Discord-DM öffnen, da Sie keinen Server mit diesem Bot teilen. Treten Sie einem gemeinsamen Server bei, aktivieren Sie Direktnachrichten und klicken Sie auf DM-Zustellung prüfen.",
+        "recoveryEnableDms": "Ihre Discord-Datenschutzeinstellungen blockieren Direktnachrichten dieses Bots (Fehler 50007). Aktivieren Sie in den Discord-Server-Datenschutzeinstellungen Direktnachrichten, prüfen Sie, dass der Bot nicht blockiert ist, und klicken Sie auf DM-Zustellung prüfen.",
+        "codeInstructions": "Führen Sie diesen einmaligen Slash-Befehl beim Discord-Bot aus (Z8 prüft anschließend die DM-Zustellung):",
+        "copy": "Kopieren",
+        "checkStatus": "Status prüfen",
+        "commandCopied": "Discord-Verknüpfungsbefehl kopiert.",
+        "copyFailed": "Befehl konnte nicht kopiert werden.",
+        "generateFailed": "Discord-Verknüpfungscode konnte nicht erzeugt werden.",
+        "dmVerified": "Zustellung von Discord-Direktnachrichten bestätigt.",
+        "dmRecheckFailed": "Discord-Direktnachrichten konnten nicht geprüft werden.",
+        "unlinked": "Discord-Konto getrennt."
+      }
     },
     "organizations": {
       "description": "Organisationsdetails und Konfiguration verwalten",

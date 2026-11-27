@@ -41,6 +41,12 @@ const ACCOUNT_EXEMPTIONS: Record<string, string> = {
 	"profile/actions.ts#updateTimeFormat":
 		"The user's own 12h/24h time format is a display preference across organizations.",
 	"profile/actions.ts#getTimeFormat": "Reads the user's own time format, an account detail.",
+	"notifications/actions.ts#getNotificationPreferences":
+		"Notification preferences are account-wide across organizations (Notifications ADR 0002); absent or ineligible organization context still returns account preferences with org-scoped chat channels marked unavailable.",
+	"notifications/actions.ts#updateNotificationPreference":
+		"Notification preferences are user-level across organizations (Notifications ADR 0002) and remain editable even without an active organization context.",
+	"notifications/actions.ts#bulkUpdateNotificationPreferences":
+		"Notification preferences are user-level across organizations (Notifications ADR 0002) and remain editable even without an active organization context.",
 };
 
 /** Auth modules a settings action test must not replace (ADR 0002): it stubs `AuthService` instead. */

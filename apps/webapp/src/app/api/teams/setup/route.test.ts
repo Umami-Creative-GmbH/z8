@@ -5,11 +5,9 @@ const mockState = vi.hoisted(() => ({
 	getSession: vi.fn(),
 	headers: vi.fn(),
 	getAbility: vi.fn(),
-	employeeFindFirst: vi.fn(),
-	organizationFindFirst: vi.fn(),
 	teamsTenantFindFirst: vi.fn(),
-	insertValues: vi.fn(),
 	requireActiveActor: vi.fn(),
+	disconnectLegacyTeamsTenantInstallation: vi.fn(),
 }));
 
 vi.mock("next/headers", () => ({
@@ -17,8 +15,7 @@ vi.mock("next/headers", () => ({
 }));
 
 vi.mock("next/server", async () => {
-	const actual =
-		await vi.importActual<typeof import("next/server")>("next/server");
+	const actual = await vi.importActual<typeof import("next/server")>("next/server");
 	return {
 		...actual,
 		connection: vi.fn().mockResolvedValue(undefined),
@@ -41,6 +38,10 @@ vi.mock("@/lib/auth/organization-action-authorization", () => ({
 	runActiveOrganizationActionActorCheck: mockState.requireActiveActor,
 }));
 
+vi.mock("@/lib/chat-installations/teams-switch", () => ({
+	disconnectLegacyTeamsTenantInstallation: mockState.disconnectLegacyTeamsTenantInstallation,
+}));
+
 vi.mock("@/lib/logger", () => ({
 	createLogger: () => ({
 		info: vi.fn(),
@@ -52,19 +53,12 @@ vi.mock("@/lib/logger", () => ({
 vi.mock("@/db", () => ({
 	db: {
 		query: {
-			employee: { findFirst: mockState.employeeFindFirst },
-			organization: { findFirst: mockState.organizationFindFirst },
 			teamsTenantConfig: { findFirst: mockState.teamsTenantFindFirst },
 		},
-		insert: () => ({ values: mockState.insertValues }),
 	},
 }));
 
 vi.mock("@/db/schema", () => ({
-	employee: {
-		userId: "employee.userId",
-		organizationId: "employee.organizationId",
-	},
 	teamsTenantConfig: {
 		id: "teamsTenantConfig.id",
 		tenantId: "teamsTenantConfig.tenantId",
@@ -72,26 +66,25 @@ vi.mock("@/db/schema", () => ({
 	},
 }));
 
-vi.mock("@/db/auth-schema", () => ({
-	organization: { id: "organization.id" },
-}));
+vi.mock("drizzle-orm", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("drizzle-orm")>();
+	return {
+		...actual,
+		and: (...args: unknown[]) => args,
+		eq: (...args: unknown[]) => args,
+	};
+});
 
-vi.mock("drizzle-orm", () => ({
-	and: (...args: unknown[]) => args,
-	eq: (...args: unknown[]) => args,
-}));
+const { DELETE, POST } = await import("./route");
 
-const { POST } = await import("./route");
-
-function createRequest(body: unknown): NextRequest {
-	return new Request("https://app.example.com/api/teams/setup", {
-		method: "POST",
-		body: JSON.stringify(body),
-		headers: { "Content-Type": "application/json" },
-	}) as NextRequest;
+function createDeleteRequest(organizationId: string, tenantId?: string): NextRequest {
+	const url = new URL("https://app.example.com/api/teams/setup");
+	url.searchParams.set("organizationId", organizationId);
+	if (tenantId) url.searchParams.set("tenantId", tenantId);
+	return new Request(url, { method: "DELETE" }) as NextRequest;
 }
 
-describe("POST /api/teams/setup", () => {
+describe("/api/teams/setup", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockState.headers.mockResolvedValue(new Headers());
@@ -102,48 +95,44 @@ describe("POST /api/teams/setup", () => {
 		mockState.getAbility.mockResolvedValue({
 			cannot: vi.fn().mockReturnValue(false),
 		});
-		mockState.employeeFindFirst.mockResolvedValue({ id: "emp-target" });
-		mockState.organizationFindFirst.mockResolvedValue({ id: "org-target" });
 		mockState.teamsTenantFindFirst.mockResolvedValue(null);
-		mockState.insertValues.mockResolvedValue(undefined);
 		mockState.requireActiveActor.mockResolvedValue({});
-	});
-
-	it.each([
-		"pending",
-		"rejected",
-		"inactive",
-	])("denies a %s actor before linking the tenant", async (actorState) => {
-		mockState.getSession.mockResolvedValue({
-			user: { id: "user-1" },
-			session: { activeOrganizationId: "org-target" },
+		mockState.disconnectLegacyTeamsTenantInstallation.mockResolvedValue({
+			kind: "disconnected",
+			tenantId: "tenant-1",
+			installationId: "inst-1",
 		});
-		mockState.requireActiveActor.mockRejectedValueOnce(new Error(actorState));
-
-		const response = await POST(
-			createRequest({
-				tenantId: "tenant-1",
-				tenantName: "Tenant 1",
-				organizationId: "org-target",
-			}),
-		);
-
-		expect(response.status).toBe(403);
-		expect(mockState.insertValues).not.toHaveBeenCalled();
 	});
 
-	it("rejects setup for a non-active target organization", async () => {
-		const response = await POST(
-			createRequest({
-				tenantId: "tenant-1",
-				tenantName: "Tenant 1",
-				organizationId: "org-target",
-			}),
-		);
+	it("returns 410 Gone for retired legacy POST setup", async () => {
+		const response = await POST();
+
+		expect(response.status).toBe(410);
+		expect(await response.json()).toMatchObject({ code: "legacy_setup_superseded" });
+	});
+
+	it.each(["pending", "rejected", "inactive"])(
+		"denies a %s actor before disconnecting the legacy tenant",
+		async (actorState) => {
+			mockState.getSession.mockResolvedValue({
+				user: { id: "user-1" },
+				session: { activeOrganizationId: "org-target" },
+			});
+			mockState.requireActiveActor.mockRejectedValueOnce(new Error(actorState));
+
+			const response = await DELETE(createDeleteRequest("org-target", "tenant-1"));
+
+			expect(response.status).toBe(403);
+			expect(mockState.disconnectLegacyTeamsTenantInstallation).not.toHaveBeenCalled();
+		},
+	);
+
+	it("rejects disconnect for a non-active target organization", async () => {
+		const response = await DELETE(createDeleteRequest("org-target", "tenant-1"));
 
 		expect(response.status).toBe(403);
 		expect(mockState.getAbility).not.toHaveBeenCalled();
-		expect(mockState.insertValues).not.toHaveBeenCalled();
+		expect(mockState.disconnectLegacyTeamsTenantInstallation).not.toHaveBeenCalled();
 		expect(await response.json()).toEqual({ error: "Access denied" });
 	});
 });
