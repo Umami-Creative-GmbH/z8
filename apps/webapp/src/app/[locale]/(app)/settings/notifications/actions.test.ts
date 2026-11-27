@@ -10,17 +10,19 @@ const mocks = vi.hoisted(() => ({
 	getOrganizationChatChannelAvailability: vi.fn(),
 }));
 
+const database = vi.hoisted(() => ({
+	query: { notificationPreference: { findFirst: mocks.findFirst } },
+	insert: () => ({ values: mocks.insertValues }),
+	update: () => ({ set: () => ({ where: mocks.updateWhere }) }),
+	select: () => ({ from: () => ({ where: mocks.selectWhere }) }),
+}));
+
 vi.mock("@/lib/effect/runtime", async () => {
 	const { runtimeModuleOver } = await import("@/test/effect-runtime");
 	const { organizationActionStubLayer } = await import("@/test/organization-action");
 	return runtimeModuleOver(
 		organizationActionStubLayer(() => mocks.caller, {
-			db: {
-				query: { notificationPreference: { findFirst: mocks.findFirst } },
-				insert: () => ({ values: mocks.insertValues }),
-				update: () => ({ set: () => ({ where: mocks.updateWhere }) }),
-				select: () => ({ from: () => ({ where: mocks.selectWhere }) }),
-			},
+			db: database,
 		}),
 	);
 });
@@ -94,7 +96,9 @@ describe("getNotificationPreferences", () => {
 				},
 			},
 		});
-		expect(mocks.getOrganizationChatChannelAvailability).toHaveBeenCalledWith("org-1");
+		expect(mocks.getOrganizationChatChannelAvailability).toHaveBeenCalledWith("org-1", {
+			db: database,
+		});
 	});
 
 	it("marks the active organization's configured channels as available via shared availability reader", async () => {
@@ -111,7 +115,9 @@ describe("getNotificationPreferences", () => {
 			success: true,
 			data: { availableChannels: { teams: true, telegram: true, discord: true, slack: true } },
 		});
-		expect(mocks.getOrganizationChatChannelAvailability).toHaveBeenCalledWith("org-1");
+		expect(mocks.getOrganizationChatChannelAvailability).toHaveBeenCalledWith("org-1", {
+			db: database,
+		});
 	});
 
 	it("preserves account-wide preferences when active organization context is absent", async () => {
@@ -145,7 +151,7 @@ describe("getNotificationPreferences", () => {
 		if (result.success) {
 			expect(result.data.matrix.approval_request_submitted.email).toBe(false);
 		}
-		expect(mocks.getOrganizationChatChannelAvailability).toHaveBeenCalledWith(null);
+		expect(mocks.getOrganizationChatChannelAvailability).toHaveBeenCalledWith(null, { db: database });
 	});
 
 	it.each([
@@ -172,7 +178,7 @@ describe("getNotificationPreferences", () => {
 					},
 				},
 			});
-			expect(mocks.getOrganizationChatChannelAvailability).toHaveBeenCalledWith(null);
+			expect(mocks.getOrganizationChatChannelAvailability).toHaveBeenCalledWith(null, { db: database });
 		},
 	);
 
