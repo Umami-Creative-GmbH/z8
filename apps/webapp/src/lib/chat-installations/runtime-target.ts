@@ -265,6 +265,7 @@ export async function readInstallationRevisionSecret(
 	const prefix = revision.secretKeyPrefix.replace(/\/+$/, "");
 	let resolvedKey: string | null = null;
 
+	const storedKeys = new Set(revision.secretKeys);
 	for (const candidate of input.secretKeyNames) {
 		const exactFullMatch = revision.secretKeys.find(
 			(key) => key === `${prefix}/${candidate}` || key.endsWith(`/${candidate}`),
@@ -273,7 +274,7 @@ export async function readInstallationRevisionSecret(
 			resolvedKey = exactFullMatch;
 			break;
 		}
-		if (revision.secretKeys.includes(candidate)) {
+		if (storedKeys.has(candidate)) {
 			resolvedKey = `${prefix}/${candidate}`;
 			break;
 		}
@@ -337,9 +338,10 @@ export async function resolveInstallationConversationForUser(
 			desc(chatInstallationConversation.createdAt),
 		);
 
+	const conversationTypes = new Set(input.conversationTypes);
 	const matched =
-		input.conversationTypes && input.conversationTypes.length > 0
-			? rows.find((row) => input.conversationTypes?.includes(row.conversationType))
+		conversationTypes.size > 0
+			? rows.find((row) => conversationTypes.has(row.conversationType))
 			: rows[0];
 
 	if (!matched) return null;
@@ -388,13 +390,12 @@ export async function listInstallationActiveConversations(
 		)
 		.orderBy(asc(chatInstallationConversation.createdAt), asc(chatInstallationConversation.id));
 
+	const conversationTypes = new Set(input.conversationTypes);
 	return rows
 		.filter(
 			(row): row is typeof row & { userId: string } =>
 				row.userId !== null &&
-				(!input.conversationTypes ||
-					input.conversationTypes.length === 0 ||
-					input.conversationTypes.includes(row.conversationType)),
+				(conversationTypes.size === 0 || conversationTypes.has(row.conversationType)),
 		)
 		.map((row) => ({
 			userId: row.userId,

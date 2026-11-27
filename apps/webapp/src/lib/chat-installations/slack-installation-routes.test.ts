@@ -59,7 +59,7 @@ function createDeps(
 	overrides?: Partial<SlackInstallationRouteDeps>,
 ): SlackInstallationRouteDeps {
 	const signingSecret = "test_signing_secret_0123456789abcdef";
-	const botToken = "xoxb-active-installation-token";
+	const botToken = "fixture-active-installation-token";
 	const revision: CredentialRevisionRecord = {
 		id: installation.activeCredentialRevisionId ?? "rev-1",
 		installationId: installation.id,
@@ -155,7 +155,7 @@ describe("Slack installation-scoped route lifecycle routing (#2045)", () => {
 			expect.objectContaining({
 				organizationId: "org-1",
 				installationId: "inst-1",
-				botAccessToken: "xoxb-active-installation-token",
+				botAccessToken: "fixture-active-installation-token",
 			}),
 		);
 

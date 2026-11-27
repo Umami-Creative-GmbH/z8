@@ -187,9 +187,6 @@ async function processBotEscalations(bot: {
 				if (!backupManagerId) return 0;
 
 				// Record the escalation
-				const _ageHours = DateTime.now()
-					.setZone("utc")
-					.diff(DateTime.fromJSDate(approval.createdAt, { zone: "utc" }), "hours").hours;
 
 				await db.insert(telegramEscalation).values({
 					organizationId: bot.organizationId,

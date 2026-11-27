@@ -16,8 +16,7 @@ export async function POST(
 	context: { params: Promise<{ routeId: string }> },
 ) {
 	await connection();
-	const { routeId } = await context.params;
-	const rawBody = await request.text();
+	const [{ routeId }, rawBody] = await Promise.all([context.params, request.text()]);
 	const secretTokenHeader = request.headers.get("x-telegram-bot-api-secret-token");
 
 	const result = await handleTelegramInstallationWebhookRequest({

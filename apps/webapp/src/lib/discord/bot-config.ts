@@ -191,15 +191,18 @@ export async function isDiscordEnabledForOrganization(organizationId: string): P
  * Get all active Discord bot configs (for cron jobs)
  */
 export async function getAllActiveBotConfigs(): Promise<ResolvedDiscordBot[]> {
-	const switchedInstallations = await listSwitchedActiveChatInstallationsForProvider("discord");
+	const [switchedInstallations, configs] = await Promise.all([
+		listSwitchedActiveChatInstallationsForProvider("discord"),
+		db.query.discordBotConfig.findMany({
+			where: eq(discordBotConfig.setupStatus, "active"),
+		}),
+	]);
 	const switchedOrgIds = new Set(switchedInstallations.map((inst) => inst.organizationId));
-	const switchedBots = await Promise.all(switchedInstallations.map(hydrateSwitchedDiscordBot));
-
-	const configs = await db.query.discordBotConfig.findMany({
-		where: eq(discordBotConfig.setupStatus, "active"),
-	});
 	const legacyConfigs = configs.filter((config) => !switchedOrgIds.has(config.organizationId));
-	const legacyBots = await Promise.all(legacyConfigs.map(hydrateBot));
+	const [switchedBots, legacyBots] = await Promise.all([
+		Promise.all(switchedInstallations.map(hydrateSwitchedDiscordBot)),
+		Promise.all(legacyConfigs.map(hydrateBot)),
+	]);
 
 	return [...switchedBots, ...legacyBots].filter((bot): bot is ResolvedDiscordBot => bot !== null);
 }

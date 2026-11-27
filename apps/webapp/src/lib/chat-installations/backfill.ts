@@ -1,3 +1,4 @@
+import { mapConcurrently } from "@/lib/async/map-concurrently";
 import { randomBytes } from "node:crypto";
 import { and, asc, eq, gt, ne } from "drizzle-orm";
 import { db as defaultDb } from "@/db";
@@ -1033,7 +1034,7 @@ export async function backfillAllLegacyChatInstallations(
 		.where(ne(telegramBotConfig.setupStatus, "disconnected"));
 
 	const telegramBotIdToOrgs = new Map<string, Set<string>>();
-	for (const row of allLiveTelegramRows) {
+	await mapConcurrently(allLiveTelegramRows, 4, async (row) => {
 		try {
 			let token = await readSecret(row.organizationId, "telegram/bot_token");
 			if (!token && row.botToken && row.botToken !== "vault:managed") {
@@ -1048,7 +1049,7 @@ export async function backfillAllLegacyChatInstallations(
 		} catch {
 			// Secret store outages are handled per-org during backfill.
 		}
-	}
+	});
 
 	const duplicateTelegramBotIds = new Set<string>();
 	for (const [botId, orgs] of telegramBotIdToOrgs) {
@@ -1065,6 +1066,7 @@ export async function backfillAllLegacyChatInstallations(
 	};
 
 	for (const orgId of pageOrgIds) {
+		// react-doctor-disable-next-line react-doctor/async-await-in-loop -- Finish the current organization before advancing the resumable migration cursor.
 		const orgResult = await backfillOrganizationChatInstallations(orgId, {
 			...options,
 			knownDuplicateTelegramBotIds: duplicateTelegramBotIds,

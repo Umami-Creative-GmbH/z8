@@ -266,6 +266,10 @@ export async function getOrganizationChatInstallationsInventory(
 
 	const providers = {} as Record<ChatInstallationProvider, ChatProviderInventory>;
 
+	const primaryTeams =
+		teamsRows.find((row) => row.setupStatus === "active") ??
+		teamsRows.find((row) => row.setupStatus !== "disconnected") ??
+		null;
 	for (const provider of CHAT_INSTALLATION_PROVIDERS) {
 		const providerRows = installations.filter((row) => row.provider === provider);
 		const summaries = providerRows.map(toInstallationSummary);
@@ -315,10 +319,6 @@ export async function getOrganizationChatInstallationsInventory(
 		} else if (provider === "discord" && discordRow && discordRow.setupStatus !== "disconnected") {
 			effectiveSettings = toEffectiveSettings(discordRow);
 		} else if (provider === "teams") {
-			const primaryTeams =
-				teamsRows.find((row) => row.setupStatus === "active") ??
-				teamsRows.find((row) => row.setupStatus !== "disconnected") ??
-				null;
 			effectiveSettings = primaryTeams ? toEffectiveSettings(primaryTeams) : null;
 		} else if (persistedSettings) {
 			effectiveSettings = toEffectiveSettings(persistedSettings);

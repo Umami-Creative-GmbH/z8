@@ -38,6 +38,10 @@ import { getTelegramLifecycleState } from "./telegram-lifecycle-actions";
 import { TelegramLifecycleSection } from "./telegram-lifecycle-section";
 import { TelegramPanel } from "./telegram-panel";
 
+function dataOrNull<T>(result: { success: true; data: T } | { success: false }) {
+	return result.success ? result.data : null;
+}
+
 async function ChatSettingsContent() {
 	const access = requireOrgAdminSettingsAccess();
 	const [
@@ -83,15 +87,15 @@ async function ChatSettingsContent() {
 			]),
 		),
 	]);
-	const inventoryData = inventory.success ? inventory.data : null;
+	const inventoryData = dataOrNull(inventory);
 	const inventoryLoadFailed = !inventory.success;
-	const slackCandidateData = slackCandidate.success ? slackCandidate.data : null;
-	const teamsCandidateData = teamsCandidate.success ? teamsCandidate.data : null;
-	const slackSwitchPreviewData = slackSwitchPreview.success ? slackSwitchPreview.data : null;
-	const teamsSwitchPreviewData = teamsSwitchPreview.success ? teamsSwitchPreview.data : null;
-	const slackRecoveryData = slackRecovery.success ? slackRecovery.data : null;
-	const telegramLifecycleData = telegramLifecycle.success ? telegramLifecycle.data : null;
-	const discordLifecycleData = discordLifecycle.success ? discordLifecycle.data : null;
+	const slackCandidateData = dataOrNull(slackCandidate);
+	const teamsCandidateData = dataOrNull(teamsCandidate);
+	const slackSwitchPreviewData = dataOrNull(slackSwitchPreview);
+	const teamsSwitchPreviewData = dataOrNull(teamsSwitchPreview);
+	const slackRecoveryData = dataOrNull(slackRecovery);
+	const telegramLifecycleData = dataOrNull(telegramLifecycle);
+	const discordLifecycleData = dataOrNull(discordLifecycle);
 
 	return (
 		<SettingsTabbedPage
@@ -117,14 +121,14 @@ async function ChatSettingsContent() {
 							/>
 							<ChatCapabilityDisclosureCard
 								channelName="Slack"
-								disclosure={slackCapabilities.success ? slackCapabilities.data : null}
+								disclosure={dataOrNull(slackCapabilities)}
 							/>
 							<SlackPrepareTestSection initialSetup={slackCandidateData} />
 							<SlackSwitchReviewSection initialPreview={slackSwitchPreviewData} />
 							<SlackRecoverySection initialState={slackRecoveryData} />
 							<NotificationChannelSettings
 								channelName="Slack"
-								config={slack.success ? slack.data : null}
+								config={dataOrNull(slack)}
 								updateAction={updateSlackNotificationChannelSettings}
 								connectAction={
 									<p className="text-sm text-muted-foreground">
@@ -156,13 +160,13 @@ async function ChatSettingsContent() {
 							/>
 							<ChatCapabilityDisclosureCard
 								channelName="Microsoft Teams"
-								disclosure={teamsCapabilities.success ? teamsCapabilities.data : null}
+								disclosure={dataOrNull(teamsCapabilities)}
 							/>
 							<TeamsPrepareTestSection initialSetup={teamsCandidateData} />
 							<TeamsSwitchReviewSection initialPreview={teamsSwitchPreviewData} />
 							<NotificationChannelSettings
 								channelName="Microsoft Teams"
-								config={teams.success ? teams.data : null}
+								config={dataOrNull(teams)}
 								updateAction={updateTeamsNotificationChannelSettings}
 								connectAction={
 									<p className="text-sm text-muted-foreground">
@@ -194,7 +198,7 @@ async function ChatSettingsContent() {
 							/>
 							<ChatCapabilityDisclosureCard
 								channelName="Telegram"
-								disclosure={telegramCapabilities.success ? telegramCapabilities.data : null}
+								disclosure={dataOrNull(telegramCapabilities)}
 							/>
 							<TelegramLifecycleSection initialState={telegramLifecycleData} />
 							<TelegramPanel />
@@ -219,11 +223,11 @@ async function ChatSettingsContent() {
 							/>
 							<ChatCapabilityDisclosureCard
 								channelName="Discord"
-								disclosure={discordCapabilities.success ? discordCapabilities.data : null}
+								disclosure={dataOrNull(discordCapabilities)}
 							/>
 							<DiscordLifecycleSection initialState={discordLifecycleData} />
 							<DiscordChannelSettings
-								config={discord.success ? discord.data : null}
+								config={dataOrNull(discord)}
 								updateAction={updateDiscordNotificationChannelSettings}
 								connectAction={connectDiscordBot}
 								disconnectAction={disconnectDiscordBot}
