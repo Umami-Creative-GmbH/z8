@@ -221,7 +221,7 @@ it("does not let a replaced refetch overwrite a newer advisory result", async ()
 		queryClient.clear();
 	}
 });
-it("keeps the real clock button usable while status is pending, suspended or failed", async () => {
+it("shows suspended driving status and reports a failed refresh", async () => {
 	let resolveStatus: (value: unknown) => void = () => {};
 	remote.status.mockImplementationOnce(
 		() =>
@@ -232,11 +232,7 @@ it("keeps the real clock button usable while status is pending, suspended or fai
 	const queryClient = client();
 	render(
 		<QueryClientProvider client={queryClient}>
-			<ClockInOutWidget
-				activeWorkPeriod={null}
-				employeeName="Driver"
-				timeFormat="24h"
-			/>
+			<DrivingAuthorizationAdvisory />
 		</QueryClientProvider>,
 	);
 	// #1420: nothing shows until the server says the advisory applies to this member.
@@ -244,8 +240,6 @@ it("keeps the real clock button usable while status is pending, suspended or fai
 	expect(
 		screen.queryByRole("complementary", { name: "Driving authorization" }),
 	).toBeNull();
-	fireEvent.click(screen.getByRole("button", { name: "Clock In" }));
-	expect(remote.clockIn).toHaveBeenCalledTimes(1);
 	resolveStatus({
 		success: true,
 		data: {
@@ -259,9 +253,6 @@ it("keeps the real clock button usable while status is pending, suspended or fai
 		await screen.findByText("Driving authorization suspended"),
 	).toBeTruthy();
 	expect(screen.getByText("Code 01")).toBeTruthy();
-	expect(
-		screen.getByRole("button", { name: "Clock In" }).hasAttribute("disabled"),
-	).toBe(false);
 	remote.status.mockRejectedValueOnce(new Error("Offline"));
 	fireEvent.click(
 		screen.getByRole("button", { name: "Refresh driving status" }),
@@ -269,23 +260,16 @@ it("keeps the real clock button usable while status is pending, suspended or fai
 	expect(
 		await screen.findByText("Driving authorization status is unavailable."),
 	).toBeTruthy();
-	fireEvent.click(screen.getByRole("button", { name: "Clock In" }));
-	expect(remote.clockIn).toHaveBeenCalledTimes(2);
 });
-it("shows no clock advisory while the feature is off or the member is not an intended driver (#1420)", async () => {
-	remote.status.mockResolvedValue({ success: true, data: null });
+it("clocks in from the dashboard without requesting driving status", () => {
 	render(
 		<QueryClientProvider client={client()}>
 			<ClockInOutWidget activeWorkPeriod={null} employeeName="Office worker" timeFormat="24h" />
 		</QueryClientProvider>,
 	);
-	await waitFor(() => expect(remote.status).toHaveBeenCalledWith({}));
-	await waitFor(() =>
-		expect(screen.queryByRole("complementary", { name: "Driving authorization" })).toBeNull(),
-	);
-	expect(screen.queryByText("Not an intended driver — no driving authorization")).toBeNull();
-	expect(screen.queryByText("Loading driving authorization…")).toBeNull();
-	expect(screen.getByRole("button", { name: "Clock In" })).toBeTruthy();
+	fireEvent.click(screen.getByRole("button", { name: "Clock In" }));
+	expect(remote.clockIn).toHaveBeenCalledOnce();
+	expect(remote.status).not.toHaveBeenCalled();
 });
 it("does not reuse another organization or user's cached status", async () => {
 	remote.status

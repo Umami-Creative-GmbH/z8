@@ -465,7 +465,7 @@ it.each([false, true])(
 		if (onBreak) expect(screen.getByRole("button", { name: "Resume" })).toBeTruthy();
 	},
 );
-it("keeps clock controls and driving advice usable while selectors are held, fail and retry", async () => {
+it("keeps clock-out available during selector failures and retries without loading driving advice", async () => {
 	let finish: (value: unknown) => void = () => {};
 	boundary.projects.mockImplementationOnce(
 		() =>
@@ -477,15 +477,6 @@ it("keeps clock controls and driving advice usable while selectors are held, fai
 		success: false,
 		error: "Categories unavailable",
 	});
-	boundary.driving.mockResolvedValue({
-		success: true,
-		data: {
-			employeeId: "employee-a",
-			status: "suspended",
-			authorizedClasses: [],
-			classes: [{ code: "B", status: "suspended", restrictions: "Code 01" }],
-		},
-	});
 	showClock();
 	fireEvent.click(await screen.findByRole("button", { name: "Clock Out" }));
 	const panel = screen.getByRole("dialog");
@@ -493,14 +484,13 @@ it("keeps clock controls and driving advice usable while selectors are held, fai
 	expect(within(panel).getByRole("button", { name: "Clock Out" }).hasAttribute("disabled")).toBe(
 		false,
 	);
-	expect(await screen.findByText("Driving authorization suspended")).toBeTruthy();
-	expect(screen.getByText("Code 01")).toBeTruthy();
 	fireEvent.click(screen.getByRole("button", { name: "Retry Work Category" }));
 	await waitFor(() => expect(boundary.categories).toHaveBeenCalledTimes(2));
 	await act(async () => finish({ success: false, error: "Projects unavailable" }));
 	fireEvent.click(await screen.findByRole("button", { name: "Retry Project" }));
 	await waitFor(() => expect(boundary.projects).toHaveBeenCalledTimes(2));
 	expect((screen.getByLabelText("Clock draft") as HTMLInputElement).value).toBe("Unsaved");
+	expect(boundary.driving).not.toHaveBeenCalled();
 });
 it("keeps vehicle expectations visible and permits a real clock command while optional vehicle choices are held", async () => {
 	boundary.status.mockResolvedValue({
