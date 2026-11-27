@@ -49,6 +49,7 @@ import {
 	actionErrorMessage,
 	type RefusalMessages,
 } from "@/lib/organization-action/action-error-message";
+import { runWithBusyState } from "./run-with-busy-state";
 
 const GUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -420,32 +421,31 @@ export function TeamsPrepareTestPanel({
 
 	const handleDownloadPackageZip = async () => {
 		if (!setup) return;
-		setIsDownloadingPackage(true);
-		try {
-			const zipBytes = await buildTeamsAppPackageZip(setup.manifestJson);
-			const blob = new Blob([new Uint8Array(zipBytes)], { type: "application/zip" });
-			const url = URL.createObjectURL(blob);
-			const link = document.createElement("a");
-			link.href = url;
-			link.download = setup.packageFileName;
-			link.click();
-			URL.revokeObjectURL(url);
-			const msg = t(
-				"settings.teamsPrepare.packageDownloaded",
-				"Single-tenant Teams app package (.zip) downloaded.",
-			);
-			announce(msg);
-			toast.success(msg);
-		} catch {
-			const msg = t(
-				"settings.teamsPrepare.packageDownloadFailed",
-				"Could not generate Teams app package (.zip).",
-			);
-			announce(msg);
-			toast.error(msg);
-		} finally {
-			setIsDownloadingPackage(false);
-		}
+		await runWithBusyState(setIsDownloadingPackage, async () => {
+			try {
+				const zipBytes = await buildTeamsAppPackageZip(setup.manifestJson);
+				const blob = new Blob([new Uint8Array(zipBytes)], { type: "application/zip" });
+				const url = URL.createObjectURL(blob);
+				const link = document.createElement("a");
+				link.href = url;
+				link.download = setup.packageFileName;
+				link.click();
+				URL.revokeObjectURL(url);
+				const msg = t(
+					"settings.teamsPrepare.packageDownloaded",
+					"Single-tenant Teams app package (.zip) downloaded.",
+				);
+				announce(msg);
+				toast.success(msg);
+			} catch {
+				const msg = t(
+					"settings.teamsPrepare.packageDownloadFailed",
+					"Could not generate Teams app package (.zip).",
+				);
+				announce(msg);
+				toast.error(msg);
+			}
+		});
 	};
 
 	const endpointUrlId = `${idPrefix}-teams-messaging-endpoint`;

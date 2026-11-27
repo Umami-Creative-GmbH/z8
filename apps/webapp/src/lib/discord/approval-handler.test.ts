@@ -19,6 +19,13 @@ vi.mock("./api", () => ({
 }));
 vi.mock("./user-resolver", () => ({ resolveDiscordUser: mocks.resolveDiscordUser }));
 vi.mock("./conversation-manager", () => ({ resolveApprovalDMChannel: vi.fn() }));
+vi.mock("@/lib/approvals/delivery/installation-origin", () => ({
+	checkInboundApprovalCardInstallationEligibility: vi.fn(async () => ({
+		allowed: true,
+		installationId: null,
+		isRetiring: false,
+	})),
+}));
 vi.mock("@/lib/approvals/delivery/kick", () => ({ kickApprovalDelivery: vi.fn() }));
 vi.mock("@/lib/approvals/delivery/store", () => ({
 	approvalDeliveryMessageReviewReference: vi.fn(),
@@ -96,6 +103,7 @@ describe("Discord approval replies", () => {
 
 		await handleApprovalButtonClick(interaction, { a: "ap", id: "r-1" }, "44", bot);
 
+		expect(mocks.attemptBotApproval).toHaveBeenCalledOnce();
 		expect(sentContent()).toBe("de:bot.approval.unavailable");
 	});
 
