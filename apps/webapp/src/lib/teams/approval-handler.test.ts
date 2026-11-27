@@ -8,6 +8,13 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/db", () => ({ db: { query: { teamsApprovalCard: { findFirst: vi.fn() } } } }));
 vi.mock("@/env", () => ({ env: { MICROSOFT_APP_ID: "app-id" } }));
+vi.mock("@/lib/approvals/delivery/installation-origin", () => ({
+	checkInboundApprovalCardInstallationEligibility: vi.fn(async () => ({
+		allowed: true,
+		installationId: null,
+		isRetiring: false,
+	})),
+}));
 vi.mock("@/lib/approvals/delivery/kick", () => ({ kickApprovalDelivery: vi.fn() }));
 vi.mock("@/lib/approvals/delivery/store", () => ({
 	approvalDeliveryMessageReviewReference: vi.fn(),
@@ -60,6 +67,7 @@ describe("Teams approval replies", () => {
 			{ organizationId: "org-1", tenantId: "t-1" } as Tenant,
 		);
 
+		expect(mocks.attemptBotApproval).toHaveBeenCalledOnce();
 		expect(sendActivity).toHaveBeenCalledWith("de:bot.approval.unavailable");
 	});
 });
