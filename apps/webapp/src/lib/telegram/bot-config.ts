@@ -187,15 +187,18 @@ export async function isTelegramEnabledForOrganization(organizationId: string): 
  * Get all active Telegram bot configs (for cron jobs)
  */
 export async function getAllActiveBotConfigs(): Promise<ResolvedTelegramBot[]> {
-	const switchedInstallations = await listSwitchedActiveChatInstallationsForProvider("telegram");
+	const [switchedInstallations, configs] = await Promise.all([
+		listSwitchedActiveChatInstallationsForProvider("telegram"),
+		db.query.telegramBotConfig.findMany({
+			where: eq(telegramBotConfig.setupStatus, "active"),
+		}),
+	]);
 	const switchedOrgIds = new Set(switchedInstallations.map((inst) => inst.organizationId));
-	const switchedBots = await Promise.all(switchedInstallations.map(hydrateSwitchedTelegramBot));
-
-	const configs = await db.query.telegramBotConfig.findMany({
-		where: eq(telegramBotConfig.setupStatus, "active"),
-	});
 	const legacyConfigs = configs.filter((config) => !switchedOrgIds.has(config.organizationId));
-	const legacyBots = await Promise.all(legacyConfigs.map(hydrateBot));
+	const [switchedBots, legacyBots] = await Promise.all([
+		Promise.all(switchedInstallations.map(hydrateSwitchedTelegramBot)),
+		Promise.all(legacyConfigs.map(hydrateBot)),
+	]);
 
 	return [...switchedBots, ...legacyBots].filter((bot): bot is ResolvedTelegramBot => bot !== null);
 }

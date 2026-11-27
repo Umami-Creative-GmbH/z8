@@ -663,6 +663,7 @@ async function carryForwardTeamsIdentitiesAndEnrollments(
 		);
 
 	for (const enrollment of candidateEnrollments) {
+		// react-doctor-disable-next-line react-doctor/async-await-in-loop -- Promotion reads and updates member links within one switch transaction.
 		const eligibility = await verifyEligibleChatLinkMember(
 			enrollment.userId,
 			input.organizationId,
@@ -737,6 +738,7 @@ async function carryForwardTeamsIdentitiesAndEnrollments(
 		if (buildVerifiedExternalScope(retiringInst) !== targetScope) continue;
 		for (const userId of activeUserIds) {
 			if (alreadyLinkedUsers.has(userId)) continue;
+			// react-doctor-disable-next-line react-doctor/async-await-in-loop -- A successful transfer reserves this user before the next source installation is considered.
 			const reused = await reuseVerifiedExternalIdentity(
 				{
 					organizationId: input.organizationId,
@@ -1407,6 +1409,7 @@ export async function confirmTeamsOrganizationSwitch(
 			now,
 		});
 
+		// react-doctor-disable-next-line react-doctor/server-sequential-independent-await -- The preview must include the identity transfers written immediately above.
 		const updatedPreview = await buildTeamsSwitchImpactPreview(input.organizationId, null, {
 			...deps,
 			db: tx,

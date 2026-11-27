@@ -1,3 +1,4 @@
+import { mapConcurrently } from "@/lib/async/map-concurrently";
 import { and, desc, eq } from "drizzle-orm";
 import { db as defaultDb } from "@/db";
 import {
@@ -139,7 +140,7 @@ async function compensateWrittenKeys(
 	writtenKeys: string[],
 	deleteSecret: (organizationId: string, key: string) => Promise<void>,
 ): Promise<void> {
-	for (const fullKey of writtenKeys) {
+	await mapConcurrently(writtenKeys, 4, async (fullKey) => {
 		try {
 			await deleteSecret(organizationId, fullKey);
 		} catch (cleanupError) {
@@ -149,7 +150,7 @@ async function compensateWrittenKeys(
 				"Failed to roll back partially written credential revision key",
 			);
 		}
-	}
+	});
 }
 
 export interface StoreCredentialRevisionInput {
@@ -201,6 +202,7 @@ export async function storeInstallationCredentialRevision(
 	try {
 		for (const [keyName, secretValue] of entries) {
 			const fullKey = `${secretKeyPrefix}/${keyName}`;
+			// react-doctor-disable-next-line react-doctor/async-await-in-loop -- Stop at the first failed write so compensation only deletes keys already persisted.
 			await storeSecret(input.organizationId, fullKey, secretValue);
 			writtenKeys.push(fullKey);
 		}
@@ -297,6 +299,7 @@ export async function readInstallationCredentialRevision(
 	for (const keyName of revision.secretKeys) {
 		const fullKey = `${revision.secretKeyPrefix}/${keyName}`;
 		try {
+			// react-doctor-disable-next-line react-doctor/async-await-in-loop -- Stop reading credential material as soon as the secret provider reports an outage.
 			const value = await readSecret(input.organizationId, fullKey);
 			if (value === null) {
 				missingKeys.push(keyName);
@@ -378,14 +381,11 @@ export async function cleanupUnreferencedCredentialRevision(
 		"cleanup_pending",
 	);
 
-	const deletedKeys: string[] = [];
-	const failedKeys: string[] = [];
-
-	for (const keyName of revision.secretKeys) {
+	const deletions = await mapConcurrently(revision.secretKeys, 4, async (keyName) => {
 		const fullKey = `${revision.secretKeyPrefix}/${keyName}`;
 		try {
 			await deleteSecret(input.organizationId, fullKey);
-			deletedKeys.push(keyName);
+			return { keyName, deleted: true };
 		} catch (error) {
 			logger.warn(
 				{
@@ -398,9 +398,11 @@ export async function cleanupUnreferencedCredentialRevision(
 				},
 				"Failed to delete secret key during credential revision cleanup; leaving retryable",
 			);
-			failedKeys.push(keyName);
+			return { keyName, deleted: false };
 		}
-	}
+	});
+	const deletedKeys = deletions.filter((key) => key.deleted).map((key) => key.keyName);
+	const failedKeys = deletions.filter((key) => !key.deleted).map((key) => key.keyName);
 
 	if (failedKeys.length > 0) {
 		return { kind: "retryable_error", deletedKeys, failedKeys };

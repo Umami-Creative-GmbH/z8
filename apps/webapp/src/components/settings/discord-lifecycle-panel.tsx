@@ -18,7 +18,8 @@ import {
 	IconTerminal2,
 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
-import { useMutation } from "@tanstack/react-query";
+import { chatInstallationQueries } from "@/lib/query/chat-installation-queries";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useRouter } from "next/navigation";
 import { useId, useRef, useState } from "react";
@@ -274,7 +275,7 @@ function MetricTile({ label, value }: { label: string; value: number }) {
 	);
 }
 
-export function DiscordLifecyclePanel({
+function useDiscordLifecyclePanel({
 	initialState,
 	refreshAction,
 	prepareAction,
@@ -288,6 +289,7 @@ export function DiscordLifecyclePanel({
 	confirmRestoreAction,
 }: DiscordLifecyclePanelProps) {
 	const { t } = useTranslate();
+	const queryClient = useQueryClient();
 	const router = useRouter();
 	const idPrefix = useId();
 	const summaryRef = useRef<HTMLDivElement | null>(null);
@@ -314,6 +316,7 @@ export function DiscordLifecyclePanel({
 
 	const announce = (msg: string) => setAnnouncement(msg);
 
+	// react-doctor-disable-next-line react-doctor/query-mutation-missing-invalidation -- Read-only refresh replaces the panel snapshot.
 	const refreshMutation = useMutation({
 		mutationFn: () => refreshAction(),
 		onSuccess: (res) => {
@@ -342,6 +345,9 @@ export function DiscordLifecyclePanel({
 		mutationFn: () => prepareAction(),
 		onSuccess: (res) => {
 			if (res.success) {
+				void queryClient.invalidateQueries(
+					chatInstallationQueries(res.data.switchPreview.organizationId),
+				);
 				setState(res.data);
 				const msg = t(
 					"settings.discordLifecycle.preparedAnnouncement",
@@ -364,6 +370,9 @@ export function DiscordLifecyclePanel({
 		mutationFn: (input: SaveDiscordCandidateCredentialsInput) => saveCredentialsAction(input),
 		onSuccess: (res) => {
 			if (res.success) {
+				void queryClient.invalidateQueries(
+					chatInstallationQueries(res.data.lifecycle.switchPreview.organizationId),
+				);
 				setState(res.data.lifecycle);
 				credentialsForm.setFieldValue("botToken", "");
 				setCredError(null);
@@ -399,6 +408,9 @@ export function DiscordLifecyclePanel({
 		mutationFn: (installationId: string) => retryCommandsAction({ installationId }),
 		onSuccess: (res) => {
 			if (res.success) {
+				void queryClient.invalidateQueries(
+					chatInstallationQueries(res.data.switchPreview.organizationId),
+				);
 				setState(res.data);
 				const msg = t(
 					"settings.discordLifecycle.commandsRetriedSuccess",
@@ -421,6 +433,9 @@ export function DiscordLifecyclePanel({
 		mutationFn: (input: SendDiscordPrivateTestInput) => sendPrivateTestAction(input),
 		onSuccess: (res) => {
 			if (res.success) {
+				void queryClient.invalidateQueries(
+					chatInstallationQueries(res.data.switchPreview.organizationId),
+				);
 				setState(res.data);
 				setDmError(null);
 				const msg = t(
@@ -455,6 +470,9 @@ export function DiscordLifecyclePanel({
 		}) => (isRestore ? confirmRestoreAction(input) : confirmSwitchAction(input)),
 		onSuccess: (res) => {
 			if (res.success) {
+				void queryClient.invalidateQueries(
+					chatInstallationQueries(res.data.lifecycle.switchPreview.organizationId),
+				);
 				setState(res.data.lifecycle);
 				setAcknowledgedUnready(false);
 				setImpactChangedNotice(null);
@@ -496,6 +514,9 @@ export function DiscordLifecyclePanel({
 		mutationFn: (input: RotateDiscordCredentialsActionInput) => rotateCredentialsAction(input),
 		onSuccess: (res) => {
 			if (res.success) {
+				void queryClient.invalidateQueries(
+					chatInstallationQueries(res.data.lifecycle.switchPreview.organizationId),
+				);
 				setState(res.data.lifecycle);
 				rotateForm.reset();
 				setRotateError(null);
@@ -532,6 +553,9 @@ export function DiscordLifecyclePanel({
 			return res.data;
 		},
 		onSuccess: (data) => {
+			void queryClient.invalidateQueries(
+				chatInstallationQueries(data.lifecycle.switchPreview.organizationId),
+			);
 			setState(data.lifecycle);
 			const msg = t(
 				"settings.discordLifecycle.revokedAnnouncement",
@@ -547,6 +571,9 @@ export function DiscordLifecyclePanel({
 		mutationFn: (installationId: string) => prepareRestoreAction({ installationId }),
 		onSuccess: (res) => {
 			if (res.success) {
+				void queryClient.invalidateQueries(
+					chatInstallationQueries(res.data.lifecycle.switchPreview.organizationId),
+				);
 				setState(res.data.lifecycle);
 				const msg = t(
 					"settings.discordLifecycle.restoreStartedAnnouncement",
@@ -664,204 +691,541 @@ export function DiscordLifecyclePanel({
 					)
 				: null);
 
-	return (
-		<div className="min-w-0 space-y-6">
-			<div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
-				{announcement}
-			</div>
+	return {
+		t,
+		summaryRef,
+		announcement,
+		copiedUrl,
+		credError,
+		acknowledgedUnready,
+		setAcknowledgedUnready,
+		impactChangedNotice,
+		switchError,
+		rotateError,
+		revokeDialog,
+		refreshMutation,
+		prepareMutation,
+		saveCredentialsMutation,
+		retryCommandsMutation,
+		privateTestMutation,
+		switchMutation,
+		rotateMutation,
+		revokeMutation,
+		prepareRestoreMutation,
+		candidate,
+		preview,
+		recovery,
+		isRestoreCandidate,
+		credentialsForm,
+		privateDmTestForm,
+		rotateForm,
+		endpointUrlId,
+		ackCheckboxId,
+		summaryHeadingId,
+		handleCopyEndpoint,
+		canSubmitSwitch,
+		dmRecoveryText,
+	};
+}
 
-			{/* 1. Prepare & Verify Replacement Discord Bot */}
-			<Card>
-				<CardHeader>
-					<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-						<div className="min-w-0 space-y-1">
-							<CardTitle className="flex items-center gap-2 text-base">
-								<IconBrandDiscord className="size-4 shrink-0" aria-hidden="true" />
-								{t(
-									"settings.discordLifecycle.prepareTitle",
-									"Prepare & verify replacement Discord bot",
-								)}
-							</CardTitle>
-							<CardDescription>
-								{t(
-									"settings.discordLifecycle.prepareDescription",
-									"Verify application identity, signed interactions, slash commands, and private DM delivery while your current Discord bot keeps serving employees.",
-								)}
-							</CardDescription>
-						</div>
-						<div className="flex flex-wrap items-center gap-2">
+type PanelState = NonNullable<ReturnType<typeof useDiscordLifecyclePanel>>;
+
+function CredentialsForm(props: PanelState & { candidate: NonNullable<PanelState["candidate"]> }) {
+	const { t, credError, saveCredentialsMutation, credentialsForm } = props;
+	return (
+		<form
+			className="space-y-3 rounded-lg border p-3"
+			onSubmit={(event) => {
+				event.preventDefault();
+				event.stopPropagation();
+				void credentialsForm.handleSubmit();
+			}}
+		>
+			<p className="text-sm font-medium">
+				{t(
+					"settings.discordLifecycle.credentialsFormTitle",
+					"Save & verify candidate bot credentials",
+				)}
+			</p>
+			<credentialsForm.Field name="botToken">
+				{(field) => (
+					<TFormItem>
+						<TFormLabel>
+							{t("settings.discordLifecycle.botTokenLabel", "Bot Token (write-only)")}
+						</TFormLabel>
+						<TFormControl>
+							<Input
+								type="password"
+								value={field.state.value}
+								onBlur={field.handleBlur}
+								onChange={(e) => field.handleChange(e.target.value)}
+								autoComplete="off"
+								spellCheck={false}
+								disabled={saveCredentialsMutation.isPending}
+								required
+							/>
+						</TFormControl>
+					</TFormItem>
+				)}
+			</credentialsForm.Field>
+			<div className="grid gap-3 sm:grid-cols-2">
+				<credentialsForm.Field name="applicationId">
+					{(field) => (
+						<TFormItem>
+							<TFormLabel>
+								{t("settings.discordLifecycle.applicationIdLabel", "Application ID")}
+							</TFormLabel>
+							<TFormControl>
+								<Input
+									inputMode="numeric"
+									value={field.state.value}
+									onBlur={field.handleBlur}
+									onChange={(e) => field.handleChange(e.target.value)}
+									autoComplete="off"
+									spellCheck={false}
+									disabled={saveCredentialsMutation.isPending}
+									required
+								/>
+							</TFormControl>
+						</TFormItem>
+					)}
+				</credentialsForm.Field>
+				<credentialsForm.Field name="publicKey">
+					{(field) => (
+						<TFormItem>
+							<TFormLabel>
+								{t("settings.discordLifecycle.publicKeyLabel", "Ed25519 Public Key")}
+							</TFormLabel>
+							<TFormControl>
+								<Input
+									value={field.state.value}
+									onBlur={field.handleBlur}
+									onChange={(e) => field.handleChange(e.target.value)}
+									autoComplete="off"
+									spellCheck={false}
+									disabled={saveCredentialsMutation.isPending}
+									required
+								/>
+							</TFormControl>
+						</TFormItem>
+					)}
+				</credentialsForm.Field>
+			</div>
+			{credError ? (
+				<p role="alert" className="text-xs text-destructive">
+					{credError}
+				</p>
+			) : null}
+			<Button type="submit" size="sm" disabled={saveCredentialsMutation.isPending}>
+				{saveCredentialsMutation.isPending ? (
+					<IconLoader2 className="mr-1.5 size-4 motion-safe:animate-spin" aria-hidden="true" />
+				) : (
+					<IconShieldCheck className="mr-1.5 size-4" aria-hidden="true" />
+				)}
+				{t("settings.discordLifecycle.saveCredentialsButton", "Verify & save credentials")}
+			</Button>
+		</form>
+	);
+}
+
+function PreparationCard(props: PanelState) {
+	const {
+		t,
+		copiedUrl,
+		retryCommandsMutation,
+		privateTestMutation,
+		candidate,
+		privateDmTestForm,
+		endpointUrlId,
+		handleCopyEndpoint,
+		dmRecoveryText,
+	} = props;
+	return (
+		<Card>
+			<PreparationHeader {...props} />
+
+			{candidate ? (
+				<CardContent className="min-w-0 space-y-5">
+					<div className="space-y-2 rounded-lg border bg-muted/30 p-3">
+						<Label htmlFor={endpointUrlId}>
+							{t(
+								"settings.discordLifecycle.interactionEndpointUrl",
+								"Candidate Interaction Endpoint URL",
+							)}
+						</Label>
+						<div className="flex flex-col gap-2 sm:flex-row">
+							<Input
+								id={endpointUrlId}
+								value={candidate.interactionEndpointUrl}
+								readOnly
+								className="font-mono text-xs"
+								onFocus={(e) => e.target.select()}
+							/>
 							<Button
 								type="button"
 								variant="outline"
 								size="sm"
-								disabled={refreshMutation.isPending}
-								onClick={() => refreshMutation.mutate()}
+								className="shrink-0"
+								onClick={() => void handleCopyEndpoint(candidate.interactionEndpointUrl)}
 							>
-								{refreshMutation.isPending ? (
-									<IconLoader2
-										className="mr-1.5 size-4 motion-safe:animate-spin"
-										aria-hidden="true"
-									/>
+								{copiedUrl ? (
+									<IconCheck className="mr-1.5 size-4" aria-hidden="true" />
 								) : (
-									<IconRefresh className="mr-1.5 size-4" aria-hidden="true" />
+									<IconCopy className="mr-1.5 size-4" aria-hidden="true" />
 								)}
-								{t("settings.discordLifecycle.refresh", "Refresh status")}
+								{copiedUrl
+									? t("settings.discordLifecycle.copied", "Copied")
+									: t("settings.discordLifecycle.copy", "Copy")}
 							</Button>
-							{!candidate ? (
-								<Button
-									type="button"
-									size="sm"
-									disabled={prepareMutation.isPending}
-									onClick={() => prepareMutation.mutate()}
-								>
-									{prepareMutation.isPending ? (
-										<IconLoader2
-											className="mr-1.5 size-4 motion-safe:animate-spin"
-											aria-hidden="true"
-										/>
-									) : (
-										<IconPlugConnected className="mr-1.5 size-4" aria-hidden="true" />
-									)}
-									{t("settings.discordLifecycle.prepareButton", "Prepare replacement bot")}
-								</Button>
-							) : null}
 						</div>
+						<p className="text-xs text-muted-foreground">
+							{t(
+								"settings.discordLifecycle.endpointHelp",
+								"Save credentials below first, then paste this URL into the Discord Developer Portal so Discord sends a signed PING.",
+							)}
+						</p>
 					</div>
-				</CardHeader>
 
-				{candidate ? (
-					<CardContent className="min-w-0 space-y-5">
-						<div className="space-y-2 rounded-lg border bg-muted/30 p-3">
-							<Label htmlFor={endpointUrlId}>
-								{t(
-									"settings.discordLifecycle.interactionEndpointUrl",
-									"Candidate Interaction Endpoint URL",
-								)}
-							</Label>
-							<div className="flex flex-col gap-2 sm:flex-row">
-								<Input
-									id={endpointUrlId}
-									value={candidate.interactionEndpointUrl}
-									readOnly
-									className="font-mono text-xs"
-									onFocus={(e) => e.target.select()}
-								/>
-								<Button
-									type="button"
-									variant="outline"
-									size="sm"
-									className="shrink-0"
-									onClick={() => void handleCopyEndpoint(candidate.interactionEndpointUrl)}
-								>
-									{copiedUrl ? (
-										<IconCheck className="mr-1.5 size-4" aria-hidden="true" />
-									) : (
-										<IconCopy className="mr-1.5 size-4" aria-hidden="true" />
-									)}
-									{copiedUrl
-										? t("settings.discordLifecycle.copied", "Copied")
-										: t("settings.discordLifecycle.copy", "Copy")}
-								</Button>
-							</div>
-							<p className="text-xs text-muted-foreground">
-								{t(
-									"settings.discordLifecycle.endpointHelp",
-									"Save credentials below first, then paste this URL into the Discord Developer Portal so Discord sends a signed PING.",
-								)}
-							</p>
-						</div>
+					{/* 4 Separate Verification Steps */}
+					<div className="space-y-2.5">
+						<StepRow
+							title={t(
+								"settings.discordLifecycle.steps.identityTitle",
+								"1. Application identity & credentials",
+							)}
+							description={t(
+								"settings.discordLifecycle.steps.identityDesc",
+								"Verifies bot token, Application ID, and Ed25519 Public Key via Discord API and stores an immutable revision.",
+							)}
+							step={candidate.steps.applicationIdentity}
+						/>
+						<StepRow
+							title={t(
+								"settings.discordLifecycle.steps.signedEndpointTitle",
+								"2. Signed interaction endpoint (PING)",
+							)}
+							description={t(
+								"settings.discordLifecycle.steps.signedEndpointDesc",
+								"Confirms Ed25519-signed traffic for this application ID. A signed PING alone does not confirm private DM reachability.",
+							)}
+							step={candidate.steps.signedInteractionEndpoint}
+						/>
+						<StepRow
+							title={t(
+								"settings.discordLifecycle.steps.commandsTitle",
+								"3. Slash command registration",
+							)}
+							description={t(
+								"settings.discordLifecycle.steps.commandsDesc",
+								"Tracked independently so registration errors can be retried without re-entering credentials.",
+							)}
+							step={candidate.steps.commandRegistration}
+							action={
+								candidate.steps.commandRegistration.canRetry ? (
+									<Button
+										type="button"
+										variant="outline"
+										size="sm"
+										disabled={retryCommandsMutation.isPending}
+										onClick={() => retryCommandsMutation.mutate(candidate.installationId)}
+									>
+										{retryCommandsMutation.isPending ? (
+											<IconLoader2
+												className="mr-1.5 size-4 motion-safe:animate-spin"
+												aria-hidden="true"
+											/>
+										) : (
+											<IconTerminal2 className="mr-1.5 size-4" aria-hidden="true" />
+										)}
+										{t("settings.discordLifecycle.retryCommands", "Retry commands")}
+									</Button>
+								) : null
+							}
+						/>
+						<StepRow
+							title={t(
+								"settings.discordLifecycle.steps.privateDmTitle",
+								"4. Private DM delivery check (required)",
+							)}
+							description={t(
+								"settings.discordLifecycle.steps.privateDmDesc",
+								"Sends a synthetic private DM to your Discord user ID to confirm real direct-message reachability.",
+							)}
+							step={candidate.steps.privateDmDelivery}
+							recoveryNotice={dmRecoveryText}
+						/>
+					</div>
 
-						{/* 4 Separate Verification Steps */}
-						<div className="space-y-2.5">
-							<StepRow
-								title={t(
-									"settings.discordLifecycle.steps.identityTitle",
-									"1. Application identity & credentials",
-								)}
-								description={t(
-									"settings.discordLifecycle.steps.identityDesc",
-									"Verifies bot token, Application ID, and Ed25519 Public Key via Discord API and stores an immutable revision.",
-								)}
-								step={candidate.steps.applicationIdentity}
-							/>
-							<StepRow
-								title={t(
-									"settings.discordLifecycle.steps.signedEndpointTitle",
-									"2. Signed interaction endpoint (PING)",
-								)}
-								description={t(
-									"settings.discordLifecycle.steps.signedEndpointDesc",
-									"Confirms Ed25519-signed traffic for this application ID. A signed PING alone does not confirm private DM reachability.",
-								)}
-								step={candidate.steps.signedInteractionEndpoint}
-							/>
-							<StepRow
-								title={t(
-									"settings.discordLifecycle.steps.commandsTitle",
-									"3. Slash command registration",
-								)}
-								description={t(
-									"settings.discordLifecycle.steps.commandsDesc",
-									"Tracked independently so registration errors can be retried without re-entering credentials.",
-								)}
-								step={candidate.steps.commandRegistration}
-								action={
-									candidate.steps.commandRegistration.canRetry ? (
-										<Button
-											type="button"
-											variant="outline"
-											size="sm"
-											disabled={retryCommandsMutation.isPending}
-											onClick={() => retryCommandsMutation.mutate(candidate.installationId)}
-										>
-											{retryCommandsMutation.isPending ? (
-												<IconLoader2
-													className="mr-1.5 size-4 motion-safe:animate-spin"
-													aria-hidden="true"
-												/>
-											) : (
-												<IconTerminal2 className="mr-1.5 size-4" aria-hidden="true" />
-											)}
-											{t("settings.discordLifecycle.retryCommands", "Retry commands")}
-										</Button>
-									) : null
-								}
-							/>
-							<StepRow
-								title={t(
-									"settings.discordLifecycle.steps.privateDmTitle",
-									"4. Private DM delivery check (required)",
-								)}
-								description={t(
-									"settings.discordLifecycle.steps.privateDmDesc",
-									"Sends a synthetic private DM to your Discord user ID to confirm real direct-message reachability.",
-								)}
-								step={candidate.steps.privateDmDelivery}
-								recoveryNotice={dmRecoveryText}
-							/>
-						</div>
+					{/* Write-only Credentials Form */}
+					<CredentialsForm {...props} candidate={candidate} />
 
-						{/* Write-only Credentials Form */}
+					{/* Private DM Verification Form */}
+					{candidate.hasStoredCredentials ? (
 						<form
 							className="space-y-3 rounded-lg border p-3"
 							onSubmit={(event) => {
 								event.preventDefault();
 								event.stopPropagation();
-								void credentialsForm.handleSubmit();
+								void privateDmTestForm.handleSubmit();
 							}}
 						>
-							<p className="text-sm font-medium">
+							<privateDmTestForm.Field name="discordUserId">
+								{(field) => (
+									<TFormItem className="space-y-2">
+										<div className="space-y-1">
+											<TFormLabel>
+												{t(
+													"settings.discordLifecycle.dmTestLabel",
+													"Test private DM delivery (Discord User ID)",
+												)}
+											</TFormLabel>
+											<p className="text-xs text-muted-foreground">
+												{t(
+													"settings.discordLifecycle.dmTestHelp",
+													"Enter your numeric Discord User ID. If Discord returns error 50007, ensure you share a server with the bot and enable server Direct Messages.",
+												)}
+											</p>
+										</div>
+										<div className="flex flex-col gap-2 sm:flex-row">
+											<TFormControl>
+												<Input
+													inputMode="numeric"
+													placeholder="123456789012345678"
+													value={field.state.value}
+													onBlur={field.handleBlur}
+													onChange={(e) => field.handleChange(e.target.value)}
+													disabled={privateTestMutation.isPending}
+													required
+												/>
+											</TFormControl>
+											<Button
+												type="submit"
+												size="sm"
+												className="shrink-0"
+												disabled={privateTestMutation.isPending}
+											>
+												{privateTestMutation.isPending ? (
+													<IconLoader2
+														className="mr-1.5 size-4 motion-safe:animate-spin"
+														aria-hidden="true"
+													/>
+												) : (
+													<IconSend className="mr-1.5 size-4" aria-hidden="true" />
+												)}
+												{t("settings.discordLifecycle.sendTestDmButton", "Send test DM")}
+											</Button>
+										</div>
+									</TFormItem>
+								)}
+							</privateDmTestForm.Field>
+						</form>
+					) : null}
+				</CardContent>
+			) : null}
+		</Card>
+	);
+}
+
+function SwitchReviewCard(props: PanelState) {
+	const {
+		t,
+		acknowledgedUnready,
+		setAcknowledgedUnready,
+		switchError,
+		switchMutation,
+		preview,
+		isRestoreCandidate,
+		ackCheckboxId,
+		canSubmitSwitch,
+	} = props;
+	const candidate = preview?.candidateInstallation;
+	if (!preview || !candidate) return null;
+	return (
+		<Card>
+			<CardHeader>
+				<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+					<div className="min-w-0 space-y-1">
+						<CardTitle className="flex items-center gap-2 text-base">
+							<IconArrowsExchange className="size-4 shrink-0" aria-hidden="true" />
+							{t("settings.discordLifecycle.switchTitle", "Review impact & switch Discord bot")}
+						</CardTitle>
+						<CardDescription>
+							{t(
+								"settings.discordLifecycle.switchDescription",
+								"Review verified Discord DM reachability, open approval cards, and in-flight notifications before switching.",
+							)}
+						</CardDescription>
+					</div>
+					<Badge
+						variant={preview.switchControlEnabled ? "default" : "secondary"}
+						className="w-fit shrink-0"
+					>
+						{preview.switchControlEnabled
+							? t("settings.discordLifecycle.gate.enabled", "Switch enabled")
+							: t("settings.discordLifecycle.gate.disabled", "Switch gated")}
+					</Badge>
+				</div>
+			</CardHeader>
+			<CardContent className="min-w-0 space-y-4">
+				{!preview.switchControlEnabled ? (
+					<div className="rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground">
+						{t(
+							"settings.discordLifecycle.gateDisabledNotice",
+							"Organization-owned Discord switching is not yet enabled for this organization. You can prepare, test, and review impact now.",
+						)}
+					</div>
+				) : null}
+
+				<SwitchImpactSummary {...props} preview={preview} />
+
+				{preview.requiresUnreadyAcknowledgement ? (
+					<div className="flex items-start gap-2 rounded-lg border p-3">
+						<input
+							id={ackCheckboxId}
+							type="checkbox"
+							className="mt-1 size-4 shrink-0"
+							checked={acknowledgedUnready}
+							onChange={(e) => setAcknowledgedUnready(e.target.checked)}
+						/>
+						<Label htmlFor={ackCheckboxId} className="text-xs font-normal leading-relaxed">
+							{t(
+								"settings.discordLifecycle.ackUnreadyLabel",
+								"I acknowledge that {count} employees still need to link or verify Discord direct messages on the replacement bot.",
+								{ count: String(preview.employeeImpact.unreadyEmployees) },
+							)}
+						</Label>
+					</div>
+				) : null}
+
+				{switchError ? (
+					<p role="alert" className="text-xs text-destructive">
+						{switchError}
+					</p>
+				) : null}
+
+				<Button
+					type="button"
+					disabled={!canSubmitSwitch}
+					onClick={() => {
+						switchMutation.mutate({
+							isRestore: isRestoreCandidate,
+							input: {
+								candidateInstallationId: candidate.id,
+								reviewedCurrentInstallationId: preview.primaryCurrentInstallationId,
+								reviewedCurrentCredentialRevisionId: preview.primaryCurrentCredentialRevisionId,
+								reviewedCandidateCredentialRevisionId: candidate.activeCredentialRevisionId,
+								reviewedImpactDigest: preview.impactDigest,
+								acknowledgeUnreadyEmployees: acknowledgedUnready,
+							},
+						});
+					}}
+				>
+					{switchMutation.isPending ? (
+						<IconLoader2 className="mr-1.5 size-4 motion-safe:animate-spin" aria-hidden="true" />
+					) : (
+						<IconArrowsExchange className="mr-1.5 size-4" aria-hidden="true" />
+					)}
+					{isRestoreCandidate
+						? t("settings.discordLifecycle.confirmRestoreButton", "Confirm Discord restore")
+						: t("settings.discordLifecycle.confirmSwitchButton", "Confirm Discord switch")}
+				</Button>
+			</CardContent>
+		</Card>
+	);
+}
+
+function RetiringInstallationsCard(props: PanelState) {
+	const { t, preview } = props;
+	return preview && preview.retiringInstallations.length > 0 ? (
+		<Card>
+			<CardHeader>
+				<CardTitle className="flex items-center gap-2 text-base">
+					<IconClock className="size-4 shrink-0" aria-hidden="true" />
+					{t("settings.discordLifecycle.retiringTitle", "Retiring Discord bots")}
+				</CardTitle>
+				<CardDescription>
+					{t(
+						"settings.discordLifecycle.retiringDescription",
+						"Retiring bots continue servicing eligible approval cards they originally sent until work settles or the 30-day deadline.",
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent className="space-y-3">
+				{preview.retiringInstallations.map((ret) => (
+					<div
+						key={ret.id}
+						className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
+					>
+						<div className="min-w-0 space-y-1">
+							<p className="truncate text-sm font-medium">
+								{ret.externalDisplayName ?? ret.externalAppId ?? ret.id}
+							</p>
+							<p className="text-xs text-muted-foreground">
 								{t(
-									"settings.discordLifecycle.credentialsFormTitle",
-									"Save & verify candidate bot credentials",
+									"settings.discordLifecycle.retiringMeta",
+									"Outstanding cards & work: {count} · Deadline: {deadline}",
+									{
+										count: String(ret.totalOutstandingCardsAndWork),
+										deadline: ret.retirementDeadlineAt ?? "—",
+									},
 								)}
 							</p>
-							<credentialsForm.Field name="botToken">
-								{(field) => (
-									<TFormItem>
-										<TFormLabel>
-											{t("settings.discordLifecycle.botTokenLabel", "Bot Token (write-only)")}
-										</TFormLabel>
+						</div>
+					</div>
+				))}
+			</CardContent>
+		</Card>
+	) : null;
+}
+
+function RecoveryCard(props: PanelState) {
+	const {
+		t,
+		rotateError,
+		revokeDialog,
+		rotateMutation,
+		prepareRestoreMutation,
+		recovery,
+		rotateForm,
+	} = props;
+	return recovery &&
+		(recovery.activeInstallation || recovery.restorableInstallations.length > 0) ? (
+		<Card>
+			<CardHeader>
+				<CardTitle className="flex items-center gap-2 text-base">
+					<IconKey className="size-4 shrink-0" aria-hidden="true" />
+					{t("settings.discordLifecycle.recoveryTitle", "Credential rotation, revoke & restore")}
+				</CardTitle>
+				<CardDescription>{recovery.rotationGuidance.summary}</CardDescription>
+			</CardHeader>
+			<CardContent className="space-y-5">
+				{recovery.activeInstallation?.canRotate ? (
+					<form
+						className="space-y-3 rounded-lg border p-3"
+						onSubmit={(event) => {
+							event.preventDefault();
+							event.stopPropagation();
+							void rotateForm.handleSubmit();
+						}}
+					>
+						<div className="space-y-1">
+							<p className="text-sm font-medium">
+								{t("settings.discordLifecycle.rotateHeading", "Rotate Discord bot token")}
+							</p>
+							<p className="text-xs text-muted-foreground">
+								{recovery.rotationGuidance.interruptionDetails}
+							</p>
+						</div>
+						<rotateForm.Field name="botToken">
+							{(field) => (
+								<TFormItem>
+									<TFormLabel>
+										{t(
+											"settings.discordLifecycle.rotateTokenLabel",
+											"New Bot Token (same application)",
+										)}
+									</TFormLabel>
+									<div className="flex flex-col gap-2 sm:flex-row">
 										<TFormControl>
 											<Input
 												type="password"
@@ -870,485 +1234,140 @@ export function DiscordLifecyclePanel({
 												onChange={(e) => field.handleChange(e.target.value)}
 												autoComplete="off"
 												spellCheck={false}
-												disabled={saveCredentialsMutation.isPending}
+												disabled={rotateMutation.isPending}
 												required
 											/>
 										</TFormControl>
-									</TFormItem>
-								)}
-							</credentialsForm.Field>
-							<div className="grid gap-3 sm:grid-cols-2">
-								<credentialsForm.Field name="applicationId">
-									{(field) => (
-										<TFormItem>
-											<TFormLabel>
-												{t("settings.discordLifecycle.applicationIdLabel", "Application ID")}
-											</TFormLabel>
-											<TFormControl>
-												<Input
-													inputMode="numeric"
-													value={field.state.value}
-													onBlur={field.handleBlur}
-													onChange={(e) => field.handleChange(e.target.value)}
-													autoComplete="off"
-													spellCheck={false}
-													disabled={saveCredentialsMutation.isPending}
-													required
-												/>
-											</TFormControl>
-										</TFormItem>
-									)}
-								</credentialsForm.Field>
-								<credentialsForm.Field name="publicKey">
-									{(field) => (
-										<TFormItem>
-											<TFormLabel>
-												{t("settings.discordLifecycle.publicKeyLabel", "Ed25519 Public Key")}
-											</TFormLabel>
-											<TFormControl>
-												<Input
-													value={field.state.value}
-													onBlur={field.handleBlur}
-													onChange={(e) => field.handleChange(e.target.value)}
-													autoComplete="off"
-													spellCheck={false}
-													disabled={saveCredentialsMutation.isPending}
-													required
-												/>
-											</TFormControl>
-										</TFormItem>
-									)}
-								</credentialsForm.Field>
-							</div>
-							{credError ? (
-								<p role="alert" className="text-xs text-destructive">
-									{credError}
-								</p>
-							) : null}
-							<Button type="submit" size="sm" disabled={saveCredentialsMutation.isPending}>
-								{saveCredentialsMutation.isPending ? (
-									<IconLoader2
-										className="mr-1.5 size-4 motion-safe:animate-spin"
-										aria-hidden="true"
-									/>
-								) : (
-									<IconShieldCheck className="mr-1.5 size-4" aria-hidden="true" />
-								)}
-								{t("settings.discordLifecycle.saveCredentialsButton", "Verify & save credentials")}
-							</Button>
-						</form>
-
-						{/* Private DM Verification Form */}
-						{candidate.hasStoredCredentials ? (
-							<form
-								className="space-y-3 rounded-lg border p-3"
-								onSubmit={(event) => {
-									event.preventDefault();
-									event.stopPropagation();
-									void privateDmTestForm.handleSubmit();
-								}}
-							>
-								<privateDmTestForm.Field name="discordUserId">
-									{(field) => (
-										<TFormItem className="space-y-2">
-											<div className="space-y-1">
-												<TFormLabel>
-													{t(
-														"settings.discordLifecycle.dmTestLabel",
-														"Test private DM delivery (Discord User ID)",
-													)}
-												</TFormLabel>
-												<p className="text-xs text-muted-foreground">
-													{t(
-														"settings.discordLifecycle.dmTestHelp",
-														"Enter your numeric Discord User ID. If Discord returns error 50007, ensure you share a server with the bot and enable server Direct Messages.",
-													)}
-												</p>
-											</div>
-											<div className="flex flex-col gap-2 sm:flex-row">
-												<TFormControl>
-													<Input
-														inputMode="numeric"
-														placeholder="123456789012345678"
-														value={field.state.value}
-														onBlur={field.handleBlur}
-														onChange={(e) => field.handleChange(e.target.value)}
-														disabled={privateTestMutation.isPending}
-														required
-													/>
-												</TFormControl>
-												<Button
-													type="submit"
-													size="sm"
-													className="shrink-0"
-													disabled={privateTestMutation.isPending}
-												>
-													{privateTestMutation.isPending ? (
-														<IconLoader2
-															className="mr-1.5 size-4 motion-safe:animate-spin"
-															aria-hidden="true"
-														/>
-													) : (
-														<IconSend className="mr-1.5 size-4" aria-hidden="true" />
-													)}
-													{t("settings.discordLifecycle.sendTestDmButton", "Send test DM")}
-												</Button>
-											</div>
-										</TFormItem>
-									)}
-								</privateDmTestForm.Field>
-							</form>
-						) : null}
-					</CardContent>
-				) : null}
-			</Card>
-
-			{/* 2. Review Impact & Switch */}
-			{preview && preview.candidateInstallation ? (
-				<Card>
-					<CardHeader>
-						<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-							<div className="min-w-0 space-y-1">
-								<CardTitle className="flex items-center gap-2 text-base">
-									<IconArrowsExchange className="size-4 shrink-0" aria-hidden="true" />
-									{t("settings.discordLifecycle.switchTitle", "Review impact & switch Discord bot")}
-								</CardTitle>
-								<CardDescription>
-									{t(
-										"settings.discordLifecycle.switchDescription",
-										"Review verified Discord DM reachability, open approval cards, and in-flight notifications before switching.",
-									)}
-								</CardDescription>
-							</div>
-							<Badge
-								variant={preview.switchControlEnabled ? "default" : "secondary"}
-								className="w-fit shrink-0"
-							>
-								{preview.switchControlEnabled
-									? t("settings.discordLifecycle.gate.enabled", "Switch enabled")
-									: t("settings.discordLifecycle.gate.disabled", "Switch gated")}
-							</Badge>
-						</div>
-					</CardHeader>
-					<CardContent className="min-w-0 space-y-4">
-						{!preview.switchControlEnabled ? (
-							<div className="rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground">
-								{t(
-									"settings.discordLifecycle.gateDisabledNotice",
-									"Organization-owned Discord switching is not yet enabled for this organization. You can prepare, test, and review impact now.",
-								)}
-							</div>
-						) : null}
-
-						<div
-							ref={summaryRef}
-							tabIndex={-1}
-							aria-labelledby={summaryHeadingId}
-							className="space-y-3 rounded-lg border bg-muted/20 p-3 focus:outline-none focus:ring-2 focus:ring-ring"
-						>
-							<h3 id={summaryHeadingId} className="text-sm font-medium">
-								{t("settings.discordLifecycle.impactSummaryHeading", "Switch impact summary")}
-							</h3>
-
-							{impactChangedNotice ? (
-								<div
-									role="alert"
-									className="flex items-start gap-2 rounded-md border border-warning/50 bg-warning/10 p-2.5 text-xs"
-								>
-									<IconAlertTriangle
-										className="mt-0.5 size-4 shrink-0 text-warning"
-										aria-hidden="true"
-									/>
-									<span>{impactChangedNotice}</span>
-								</div>
-							) : null}
-
-							<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-								<MetricTile
-									label={t("settings.discordLifecycle.metrics.reachable", "Verified DM reachable")}
-									value={preview.employeeImpact.verifiedReachableEmployees}
-								/>
-								<MetricTile
-									label={t("settings.discordLifecycle.metrics.actionNeeded", "Action needed")}
-									value={preview.employeeImpact.actionNeededEmployees}
-								/>
-								<MetricTile
-									label={t("settings.discordLifecycle.metrics.unknown", "Unknown reachability")}
-									value={preview.employeeImpact.unknownReachabilityEmployees}
-								/>
-								<MetricTile
-									label={t(
-										"settings.discordLifecycle.metrics.openCards",
-										"Open approval cards & work",
-									)}
-									value={preview.approvalImpact.totalOutstanding}
-								/>
-							</div>
-						</div>
-
-						{preview.requiresUnreadyAcknowledgement ? (
-							<div className="flex items-start gap-2 rounded-lg border p-3">
-								<input
-									id={ackCheckboxId}
-									type="checkbox"
-									className="mt-1 size-4 shrink-0"
-									checked={acknowledgedUnready}
-									onChange={(e) => setAcknowledgedUnready(e.target.checked)}
-								/>
-								<Label htmlFor={ackCheckboxId} className="text-xs font-normal leading-relaxed">
-									{t(
-										"settings.discordLifecycle.ackUnreadyLabel",
-										"I acknowledge that {count} employees still need to link or verify Discord direct messages on the replacement bot.",
-										{ count: String(preview.employeeImpact.unreadyEmployees) },
-									)}
-								</Label>
-							</div>
-						) : null}
-
-						{switchError ? (
-							<p role="alert" className="text-xs text-destructive">
-								{switchError}
-							</p>
-						) : null}
-
-						<Button
-							type="button"
-							disabled={!canSubmitSwitch}
-							onClick={() => {
-								if (!preview.candidateInstallation) return;
-								switchMutation.mutate({
-									isRestore: isRestoreCandidate,
-									input: {
-										candidateInstallationId: preview.candidateInstallation.id,
-										reviewedCurrentInstallationId: preview.primaryCurrentInstallationId,
-										reviewedCurrentCredentialRevisionId: preview.primaryCurrentCredentialRevisionId,
-										reviewedCandidateCredentialRevisionId:
-											preview.candidateInstallation.activeCredentialRevisionId,
-										reviewedImpactDigest: preview.impactDigest,
-										acknowledgeUnreadyEmployees: acknowledgedUnready,
-									},
-								});
-							}}
-						>
-							{switchMutation.isPending ? (
-								<IconLoader2
-									className="mr-1.5 size-4 motion-safe:animate-spin"
-									aria-hidden="true"
-								/>
-							) : (
-								<IconArrowsExchange className="mr-1.5 size-4" aria-hidden="true" />
-							)}
-							{isRestoreCandidate
-								? t("settings.discordLifecycle.confirmRestoreButton", "Confirm Discord restore")
-								: t("settings.discordLifecycle.confirmSwitchButton", "Confirm Discord switch")}
-						</Button>
-					</CardContent>
-				</Card>
-			) : null}
-
-			{/* 3. Retiring Installations */}
-			{preview && preview.retiringInstallations.length > 0 ? (
-				<Card>
-					<CardHeader>
-						<CardTitle className="flex items-center gap-2 text-base">
-							<IconClock className="size-4 shrink-0" aria-hidden="true" />
-							{t("settings.discordLifecycle.retiringTitle", "Retiring Discord bots")}
-						</CardTitle>
-						<CardDescription>
-							{t(
-								"settings.discordLifecycle.retiringDescription",
-								"Retiring bots continue servicing eligible approval cards they originally sent until work settles or the 30-day deadline.",
-							)}
-						</CardDescription>
-					</CardHeader>
-					<CardContent className="space-y-3">
-						{preview.retiringInstallations.map((ret) => (
-							<div
-								key={ret.id}
-								className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
-							>
-								<div className="min-w-0 space-y-1">
-									<p className="truncate text-sm font-medium">
-										{ret.externalDisplayName ?? ret.externalAppId ?? ret.id}
-									</p>
-									<p className="text-xs text-muted-foreground">
-										{t(
-											"settings.discordLifecycle.retiringMeta",
-											"Outstanding cards & work: {count} · Deadline: {deadline}",
-											{
-												count: String(ret.totalOutstandingCardsAndWork),
-												deadline: ret.retirementDeadlineAt ?? "—",
-											},
-										)}
-									</p>
-								</div>
-							</div>
-						))}
-					</CardContent>
-				</Card>
-			) : null}
-
-			{/* 4. Same-App Rotation, Revoke, & Restore */}
-			{recovery && (recovery.activeInstallation || recovery.restorableInstallations.length > 0) ? (
-				<Card>
-					<CardHeader>
-						<CardTitle className="flex items-center gap-2 text-base">
-							<IconKey className="size-4 shrink-0" aria-hidden="true" />
-							{t(
-								"settings.discordLifecycle.recoveryTitle",
-								"Credential rotation, revoke & restore",
-							)}
-						</CardTitle>
-						<CardDescription>{recovery.rotationGuidance.summary}</CardDescription>
-					</CardHeader>
-					<CardContent className="space-y-5">
-						{recovery.activeInstallation?.canRotate ? (
-							<form
-								className="space-y-3 rounded-lg border p-3"
-								onSubmit={(event) => {
-									event.preventDefault();
-									event.stopPropagation();
-									void rotateForm.handleSubmit();
-								}}
-							>
-								<div className="space-y-1">
-									<p className="text-sm font-medium">
-										{t("settings.discordLifecycle.rotateHeading", "Rotate Discord bot token")}
-									</p>
-									<p className="text-xs text-muted-foreground">
-										{recovery.rotationGuidance.interruptionDetails}
-									</p>
-								</div>
-								<rotateForm.Field name="botToken">
-									{(field) => (
-										<TFormItem>
-											<TFormLabel>
-												{t(
-													"settings.discordLifecycle.rotateTokenLabel",
-													"New Bot Token (same application)",
-												)}
-											</TFormLabel>
-											<div className="flex flex-col gap-2 sm:flex-row">
-												<TFormControl>
-													<Input
-														type="password"
-														value={field.state.value}
-														onBlur={field.handleBlur}
-														onChange={(e) => field.handleChange(e.target.value)}
-														autoComplete="off"
-														spellCheck={false}
-														disabled={rotateMutation.isPending}
-														required
-													/>
-												</TFormControl>
-												<Button
-													type="submit"
-													size="sm"
-													className="shrink-0"
-													disabled={rotateMutation.isPending}
-												>
-													{rotateMutation.isPending ? (
-														<IconLoader2
-															className="mr-1.5 size-4 motion-safe:animate-spin"
-															aria-hidden="true"
-														/>
-													) : (
-														<IconKey className="mr-1.5 size-4" aria-hidden="true" />
-													)}
-													{t("settings.discordLifecycle.rotateButton", "Rotate token")}
-												</Button>
-											</div>
-										</TFormItem>
-									)}
-								</rotateForm.Field>
-								{rotateError ? (
-									<p role="alert" className="text-xs text-destructive">
-										{rotateError}
-									</p>
-								) : null}
-							</form>
-						) : null}
-
-						{recovery.activeInstallation?.canRevoke ? (
-							<div className="flex flex-col gap-2 rounded-lg border border-destructive/30 p-3 sm:flex-row sm:items-center sm:justify-between">
-								<div className="min-w-0 space-y-1">
-									<p className="text-sm font-medium">
-										{t("settings.discordLifecycle.revokeHeading", "Revoke active Discord bot")}
-									</p>
-									<p className="text-xs text-muted-foreground">
-										{t(
-											"settings.discordLifecycle.revokeHelp",
-											"Immediately stops Discord authorization while keeping pending approvals available in the Z8 inbox.",
-										)}
-									</p>
-								</div>
-								<Button
-									type="button"
-									variant="destructive"
-									size="sm"
-									className="shrink-0"
-									disabled={revokeDialog.isPending}
-									onClick={() =>
-										revokeDialog.request({
-											id: recovery.activeInstallation!.id,
-											label:
-												recovery.activeInstallation!.externalDisplayName ??
-												recovery.activeInstallation!.externalAppId ??
-												recovery.activeInstallation!.id,
-										})
-									}
-								>
-									<IconShieldOff className="mr-1.5 size-4" aria-hidden="true" />
-									{t("settings.discordLifecycle.revokeButton", "Revoke bot")}
-								</Button>
-							</div>
-						) : null}
-
-						{recovery.restorableInstallations.length > 0 ? (
-							<div className="space-y-2">
-								<p className="text-sm font-medium">
-									{t("settings.discordLifecycle.restoreHeading", "Restore a previous Discord bot")}
-								</p>
-								{recovery.restorableInstallations.map((inst) => (
-									<div
-										key={inst.id}
-										className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
-									>
-										<div className="min-w-0 space-y-0.5">
-											<p className="truncate text-sm font-medium">
-												{inst.externalDisplayName ?? inst.externalAppId ?? inst.id}
-											</p>
-											<p className="text-xs text-muted-foreground">
-												{t("settings.discordLifecycle.restoreMeta", "Status: {status}", {
-													status: inst.status,
-												})}
-											</p>
-										</div>
 										<Button
-											type="button"
-											variant="outline"
+											type="submit"
 											size="sm"
 											className="shrink-0"
-											disabled={prepareRestoreMutation.isPending}
-											onClick={() => prepareRestoreMutation.mutate(inst.id)}
+											disabled={rotateMutation.isPending}
 										>
-											{prepareRestoreMutation.isPending ? (
+											{rotateMutation.isPending ? (
 												<IconLoader2
 													className="mr-1.5 size-4 motion-safe:animate-spin"
 													aria-hidden="true"
 												/>
 											) : (
-												<IconRestore className="mr-1.5 size-4" aria-hidden="true" />
+												<IconKey className="mr-1.5 size-4" aria-hidden="true" />
 											)}
-											{t("settings.discordLifecycle.restoreButton", "Begin verified restore")}
+											{t("settings.discordLifecycle.rotateButton", "Rotate token")}
 										</Button>
 									</div>
-								))}
-							</div>
+								</TFormItem>
+							)}
+						</rotateForm.Field>
+						{rotateError ? (
+							<p role="alert" className="text-xs text-destructive">
+								{rotateError}
+							</p>
 						) : null}
-					</CardContent>
-				</Card>
-			) : null}
+					</form>
+				) : null}
+
+				{recovery.activeInstallation?.canRevoke ? (
+					<div className="flex flex-col gap-2 rounded-lg border border-destructive/30 p-3 sm:flex-row sm:items-center sm:justify-between">
+						<div className="min-w-0 space-y-1">
+							<p className="text-sm font-medium">
+								{t("settings.discordLifecycle.revokeHeading", "Revoke active Discord bot")}
+							</p>
+							<p className="text-xs text-muted-foreground">
+								{t(
+									"settings.discordLifecycle.revokeHelp",
+									"Immediately stops Discord authorization while keeping pending approvals available in the Z8 inbox.",
+								)}
+							</p>
+						</div>
+						<Button
+							type="button"
+							variant="destructive"
+							size="sm"
+							className="shrink-0"
+							disabled={revokeDialog.isPending}
+							onClick={() =>
+								revokeDialog.request({
+									id: recovery.activeInstallation!.id,
+									label:
+										recovery.activeInstallation!.externalDisplayName ??
+										recovery.activeInstallation!.externalAppId ??
+										recovery.activeInstallation!.id,
+								})
+							}
+						>
+							<IconShieldOff className="mr-1.5 size-4" aria-hidden="true" />
+							{t("settings.discordLifecycle.revokeButton", "Revoke bot")}
+						</Button>
+					</div>
+				) : null}
+
+				{recovery.restorableInstallations.length > 0 ? (
+					<div className="space-y-2">
+						<p className="text-sm font-medium">
+							{t("settings.discordLifecycle.restoreHeading", "Restore a previous Discord bot")}
+						</p>
+						{recovery.restorableInstallations.map((inst) => (
+							<div
+								key={inst.id}
+								className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
+							>
+								<div className="min-w-0 space-y-0.5">
+									<p className="truncate text-sm font-medium">
+										{inst.externalDisplayName ?? inst.externalAppId ?? inst.id}
+									</p>
+									<p className="text-xs text-muted-foreground">
+										{t("settings.discordLifecycle.restoreMeta", "Status: {status}", {
+											status: inst.status,
+										})}
+									</p>
+								</div>
+								<Button
+									type="button"
+									variant="outline"
+									size="sm"
+									className="shrink-0"
+									disabled={prepareRestoreMutation.isPending}
+									onClick={() => prepareRestoreMutation.mutate(inst.id)}
+								>
+									{prepareRestoreMutation.isPending ? (
+										<IconLoader2
+											className="mr-1.5 size-4 motion-safe:animate-spin"
+											aria-hidden="true"
+										/>
+									) : (
+										<IconRestore className="mr-1.5 size-4" aria-hidden="true" />
+									)}
+									{t("settings.discordLifecycle.restoreButton", "Begin verified restore")}
+								</Button>
+							</div>
+						))}
+					</div>
+				) : null}
+			</CardContent>
+		</Card>
+	) : null;
+}
+
+export function DiscordLifecyclePanel(props: DiscordLifecyclePanelProps) {
+	const model = useDiscordLifecyclePanel(props);
+	const { t, announcement, revokeDialog, revokeMutation } = model;
+	return (
+		<div className="min-w-0 space-y-6">
+			<div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+				{announcement}
+			</div>
+
+			{/* 1. Prepare & Verify Replacement Discord Bot */}
+			<PreparationCard {...model} />
+
+			{/* 2. Review Impact & Switch */}
+			<SwitchReviewCard {...model} />
+
+			{/* 3. Retiring Installations */}
+			<RetiringInstallationsCard {...model} />
+
+			{/* 4. Same-App Rotation, Revoke, & Restore */}
+			<RecoveryCard {...model} />
 
 			<ConfirmActionDialog
 				open={revokeDialog.open}
@@ -1380,5 +1399,120 @@ export function DiscordLifecyclePanel({
 				}}
 			/>
 		</div>
+	);
+}
+
+function SwitchImpactSummary({
+	t,
+	summaryRef,
+	impactChangedNotice,
+	preview,
+	summaryHeadingId,
+}: Pick<PanelState, "t" | "summaryRef" | "impactChangedNotice" | "preview" | "summaryHeadingId"> & {
+	preview: NonNullable<PanelState["preview"]>;
+}) {
+	return (
+		<div
+			ref={summaryRef}
+			tabIndex={-1}
+			aria-labelledby={summaryHeadingId}
+			className="space-y-3 rounded-lg border bg-muted/20 p-3 focus:outline-none focus:ring-2 focus:ring-ring"
+		>
+			<h3 id={summaryHeadingId} className="text-sm font-medium">
+				{t("settings.discordLifecycle.impactSummaryHeading", "Switch impact summary")}
+			</h3>
+
+			{impactChangedNotice ? (
+				<div
+					role="alert"
+					className="flex items-start gap-2 rounded-md border border-warning/50 bg-warning/10 p-2.5 text-xs"
+				>
+					<IconAlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden="true" />
+					<span>{impactChangedNotice}</span>
+				</div>
+			) : null}
+
+			<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+				<MetricTile
+					label={t("settings.discordLifecycle.metrics.reachable", "Verified DM reachable")}
+					value={preview.employeeImpact.verifiedReachableEmployees}
+				/>
+				<MetricTile
+					label={t("settings.discordLifecycle.metrics.actionNeeded", "Action needed")}
+					value={preview.employeeImpact.actionNeededEmployees}
+				/>
+				<MetricTile
+					label={t("settings.discordLifecycle.metrics.unknown", "Unknown reachability")}
+					value={preview.employeeImpact.unknownReachabilityEmployees}
+				/>
+				<MetricTile
+					label={t("settings.discordLifecycle.metrics.openCards", "Open approval cards & work")}
+					value={preview.approvalImpact.totalOutstanding}
+				/>
+			</div>
+		</div>
+	);
+}
+
+function PreparationHeader({
+	t,
+	refreshMutation,
+	prepareMutation,
+	candidate,
+}: Pick<PanelState, "t" | "refreshMutation" | "prepareMutation" | "candidate">) {
+	return (
+		<CardHeader>
+			<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+				<div className="min-w-0 space-y-1">
+					<CardTitle className="flex items-center gap-2 text-base">
+						<IconBrandDiscord className="size-4 shrink-0" aria-hidden="true" />
+						{t(
+							"settings.discordLifecycle.prepareTitle",
+							"Prepare & verify replacement Discord bot",
+						)}
+					</CardTitle>
+					<CardDescription>
+						{t(
+							"settings.discordLifecycle.prepareDescription",
+							"Verify application identity, signed interactions, slash commands, and private DM delivery while your current Discord bot keeps serving employees.",
+						)}
+					</CardDescription>
+				</div>
+				<div className="flex flex-wrap items-center gap-2">
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						disabled={refreshMutation.isPending}
+						onClick={() => refreshMutation.mutate()}
+					>
+						{refreshMutation.isPending ? (
+							<IconLoader2 className="mr-1.5 size-4 motion-safe:animate-spin" aria-hidden="true" />
+						) : (
+							<IconRefresh className="mr-1.5 size-4" aria-hidden="true" />
+						)}
+						{t("settings.discordLifecycle.refresh", "Refresh status")}
+					</Button>
+					{!candidate ? (
+						<Button
+							type="button"
+							size="sm"
+							disabled={prepareMutation.isPending}
+							onClick={() => prepareMutation.mutate()}
+						>
+							{prepareMutation.isPending ? (
+								<IconLoader2
+									className="mr-1.5 size-4 motion-safe:animate-spin"
+									aria-hidden="true"
+								/>
+							) : (
+								<IconPlugConnected className="mr-1.5 size-4" aria-hidden="true" />
+							)}
+							{t("settings.discordLifecycle.prepareButton", "Prepare replacement bot")}
+						</Button>
+					) : null}
+				</div>
+			</div>
+		</CardHeader>
 	);
 }

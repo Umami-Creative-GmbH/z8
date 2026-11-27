@@ -14,7 +14,8 @@ import {
 	IconShieldOff,
 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
-import { useMutation } from "@tanstack/react-query";
+import { chatInstallationQueries } from "@/lib/query/chat-installation-queries";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { useStore } from "@tanstack/react-store";
 import { useTranslate } from "@tolgee/react";
 import { useRouter } from "next/navigation";
@@ -205,7 +206,7 @@ function isPreviewPayload(value: unknown): value is ChatSwitchImpactPreview {
 	);
 }
 
-export function ChatInstallationRecoveryPanel({
+function useChatInstallationRecoveryPanel({
 	channelName,
 	initialState,
 	refreshStateAction,
@@ -216,6 +217,7 @@ export function ChatInstallationRecoveryPanel({
 	confirmRestoreAction,
 }: ChatInstallationRecoveryPanelProps) {
 	const { t } = useTranslate();
+	const queryClient = useQueryClient();
 	const router = useRouter();
 	const idPrefix = useId();
 
@@ -242,6 +244,7 @@ export function ChatInstallationRecoveryPanel({
 		});
 	};
 
+	// react-doctor-disable-next-line react-doctor/query-mutation-missing-invalidation -- Read-only refresh replaces the panel snapshot.
 	const refreshMutation = useMutation({
 		mutationFn: () => refreshStateAction(),
 		onSuccess: (result) => {
@@ -271,6 +274,9 @@ export function ChatInstallationRecoveryPanel({
 		mutationFn: (input: RotateSlackCredentialsActionInput) => rotateCredentialsAction(input),
 		onSuccess: (result) => {
 			if (result.success) {
+				void queryClient.invalidateQueries(
+					chatInstallationQueries(result.data.recoveryState.organizationId),
+				);
 				setState(result.data.recoveryState);
 				setLastRotationResult(result.data);
 				setRotateError(null);
@@ -310,6 +316,9 @@ export function ChatInstallationRecoveryPanel({
 		mutationFn: (input: RevokeSlackInstallationActionInput) => revokeInstallationAction(input),
 		onSuccess: (result) => {
 			if (result.success) {
+				void queryClient.invalidateQueries(
+					chatInstallationQueries(result.data.recoveryState.organizationId),
+				);
 				setState(result.data.recoveryState);
 				setRevokeError(null);
 				setRevokeDialogOpen(false);
@@ -343,6 +352,9 @@ export function ChatInstallationRecoveryPanel({
 		mutationFn: (input: PrepareSlackRestoreActionInput) => prepareRestoreAction(input),
 		onSuccess: (result) => {
 			if (result.success) {
+				void queryClient.invalidateQueries(
+					chatInstallationQueries(result.data.recoveryState.organizationId),
+				);
 				setState(result.data.recoveryState);
 				setRestoreError(null);
 				setRestoreImpactChangedNotice(null);
@@ -370,6 +382,9 @@ export function ChatInstallationRecoveryPanel({
 		mutationFn: (input: VerifySlackRestoreActionInput) => verifyRestoreAction(input),
 		onSuccess: (result) => {
 			if (result.success) {
+				void queryClient.invalidateQueries(
+					chatInstallationQueries(result.data.recoveryState.organizationId),
+				);
 				setState(result.data.recoveryState);
 				setRestoreError(null);
 				restoreVerifyForm.reset();
@@ -401,6 +416,9 @@ export function ChatInstallationRecoveryPanel({
 		mutationFn: (input: ConfirmSlackRestoreActionInput) => confirmRestoreAction(input),
 		onSuccess: (result) => {
 			if (result.success) {
+				void queryClient.invalidateQueries(
+					chatInstallationQueries(result.data.recoveryState.organizationId),
+				);
 				setState(result.data.recoveryState);
 				setRestoreError(null);
 				setRestoreImpactChangedNotice(null);
@@ -531,6 +549,608 @@ export function ChatInstallationRecoveryPanel({
 		}
 	};
 
+	return {
+		channelName,
+		t,
+		rotateTriggerRef,
+		revokeTriggerRef,
+		restoreSummaryRef,
+		state,
+		rotateDialogOpen,
+		setRotateDialogOpen,
+		revokeDialogOpen,
+		setRevokeDialogOpen,
+		lastRotationResult,
+		rotateError,
+		revokeError,
+		setRevokeError,
+		restoreError,
+		setRestoreError,
+		restoreImpactChangedNotice,
+		setRestoreImpactChangedNotice,
+		acknowledgedUnready,
+		setAcknowledgedUnready,
+		announcement,
+		refreshMutation,
+		rotateMutation,
+		revokeMutation,
+		prepareRestoreMutation,
+		verifyRestoreMutation,
+		confirmRestoreMutation,
+		rotateForm,
+		restoreVerifyForm,
+		rotateFormValues,
+		restoreVerifyValues,
+		activeInstallation,
+		restoreSetup,
+		restorePreview,
+		ackCheckboxId,
+		rotateBotTokenId,
+		rotateSigningSecretId,
+		restoreBotTokenId,
+		restoreSigningSecretId,
+		restoreSlackUserId,
+		canSubmitRestoreConfirm,
+		handleRotateDialogOpenChange,
+		handleRevokeDialogOpenChange,
+	};
+}
+
+type PanelState = NonNullable<ReturnType<typeof useChatInstallationRecoveryPanel>>;
+
+function ActiveInstallationSection(props: PanelState) {
+	const { channelName, t, state, lastRotationResult, activeInstallation } = props;
+	return activeInstallation ? (
+		<div className="min-w-0 space-y-4 rounded-lg border bg-muted/20 p-4">
+			<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+				<div className="min-w-0 space-y-1">
+					<p className="break-words text-sm font-medium">
+						{activeInstallation.externalDisplayName ??
+							activeInstallation.externalSpaceName ??
+							channelName}
+					</p>
+					<p className="break-words text-xs text-muted-foreground">
+						{activeInstallation.externalAppId
+							? `${t("settings.recovery.appIdLabel", "App ID")}: ${activeInstallation.externalAppId}`
+							: t("settings.recovery.deploymentManagedLabel", "Deployment-managed app")}
+						{activeInstallation.externalSpaceId
+							? ` · ${activeInstallation.externalSpaceName ?? activeInstallation.externalSpaceId}`
+							: ""}
+					</p>
+				</div>
+				<div className="flex flex-wrap items-center gap-2">
+					<Badge variant="default">
+						{activeInstallation.status === "active"
+							? t("settings.recovery.status.active", "Active")
+							: t("settings.recovery.status.legacyActive", "Legacy active")}
+					</Badge>
+					{activeInstallation.endpointState === "uncertain" ? (
+						<Badge variant="destructive">
+							{t("settings.recovery.endpointState.uncertain", "Endpoint uncertain")}
+						</Badge>
+					) : null}
+				</div>
+			</div>
+
+			{/* Provider-specific interruption guidance */}
+			<div className="rounded-md border bg-background p-3 text-xs text-muted-foreground">
+				<p className="flex items-center gap-1.5 font-medium text-foreground">
+					<IconInfoCircle className="size-4 shrink-0" aria-hidden="true" />
+					{t("settings.recovery.guidance.heading", "Provider interruption & recovery guidance")}
+				</p>
+				<p className="mt-1 break-words">{state.rotationGuidance.interruptionDetails}</p>
+			</div>
+
+			<ActiveInstallationActions {...props} activeInstallation={activeInstallation} />
+
+			{/* Post-rotation verification checklist */}
+			{lastRotationResult ? (
+				<div className="rounded-md border border-primary/40 bg-primary/5 p-3 text-xs">
+					<p className="flex items-center gap-1.5 font-medium text-foreground">
+						<IconCheck className="size-4 shrink-0 text-primary" aria-hidden="true" />
+						{t(
+							"settings.recovery.rotate.postRotationHeading",
+							"Credentials rotated to revision v{revision} — verify recovery",
+							{ revision: String(lastRotationResult.newRevisionNumber) },
+						)}
+					</p>
+					<ol className="mt-2 list-decimal space-y-1 pl-4 text-muted-foreground">
+						{lastRotationResult.guidance.verificationSteps.map((step) => (
+							<li key={step} className="break-words">
+								{step}
+							</li>
+						))}
+					</ol>
+				</div>
+			) : null}
+		</div>
+	) : null;
+}
+
+function RestorableInstallationsSection(props: PanelState) {
+	const { channelName, t, state, restoreError, prepareRestoreMutation } = props;
+	return state.restorableInstallations.length > 0 ? (
+		<div className="min-w-0 space-y-3">
+			<div className="space-y-1">
+				<h3 className="flex items-center gap-1.5 text-sm font-medium">
+					<IconHistory className="size-4 shrink-0" aria-hidden="true" />
+					{t(
+						"settings.recovery.restore.listHeading",
+						"Previous installations available to restore",
+					)}
+				</h3>
+				<p className="text-xs text-muted-foreground">
+					{t(
+						"settings.recovery.restore.listDescription",
+						"Restoring a previous installation requires fresh credential and delivery verification plus a fresh impact review before it becomes active.",
+					)}
+				</p>
+			</div>
+
+			{restoreError ? (
+				<div
+					role="alert"
+					className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive"
+				>
+					{restoreError}
+				</div>
+			) : null}
+
+			<ul className="space-y-2">
+				{state.restorableInstallations.map((inst) => (
+					<li
+						key={inst.id}
+						className="flex flex-col gap-3 rounded-lg border bg-background p-3 sm:flex-row sm:items-center sm:justify-between"
+					>
+						<div className="min-w-0 space-y-0.5">
+							<p className="break-words text-sm font-medium">
+								{inst.externalDisplayName ?? inst.externalSpaceName ?? channelName}
+							</p>
+							<p className="break-words text-xs text-muted-foreground">
+								{inst.externalAppId ? `${inst.externalAppId} · ` : ""}
+								{inst.status}
+								{inst.revokedAt
+									? ` · ${t("settings.recovery.restore.revokedAt", "Revoked: {timestamp}", { timestamp: inst.revokedAt })}`
+									: inst.retiredAt
+										? ` · ${t("settings.recovery.restore.retiredAt", "Retired: {timestamp}", { timestamp: inst.retiredAt })}`
+										: ""}
+							</p>
+							{inst.endpointState === "uncertain" ? (
+								<p className="text-xs text-destructive">
+									{t(
+										"settings.recovery.restore.uncertainWarning",
+										"Endpoint cleanup timed out; endpoint reconciliation is required before restoring.",
+									)}
+								</p>
+							) : null}
+						</div>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							className="w-fit shrink-0"
+							disabled={prepareRestoreMutation.isPending}
+							onClick={() => prepareRestoreMutation.mutate({ installationId: inst.id })}
+						>
+							{prepareRestoreMutation.isPending ? (
+								<IconLoader2 className="mr-1.5 size-4 animate-spin" aria-hidden="true" />
+							) : (
+								<IconHistory className="mr-1.5 size-4" aria-hidden="true" />
+							)}
+							{t("settings.recovery.restore.startButton", "Start restore & verify")}
+						</Button>
+					</li>
+				))}
+			</ul>
+		</div>
+	) : null;
+}
+
+function RestoreVerificationSection(props: PanelState) {
+	const {
+		t,
+		restoreError,
+		verifyRestoreMutation,
+		restoreVerifyForm,
+		restoreVerifyValues,
+		restoreSetup,
+		restoreBotTokenId,
+		restoreSigningSecretId,
+		restoreSlackUserId,
+	} = props;
+	return restoreSetup ? (
+		<div className="min-w-0 space-y-4 rounded-lg border border-primary/30 bg-background p-4">
+			<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+				<div className="min-w-0 space-y-0.5">
+					<h3 className="flex items-center gap-1.5 text-sm font-medium">
+						<IconShieldCheck className="size-4 shrink-0" aria-hidden="true" />
+						{t("settings.recovery.restore.verifyHeading", "Verify installation before restoring")}
+					</h3>
+					<p className="break-words text-xs text-muted-foreground">
+						{t(
+							"settings.recovery.restore.verifyDescription",
+							"Re-verify credentials, receive a fresh signed Slack event, and send a synthetic private DM test before confirming restore.",
+						)}
+					</p>
+				</div>
+				<Badge variant={restoreSetup.readyForSwitch ? "default" : "secondary"}>
+					{restoreSetup.readyForSwitch
+						? t("settings.recovery.restore.readyBadge", "Ready to confirm restore")
+						: t("settings.recovery.restore.pendingBadge", "Verification required")}
+				</Badge>
+			</div>
+
+			{restoreError ? (
+				<div
+					role="alert"
+					className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive"
+				>
+					{restoreError}
+				</div>
+			) : null}
+
+			<form
+				onSubmit={(event) => {
+					event.preventDefault();
+					event.stopPropagation();
+					void restoreVerifyForm.handleSubmit();
+				}}
+				className="space-y-3"
+			>
+				<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+					<restoreVerifyForm.Field name="botToken">
+						{(field) => (
+							<TFormItem>
+								<TFormLabel htmlFor={restoreBotTokenId}>
+									{t("settings.recovery.fields.botToken", "Bot User OAuth Token (write-only)")}
+								</TFormLabel>
+								<TFormControl>
+									<Input
+										id={restoreBotTokenId}
+										type="password"
+										autoComplete="off"
+										placeholder="xoxb-..."
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										onBlur={field.handleBlur}
+									/>
+								</TFormControl>
+							</TFormItem>
+						)}
+					</restoreVerifyForm.Field>
+
+					<restoreVerifyForm.Field name="signingSecret">
+						{(field) => (
+							<TFormItem>
+								<TFormLabel htmlFor={restoreSigningSecretId}>
+									{t("settings.recovery.fields.signingSecret", "Signing Secret (write-only)")}
+								</TFormLabel>
+								<TFormControl>
+									<Input
+										id={restoreSigningSecretId}
+										type="password"
+										autoComplete="off"
+										placeholder="••••••••••••••••"
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										onBlur={field.handleBlur}
+									/>
+								</TFormControl>
+							</TFormItem>
+						)}
+					</restoreVerifyForm.Field>
+				</div>
+
+				<restoreVerifyForm.Field name="slackUserId">
+					{(field) => (
+						<TFormItem>
+							<TFormLabel htmlFor={restoreSlackUserId}>
+								{t(
+									"settings.recovery.restore.slackUserIdLabel",
+									"Slack Member ID for synthetic DM test (optional)",
+								)}
+							</TFormLabel>
+							<TFormControl>
+								<Input
+									id={restoreSlackUserId}
+									type="text"
+									autoComplete="off"
+									placeholder="U01234567"
+									value={field.state.value}
+									onChange={(e) => field.handleChange(e.target.value)}
+									onBlur={field.handleBlur}
+								/>
+							</TFormControl>
+						</TFormItem>
+					)}
+				</restoreVerifyForm.Field>
+
+				<Button
+					type="submit"
+					variant="outline"
+					size="sm"
+					disabled={
+						verifyRestoreMutation.isPending ||
+						(!restoreVerifyValues.botToken &&
+							!restoreVerifyValues.signingSecret &&
+							!restoreVerifyValues.slackUserId &&
+							!restoreSetup.hasStoredCredentials)
+					}
+				>
+					{verifyRestoreMutation.isPending ? (
+						<IconLoader2 className="mr-1.5 size-4 animate-spin" aria-hidden="true" />
+					) : (
+						<IconSend className="mr-1.5 size-4" aria-hidden="true" />
+					)}
+					{t("settings.recovery.restore.verifyButton", "Verify credentials & test DM")}
+				</Button>
+			</form>
+
+			{/* Fresh impact review & confirmation */}
+			<RestoreImpactReview {...props} />
+		</div>
+	) : null;
+}
+
+function CleanupJobsSection(props: PanelState) {
+	const { t, state } = props;
+	return state.pendingCleanupJobs.length > 0 ? (
+		<div className="min-w-0 space-y-2 rounded-lg border bg-muted/10 p-3 text-xs">
+			<p className="font-medium">
+				{t("settings.recovery.cleanup.heading", "Background cleanup queue")}
+			</p>
+			<ul className="space-y-1.5">
+				{state.pendingCleanupJobs.map((job) => (
+					<li
+						key={job.id}
+						className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between"
+					>
+						<span className="break-words text-muted-foreground">
+							{job.kind === "credential_revision_cleanup"
+								? t("settings.recovery.cleanup.credentialKind", "Credential revision cleanup")
+								: t("settings.recovery.cleanup.endpointKind", "Provider endpoint cleanup")}
+							{job.lastErrorCode ? ` (${job.lastErrorCode})` : ""}
+						</span>
+						<Badge variant={job.status === "exhausted" ? "destructive" : "secondary"}>
+							{job.status} ({job.attemptCount}/{job.maxAttempts})
+						</Badge>
+					</li>
+				))}
+			</ul>
+		</div>
+	) : null;
+}
+
+function RotationDialog(props: PanelState) {
+	const {
+		channelName,
+		t,
+		state,
+		rotateDialogOpen,
+		rotateError,
+		rotateMutation,
+		rotateForm,
+		rotateFormValues,
+		rotateBotTokenId,
+		rotateSigningSecretId,
+		handleRotateDialogOpenChange,
+	} = props;
+	return (
+		<Dialog open={rotateDialogOpen} onOpenChange={handleRotateDialogOpenChange}>
+			<DialogContent>
+				<DialogHeader>
+					<DialogTitle>
+						{t("settings.recovery.rotate.dialogTitle", "Rotate {channel} credentials", {
+							channel: channelName,
+						})}
+					</DialogTitle>
+					<DialogDescription>
+						{t(
+							"settings.recovery.rotate.dialogDescription",
+							"Enter new credentials for the exact same app and workspace. Existing DM conversations, employee links, and open approval cards are preserved.",
+						)}
+					</DialogDescription>
+				</DialogHeader>
+
+				<div className="rounded-md border border-warning/40 bg-warning/10 p-3 text-xs">
+					<p className="font-medium text-foreground">
+						{t("settings.recovery.rotate.interruptionTitle", "Provider-imposed interruption")}
+					</p>
+					<p className="mt-1 break-words text-muted-foreground">
+						{state.rotationGuidance.interruptionDetails}
+					</p>
+				</div>
+
+				{rotateError ? (
+					<div
+						role="alert"
+						className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive"
+					>
+						{rotateError}
+					</div>
+				) : null}
+
+				<form
+					onSubmit={(event) => {
+						event.preventDefault();
+						event.stopPropagation();
+						void rotateForm.handleSubmit();
+					}}
+					className="space-y-4"
+				>
+					<rotateForm.Field
+						name="botToken"
+						validators={{
+							onSubmit: ({ value }) =>
+								!value.trim()
+									? t("settings.recovery.validation.botTokenRequired", "Bot token is required.")
+									: undefined,
+						}}
+					>
+						{(field) => (
+							<TFormItem>
+								<TFormLabel htmlFor={rotateBotTokenId}>
+									{t("settings.recovery.fields.botToken", "Bot User OAuth Token (write-only)")}
+								</TFormLabel>
+								<TFormControl>
+									<Input
+										id={rotateBotTokenId}
+										type="password"
+										autoComplete="off"
+										placeholder="xoxb-..."
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										onBlur={field.handleBlur}
+										aria-invalid={fieldHasError(field)}
+									/>
+								</TFormControl>
+								<TFormDescription>
+									{t(
+										"settings.recovery.fields.writeOnlyHint",
+										"Stored in a new immutable revision and never displayed again.",
+									)}
+								</TFormDescription>
+								<TFormMessage field={field} />
+							</TFormItem>
+						)}
+					</rotateForm.Field>
+
+					<rotateForm.Field
+						name="signingSecret"
+						validators={{
+							onSubmit: ({ value }) =>
+								!value.trim()
+									? t(
+											"settings.recovery.validation.signingSecretRequired",
+											"Signing secret is required.",
+										)
+									: undefined,
+						}}
+					>
+						{(field) => (
+							<TFormItem>
+								<TFormLabel htmlFor={rotateSigningSecretId}>
+									{t("settings.recovery.fields.signingSecret", "Signing Secret (write-only)")}
+								</TFormLabel>
+								<TFormControl>
+									<Input
+										id={rotateSigningSecretId}
+										type="password"
+										autoComplete="off"
+										placeholder="••••••••••••••••"
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										onBlur={field.handleBlur}
+										aria-invalid={fieldHasError(field)}
+									/>
+								</TFormControl>
+								<TFormMessage field={field} />
+							</TFormItem>
+						)}
+					</rotateForm.Field>
+
+					<DialogFooter>
+						<Button
+							type="button"
+							variant="outline"
+							onClick={() => handleRotateDialogOpenChange(false)}
+						>
+							{t("common.cancel", "Cancel")}
+						</Button>
+						<Button
+							type="submit"
+							disabled={
+								rotateMutation.isPending ||
+								!rotateFormValues.botToken.trim() ||
+								!rotateFormValues.signingSecret.trim()
+							}
+						>
+							{rotateMutation.isPending ? (
+								<IconLoader2 className="mr-1.5 size-4 animate-spin" aria-hidden="true" />
+							) : (
+								<IconKey className="mr-1.5 size-4" aria-hidden="true" />
+							)}
+							{t("settings.recovery.rotate.submitButton", "Verify identity & rotate")}
+						</Button>
+					</DialogFooter>
+				</form>
+			</DialogContent>
+		</Dialog>
+	);
+}
+
+function RevocationDialog(props: PanelState) {
+	const {
+		channelName,
+		t,
+		revokeDialogOpen,
+		revokeError,
+		setRevokeError,
+		revokeMutation,
+		activeInstallation,
+		handleRevokeDialogOpenChange,
+	} = props;
+	return (
+		<Dialog open={revokeDialogOpen} onOpenChange={handleRevokeDialogOpenChange}>
+			<DialogContent>
+				<DialogHeader>
+					<DialogTitle>
+						{t("settings.recovery.revoke.dialogTitle", "Revoke {channel} access immediately?", {
+							channel: channelName,
+						})}
+					</DialogTitle>
+					<DialogDescription>
+						{t(
+							"settings.recovery.revoke.dialogDescription",
+							"Revocation immediately ends local authorization for this installation. Asynchronous cleanup removes only this organization's credentials and leaves shared deployment credentials and unrelated organizations unaffected. Pending approvals remain available in the Z8 inbox.",
+						)}
+					</DialogDescription>
+				</DialogHeader>
+
+				{revokeError ? (
+					<div
+						role="alert"
+						className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive"
+					>
+						{revokeError}
+					</div>
+				) : null}
+
+				<DialogFooter>
+					<Button
+						type="button"
+						variant="outline"
+						onClick={() => handleRevokeDialogOpenChange(false)}
+					>
+						{t("common.cancel", "Cancel")}
+					</Button>
+					<Button
+						type="button"
+						variant="destructive"
+						disabled={revokeMutation.isPending || !activeInstallation}
+						onClick={() => {
+							if (!activeInstallation) return;
+							setRevokeError(null);
+							revokeMutation.mutate({ installationId: activeInstallation.id });
+						}}
+					>
+						{revokeMutation.isPending ? (
+							<IconLoader2 className="mr-1.5 size-4 animate-spin" aria-hidden="true" />
+						) : (
+							<IconShieldOff className="mr-1.5 size-4" aria-hidden="true" />
+						)}
+						{t("settings.recovery.revoke.confirmButton", "Confirm immediate revocation")}
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
+	);
+}
+
+export function ChatInstallationRecoveryPanel(props: ChatInstallationRecoveryPanelProps) {
+	const model = useChatInstallationRecoveryPanel(props);
+	if (!model) return null;
+	const { channelName, t, announcement, refreshMutation } = model;
 	return (
 		<Card>
 			<CardHeader>
@@ -577,649 +1197,199 @@ export function ChatInstallationRecoveryPanel({
 				</div>
 
 				{/* Active installation rotation & immediate revocation */}
-				{activeInstallation ? (
-					<div className="min-w-0 space-y-4 rounded-lg border bg-muted/20 p-4">
-						<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-							<div className="min-w-0 space-y-1">
-								<p className="break-words text-sm font-medium">
-									{activeInstallation.externalDisplayName ??
-										activeInstallation.externalSpaceName ??
-										channelName}
-								</p>
-								<p className="break-words text-xs text-muted-foreground">
-									{activeInstallation.externalAppId
-										? `${t("settings.recovery.appIdLabel", "App ID")}: ${activeInstallation.externalAppId}`
-										: t("settings.recovery.deploymentManagedLabel", "Deployment-managed app")}
-									{activeInstallation.externalSpaceId
-										? ` · ${activeInstallation.externalSpaceName ?? activeInstallation.externalSpaceId}`
-										: ""}
-								</p>
-							</div>
-							<div className="flex flex-wrap items-center gap-2">
-								<Badge variant="default">
-									{activeInstallation.status === "active"
-										? t("settings.recovery.status.active", "Active")
-										: t("settings.recovery.status.legacyActive", "Legacy active")}
-								</Badge>
-								{activeInstallation.endpointState === "uncertain" ? (
-									<Badge variant="destructive">
-										{t("settings.recovery.endpointState.uncertain", "Endpoint uncertain")}
-									</Badge>
-								) : null}
-							</div>
-						</div>
-
-						{/* Provider-specific interruption guidance */}
-						<div className="rounded-md border bg-background p-3 text-xs text-muted-foreground">
-							<p className="flex items-center gap-1.5 font-medium text-foreground">
-								<IconInfoCircle className="size-4 shrink-0" aria-hidden="true" />
-								{t(
-									"settings.recovery.guidance.heading",
-									"Provider interruption & recovery guidance",
-								)}
-							</p>
-							<p className="mt-1 break-words">{state.rotationGuidance.interruptionDetails}</p>
-						</div>
-
-						<div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-							{activeInstallation.canRotate ? (
-								<Button
-									ref={rotateTriggerRef}
-									type="button"
-									variant="outline"
-									size="sm"
-									onClick={() => setRotateDialogOpen(true)}
-								>
-									<IconKey className="mr-1.5 size-4" aria-hidden="true" />
-									{t("settings.recovery.rotate.openButton", "Rotate credentials")}
-								</Button>
-							) : null}
-
-							{activeInstallation.canRevoke ? (
-								<Button
-									ref={revokeTriggerRef}
-									type="button"
-									variant="destructive"
-									size="sm"
-									onClick={() => setRevokeDialogOpen(true)}
-								>
-									<IconShieldOff className="mr-1.5 size-4" aria-hidden="true" />
-									{t("settings.recovery.revoke.openButton", "Revoke access immediately")}
-								</Button>
-							) : null}
-						</div>
-
-						{/* Post-rotation verification checklist */}
-						{lastRotationResult ? (
-							<div className="rounded-md border border-primary/40 bg-primary/5 p-3 text-xs">
-								<p className="flex items-center gap-1.5 font-medium text-foreground">
-									<IconCheck className="size-4 shrink-0 text-primary" aria-hidden="true" />
-									{t(
-										"settings.recovery.rotate.postRotationHeading",
-										"Credentials rotated to revision v{revision} — verify recovery",
-										{ revision: String(lastRotationResult.newRevisionNumber) },
-									)}
-								</p>
-								<ol className="mt-2 list-decimal space-y-1 pl-4 text-muted-foreground">
-									{lastRotationResult.guidance.verificationSteps.map((step) => (
-										<li key={step} className="break-words">
-											{step}
-										</li>
-									))}
-								</ol>
-							</div>
-						) : null}
-					</div>
-				) : null}
+				<ActiveInstallationSection {...model} />
 
 				{/* Restorable previous installations */}
-				{state.restorableInstallations.length > 0 ? (
-					<div className="min-w-0 space-y-3">
-						<div className="space-y-1">
-							<h3 className="flex items-center gap-1.5 text-sm font-medium">
-								<IconHistory className="size-4 shrink-0" aria-hidden="true" />
-								{t(
-									"settings.recovery.restore.listHeading",
-									"Previous installations available to restore",
-								)}
-							</h3>
-							<p className="text-xs text-muted-foreground">
-								{t(
-									"settings.recovery.restore.listDescription",
-									"Restoring a previous installation requires fresh credential and delivery verification plus a fresh impact review before it becomes active.",
-								)}
-							</p>
-						</div>
-
-						{restoreError ? (
-							<div
-								role="alert"
-								className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive"
-							>
-								{restoreError}
-							</div>
-						) : null}
-
-						<ul className="space-y-2">
-							{state.restorableInstallations.map((inst) => (
-								<li
-									key={inst.id}
-									className="flex flex-col gap-3 rounded-lg border bg-background p-3 sm:flex-row sm:items-center sm:justify-between"
-								>
-									<div className="min-w-0 space-y-0.5">
-										<p className="break-words text-sm font-medium">
-											{inst.externalDisplayName ?? inst.externalSpaceName ?? channelName}
-										</p>
-										<p className="break-words text-xs text-muted-foreground">
-											{inst.externalAppId ? `${inst.externalAppId} · ` : ""}
-											{inst.status}
-											{inst.revokedAt
-												? ` · ${t("settings.recovery.restore.revokedAt", "Revoked: {timestamp}", { timestamp: inst.revokedAt })}`
-												: inst.retiredAt
-													? ` · ${t("settings.recovery.restore.retiredAt", "Retired: {timestamp}", { timestamp: inst.retiredAt })}`
-													: ""}
-										</p>
-										{inst.endpointState === "uncertain" ? (
-											<p className="text-xs text-destructive">
-												{t(
-													"settings.recovery.restore.uncertainWarning",
-													"Endpoint cleanup timed out; endpoint reconciliation is required before restoring.",
-												)}
-											</p>
-										) : null}
-									</div>
-									<Button
-										type="button"
-										variant="outline"
-										size="sm"
-										className="w-fit shrink-0"
-										disabled={prepareRestoreMutation.isPending}
-										onClick={() => prepareRestoreMutation.mutate({ installationId: inst.id })}
-									>
-										{prepareRestoreMutation.isPending ? (
-											<IconLoader2 className="mr-1.5 size-4 animate-spin" aria-hidden="true" />
-										) : (
-											<IconHistory className="mr-1.5 size-4" aria-hidden="true" />
-										)}
-										{t("settings.recovery.restore.startButton", "Start restore & verify")}
-									</Button>
-								</li>
-							))}
-						</ul>
-					</div>
-				) : null}
+				<RestorableInstallationsSection {...model} />
 
 				{/* In-progress restore verification & fresh impact review */}
-				{restoreSetup ? (
-					<div className="min-w-0 space-y-4 rounded-lg border border-primary/30 bg-background p-4">
-						<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-							<div className="min-w-0 space-y-0.5">
-								<h3 className="flex items-center gap-1.5 text-sm font-medium">
-									<IconShieldCheck className="size-4 shrink-0" aria-hidden="true" />
-									{t(
-										"settings.recovery.restore.verifyHeading",
-										"Verify installation before restoring",
-									)}
-								</h3>
-								<p className="break-words text-xs text-muted-foreground">
-									{t(
-										"settings.recovery.restore.verifyDescription",
-										"Re-verify credentials, receive a fresh signed Slack event, and send a synthetic private DM test before confirming restore.",
-									)}
-								</p>
-							</div>
-							<Badge variant={restoreSetup.readyForSwitch ? "default" : "secondary"}>
-								{restoreSetup.readyForSwitch
-									? t("settings.recovery.restore.readyBadge", "Ready to confirm restore")
-									: t("settings.recovery.restore.pendingBadge", "Verification required")}
-							</Badge>
-						</div>
-
-						{restoreError ? (
-							<div
-								role="alert"
-								className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive"
-							>
-								{restoreError}
-							</div>
-						) : null}
-
-						<form
-							onSubmit={(event) => {
-								event.preventDefault();
-								event.stopPropagation();
-								void restoreVerifyForm.handleSubmit();
-							}}
-							className="space-y-3"
-						>
-							<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-								<restoreVerifyForm.Field name="botToken">
-									{(field) => (
-										<TFormItem>
-											<TFormLabel htmlFor={restoreBotTokenId}>
-												{t(
-													"settings.recovery.fields.botToken",
-													"Bot User OAuth Token (write-only)",
-												)}
-											</TFormLabel>
-											<TFormControl>
-												<Input
-													id={restoreBotTokenId}
-													type="password"
-													autoComplete="off"
-													placeholder="xoxb-..."
-													value={field.state.value}
-													onChange={(e) => field.handleChange(e.target.value)}
-													onBlur={field.handleBlur}
-												/>
-											</TFormControl>
-										</TFormItem>
-									)}
-								</restoreVerifyForm.Field>
-
-								<restoreVerifyForm.Field name="signingSecret">
-									{(field) => (
-										<TFormItem>
-											<TFormLabel htmlFor={restoreSigningSecretId}>
-												{t("settings.recovery.fields.signingSecret", "Signing Secret (write-only)")}
-											</TFormLabel>
-											<TFormControl>
-												<Input
-													id={restoreSigningSecretId}
-													type="password"
-													autoComplete="off"
-													placeholder="••••••••••••••••"
-													value={field.state.value}
-													onChange={(e) => field.handleChange(e.target.value)}
-													onBlur={field.handleBlur}
-												/>
-											</TFormControl>
-										</TFormItem>
-									)}
-								</restoreVerifyForm.Field>
-							</div>
-
-							<restoreVerifyForm.Field name="slackUserId">
-								{(field) => (
-									<TFormItem>
-										<TFormLabel htmlFor={restoreSlackUserId}>
-											{t(
-												"settings.recovery.restore.slackUserIdLabel",
-												"Slack Member ID for synthetic DM test (optional)",
-											)}
-										</TFormLabel>
-										<TFormControl>
-											<Input
-												id={restoreSlackUserId}
-												type="text"
-												autoComplete="off"
-												placeholder="U01234567"
-												value={field.state.value}
-												onChange={(e) => field.handleChange(e.target.value)}
-												onBlur={field.handleBlur}
-											/>
-										</TFormControl>
-									</TFormItem>
-								)}
-							</restoreVerifyForm.Field>
-
-							<Button
-								type="submit"
-								variant="outline"
-								size="sm"
-								disabled={
-									verifyRestoreMutation.isPending ||
-									(!restoreVerifyValues.botToken &&
-										!restoreVerifyValues.signingSecret &&
-										!restoreVerifyValues.slackUserId &&
-										!restoreSetup.hasStoredCredentials)
-								}
-							>
-								{verifyRestoreMutation.isPending ? (
-									<IconLoader2 className="mr-1.5 size-4 animate-spin" aria-hidden="true" />
-								) : (
-									<IconSend className="mr-1.5 size-4" aria-hidden="true" />
-								)}
-								{t("settings.recovery.restore.verifyButton", "Verify credentials & test DM")}
-							</Button>
-						</form>
-
-						{/* Fresh impact review & confirmation */}
-						{restorePreview ? (
-							<div
-								ref={restoreSummaryRef}
-								tabIndex={-1}
-								className="space-y-3 rounded-lg border bg-muted/20 p-3 outline-none focus-visible:ring-2 focus-visible:ring-ring"
-							>
-								<div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-									<p className="text-sm font-medium">
-										{t("settings.recovery.restore.impactHeading", "Fresh restore impact review")}
-									</p>
-									<span className="text-xs text-muted-foreground">
-										{t("settings.recovery.restore.snapshot", "Snapshot: {timestamp}", {
-											timestamp: restorePreview.generatedAt,
-										})}
-									</span>
-								</div>
-
-								{restoreImpactChangedNotice ? (
-									<div
-										role="alert"
-										className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-2.5 text-xs text-destructive"
-									>
-										<IconAlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-										<p className="break-words">{restoreImpactChangedNotice}</p>
-									</div>
-								) : null}
-
-								<div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-									<div className="rounded border bg-background p-2.5 text-xs">
-										<p className="text-muted-foreground">
-											{t("settings.recovery.restore.metrics.reachable", "Verified reachable")}
-										</p>
-										<p className="mt-1 text-lg font-semibold tabular-nums">
-											{restorePreview.employeeImpact.verifiedReachableEmployees}
-										</p>
-									</div>
-									<div className="rounded border bg-background p-2.5 text-xs">
-										<p className="text-muted-foreground">
-											{t(
-												"settings.recovery.restore.metrics.unready",
-												"Employees needing action / unknown",
-											)}
-										</p>
-										<p className="mt-1 text-lg font-semibold tabular-nums">
-											{restorePreview.employeeImpact.unreadyEmployees}
-										</p>
-									</div>
-									<div className="rounded border bg-background p-2.5 text-xs">
-										<p className="text-muted-foreground">
-											{t(
-												"settings.recovery.restore.metrics.approvals",
-												"Outstanding approval cards",
-											)}
-										</p>
-										<p className="mt-1 text-lg font-semibold tabular-nums">
-											{restorePreview.approvalImpact.totalOutstanding}
-										</p>
-									</div>
-								</div>
-
-								{restorePreview.requiresUnreadyAcknowledgement ? (
-									<div className="flex items-start gap-2">
-										<input
-											id={ackCheckboxId}
-											type="checkbox"
-											checked={acknowledgedUnready}
-											onChange={(e) => setAcknowledgedUnready(e.target.checked)}
-											className="mt-0.5 size-4 rounded border-input"
-										/>
-										<Label htmlFor={ackCheckboxId} className="text-xs leading-relaxed">
-											{t(
-												"settings.recovery.restore.acknowledgeUnready",
-												"I acknowledge that {count} employees still need to connect or verify direct messages after restoring this installation.",
-												{ count: String(restorePreview.employeeImpact.unreadyEmployees) },
-											)}
-										</Label>
-									</div>
-								) : null}
-
-								<Button
-									type="button"
-									size="sm"
-									disabled={!canSubmitRestoreConfirm}
-									onClick={() => {
-										if (!restorePreview.candidateInstallation) return;
-										setRestoreError(null);
-										setRestoreImpactChangedNotice(null);
-										confirmRestoreMutation.mutate({
-											candidateInstallationId: restorePreview.candidateInstallation.id,
-											reviewedCurrentInstallationId: restorePreview.primaryCurrentInstallationId,
-											reviewedCurrentCredentialRevisionId:
-												restorePreview.primaryCurrentCredentialRevisionId,
-											reviewedCandidateCredentialRevisionId:
-												restorePreview.candidateInstallation.activeCredentialRevisionId,
-											reviewedImpactDigest: restorePreview.impactDigest,
-											acknowledgeUnreadyEmployees: acknowledgedUnready,
-										});
-									}}
-								>
-									{confirmRestoreMutation.isPending ? (
-										<IconLoader2 className="mr-1.5 size-4 animate-spin" aria-hidden="true" />
-									) : (
-										<IconShieldCheck className="mr-1.5 size-4" aria-hidden="true" />
-									)}
-									{t("settings.recovery.restore.confirmButton", "Confirm restore")}
-								</Button>
-							</div>
-						) : null}
-					</div>
-				) : null}
+				<RestoreVerificationSection {...model} />
 
 				{/* Pending / exhausted cleanup jobs (redacted status only) */}
-				{state.pendingCleanupJobs.length > 0 ? (
-					<div className="min-w-0 space-y-2 rounded-lg border bg-muted/10 p-3 text-xs">
-						<p className="font-medium">
-							{t("settings.recovery.cleanup.heading", "Background cleanup queue")}
-						</p>
-						<ul className="space-y-1.5">
-							{state.pendingCleanupJobs.map((job) => (
-								<li
-									key={job.id}
-									className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between"
-								>
-									<span className="break-words text-muted-foreground">
-										{job.kind === "credential_revision_cleanup"
-											? t("settings.recovery.cleanup.credentialKind", "Credential revision cleanup")
-											: t("settings.recovery.cleanup.endpointKind", "Provider endpoint cleanup")}
-										{job.lastErrorCode ? ` (${job.lastErrorCode})` : ""}
-									</span>
-									<Badge variant={job.status === "exhausted" ? "destructive" : "secondary"}>
-										{job.status} ({job.attemptCount}/{job.maxAttempts})
-									</Badge>
-								</li>
-							))}
-						</ul>
-					</div>
-				) : null}
+				<CleanupJobsSection {...model} />
 
 				{/* Rotate credentials dialog */}
-				<Dialog open={rotateDialogOpen} onOpenChange={handleRotateDialogOpenChange}>
-					<DialogContent>
-						<DialogHeader>
-							<DialogTitle>
-								{t("settings.recovery.rotate.dialogTitle", "Rotate {channel} credentials", {
-									channel: channelName,
-								})}
-							</DialogTitle>
-							<DialogDescription>
-								{t(
-									"settings.recovery.rotate.dialogDescription",
-									"Enter new credentials for the exact same app and workspace. Existing DM conversations, employee links, and open approval cards are preserved.",
-								)}
-							</DialogDescription>
-						</DialogHeader>
-
-						<div className="rounded-md border border-warning/40 bg-warning/10 p-3 text-xs">
-							<p className="font-medium text-foreground">
-								{t("settings.recovery.rotate.interruptionTitle", "Provider-imposed interruption")}
-							</p>
-							<p className="mt-1 break-words text-muted-foreground">
-								{state.rotationGuidance.interruptionDetails}
-							</p>
-						</div>
-
-						{rotateError ? (
-							<div
-								role="alert"
-								className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive"
-							>
-								{rotateError}
-							</div>
-						) : null}
-
-						<form
-							onSubmit={(event) => {
-								event.preventDefault();
-								event.stopPropagation();
-								void rotateForm.handleSubmit();
-							}}
-							className="space-y-4"
-						>
-							<rotateForm.Field
-								name="botToken"
-								validators={{
-									onSubmit: ({ value }) =>
-										!value.trim()
-											? t("settings.recovery.validation.botTokenRequired", "Bot token is required.")
-											: undefined,
-								}}
-							>
-								{(field) => (
-									<TFormItem>
-										<TFormLabel htmlFor={rotateBotTokenId}>
-											{t("settings.recovery.fields.botToken", "Bot User OAuth Token (write-only)")}
-										</TFormLabel>
-										<TFormControl>
-											<Input
-												id={rotateBotTokenId}
-												type="password"
-												autoComplete="off"
-												placeholder="xoxb-..."
-												value={field.state.value}
-												onChange={(e) => field.handleChange(e.target.value)}
-												onBlur={field.handleBlur}
-												aria-invalid={fieldHasError(field)}
-											/>
-										</TFormControl>
-										<TFormDescription>
-											{t(
-												"settings.recovery.fields.writeOnlyHint",
-												"Stored in a new immutable revision and never displayed again.",
-											)}
-										</TFormDescription>
-										<TFormMessage field={field} />
-									</TFormItem>
-								)}
-							</rotateForm.Field>
-
-							<rotateForm.Field
-								name="signingSecret"
-								validators={{
-									onSubmit: ({ value }) =>
-										!value.trim()
-											? t(
-													"settings.recovery.validation.signingSecretRequired",
-													"Signing secret is required.",
-												)
-											: undefined,
-								}}
-							>
-								{(field) => (
-									<TFormItem>
-										<TFormLabel htmlFor={rotateSigningSecretId}>
-											{t("settings.recovery.fields.signingSecret", "Signing Secret (write-only)")}
-										</TFormLabel>
-										<TFormControl>
-											<Input
-												id={rotateSigningSecretId}
-												type="password"
-												autoComplete="off"
-												placeholder="••••••••••••••••"
-												value={field.state.value}
-												onChange={(e) => field.handleChange(e.target.value)}
-												onBlur={field.handleBlur}
-												aria-invalid={fieldHasError(field)}
-											/>
-										</TFormControl>
-										<TFormMessage field={field} />
-									</TFormItem>
-								)}
-							</rotateForm.Field>
-
-							<DialogFooter>
-								<Button
-									type="button"
-									variant="outline"
-									onClick={() => handleRotateDialogOpenChange(false)}
-								>
-									{t("common.cancel", "Cancel")}
-								</Button>
-								<Button
-									type="submit"
-									disabled={
-										rotateMutation.isPending ||
-										!rotateFormValues.botToken.trim() ||
-										!rotateFormValues.signingSecret.trim()
-									}
-								>
-									{rotateMutation.isPending ? (
-										<IconLoader2 className="mr-1.5 size-4 animate-spin" aria-hidden="true" />
-									) : (
-										<IconKey className="mr-1.5 size-4" aria-hidden="true" />
-									)}
-									{t("settings.recovery.rotate.submitButton", "Verify identity & rotate")}
-								</Button>
-							</DialogFooter>
-						</form>
-					</DialogContent>
-				</Dialog>
+				<RotationDialog {...model} />
 
 				{/* Immediate revoke confirmation dialog */}
-				<Dialog open={revokeDialogOpen} onOpenChange={handleRevokeDialogOpenChange}>
-					<DialogContent>
-						<DialogHeader>
-							<DialogTitle>
-								{t("settings.recovery.revoke.dialogTitle", "Revoke {channel} access immediately?", {
-									channel: channelName,
-								})}
-							</DialogTitle>
-							<DialogDescription>
-								{t(
-									"settings.recovery.revoke.dialogDescription",
-									"Revocation immediately ends local authorization for this installation. Asynchronous cleanup removes only this organization's credentials and leaves shared deployment credentials and unrelated organizations unaffected. Pending approvals remain available in the Z8 inbox.",
-								)}
-							</DialogDescription>
-						</DialogHeader>
-
-						{revokeError ? (
-							<div
-								role="alert"
-								className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive"
-							>
-								{revokeError}
-							</div>
-						) : null}
-
-						<DialogFooter>
-							<Button
-								type="button"
-								variant="outline"
-								onClick={() => handleRevokeDialogOpenChange(false)}
-							>
-								{t("common.cancel", "Cancel")}
-							</Button>
-							<Button
-								type="button"
-								variant="destructive"
-								disabled={revokeMutation.isPending || !activeInstallation}
-								onClick={() => {
-									if (!activeInstallation) return;
-									setRevokeError(null);
-									revokeMutation.mutate({ installationId: activeInstallation.id });
-								}}
-							>
-								{revokeMutation.isPending ? (
-									<IconLoader2 className="mr-1.5 size-4 animate-spin" aria-hidden="true" />
-								) : (
-									<IconShieldOff className="mr-1.5 size-4" aria-hidden="true" />
-								)}
-								{t("settings.recovery.revoke.confirmButton", "Confirm immediate revocation")}
-							</Button>
-						</DialogFooter>
-					</DialogContent>
-				</Dialog>
+				<RevocationDialog {...model} />
 			</CardContent>
 		</Card>
+	);
+}
+
+function RestoreImpactReview({
+	t,
+	restoreSummaryRef,
+	setRestoreError,
+	restoreImpactChangedNotice,
+	setRestoreImpactChangedNotice,
+	acknowledgedUnready,
+	setAcknowledgedUnready,
+	confirmRestoreMutation,
+	restorePreview,
+	ackCheckboxId,
+	canSubmitRestoreConfirm,
+}: Pick<
+	PanelState,
+	| "t"
+	| "restoreSummaryRef"
+	| "setRestoreError"
+	| "restoreImpactChangedNotice"
+	| "setRestoreImpactChangedNotice"
+	| "acknowledgedUnready"
+	| "setAcknowledgedUnready"
+	| "confirmRestoreMutation"
+	| "restorePreview"
+	| "ackCheckboxId"
+	| "canSubmitRestoreConfirm"
+>) {
+	return restorePreview ? (
+		<div
+			ref={restoreSummaryRef}
+			tabIndex={-1}
+			className="space-y-3 rounded-lg border bg-muted/20 p-3 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+		>
+			<div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+				<p className="text-sm font-medium">
+					{t("settings.recovery.restore.impactHeading", "Fresh restore impact review")}
+				</p>
+				<span className="text-xs text-muted-foreground">
+					{t("settings.recovery.restore.snapshot", "Snapshot: {timestamp}", {
+						timestamp: restorePreview.generatedAt,
+					})}
+				</span>
+			</div>
+
+			{restoreImpactChangedNotice ? (
+				<div
+					role="alert"
+					className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-2.5 text-xs text-destructive"
+				>
+					<IconAlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+					<p className="break-words">{restoreImpactChangedNotice}</p>
+				</div>
+			) : null}
+
+			<div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+				<div className="rounded border bg-background p-2.5 text-xs">
+					<p className="text-muted-foreground">
+						{t("settings.recovery.restore.metrics.reachable", "Verified reachable")}
+					</p>
+					<p className="mt-1 text-lg font-semibold tabular-nums">
+						{restorePreview.employeeImpact.verifiedReachableEmployees}
+					</p>
+				</div>
+				<div className="rounded border bg-background p-2.5 text-xs">
+					<p className="text-muted-foreground">
+						{t("settings.recovery.restore.metrics.unready", "Employees needing action / unknown")}
+					</p>
+					<p className="mt-1 text-lg font-semibold tabular-nums">
+						{restorePreview.employeeImpact.unreadyEmployees}
+					</p>
+				</div>
+				<div className="rounded border bg-background p-2.5 text-xs">
+					<p className="text-muted-foreground">
+						{t("settings.recovery.restore.metrics.approvals", "Outstanding approval cards")}
+					</p>
+					<p className="mt-1 text-lg font-semibold tabular-nums">
+						{restorePreview.approvalImpact.totalOutstanding}
+					</p>
+				</div>
+			</div>
+
+			{restorePreview.requiresUnreadyAcknowledgement ? (
+				<div className="flex items-start gap-2">
+					<input
+						id={ackCheckboxId}
+						type="checkbox"
+						checked={acknowledgedUnready}
+						onChange={(e) => setAcknowledgedUnready(e.target.checked)}
+						className="mt-0.5 size-4 rounded border-input"
+					/>
+					<Label htmlFor={ackCheckboxId} className="text-xs leading-relaxed">
+						{t(
+							"settings.recovery.restore.acknowledgeUnready",
+							"I acknowledge that {count} employees still need to connect or verify direct messages after restoring this installation.",
+							{ count: String(restorePreview.employeeImpact.unreadyEmployees) },
+						)}
+					</Label>
+				</div>
+			) : null}
+
+			<Button
+				type="button"
+				size="sm"
+				disabled={!canSubmitRestoreConfirm}
+				onClick={() => {
+					if (!restorePreview.candidateInstallation) return;
+					setRestoreError(null);
+					setRestoreImpactChangedNotice(null);
+					confirmRestoreMutation.mutate({
+						candidateInstallationId: restorePreview.candidateInstallation.id,
+						reviewedCurrentInstallationId: restorePreview.primaryCurrentInstallationId,
+						reviewedCurrentCredentialRevisionId: restorePreview.primaryCurrentCredentialRevisionId,
+						reviewedCandidateCredentialRevisionId:
+							restorePreview.candidateInstallation.activeCredentialRevisionId,
+						reviewedImpactDigest: restorePreview.impactDigest,
+						acknowledgeUnreadyEmployees: acknowledgedUnready,
+					});
+				}}
+			>
+				{confirmRestoreMutation.isPending ? (
+					<IconLoader2 className="mr-1.5 size-4 animate-spin" aria-hidden="true" />
+				) : (
+					<IconShieldCheck className="mr-1.5 size-4" aria-hidden="true" />
+				)}
+				{t("settings.recovery.restore.confirmButton", "Confirm restore")}
+			</Button>
+		</div>
+	) : null;
+}
+
+function ActiveInstallationActions({
+	t,
+	rotateTriggerRef,
+	revokeTriggerRef,
+	setRotateDialogOpen,
+	setRevokeDialogOpen,
+	activeInstallation,
+}: Pick<
+	PanelState,
+	| "t"
+	| "rotateTriggerRef"
+	| "revokeTriggerRef"
+	| "setRotateDialogOpen"
+	| "setRevokeDialogOpen"
+	| "activeInstallation"
+> & { activeInstallation: NonNullable<PanelState["activeInstallation"]> }) {
+	return (
+		<div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+			{activeInstallation.canRotate ? (
+				<Button
+					ref={rotateTriggerRef}
+					type="button"
+					variant="outline"
+					size="sm"
+					onClick={() => setRotateDialogOpen(true)}
+				>
+					<IconKey className="mr-1.5 size-4" aria-hidden="true" />
+					{t("settings.recovery.rotate.openButton", "Rotate credentials")}
+				</Button>
+			) : null}
+
+			{activeInstallation.canRevoke ? (
+				<Button
+					ref={revokeTriggerRef}
+					type="button"
+					variant="destructive"
+					size="sm"
+					onClick={() => setRevokeDialogOpen(true)}
+				>
+					<IconShieldOff className="mr-1.5 size-4" aria-hidden="true" />
+					{t("settings.recovery.revoke.openButton", "Revoke access immediately")}
+				</Button>
+			) : null}
+		</div>
 	);
 }

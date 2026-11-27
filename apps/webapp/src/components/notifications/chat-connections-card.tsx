@@ -138,6 +138,434 @@ function LinkCodeExpiry({ expiresAt }: { expiresAt: string }) {
 	);
 }
 
+const renderStatusBadge = (
+	t: ReturnType<typeof useTranslate>["t"],
+	status: MemberChatLinkStatus,
+) => {
+	switch (status) {
+		case "connected":
+			return (
+				<Badge variant="secondary">
+					<IconCheck className="size-3.5" aria-hidden="true" />
+					{t("settings.notifications.chatLinks.status.connected", "Connected")}
+				</Badge>
+			);
+		case "action_needed":
+			return (
+				<Badge variant="outline">
+					<IconAlertTriangle className="size-3.5" aria-hidden="true" />
+					{t("settings.notifications.chatLinks.status.actionNeeded", "Action needed")}
+				</Badge>
+			);
+		case "could_not_verify":
+			return (
+				<Badge variant="destructive">
+					<IconExclamationCircle className="size-3.5" aria-hidden="true" />
+					{t("settings.notifications.chatLinks.status.couldNotVerify", "Couldn't verify")}
+				</Badge>
+			);
+		default:
+			return null;
+	}
+};
+
+const renderHint = (
+	t: ReturnType<typeof useTranslate>["t"],
+	provider: ChatInstallationProvider,
+	hint: MemberChatLinkRecoveryHint,
+) => {
+	if (!hint) return null;
+	switch (hint) {
+		case "link_required":
+			switch (provider) {
+				case "telegram":
+					return t(
+						"settings.notifications.chatLinks.hints.telegramLinkRequired",
+						"Generate a short-lived link code and send it to your organization's Telegram bot.",
+					);
+				case "slack":
+					return t(
+						"settings.notifications.chatLinks.hints.slackLinkRequired",
+						"Generate a short-lived link code and run it in Slack to connect your account.",
+					);
+				case "teams":
+					return t(
+						"settings.notifications.chatLinks.hints.teamsLinkRequired",
+						"Generate a short-lived link code and send it in a 1:1 chat with your organization's Teams app.",
+					);
+				case "discord":
+					return t(
+						"settings.notifications.chatLinks.hints.discordLinkRequired",
+						"Generate a short-lived link code and run `/link` with your organization's Discord bot.",
+					);
+			}
+			break;
+		case "start_bot_private_chat":
+			return t(
+				"settings.notifications.chatLinks.hints.startPrivateChat",
+				"Open a direct message with the bot so Z8 can deliver private notifications.",
+			);
+		case "discord_share_server_with_bot":
+			return t(
+				"settings.notifications.chatLinks.hints.discordShareServer",
+				"Z8 could not open a Discord DM because you do not share a server with this bot. Join a shared server with the bot, enable Direct Messages for that server, and click Verify DM delivery.",
+			);
+		case "discord_enable_server_dms":
+			return t(
+				"settings.notifications.chatLinks.hints.discordEnableDms",
+				"Discord privacy settings blocked direct messages from this bot (error 50007). Open your Discord server Privacy Settings, enable Direct Messages, ensure the bot is not blocked, and click Verify DM delivery.",
+			);
+		case "installation_remediation":
+			return t(
+				"settings.notifications.chatLinks.hints.remediation",
+				"Your organization's connection needs attention from an administrator before status can be verified.",
+			);
+		case "verification_error":
+			return t(
+				"settings.notifications.chatLinks.hints.verificationError",
+				"Connection status could not be verified. Try checking again.",
+			);
+	}
+};
+
+const renderCodeInstructions = (
+	t: ReturnType<typeof useTranslate>["t"],
+	provider: ChatInstallationProvider,
+	purpose: ChatLinkProofPurpose,
+) => {
+	if (purpose === "candidate_enrollment") {
+		switch (provider) {
+			case "telegram":
+				return t(
+					"settings.notifications.chatLinks.replacementTelegramInstructions",
+					"Open the replacement bot in Telegram and send this one-time command:",
+				);
+			case "slack":
+				return t(
+					"settings.notifications.chatLinks.replacementSlackInstructions",
+					"Send this one-time message in a direct message to your organization's replacement Slack app:",
+				);
+			case "teams":
+				return t(
+					"settings.notifications.chatLinks.replacementTeamsInstructions",
+					"Send this one-time message in a 1:1 chat with your organization's replacement Teams app:",
+				);
+			case "discord":
+				return t(
+					"settings.notifications.chatLinks.replacementDiscordInstructions",
+					"Run this one-time slash command with your organization's replacement Discord bot (Z8 will then verify DM delivery):",
+				);
+		}
+	}
+
+	switch (provider) {
+		case "telegram":
+			return t(
+				"settings.notifications.chatLinks.telegramInstructions",
+				"Send this one-time command in a private chat with your organization's Telegram bot:",
+			);
+		case "slack":
+			return t(
+				"settings.notifications.chatLinks.slackInstructions",
+				"Run this one-time command in Slack (or DM `link <code>` to the bot):",
+			);
+		case "teams":
+			return t(
+				"settings.notifications.chatLinks.teamsInstructions",
+				"Send this one-time message in a 1:1 chat with the Z8 app in Microsoft Teams:",
+			);
+		case "discord":
+			return t(
+				"settings.notifications.chatLinks.discordInstructions",
+				"Run this one-time slash command with the Discord bot (Z8 will then verify direct message delivery):",
+			);
+	}
+};
+
+function LinkCodeBox(params: {
+	provider: ChatInstallationProvider;
+	purpose: ChatLinkProofPurpose;
+	generated: GeneratedMemberLinkCode;
+	fallbackBotUsername: string | null;
+	copiedCommand: string | null;
+	handleCopyCommand: (command: string) => Promise<void>;
+	onRetry: () => void;
+	isRetrying: boolean;
+}) {
+	const { t } = useTranslate();
+	const { copiedCommand, handleCopyCommand, onRetry, isRetrying } = params;
+	const command = formatLinkCommand(params.provider, params.purpose, params.generated.code);
+	const telegramBotUsername =
+		params.provider === "telegram"
+			? (params.generated.botUsername ?? params.fallbackBotUsername)
+			: null;
+	const isCopied = copiedCommand === command;
+
+	return (
+		<div className="space-y-2.5 rounded-md border bg-background p-3">
+			<p className="text-xs text-muted-foreground">
+				{renderCodeInstructions(t, params.provider, params.purpose)}
+			</p>
+			<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+				<code className="break-all rounded bg-muted px-2.5 py-1.5 font-mono text-sm font-medium">
+					{command}
+				</code>
+				<div className="flex flex-wrap items-center gap-2">
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						onClick={() => void handleCopyCommand(command)}
+					>
+						{isCopied ? (
+							<IconCheck className="mr-1.5 size-4" aria-hidden="true" />
+						) : (
+							<IconCopy className="mr-1.5 size-4" aria-hidden="true" />
+						)}
+						{t("settings.notifications.chatLinks.copyCommand", "Copy")}
+					</Button>
+					{telegramBotUsername && (
+						<Button variant="outline" size="sm" asChild>
+							<a
+								href={`https://t.me/${telegramBotUsername.replace(/^@/, "")}`}
+								target="_blank"
+								rel="noopener noreferrer"
+							>
+								<IconExternalLink className="mr-1.5 size-4" aria-hidden="true" />
+								{t("settings.notifications.chatLinks.openTelegramBot", "Open @{botUsername}", {
+									botUsername: telegramBotUsername.replace(/^@/, ""),
+								})}
+							</a>
+						</Button>
+					)}
+					<Button type="button" variant="ghost" size="sm" onClick={onRetry} disabled={isRetrying}>
+						<IconRefresh
+							className={isRetrying ? "mr-1.5 size-4 motion-safe:animate-spin" : "mr-1.5 size-4"}
+							aria-hidden="true"
+						/>
+						{t("settings.notifications.chatLinks.checkStatus", "Check status")}
+					</Button>
+				</div>
+			</div>
+			<LinkCodeExpiry expiresAt={params.generated.expiresAt} />
+		</div>
+	);
+}
+
+type Enrollment = NonNullable<MemberChatChannelLinkView["candidateEnrollment"]>;
+
+function CandidateEnrollmentHeading({
+	candidate,
+	providerLabel,
+}: {
+	candidate: Enrollment;
+	providerLabel: string;
+}) {
+	const { t } = useTranslate();
+	return (
+		<div className="min-w-0 space-y-1">
+			<div className="flex flex-wrap items-center gap-2">
+				<span className="text-xs font-medium">
+					{t(
+						"settings.notifications.chatLinks.replacementChannelTitle",
+						"Replacement {provider} connection staged",
+						{ provider: providerLabel },
+					)}
+				</span>
+				<Badge variant={candidate.status === "enrolled" ? "secondary" : "outline"}>
+					{candidate.status === "enrolled"
+						? t("settings.notifications.chatLinks.replacementEnrolled", "Enrolled")
+						: t("settings.notifications.chatLinks.status.actionNeeded", "Action needed")}
+				</Badge>
+			</div>
+			{candidate.installationLabel && (
+				<p className="truncate text-xs text-muted-foreground">{candidate.installationLabel}</p>
+			)}
+			<p className="text-xs text-muted-foreground">
+				{candidate.status === "enrolled"
+					? t(
+							"settings.notifications.chatLinks.replacementChannelEnrolledHint",
+							"You are enrolled for the replacement connection. Your current live link stays active until your admin completes the switch.",
+						)
+					: t(
+							"settings.notifications.chatLinks.replacementChannelHint",
+							"Link the staged replacement ahead of the switch. Your current notifications stay uninterrupted until your admin switches.",
+						)}
+			</p>
+		</div>
+	);
+}
+
+function CandidateEnrollment({
+	generatedCodes,
+	generatingCodeKey,
+	onGenerateLinkCode,
+	onRecheckDiscordDm,
+	recheckingDiscordInstallationId,
+	isRetrying,
+	onRetry,
+	provider,
+	providerLabel,
+	candidate,
+	copiedCommand,
+	handleCopyCommand,
+}: Pick<
+	ChatConnectionsCardProps,
+	| "generatedCodes"
+	| "generatingCodeKey"
+	| "onGenerateLinkCode"
+	| "onRecheckDiscordDm"
+	| "recheckingDiscordInstallationId"
+	| "isRetrying"
+	| "onRetry"
+> & {
+	provider: ChatInstallationProvider;
+	providerLabel: string;
+	candidate: Enrollment;
+	copiedCommand: string | null;
+	handleCopyCommand: (command: string) => Promise<void>;
+}) {
+	const { t } = useTranslate();
+	const codeKey = chatLinkCodeKey(provider, "candidate_enrollment", candidate.installationId);
+	const candidateCode = generatedCodes[codeKey];
+	const isGeneratingCandidateCode = generatingCodeKey === codeKey;
+	const isRecheckingCandidateDiscord = recheckingDiscordInstallationId === candidate.installationId;
+	const candidateDiscordDmBlocked =
+		provider === "discord" &&
+		(candidate.recoveryHint === "discord_enable_server_dms" ||
+			candidate.recoveryHint === "discord_share_server_with_bot");
+	return (
+		<div className="space-y-2.5 rounded-md border border-dashed bg-background p-3">
+			<div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+				<CandidateEnrollmentHeading candidate={candidate} providerLabel={providerLabel} />
+
+				<div className="flex shrink-0 flex-wrap items-center gap-2">
+					{candidate.canRecheckDm && candidateDiscordDmBlocked && onRecheckDiscordDm && (
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							disabled={isRecheckingCandidateDiscord}
+							onClick={() => onRecheckDiscordDm(candidate.installationId)}
+						>
+							{isRecheckingCandidateDiscord ? (
+								<IconLoader2
+									className="mr-1.5 size-4 motion-safe:animate-spin"
+									aria-hidden="true"
+								/>
+							) : (
+								<IconRefresh className="mr-1.5 size-4" aria-hidden="true" />
+							)}
+							{t("settings.notifications.chatLinks.verifyDmButton", "Verify DM delivery")}
+						</Button>
+					)}
+
+					{candidate.canGenerateLinkCode && candidate.status !== "enrolled" && (
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							disabled={isGeneratingCandidateCode}
+							onClick={() =>
+								onGenerateLinkCode({
+									provider,
+									purpose: "candidate_enrollment",
+									installationId: candidate.installationId,
+								})
+							}
+						>
+							{isGeneratingCandidateCode && (
+								<IconLoader2
+									className="mr-1.5 size-4 motion-safe:animate-spin"
+									aria-hidden="true"
+								/>
+							)}
+							{t(
+								"settings.notifications.chatLinks.generateReplacementCode",
+								"Link replacement bot",
+							)}
+						</Button>
+					)}
+				</div>
+			</div>
+
+			{candidateDiscordDmBlocked && candidate.recoveryHint && (
+				<div
+					role="alert"
+					className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 p-2.5 text-xs"
+				>
+					<IconAlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden="true" />
+					<span>{renderHint(t, provider, candidate.recoveryHint)}</span>
+				</div>
+			)}
+
+			{candidateCode &&
+				candidateCode.installationId === candidate.installationId &&
+				candidate.status !== "enrolled" && (
+					<LinkCodeBox
+						provider={provider}
+						purpose="candidate_enrollment"
+						generated={candidateCode}
+						fallbackBotUsername={candidate.botUsername}
+						copiedCommand={copiedCommand}
+						handleCopyCommand={handleCopyCommand}
+						onRetry={onRetry}
+						isRetrying={isRetrying}
+					/>
+				)}
+		</div>
+	);
+}
+
+function ChatConnectionsLoadError({
+	onRetry,
+	isRetrying,
+}: Pick<ChatConnectionsCardProps, "onRetry" | "isRetrying">) {
+	const { t } = useTranslate();
+	return (
+		<Card className="border-destructive/40">
+			<CardHeader className="pb-3">
+				<div className="flex flex-wrap items-center justify-between gap-2">
+					<div className="flex items-center gap-2">
+						<IconPlugConnected
+							className="size-5 shrink-0 text-muted-foreground"
+							aria-hidden="true"
+						/>
+						<CardTitle className="text-base">
+							{t("settings.notifications.chatLinks.title", "Chat connections")}
+						</CardTitle>
+					</div>
+					<Badge variant="destructive">
+						<IconExclamationCircle className="size-3.5" aria-hidden="true" />
+						{t("settings.notifications.chatLinks.status.couldNotVerify", "Couldn't verify")}
+					</Badge>
+				</div>
+				<CardDescription>
+					{t(
+						"settings.notifications.chatLinks.description",
+						"Manage how your account is linked to your organization's chat channels.",
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent className="flex flex-col items-start gap-3">
+				<p className="text-sm text-muted-foreground" role="alert">
+					{t(
+						"settings.notifications.chatLinks.loadFailed",
+						"We couldn't verify your chat connections right now. Your notification preferences below remain available.",
+					)}
+				</p>
+				<Button variant="outline" size="sm" onClick={onRetry} disabled={isRetrying}>
+					<IconRefresh
+						className={isRetrying ? "mr-1.5 size-4 motion-safe:animate-spin" : "mr-1.5 size-4"}
+						aria-hidden="true"
+					/>
+					{t("common.retry", "Retry")}
+				</Button>
+			</CardContent>
+		</Card>
+	);
+}
+
 export function ChatConnectionsCard({
 	hasOrganizationContext,
 	channels,
@@ -174,50 +602,7 @@ export function ChatConnectionsCard({
 		);
 	}
 
-	if (error) {
-		return (
-			<Card className="border-destructive/40">
-				<CardHeader className="pb-3">
-					<div className="flex flex-wrap items-center justify-between gap-2">
-						<div className="flex items-center gap-2">
-							<IconPlugConnected
-								className="size-5 shrink-0 text-muted-foreground"
-								aria-hidden="true"
-							/>
-							<CardTitle className="text-base">
-								{t("settings.notifications.chatLinks.title", "Chat connections")}
-							</CardTitle>
-						</div>
-						<Badge variant="destructive">
-							<IconExclamationCircle className="size-3.5" aria-hidden="true" />
-							{t("settings.notifications.chatLinks.status.couldNotVerify", "Couldn't verify")}
-						</Badge>
-					</div>
-					<CardDescription>
-						{t(
-							"settings.notifications.chatLinks.description",
-							"Manage how your account is linked to your organization's chat channels.",
-						)}
-					</CardDescription>
-				</CardHeader>
-				<CardContent className="flex flex-col items-start gap-3">
-					<p className="text-sm text-muted-foreground" role="alert">
-						{t(
-							"settings.notifications.chatLinks.loadFailed",
-							"We couldn't verify your chat connections right now. Your notification preferences below remain available.",
-						)}
-					</p>
-					<Button variant="outline" size="sm" onClick={onRetry} disabled={isRetrying}>
-						<IconRefresh
-							className={isRetrying ? "mr-1.5 size-4 motion-safe:animate-spin" : "mr-1.5 size-4"}
-							aria-hidden="true"
-						/>
-						{t("common.retry", "Retry")}
-					</Button>
-				</CardContent>
-			</Card>
-		);
-	}
+	if (error) return <ChatConnectionsLoadError onRetry={onRetry} isRetrying={isRetrying} />;
 
 	const visibleChannels = channels.filter(
 		(channel) =>
@@ -228,142 +613,6 @@ export function ChatConnectionsCard({
 	if (visibleChannels.length === 0) {
 		return null;
 	}
-
-	const renderStatusBadge = (status: MemberChatLinkStatus) => {
-		switch (status) {
-			case "connected":
-				return (
-					<Badge variant="secondary">
-						<IconCheck className="size-3.5" aria-hidden="true" />
-						{t("settings.notifications.chatLinks.status.connected", "Connected")}
-					</Badge>
-				);
-			case "action_needed":
-				return (
-					<Badge variant="outline">
-						<IconAlertTriangle className="size-3.5" aria-hidden="true" />
-						{t("settings.notifications.chatLinks.status.actionNeeded", "Action needed")}
-					</Badge>
-				);
-			case "could_not_verify":
-				return (
-					<Badge variant="destructive">
-						<IconExclamationCircle className="size-3.5" aria-hidden="true" />
-						{t("settings.notifications.chatLinks.status.couldNotVerify", "Couldn't verify")}
-					</Badge>
-				);
-			default:
-				return null;
-		}
-	};
-
-	const renderHint = (provider: ChatInstallationProvider, hint: MemberChatLinkRecoveryHint) => {
-		if (!hint) return null;
-		switch (hint) {
-			case "link_required":
-				switch (provider) {
-					case "telegram":
-						return t(
-							"settings.notifications.chatLinks.hints.telegramLinkRequired",
-							"Generate a short-lived link code and send it to your organization's Telegram bot.",
-						);
-					case "slack":
-						return t(
-							"settings.notifications.chatLinks.hints.slackLinkRequired",
-							"Generate a short-lived link code and run it in Slack to connect your account.",
-						);
-					case "teams":
-						return t(
-							"settings.notifications.chatLinks.hints.teamsLinkRequired",
-							"Generate a short-lived link code and send it in a 1:1 chat with your organization's Teams app.",
-						);
-					case "discord":
-						return t(
-							"settings.notifications.chatLinks.hints.discordLinkRequired",
-							"Generate a short-lived link code and run `/link` with your organization's Discord bot.",
-						);
-				}
-				break;
-			case "start_bot_private_chat":
-				return t(
-					"settings.notifications.chatLinks.hints.startPrivateChat",
-					"Open a direct message with the bot so Z8 can deliver private notifications.",
-				);
-			case "discord_share_server_with_bot":
-				return t(
-					"settings.notifications.chatLinks.hints.discordShareServer",
-					"Z8 could not open a Discord DM because you do not share a server with this bot. Join a shared server with the bot, enable Direct Messages for that server, and click Verify DM delivery.",
-				);
-			case "discord_enable_server_dms":
-				return t(
-					"settings.notifications.chatLinks.hints.discordEnableDms",
-					"Discord privacy settings blocked direct messages from this bot (error 50007). Open your Discord server Privacy Settings, enable Direct Messages, ensure the bot is not blocked, and click Verify DM delivery.",
-				);
-			case "installation_remediation":
-				return t(
-					"settings.notifications.chatLinks.hints.remediation",
-					"Your organization's connection needs attention from an administrator before status can be verified.",
-				);
-			case "verification_error":
-				return t(
-					"settings.notifications.chatLinks.hints.verificationError",
-					"Connection status could not be verified. Try checking again.",
-				);
-		}
-	};
-
-	const renderCodeInstructions = (
-		provider: ChatInstallationProvider,
-		purpose: ChatLinkProofPurpose,
-	) => {
-		if (purpose === "candidate_enrollment") {
-			switch (provider) {
-				case "telegram":
-					return t(
-						"settings.notifications.chatLinks.replacementTelegramInstructions",
-						"Open the replacement bot in Telegram and send this one-time command:",
-					);
-				case "slack":
-					return t(
-						"settings.notifications.chatLinks.replacementSlackInstructions",
-						"Send this one-time message in a direct message to your organization's replacement Slack app:",
-					);
-				case "teams":
-					return t(
-						"settings.notifications.chatLinks.replacementTeamsInstructions",
-						"Send this one-time message in a 1:1 chat with your organization's replacement Teams app:",
-					);
-				case "discord":
-					return t(
-						"settings.notifications.chatLinks.replacementDiscordInstructions",
-						"Run this one-time slash command with your organization's replacement Discord bot (Z8 will then verify DM delivery):",
-					);
-			}
-		}
-
-		switch (provider) {
-			case "telegram":
-				return t(
-					"settings.notifications.chatLinks.telegramInstructions",
-					"Send this one-time command in a private chat with your organization's Telegram bot:",
-				);
-			case "slack":
-				return t(
-					"settings.notifications.chatLinks.slackInstructions",
-					"Run this one-time command in Slack (or DM `link <code>` to the bot):",
-				);
-			case "teams":
-				return t(
-					"settings.notifications.chatLinks.teamsInstructions",
-					"Send this one-time message in a 1:1 chat with the Z8 app in Microsoft Teams:",
-				);
-			case "discord":
-				return t(
-					"settings.notifications.chatLinks.discordInstructions",
-					"Run this one-time slash command with the Discord bot (Z8 will then verify direct message delivery):",
-				);
-		}
-	};
 
 	const handleCopyCommand = async (command: string) => {
 		try {
@@ -378,70 +627,6 @@ export function ChatConnectionsCard({
 		} catch {
 			toast.error(t("settings.notifications.chatLinks.copyFailed", "Couldn't copy link command"));
 		}
-	};
-
-	const renderCodeBox = (params: {
-		provider: ChatInstallationProvider;
-		purpose: ChatLinkProofPurpose;
-		generated: GeneratedMemberLinkCode;
-		fallbackBotUsername: string | null;
-	}) => {
-		const command = formatLinkCommand(params.provider, params.purpose, params.generated.code);
-		const telegramBotUsername =
-			params.provider === "telegram"
-				? (params.generated.botUsername ?? params.fallbackBotUsername)
-				: null;
-		const isCopied = copiedCommand === command;
-
-		return (
-			<div className="space-y-2.5 rounded-md border bg-background p-3">
-				<p className="text-xs text-muted-foreground">
-					{renderCodeInstructions(params.provider, params.purpose)}
-				</p>
-				<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-					<code className="break-all rounded bg-muted px-2.5 py-1.5 font-mono text-sm font-medium">
-						{command}
-					</code>
-					<div className="flex flex-wrap items-center gap-2">
-						<Button
-							type="button"
-							variant="outline"
-							size="sm"
-							onClick={() => void handleCopyCommand(command)}
-						>
-							{isCopied ? (
-								<IconCheck className="mr-1.5 size-4" aria-hidden="true" />
-							) : (
-								<IconCopy className="mr-1.5 size-4" aria-hidden="true" />
-							)}
-							{t("settings.notifications.chatLinks.copyCommand", "Copy")}
-						</Button>
-						{telegramBotUsername && (
-							<Button variant="outline" size="sm" asChild>
-								<a
-									href={`https://t.me/${telegramBotUsername.replace(/^@/, "")}`}
-									target="_blank"
-									rel="noopener noreferrer"
-								>
-									<IconExternalLink className="mr-1.5 size-4" aria-hidden="true" />
-									{t("settings.notifications.chatLinks.openTelegramBot", "Open @{botUsername}", {
-										botUsername: telegramBotUsername.replace(/^@/, ""),
-									})}
-								</a>
-							</Button>
-						)}
-						<Button type="button" variant="ghost" size="sm" onClick={onRetry} disabled={isRetrying}>
-							<IconRefresh
-								className={isRetrying ? "mr-1.5 size-4 motion-safe:animate-spin" : "mr-1.5 size-4"}
-								aria-hidden="true"
-							/>
-							{t("settings.notifications.chatLinks.checkStatus", "Check status")}
-						</Button>
-					</div>
-				</div>
-				<LinkCodeExpiry expiresAt={params.generated.expiresAt} />
-			</div>
-		);
 	};
 
 	return (
@@ -470,7 +655,7 @@ export function ChatConnectionsCard({
 							? `@${channel.externalUsername}`
 							: channel.externalUsername
 						: channel.externalDisplayName;
-					const hintText = renderHint(channel.provider, channel.recoveryHint);
+					const hintText = renderHint(t, channel.provider, channel.recoveryHint);
 					const isDiscordDmBlocked =
 						channel.provider === "discord" &&
 						(channel.recoveryHint === "discord_enable_server_dms" ||
@@ -493,23 +678,6 @@ export function ChatConnectionsCard({
 						Boolean(channel.installationId) &&
 						recheckingDiscordInstallationId === channel.installationId;
 
-					const candidate = channel.candidateEnrollment ?? null;
-					const candidateCodeKey = candidate
-						? chatLinkCodeKey(channel.provider, "candidate_enrollment", candidate.installationId)
-						: null;
-					const candidateCode = candidateCodeKey
-						? (generatedCodes[candidateCodeKey] ?? null)
-						: null;
-					const isGeneratingCandidateCode =
-						candidateCodeKey !== null && generatingCodeKey === candidateCodeKey;
-					const isRecheckingCandidateDiscord =
-						candidate !== null && recheckingDiscordInstallationId === candidate.installationId;
-					const candidateDiscordDmBlocked =
-						channel.provider === "discord" &&
-						candidate !== null &&
-						(candidate.recoveryHint === "discord_enable_server_dms" ||
-							candidate.recoveryHint === "discord_share_server_with_bot");
-
 					return (
 						<div key={channel.provider} className="space-y-3 rounded-lg border bg-muted/30 p-3">
 							<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -517,7 +685,7 @@ export function ChatConnectionsCard({
 									<div className="flex flex-wrap items-center gap-2">
 										<ProviderIcon className="size-4 shrink-0" aria-hidden="true" />
 										<span className="text-sm font-medium">{providerLabel}</span>
-										{renderStatusBadge(channel.status)}
+										{renderStatusBadge(t, channel.status)}
 									</div>
 									{channel.installationLabel && (
 										<p className="truncate text-xs text-muted-foreground">
@@ -638,133 +806,34 @@ export function ChatConnectionsCard({
 								</div>
 							)}
 
-							{showLiveCode &&
-								liveCode &&
-								renderCodeBox({
-									provider: channel.provider,
-									purpose: "member_link",
-									generated: liveCode,
-									fallbackBotUsername: channel.botUsername,
-								})}
+							{showLiveCode && liveCode && (
+								<LinkCodeBox
+									provider={channel.provider}
+									purpose="member_link"
+									generated={liveCode}
+									fallbackBotUsername={channel.botUsername}
+									copiedCommand={copiedCommand}
+									handleCopyCommand={handleCopyCommand}
+									onRetry={onRetry}
+									isRetrying={isRetrying}
+								/>
+							)}
 
-							{candidate && (
-								<div className="space-y-2.5 rounded-md border border-dashed bg-background p-3">
-									<div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-										<div className="min-w-0 space-y-1">
-											<div className="flex flex-wrap items-center gap-2">
-												<span className="text-xs font-medium">
-													{t(
-														"settings.notifications.chatLinks.replacementChannelTitle",
-														"Replacement {provider} connection staged",
-														{ provider: providerLabel },
-													)}
-												</span>
-												<Badge variant={candidate.status === "enrolled" ? "secondary" : "outline"}>
-													{candidate.status === "enrolled"
-														? t("settings.notifications.chatLinks.replacementEnrolled", "Enrolled")
-														: t(
-																"settings.notifications.chatLinks.status.actionNeeded",
-																"Action needed",
-															)}
-												</Badge>
-											</div>
-											{candidate.installationLabel && (
-												<p className="truncate text-xs text-muted-foreground">
-													{candidate.installationLabel}
-												</p>
-											)}
-											<p className="text-xs text-muted-foreground">
-												{candidate.status === "enrolled"
-													? t(
-															"settings.notifications.chatLinks.replacementChannelEnrolledHint",
-															"You are enrolled for the replacement connection. Your current live link stays active until your admin completes the switch.",
-														)
-													: t(
-															"settings.notifications.chatLinks.replacementChannelHint",
-															"Link the staged replacement ahead of the switch. Your current notifications stay uninterrupted until your admin switches.",
-														)}
-											</p>
-										</div>
-
-										<div className="flex shrink-0 flex-wrap items-center gap-2">
-											{channel.provider === "discord" &&
-												candidate.canRecheckDm &&
-												candidateDiscordDmBlocked &&
-												onRecheckDiscordDm && (
-													<Button
-														type="button"
-														variant="outline"
-														size="sm"
-														disabled={isRecheckingCandidateDiscord}
-														onClick={() => onRecheckDiscordDm(candidate.installationId)}
-													>
-														{isRecheckingCandidateDiscord ? (
-															<IconLoader2
-																className="mr-1.5 size-4 motion-safe:animate-spin"
-																aria-hidden="true"
-															/>
-														) : (
-															<IconRefresh className="mr-1.5 size-4" aria-hidden="true" />
-														)}
-														{t(
-															"settings.notifications.chatLinks.verifyDmButton",
-															"Verify DM delivery",
-														)}
-													</Button>
-												)}
-
-											{candidate.canGenerateLinkCode && candidate.status !== "enrolled" && (
-												<Button
-													type="button"
-													variant="outline"
-													size="sm"
-													disabled={isGeneratingCandidateCode}
-													onClick={() =>
-														onGenerateLinkCode({
-															provider: channel.provider,
-															purpose: "candidate_enrollment",
-															installationId: candidate.installationId,
-														})
-													}
-												>
-													{isGeneratingCandidateCode && (
-														<IconLoader2
-															className="mr-1.5 size-4 motion-safe:animate-spin"
-															aria-hidden="true"
-														/>
-													)}
-													{t(
-														"settings.notifications.chatLinks.generateReplacementCode",
-														"Link replacement bot",
-													)}
-												</Button>
-											)}
-										</div>
-									</div>
-
-									{candidateDiscordDmBlocked && candidate.recoveryHint && (
-										<div
-											role="alert"
-											className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 p-2.5 text-xs"
-										>
-											<IconAlertTriangle
-												className="mt-0.5 size-4 shrink-0 text-warning"
-												aria-hidden="true"
-											/>
-											<span>{renderHint(channel.provider, candidate.recoveryHint)}</span>
-										</div>
-									)}
-
-									{candidateCode &&
-										candidateCode.installationId === candidate.installationId &&
-										candidate.status !== "enrolled" &&
-										renderCodeBox({
-											provider: channel.provider,
-											purpose: "candidate_enrollment",
-											generated: candidateCode,
-											fallbackBotUsername: candidate.botUsername,
-										})}
-								</div>
+							{channel.candidateEnrollment && (
+								<CandidateEnrollment
+									provider={channel.provider}
+									providerLabel={providerLabel}
+									candidate={channel.candidateEnrollment}
+									copiedCommand={copiedCommand}
+									handleCopyCommand={handleCopyCommand}
+									generatedCodes={generatedCodes}
+									generatingCodeKey={generatingCodeKey}
+									onGenerateLinkCode={onGenerateLinkCode}
+									onRecheckDiscordDm={onRecheckDiscordDm}
+									recheckingDiscordInstallationId={recheckingDiscordInstallationId}
+									isRetrying={isRetrying}
+									onRetry={onRetry}
+								/>
 							)}
 						</div>
 					);

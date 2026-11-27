@@ -191,22 +191,7 @@ function blockerCopy(
 	}
 }
 
-function InstallationIdentityRow({
-	installation,
-	t,
-}: {
-	installation: ChatInstallationSummary;
-	t: TranslateFn;
-}) {
-	const isLegacy = installation.legacyTable !== null;
-	const displayLabel =
-		installation.externalDisplayName ??
-		installation.externalSpaceName ??
-		(installation.externalBotUsername ? `@${installation.externalBotUsername}` : null) ??
-		installation.externalSpaceId ??
-		installation.externalAppId ??
-		t("settings.chatInstallations.identity.unidentified", "Unidentified installation");
-
+function installationEvidence(installation: ChatInstallationSummary, t: TranslateFn) {
 	const evidenceParts: string[] = [];
 	if (installation.lastVerifiedAt) {
 		evidenceParts.push(
@@ -271,6 +256,27 @@ function InstallationIdentityRow({
 			),
 		);
 	}
+
+	return evidenceParts;
+}
+
+function InstallationIdentityRow({
+	installation,
+	t,
+}: {
+	installation: ChatInstallationSummary;
+	t: TranslateFn;
+}) {
+	const isLegacy = installation.legacyTable !== null;
+	const displayLabel =
+		installation.externalDisplayName ??
+		installation.externalSpaceName ??
+		(installation.externalBotUsername ? `@${installation.externalBotUsername}` : null) ??
+		installation.externalSpaceId ??
+		installation.externalAppId ??
+		t("settings.chatInstallations.identity.unidentified", "Unidentified installation");
+
+	const evidenceParts = installationEvidence(installation, t);
 
 	return (
 		<div className="min-w-0 space-y-2 rounded-lg border bg-muted/20 p-3">
@@ -511,6 +517,7 @@ export function ChatInstallationInventoryCard({
 	const inventory = matchesBase ? override.inventory : initialInventory;
 	const loadFailed = matchesBase ? override.loadFailed : initialLoadFailed;
 
+	// react-doctor-disable-next-line react-doctor/query-mutation-missing-invalidation -- Retry reads server inventory into the local snapshot.
 	const retryMutation = useMutation({
 		mutationFn: () => retryAction(),
 		onMutate: () => {
@@ -624,6 +631,34 @@ export function ChatInstallationInventoryCard({
 		);
 	}
 
+	return (
+		<InventoryDetails
+			inventory={inventory}
+			provider={provider}
+			channelName={channelName}
+			announcement={announcement}
+			retryPending={retryMutation.isPending}
+			onRetry={() => retryMutation.mutate()}
+		/>
+	);
+}
+
+function InventoryDetails({
+	inventory,
+	provider,
+	channelName,
+	announcement,
+	retryPending,
+	onRetry,
+}: {
+	inventory: ChatProviderInventory;
+	provider: ChatInstallationProvider;
+	channelName: string;
+	announcement: string;
+	retryPending: boolean;
+	onRetry: () => void;
+}) {
+	const { t } = useTranslate();
 	const {
 		connectionState,
 		blockers,
@@ -729,10 +764,10 @@ export function ChatInstallationInventoryCard({
 							variant="outline"
 							size="sm"
 							className="w-fit shrink-0"
-							disabled={retryMutation.isPending}
-							onClick={() => retryMutation.mutate()}
+							disabled={retryPending}
+							onClick={onRetry}
 						>
-							{retryMutation.isPending ? (
+							{retryPending ? (
 								<IconLoader2 className="mr-2 size-4 motion-safe:animate-spin" aria-hidden="true" />
 							) : (
 								<IconRefresh className="mr-2 size-4" aria-hidden="true" />
@@ -760,11 +795,11 @@ export function ChatInstallationInventoryCard({
 							</p>
 						</div>
 						<ul className="space-y-2">
-							{hardBlockers.map((blocker, index) => {
+							{hardBlockers.map((blocker) => {
 								const copy = blockerCopy(blocker, t);
 								return (
 									<li
-										key={`${blocker.code}-${blocker.installationId ?? index}`}
+										key={blocker.installationId ?? blocker.legacyRecordId ?? blocker.code}
 										className="min-w-0 space-y-1 rounded-md border bg-background p-2.5 text-xs"
 									>
 										<p className="break-words font-medium text-foreground">

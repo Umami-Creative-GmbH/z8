@@ -1177,6 +1177,7 @@ export async function retryTelegramCandidateWebhookRegistration(
 		deps?.verificationTtlMs,
 	);
 
+	// react-doctor-disable-next-line react-doctor/async-defer-await -- Persist failure evidence before returning the registration error.
 	const updated = await repository.updateInstallation(input.organizationId, candidate.id, {
 		endpointGeneration: nextGeneration,
 		endpointState: passed ? "synced" : "uncertain",
@@ -1287,6 +1288,7 @@ export async function retryTelegramCandidateCommandRegistration(
 		deps?.verificationTtlMs,
 	);
 
+	// react-doctor-disable-next-line react-doctor/async-defer-await -- Persist failure evidence before returning the registration error.
 	const updated = await repository.updateInstallation(input.organizationId, candidate.id, {
 		verificationEvidence: nextEvidence,
 		verificationState: computed.effectiveVerificationState,

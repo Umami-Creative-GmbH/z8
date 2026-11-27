@@ -58,6 +58,7 @@ export function useMemberChatLinks() {
 		},
 	});
 
+	// react-doctor-disable-next-line react-doctor/query-mutation-missing-invalidation -- Issuing a one-time code leaves membership unchanged until redemption.
 	const generateLinkCodeMutation = useMutation({
 		mutationFn: async (input: {
 			provider: ChatInstallationProvider;

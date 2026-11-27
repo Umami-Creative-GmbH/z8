@@ -702,14 +702,12 @@ async function recordAttempt(
 				endedAt: dateFromInstant(item.work.endedAt),
 				startOffsetMinutes: item.work.startOffsetMinutes,
 				durationMinutes: item.work.durationMinutes,
-				shares: item.shares.map(
-					(share): InvoicedWorkShare => ({
-						line: share.line,
-						durationMs: share.durationMs,
-						rate: formatRate(share.rate),
-						amount: formatRate(share.amount),
-					}),
-				),
+				shares: item.shares.map((share): InvoicedWorkShare => ({
+					line: share.line,
+					durationMs: share.durationMs,
+					rate: formatRate(share.rate),
+					amount: formatRate(share.amount),
+				})),
 			})),
 		);
 		// The hand-off started: its work is reserved from now on. No key, no secrets.
@@ -1435,16 +1433,23 @@ export type InvoicedWorkRowView = InvoicedWorkView & {
 	};
 };
 
-/** The row as the views show it, with its draft: without what only grouping and comparing need. */
-export function toInvoicedWorkView({
+/** Work fields shared by invoice draft details and marked work items. */
+function toDraftWorkView({
+	invoiceDraftId: _draftId,
 	timesheet: _timesheet,
 	carriedFromWorkPeriodId: _source,
 	markVersion: _version,
 	released: _released,
 	handedOff: _handedOff,
 	...view
-}: InvoicedWorkRowView): InvoicedWorkView & { invoiceDraftId: string } {
+}: InvoicedWorkRowView): InvoicedWorkView {
 	return view;
+}
+
+export function toInvoicedWorkView(
+	row: InvoicedWorkRowView,
+): InvoicedWorkView & { invoiceDraftId: string } {
+	return { ...toDraftWorkView(row), invoiceDraftId: row.invoiceDraftId };
 }
 
 /** Invoiced work rows with names, for a draft or for all marked work. */
@@ -1589,10 +1594,7 @@ export async function getInvoiceDraftDetail(
 			rate: line.unitPrice,
 			amount: line.amount,
 		})),
-		work: work.map((row) => {
-			const { invoiceDraftId: _draftId, ...view } = toInvoicedWorkView(row);
-			return view;
-		}),
+		work: work.map(toDraftWorkView),
 		timesheet: work.flatMap((item) => (item.timesheet ? [item.timesheet] : [])),
 		releaseReason: draft.releaseReason,
 		endedAt: draft.endedAt?.toISOString() ?? null,

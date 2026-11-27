@@ -1029,6 +1029,7 @@ async function carryForwardVerifiedIdentities(
 		);
 
 	for (const enrollment of candidateEnrollments) {
+		// react-doctor-disable-next-line react-doctor/async-await-in-loop -- Promotion reads and updates member links within one switch transaction.
 		const eligibility = await verifyEligibleChatLinkMember(
 			enrollment.userId,
 			input.organizationId,
@@ -1103,6 +1104,7 @@ async function carryForwardVerifiedIdentities(
 		if (buildVerifiedExternalScope(retiringInst) !== targetScope) continue;
 		for (const userId of activeUserIds) {
 			if (alreadyLinkedUsers.has(userId)) continue;
+			// react-doctor-disable-next-line react-doctor/async-await-in-loop -- A successful transfer reserves this user before the next source installation is considered.
 			const reused = await reuseVerifiedExternalIdentity(
 				{
 					organizationId: input.organizationId,
@@ -1422,6 +1424,7 @@ export async function confirmChatInstallationSwitch(
 			now,
 		});
 
+		// react-doctor-disable-next-line react-doctor/server-sequential-independent-await -- The preview must include the identity transfers written immediately above.
 		const updatedPreview = await buildChatSwitchImpactPreview(
 			{
 				organizationId: input.organizationId,
@@ -1522,6 +1525,7 @@ export async function retireSettledChatInstallations(
 	let deadlineReached = 0;
 
 	for (const inst of retiringRows) {
+		// react-doctor-disable-next-line react-doctor/async-await-in-loop -- Retire one installation and write its audit record before advancing through the ordered sweep.
 		const counts = await countApprovalWork(inst.organizationId, inst.id, db);
 		const evaluation = evaluateInstallationRetirementEligibility({
 			retirementDeadlineAt: inst.retirementDeadlineAt,
