@@ -1,10 +1,8 @@
 "use client";
 
 import {
-	IconAlertTriangle,
 	IconBrandSlack,
 	IconCheck,
-	IconClockExclamation,
 	IconCopy,
 	IconDownload,
 	IconKey,
@@ -13,6 +11,7 @@ import {
 	IconSend,
 	IconShieldCheck,
 } from "@tabler/icons-react";
+import { VerificationHeading, VerificationStepRow } from "./chat-verification";
 import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { useStore } from "@tanstack/react-store";
@@ -37,11 +36,7 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
-import type {
-	SlackCandidateSetupView,
-	SlackVerificationStepStatus,
-	SlackVerificationStepView,
-} from "@/lib/chat-installations/slack-setup";
+import type { SlackCandidateSetupView } from "@/lib/chat-installations/slack-setup";
 import type { ServerActionResult } from "@/lib/effect/result";
 import {
 	actionErrorMessage,
@@ -119,95 +114,7 @@ export interface SlackPrepareTestPanelProps {
 	) => Promise<ServerActionResult<SlackCandidateSetupView>>;
 }
 
-function StepStatusBadge({
-	status,
-	t,
-}: {
-	status: SlackVerificationStepStatus;
-	t: ReturnType<typeof useTranslate>["t"];
-}) {
-	switch (status) {
-		case "passed":
-			return (
-				<Badge variant="default" className="w-fit shrink-0 gap-1">
-					<IconCheck className="size-3.5" aria-hidden="true" />
-					{t("settings.slack.orgOwned.status.passed", "Passed")}
-				</Badge>
-			);
-		case "failed":
-			return (
-				<Badge variant="destructive" className="w-fit shrink-0 gap-1">
-					<IconAlertTriangle className="size-3.5" aria-hidden="true" />
-					{t("settings.slack.orgOwned.status.failed", "Action needed")}
-				</Badge>
-			);
-		case "expired":
-			return (
-				<Badge variant="outline" className="w-fit shrink-0 gap-1 border-warning/60 text-warning">
-					<IconClockExclamation className="size-3.5" aria-hidden="true" />
-					{t("settings.slack.orgOwned.status.expired", "Expired")}
-				</Badge>
-			);
-		case "pending":
-			return (
-				<Badge variant="secondary" className="w-fit shrink-0">
-					{t("settings.slack.orgOwned.status.pending", "Pending")}
-				</Badge>
-			);
-	}
-}
-
-function StepRow({
-	title,
-	description,
-	step,
-	action,
-	t,
-}: {
-	title: string;
-	description: string;
-	step: SlackVerificationStepView;
-	action?: React.ReactNode;
-	t: ReturnType<typeof useTranslate>["t"];
-}) {
-	return (
-		<li className="min-w-0 space-y-2 rounded-lg border bg-background p-3">
-			<div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-				<div className="min-w-0 space-y-0.5">
-					<p className="break-words text-sm font-medium">{title}</p>
-					<p className="break-words text-xs text-muted-foreground">{description}</p>
-				</div>
-				<StepStatusBadge status={step.status} t={t} />
-			</div>
-			{step.verifiedAt ? (
-				<p className="break-words text-xs text-muted-foreground">
-					{step.status === "expired"
-						? t(
-								"settings.slack.orgOwned.stepExpiredAt",
-								"Previously verified at {timestamp}. Proof has expired and must be refreshed.",
-								{ timestamp: step.verifiedAt },
-							)
-						: t("settings.slack.orgOwned.stepVerifiedAt", "Verified: {timestamp}", {
-								timestamp: step.verifiedAt,
-							})}
-					{step.detail ? ` · ${step.detail}` : ""}
-				</p>
-			) : null}
-			{step.status === "failed" && step.failureCode ? (
-				<p role="alert" className="break-words text-xs text-destructive">
-					{t(
-						"settings.slack.orgOwned.stepFailureCode",
-						"Last verification check failed ({code}). Fix the step and retry.",
-						{ code: step.failureCode },
-					)}
-				</p>
-			) : null}
-			{action ? <div className="pt-1">{action}</div> : null}
-		</li>
-	);
-}
-
-export function SlackPrepareTestPanel({
+function useSlackPrepareTestPanel({
 	initialSetup,
 	prepareAction,
 	refreshAction,
@@ -442,6 +349,561 @@ export function SlackPrepareTestPanel({
 	const interactionsUrlId = `${idPrefix}-interactions-url`;
 	const commandsUrlId = `${idPrefix}-commands-url`;
 
+	return {
+		t,
+		idPrefix,
+		setup,
+		manifestFormat,
+		setManifestFormat,
+		announcement,
+		credentialsError,
+		setCredentialsError,
+		privateTestError,
+		setPrivateTestError,
+		copiedKey,
+		prepareMutation,
+		refreshMutation,
+		credentialsForm,
+		privateTestForm,
+		isSavingCredentials,
+		isSendingTest,
+		handleCopy,
+		handleDownloadManifest,
+		botTokenInputId,
+		signingSecretInputId,
+		slackUserIdInputId,
+		eventsUrlId,
+		interactionsUrlId,
+		commandsUrlId,
+	};
+}
+
+type PanelState = NonNullable<ReturnType<typeof useSlackPrepareTestPanel>>;
+
+function ManifestSection(props: PanelState & { setup: NonNullable<PanelState["setup"]> }) {
+	const {
+		t,
+		idPrefix,
+		manifestFormat,
+		setManifestFormat,
+		copiedKey,
+		handleCopy,
+		handleDownloadManifest,
+		eventsUrlId,
+		interactionsUrlId,
+		commandsUrlId,
+		setup,
+	} = props;
+	return (
+		<section aria-labelledby={`${idPrefix}-prepare-heading`} className="min-w-0 space-y-4">
+			<div className="space-y-1">
+				<h3 id={`${idPrefix}-prepare-heading`} className="text-sm font-semibold">
+					{t("settings.slack.orgOwned.prepare.heading", "1. Prepare your Slack app")}
+				</h3>
+				<p className="text-xs text-muted-foreground">
+					{t(
+						"settings.slack.orgOwned.prepare.instructions",
+						"In Slack API (api.slack.com/apps), choose Create New App → From an app manifest, paste this manifest, and install the app to your workspace.",
+					)}
+				</p>
+			</div>
+
+			<div className="space-y-2">
+				<div className="flex flex-wrap items-center gap-2">
+					<Button
+						type="button"
+						variant={manifestFormat === "yaml" ? "default" : "outline"}
+						size="sm"
+						onClick={() => setManifestFormat("yaml")}
+					>
+						YAML
+					</Button>
+					<Button
+						type="button"
+						variant={manifestFormat === "json" ? "default" : "outline"}
+						size="sm"
+						onClick={() => setManifestFormat("json")}
+					>
+						JSON
+					</Button>
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						onClick={() =>
+							handleCopy(
+								"manifest",
+								manifestFormat === "json" ? setup.manifestJson : setup.manifestYaml,
+								t("settings.slack.orgOwned.prepare.manifestLabel", "Slack app manifest"),
+							)
+						}
+					>
+						{copiedKey === "manifest" ? (
+							<IconCheck className="mr-1.5 size-4" aria-hidden="true" />
+						) : (
+							<IconCopy className="mr-1.5 size-4" aria-hidden="true" />
+						)}
+						{t("settings.slack.orgOwned.prepare.copyManifest", "Copy manifest")}
+					</Button>
+					<Button type="button" variant="outline" size="sm" onClick={handleDownloadManifest}>
+						<IconDownload className="mr-1.5 size-4" aria-hidden="true" />
+						{t("settings.slack.orgOwned.prepare.downloadManifest", "Download")}
+					</Button>
+				</div>
+
+				<pre className="max-h-56 overflow-auto rounded-md border bg-muted/40 p-3 font-mono text-xs leading-relaxed">
+					{manifestFormat === "json" ? setup.manifestJson : setup.manifestYaml}
+				</pre>
+			</div>
+
+			<div className="grid gap-3">
+				{[
+					{
+						id: eventsUrlId,
+						key: "events",
+						label: t("settings.slack.orgOwned.prepare.eventsUrl", "Event Subscriptions URL"),
+						value: setup.urls.eventsUrl,
+					},
+					{
+						id: interactionsUrlId,
+						key: "interactions",
+						label: t(
+							"settings.slack.orgOwned.prepare.interactionsUrl",
+							"Interactivity Request URL",
+						),
+						value: setup.urls.interactionsUrl,
+					},
+					{
+						id: commandsUrlId,
+						key: "commands",
+						label: t("settings.slack.orgOwned.prepare.commandsUrl", "Slash Command URL"),
+						value: setup.urls.commandsUrl,
+					},
+				].map((urlItem) => (
+					<div key={urlItem.key} className="min-w-0 space-y-1">
+						<Label htmlFor={urlItem.id} className="text-xs">
+							{urlItem.label}
+						</Label>
+						<div className="flex flex-col gap-2 sm:flex-row">
+							<Input
+								id={urlItem.id}
+								value={urlItem.value}
+								readOnly
+								className="min-w-0 font-mono text-xs"
+								onFocus={(event) => event.target.select()}
+							/>
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								className="w-fit shrink-0"
+								onClick={() => handleCopy(urlItem.key, urlItem.value, urlItem.label)}
+							>
+								{copiedKey === urlItem.key ? (
+									<IconCheck className="mr-1.5 size-4" aria-hidden="true" />
+								) : (
+									<IconCopy className="mr-1.5 size-4" aria-hidden="true" />
+								)}
+								{t("settings.slack.orgOwned.prepare.copyUrl", "Copy")}
+							</Button>
+						</div>
+					</div>
+				))}
+			</div>
+		</section>
+	);
+}
+
+function CredentialsSection(props: PanelState & { setup: NonNullable<PanelState["setup"]> }) {
+	const {
+		t,
+		idPrefix,
+		credentialsError,
+		setCredentialsError,
+		credentialsForm,
+		isSavingCredentials,
+		botTokenInputId,
+		signingSecretInputId,
+		setup,
+	} = props;
+	return (
+		<section
+			aria-labelledby={`${idPrefix}-credentials-heading`}
+			className="min-w-0 space-y-4 border-t pt-4"
+		>
+			<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+				<div className="min-w-0 space-y-1">
+					<h3 id={`${idPrefix}-credentials-heading`} className="text-sm font-semibold">
+						{t("settings.slack.orgOwned.credentials.heading", "2. Enter credentials (write-only)")}
+					</h3>
+					<p className="text-xs text-muted-foreground">
+						{t(
+							"settings.slack.orgOwned.credentials.description",
+							"Credentials are stored in an immutable organization-scoped revision and are never displayed again after saving.",
+						)}
+					</p>
+				</div>
+				{setup.hasStoredCredentials ? (
+					<Badge variant="outline" className="w-fit shrink-0">
+						{t("settings.slack.orgOwned.credentials.storedBadge", "Stored (revision v{revision})", {
+							revision: String(setup.credentialRevisionNumber ?? 1),
+						})}
+					</Badge>
+				) : null}
+			</div>
+
+			<form
+				className="space-y-4"
+				onSubmit={(event) => {
+					event.preventDefault();
+					credentialsForm.handleSubmit();
+				}}
+			>
+				<div className="grid gap-4 sm:grid-cols-2">
+					<credentialsForm.Field
+						name="botToken"
+						validators={{
+							onBlur: ({ value }) => {
+								const trimmed = value.trim();
+								if (!trimmed) {
+									return t(
+										"settings.slack.orgOwned.validation.botTokenRequired",
+										"Bot User OAuth Token is required.",
+									);
+								}
+								if (!trimmed.startsWith("xoxb-")) {
+									return t(
+										"settings.slack.orgOwned.errors.invalidBotTokenFormat",
+										"Bot token must start with xoxb-.",
+									);
+								}
+								return undefined;
+							},
+						}}
+					>
+						{(field) => {
+							const hasError = fieldHasError(field);
+							return (
+								<TFormItem>
+									<TFormLabel htmlFor={botTokenInputId} hasError={hasError} required>
+										{t("settings.slack.orgOwned.credentials.botToken", "Bot User OAuth Token")}
+									</TFormLabel>
+									<TFormControl hasError={hasError}>
+										<Input
+											id={botTokenInputId}
+											name="botToken"
+											type="password"
+											placeholder="xoxb-..."
+											value={field.state.value}
+											onChange={(event) => {
+												setCredentialsError(null);
+												field.handleChange(event.target.value);
+											}}
+											onBlur={field.handleBlur}
+											disabled={isSavingCredentials}
+											autoComplete="off"
+											spellCheck={false}
+										/>
+									</TFormControl>
+									<TFormDescription>
+										{t(
+											"settings.slack.orgOwned.credentials.botTokenHelp",
+											"Found under OAuth & Permissions after installing your Slack app.",
+										)}
+									</TFormDescription>
+									<TFormMessage field={field} />
+								</TFormItem>
+							);
+						}}
+					</credentialsForm.Field>
+
+					<credentialsForm.Field
+						name="signingSecret"
+						validators={{
+							onBlur: ({ value }) => {
+								const trimmed = value.trim();
+								if (!trimmed) {
+									return t(
+										"settings.slack.orgOwned.validation.signingSecretRequired",
+										"Signing Secret is required.",
+									);
+								}
+								if (trimmed.length < 16) {
+									return t(
+										"settings.slack.orgOwned.errors.invalidSigningSecretFormat",
+										"Signing secret must be at least 16 characters with no spaces.",
+									);
+								}
+								return undefined;
+							},
+						}}
+					>
+						{(field) => {
+							const hasError = fieldHasError(field);
+							return (
+								<TFormItem>
+									<TFormLabel htmlFor={signingSecretInputId} hasError={hasError} required>
+										{t("settings.slack.orgOwned.credentials.signingSecret", "Signing Secret")}
+									</TFormLabel>
+									<TFormControl hasError={hasError}>
+										<Input
+											id={signingSecretInputId}
+											name="signingSecret"
+											type="password"
+											value={field.state.value}
+											onChange={(event) => {
+												setCredentialsError(null);
+												field.handleChange(event.target.value);
+											}}
+											onBlur={field.handleBlur}
+											disabled={isSavingCredentials}
+											autoComplete="off"
+											spellCheck={false}
+										/>
+									</TFormControl>
+									<TFormDescription>
+										{t(
+											"settings.slack.orgOwned.credentials.signingSecretHelp",
+											"Found under Basic Information → App Credentials in Slack.",
+										)}
+									</TFormDescription>
+									<TFormMessage field={field} />
+								</TFormItem>
+							);
+						}}
+					</credentialsForm.Field>
+				</div>
+
+				{credentialsError ? (
+					<p role="alert" className="text-sm text-destructive">
+						{credentialsError}
+					</p>
+				) : null}
+
+				<Button type="submit" disabled={isSavingCredentials}>
+					{isSavingCredentials ? (
+						<IconLoader2 className="mr-2 size-4 motion-safe:animate-spin" aria-hidden="true" />
+					) : (
+						<IconKey className="mr-2 size-4" aria-hidden="true" />
+					)}
+					{setup.hasStoredCredentials
+						? t(
+								"settings.slack.orgOwned.credentials.updateButton",
+								"Verify & save new credential revision",
+							)
+						: t("settings.slack.orgOwned.credentials.saveButton", "Verify & save credentials")}
+				</Button>
+			</form>
+		</section>
+	);
+}
+
+function VerificationSection(props: PanelState & { setup: NonNullable<PanelState["setup"]> }) {
+	const {
+		t,
+		idPrefix,
+		privateTestError,
+		setPrivateTestError,
+		refreshMutation,
+		privateTestForm,
+		isSendingTest,
+		slackUserIdInputId,
+		setup,
+	} = props;
+	return (
+		<section
+			aria-labelledby={`${idPrefix}-test-heading`}
+			className="min-w-0 space-y-4 border-t pt-4"
+		>
+			<VerificationHeading
+				headingId={`${idPrefix}-test-heading`}
+				title={t("settings.slack.orgOwned.test.heading", "3. Test & verify candidate app")}
+				description={t(
+					"settings.slack.orgOwned.test.description",
+					"Candidate testing never executes production commands, approval actions, or live notifications.",
+				)}
+				refreshLabel={t("settings.slack.orgOwned.test.refreshStatus", "Refresh status")}
+				pending={refreshMutation.isPending}
+				onRefresh={() => refreshMutation.mutate()}
+			/>
+
+			<ul className="space-y-3">
+				<VerificationStepRow
+					provider="slack"
+					title={t("settings.slack.orgOwned.steps.identity.title", "App & workspace identity")}
+					description={t(
+						"settings.slack.orgOwned.steps.identity.description",
+						"Confirmed from Slack bot metadata (auth.test and bots.info) and bound to your organization.",
+					)}
+					step={setup.steps.identity}
+					t={t}
+				/>
+
+				<VerificationStepRow
+					provider="slack"
+					title={t(
+						"settings.slack.orgOwned.steps.signedEvent.title",
+						"Fresh signed app-and-workspace event",
+					)}
+					description={t(
+						"settings.slack.orgOwned.steps.signedEvent.description",
+						"After saving credentials, enable Event Subscriptions in Slack and send a direct message or @mention to your candidate app, then refresh status.",
+					)}
+					step={setup.steps.signedEvent}
+					action={
+						setup.steps.signedEvent.status === "failed" ||
+						setup.steps.signedEvent.status === "expired" ? (
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								disabled={refreshMutation.isPending}
+								onClick={() => refreshMutation.mutate()}
+							>
+								<IconRefresh className="mr-1.5 size-4" aria-hidden="true" />
+								{t("settings.slack.orgOwned.steps.signedEvent.retry", "Recheck signed event")}
+							</Button>
+						) : null
+					}
+					t={t}
+				/>
+
+				<VerificationStepRow
+					provider="slack"
+					title={t(
+						"settings.slack.orgOwned.steps.privateTest.title",
+						"Synthetic private test message",
+					)}
+					description={t(
+						"settings.slack.orgOwned.steps.privateTest.description",
+						"Send a private verification DM to your Slack member ID (found in Slack profile → Copy member ID).",
+					)}
+					step={setup.steps.privateTest}
+					action={
+						setup.hasStoredCredentials ? (
+							<form
+								className="space-y-3 pt-1"
+								onSubmit={(event) => {
+									event.preventDefault();
+									privateTestForm.handleSubmit();
+								}}
+							>
+								<privateTestForm.Field
+									name="slackUserId"
+									validators={{
+										onBlur: ({ value }) => {
+											const trimmed = value.trim().toUpperCase();
+											if (!trimmed) {
+												return t(
+													"settings.slack.orgOwned.validation.slackUserIdRequired",
+													"Slack member ID is required.",
+												);
+											}
+											if (!/^[UW][A-Z0-9]{7,}$/.test(trimmed)) {
+												return t(
+													"settings.slack.orgOwned.errors.invalidSlackUserId",
+													"Enter a valid Slack member ID (for example, U01234567).",
+												);
+											}
+											return undefined;
+										},
+									}}
+								>
+									{(field) => {
+										const hasError = fieldHasError(field);
+										return (
+											<TFormItem>
+												<TFormLabel htmlFor={slackUserIdInputId} hasError={hasError}>
+													{t(
+														"settings.slack.orgOwned.test.slackUserIdLabel",
+														"Your Slack Member ID",
+													)}
+												</TFormLabel>
+												<div className="flex flex-col gap-2 sm:flex-row">
+													<TFormControl hasError={hasError}>
+														<Input
+															id={slackUserIdInputId}
+															name="slackUserId"
+															placeholder="U01234567"
+															value={field.state.value}
+															onChange={(event) => {
+																setPrivateTestError(null);
+																field.handleChange(event.target.value);
+															}}
+															onBlur={field.handleBlur}
+															disabled={isSendingTest}
+															className="min-w-0 font-mono text-xs"
+															autoComplete="off"
+															spellCheck={false}
+														/>
+													</TFormControl>
+													<Button
+														type="submit"
+														variant={
+															setup.steps.privateTest.status === "failed" ||
+															setup.steps.privateTest.status === "expired"
+																? "default"
+																: "outline"
+														}
+														size="sm"
+														className="w-fit shrink-0"
+														disabled={isSendingTest}
+													>
+														{isSendingTest ? (
+															<IconLoader2
+																className="mr-1.5 size-4 motion-safe:animate-spin"
+																aria-hidden="true"
+															/>
+														) : (
+															<IconSend className="mr-1.5 size-4" aria-hidden="true" />
+														)}
+														{setup.steps.privateTest.status === "failed" ||
+														setup.steps.privateTest.status === "expired"
+															? t(
+																	"settings.slack.orgOwned.test.retryPrivateTest",
+																	"Retry private test",
+																)
+															: t("settings.slack.orgOwned.test.sendPrivateTest", "Send test DM")}
+													</Button>
+												</div>
+												<TFormMessage field={field} />
+											</TFormItem>
+										);
+									}}
+								</privateTestForm.Field>
+								{privateTestError ? (
+									<p role="alert" className="text-xs text-destructive">
+										{privateTestError}
+									</p>
+								) : null}
+							</form>
+						) : null
+					}
+					t={t}
+				/>
+			</ul>
+
+			{setup.readyForSwitch ? (
+				<div
+					role="status"
+					className="flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm"
+				>
+					<IconShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+					<p className="break-words text-xs sm:text-sm">
+						{t(
+							"settings.slack.orgOwned.readyBanner",
+							"Your organization-owned Slack app passed identity, signed inbound event, and private test delivery checks. Existing Slack traffic remains on your current connection until you review and confirm a switch.",
+						)}
+					</p>
+				</div>
+			) : null}
+		</section>
+	);
+}
+
+export function SlackPrepareTestPanel(props: SlackPrepareTestPanelProps) {
+	const model = useSlackPrepareTestPanel(props);
+	const { t, setup, announcement, prepareMutation } = model;
 	return (
 		<Card>
 			<CardHeader>
@@ -501,535 +963,13 @@ export function SlackPrepareTestPanel({
 				) : (
 					<>
 						{/* Step 1: Prepare Manifest & Callback URLs */}
-						<section aria-labelledby={`${idPrefix}-prepare-heading`} className="min-w-0 space-y-4">
-							<div className="space-y-1">
-								<h3 id={`${idPrefix}-prepare-heading`} className="text-sm font-semibold">
-									{t("settings.slack.orgOwned.prepare.heading", "1. Prepare your Slack app")}
-								</h3>
-								<p className="text-xs text-muted-foreground">
-									{t(
-										"settings.slack.orgOwned.prepare.instructions",
-										"In Slack API (api.slack.com/apps), choose Create New App → From an app manifest, paste this manifest, and install the app to your workspace.",
-									)}
-								</p>
-							</div>
-
-							<div className="space-y-2">
-								<div className="flex flex-wrap items-center gap-2">
-									<Button
-										type="button"
-										variant={manifestFormat === "yaml" ? "default" : "outline"}
-										size="sm"
-										onClick={() => setManifestFormat("yaml")}
-									>
-										YAML
-									</Button>
-									<Button
-										type="button"
-										variant={manifestFormat === "json" ? "default" : "outline"}
-										size="sm"
-										onClick={() => setManifestFormat("json")}
-									>
-										JSON
-									</Button>
-									<Button
-										type="button"
-										variant="outline"
-										size="sm"
-										onClick={() =>
-											handleCopy(
-												"manifest",
-												manifestFormat === "json" ? setup.manifestJson : setup.manifestYaml,
-												t("settings.slack.orgOwned.prepare.manifestLabel", "Slack app manifest"),
-											)
-										}
-									>
-										{copiedKey === "manifest" ? (
-											<IconCheck className="mr-1.5 size-4" aria-hidden="true" />
-										) : (
-											<IconCopy className="mr-1.5 size-4" aria-hidden="true" />
-										)}
-										{t("settings.slack.orgOwned.prepare.copyManifest", "Copy manifest")}
-									</Button>
-									<Button
-										type="button"
-										variant="outline"
-										size="sm"
-										onClick={handleDownloadManifest}
-									>
-										<IconDownload className="mr-1.5 size-4" aria-hidden="true" />
-										{t("settings.slack.orgOwned.prepare.downloadManifest", "Download")}
-									</Button>
-								</div>
-
-								<pre className="max-h-56 overflow-auto rounded-md border bg-muted/40 p-3 font-mono text-xs leading-relaxed">
-									{manifestFormat === "json" ? setup.manifestJson : setup.manifestYaml}
-								</pre>
-							</div>
-
-							<div className="grid gap-3">
-								{[
-									{
-										id: eventsUrlId,
-										key: "events",
-										label: t(
-											"settings.slack.orgOwned.prepare.eventsUrl",
-											"Event Subscriptions URL",
-										),
-										value: setup.urls.eventsUrl,
-									},
-									{
-										id: interactionsUrlId,
-										key: "interactions",
-										label: t(
-											"settings.slack.orgOwned.prepare.interactionsUrl",
-											"Interactivity Request URL",
-										),
-										value: setup.urls.interactionsUrl,
-									},
-									{
-										id: commandsUrlId,
-										key: "commands",
-										label: t("settings.slack.orgOwned.prepare.commandsUrl", "Slash Command URL"),
-										value: setup.urls.commandsUrl,
-									},
-								].map((urlItem) => (
-									<div key={urlItem.key} className="min-w-0 space-y-1">
-										<Label htmlFor={urlItem.id} className="text-xs">
-											{urlItem.label}
-										</Label>
-										<div className="flex flex-col gap-2 sm:flex-row">
-											<Input
-												id={urlItem.id}
-												value={urlItem.value}
-												readOnly
-												className="min-w-0 font-mono text-xs"
-												onFocus={(event) => event.target.select()}
-											/>
-											<Button
-												type="button"
-												variant="outline"
-												size="sm"
-												className="w-fit shrink-0"
-												onClick={() => handleCopy(urlItem.key, urlItem.value, urlItem.label)}
-											>
-												{copiedKey === urlItem.key ? (
-													<IconCheck className="mr-1.5 size-4" aria-hidden="true" />
-												) : (
-													<IconCopy className="mr-1.5 size-4" aria-hidden="true" />
-												)}
-												{t("settings.slack.orgOwned.prepare.copyUrl", "Copy")}
-											</Button>
-										</div>
-									</div>
-								))}
-							</div>
-						</section>
+						<ManifestSection {...model} setup={setup} />
 
 						{/* Step 2: Write-only Credentials */}
-						<section
-							aria-labelledby={`${idPrefix}-credentials-heading`}
-							className="min-w-0 space-y-4 border-t pt-4"
-						>
-							<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-								<div className="min-w-0 space-y-1">
-									<h3 id={`${idPrefix}-credentials-heading`} className="text-sm font-semibold">
-										{t(
-											"settings.slack.orgOwned.credentials.heading",
-											"2. Enter credentials (write-only)",
-										)}
-									</h3>
-									<p className="text-xs text-muted-foreground">
-										{t(
-											"settings.slack.orgOwned.credentials.description",
-											"Credentials are stored in an immutable organization-scoped revision and are never displayed again after saving.",
-										)}
-									</p>
-								</div>
-								{setup.hasStoredCredentials ? (
-									<Badge variant="outline" className="w-fit shrink-0">
-										{t(
-											"settings.slack.orgOwned.credentials.storedBadge",
-											"Stored (revision v{revision})",
-											{ revision: String(setup.credentialRevisionNumber ?? 1) },
-										)}
-									</Badge>
-								) : null}
-							</div>
-
-							<form
-								className="space-y-4"
-								onSubmit={(event) => {
-									event.preventDefault();
-									credentialsForm.handleSubmit();
-								}}
-							>
-								<div className="grid gap-4 sm:grid-cols-2">
-									<credentialsForm.Field
-										name="botToken"
-										validators={{
-											onBlur: ({ value }) => {
-												const trimmed = value.trim();
-												if (!trimmed) {
-													return t(
-														"settings.slack.orgOwned.validation.botTokenRequired",
-														"Bot User OAuth Token is required.",
-													);
-												}
-												if (!trimmed.startsWith("xoxb-")) {
-													return t(
-														"settings.slack.orgOwned.errors.invalidBotTokenFormat",
-														"Bot token must start with xoxb-.",
-													);
-												}
-												return undefined;
-											},
-										}}
-									>
-										{(field) => {
-											const hasError = fieldHasError(field);
-											return (
-												<TFormItem>
-													<TFormLabel htmlFor={botTokenInputId} hasError={hasError} required>
-														{t(
-															"settings.slack.orgOwned.credentials.botToken",
-															"Bot User OAuth Token",
-														)}
-													</TFormLabel>
-													<TFormControl hasError={hasError}>
-														<Input
-															id={botTokenInputId}
-															name="botToken"
-															type="password"
-															placeholder="xoxb-..."
-															value={field.state.value}
-															onChange={(event) => {
-																setCredentialsError(null);
-																field.handleChange(event.target.value);
-															}}
-															onBlur={field.handleBlur}
-															disabled={isSavingCredentials}
-															autoComplete="off"
-															spellCheck={false}
-														/>
-													</TFormControl>
-													<TFormDescription>
-														{t(
-															"settings.slack.orgOwned.credentials.botTokenHelp",
-															"Found under OAuth & Permissions after installing your Slack app.",
-														)}
-													</TFormDescription>
-													<TFormMessage field={field} />
-												</TFormItem>
-											);
-										}}
-									</credentialsForm.Field>
-
-									<credentialsForm.Field
-										name="signingSecret"
-										validators={{
-											onBlur: ({ value }) => {
-												const trimmed = value.trim();
-												if (!trimmed) {
-													return t(
-														"settings.slack.orgOwned.validation.signingSecretRequired",
-														"Signing Secret is required.",
-													);
-												}
-												if (trimmed.length < 16) {
-													return t(
-														"settings.slack.orgOwned.errors.invalidSigningSecretFormat",
-														"Signing secret must be at least 16 characters with no spaces.",
-													);
-												}
-												return undefined;
-											},
-										}}
-									>
-										{(field) => {
-											const hasError = fieldHasError(field);
-											return (
-												<TFormItem>
-													<TFormLabel htmlFor={signingSecretInputId} hasError={hasError} required>
-														{t(
-															"settings.slack.orgOwned.credentials.signingSecret",
-															"Signing Secret",
-														)}
-													</TFormLabel>
-													<TFormControl hasError={hasError}>
-														<Input
-															id={signingSecretInputId}
-															name="signingSecret"
-															type="password"
-															value={field.state.value}
-															onChange={(event) => {
-																setCredentialsError(null);
-																field.handleChange(event.target.value);
-															}}
-															onBlur={field.handleBlur}
-															disabled={isSavingCredentials}
-															autoComplete="off"
-															spellCheck={false}
-														/>
-													</TFormControl>
-													<TFormDescription>
-														{t(
-															"settings.slack.orgOwned.credentials.signingSecretHelp",
-															"Found under Basic Information → App Credentials in Slack.",
-														)}
-													</TFormDescription>
-													<TFormMessage field={field} />
-												</TFormItem>
-											);
-										}}
-									</credentialsForm.Field>
-								</div>
-
-								{credentialsError ? (
-									<p role="alert" className="text-sm text-destructive">
-										{credentialsError}
-									</p>
-								) : null}
-
-								<Button type="submit" disabled={isSavingCredentials}>
-									{isSavingCredentials ? (
-										<IconLoader2
-											className="mr-2 size-4 motion-safe:animate-spin"
-											aria-hidden="true"
-										/>
-									) : (
-										<IconKey className="mr-2 size-4" aria-hidden="true" />
-									)}
-									{setup.hasStoredCredentials
-										? t(
-												"settings.slack.orgOwned.credentials.updateButton",
-												"Verify & save new credential revision",
-											)
-										: t(
-												"settings.slack.orgOwned.credentials.saveButton",
-												"Verify & save credentials",
-											)}
-								</Button>
-							</form>
-						</section>
+						<CredentialsSection {...model} setup={setup} />
 
 						{/* Step 3: Verification Checklist & Synthetic Private Test */}
-						<section
-							aria-labelledby={`${idPrefix}-test-heading`}
-							className="min-w-0 space-y-4 border-t pt-4"
-						>
-							<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-								<div className="min-w-0 space-y-1">
-									<h3 id={`${idPrefix}-test-heading`} className="text-sm font-semibold">
-										{t("settings.slack.orgOwned.test.heading", "3. Test & verify candidate app")}
-									</h3>
-									<p className="text-xs text-muted-foreground">
-										{t(
-											"settings.slack.orgOwned.test.description",
-											"Candidate testing never executes production commands, approval actions, or live notifications.",
-										)}
-									</p>
-								</div>
-								<Button
-									type="button"
-									variant="outline"
-									size="sm"
-									className="w-fit shrink-0"
-									disabled={refreshMutation.isPending}
-									onClick={() => refreshMutation.mutate()}
-								>
-									{refreshMutation.isPending ? (
-										<IconLoader2
-											className="mr-1.5 size-4 motion-safe:animate-spin"
-											aria-hidden="true"
-										/>
-									) : (
-										<IconRefresh className="mr-1.5 size-4" aria-hidden="true" />
-									)}
-									{t("settings.slack.orgOwned.test.refreshStatus", "Refresh status")}
-								</Button>
-							</div>
-
-							<ul className="space-y-3">
-								<StepRow
-									title={t(
-										"settings.slack.orgOwned.steps.identity.title",
-										"App & workspace identity",
-									)}
-									description={t(
-										"settings.slack.orgOwned.steps.identity.description",
-										"Confirmed from Slack bot metadata (auth.test and bots.info) and bound to your organization.",
-									)}
-									step={setup.steps.identity}
-									t={t}
-								/>
-
-								<StepRow
-									title={t(
-										"settings.slack.orgOwned.steps.signedEvent.title",
-										"Fresh signed app-and-workspace event",
-									)}
-									description={t(
-										"settings.slack.orgOwned.steps.signedEvent.description",
-										"After saving credentials, enable Event Subscriptions in Slack and send a direct message or @mention to your candidate app, then refresh status.",
-									)}
-									step={setup.steps.signedEvent}
-									action={
-										setup.steps.signedEvent.status === "failed" ||
-										setup.steps.signedEvent.status === "expired" ? (
-											<Button
-												type="button"
-												variant="outline"
-												size="sm"
-												disabled={refreshMutation.isPending}
-												onClick={() => refreshMutation.mutate()}
-											>
-												<IconRefresh className="mr-1.5 size-4" aria-hidden="true" />
-												{t(
-													"settings.slack.orgOwned.steps.signedEvent.retry",
-													"Recheck signed event",
-												)}
-											</Button>
-										) : null
-									}
-									t={t}
-								/>
-
-								<StepRow
-									title={t(
-										"settings.slack.orgOwned.steps.privateTest.title",
-										"Synthetic private test message",
-									)}
-									description={t(
-										"settings.slack.orgOwned.steps.privateTest.description",
-										"Send a private verification DM to your Slack member ID (found in Slack profile → Copy member ID).",
-									)}
-									step={setup.steps.privateTest}
-									action={
-										setup.hasStoredCredentials ? (
-											<form
-												className="space-y-3 pt-1"
-												onSubmit={(event) => {
-													event.preventDefault();
-													privateTestForm.handleSubmit();
-												}}
-											>
-												<privateTestForm.Field
-													name="slackUserId"
-													validators={{
-														onBlur: ({ value }) => {
-															const trimmed = value.trim().toUpperCase();
-															if (!trimmed) {
-																return t(
-																	"settings.slack.orgOwned.validation.slackUserIdRequired",
-																	"Slack member ID is required.",
-																);
-															}
-															if (!/^[UW][A-Z0-9]{7,}$/.test(trimmed)) {
-																return t(
-																	"settings.slack.orgOwned.errors.invalidSlackUserId",
-																	"Enter a valid Slack member ID (for example, U01234567).",
-																);
-															}
-															return undefined;
-														},
-													}}
-												>
-													{(field) => {
-														const hasError = fieldHasError(field);
-														return (
-															<TFormItem>
-																<TFormLabel htmlFor={slackUserIdInputId} hasError={hasError}>
-																	{t(
-																		"settings.slack.orgOwned.test.slackUserIdLabel",
-																		"Your Slack Member ID",
-																	)}
-																</TFormLabel>
-																<div className="flex flex-col gap-2 sm:flex-row">
-																	<TFormControl hasError={hasError}>
-																		<Input
-																			id={slackUserIdInputId}
-																			name="slackUserId"
-																			placeholder="U01234567"
-																			value={field.state.value}
-																			onChange={(event) => {
-																				setPrivateTestError(null);
-																				field.handleChange(event.target.value);
-																			}}
-																			onBlur={field.handleBlur}
-																			disabled={isSendingTest}
-																			className="min-w-0 font-mono text-xs"
-																			autoComplete="off"
-																			spellCheck={false}
-																		/>
-																	</TFormControl>
-																	<Button
-																		type="submit"
-																		variant={
-																			setup.steps.privateTest.status === "failed" ||
-																			setup.steps.privateTest.status === "expired"
-																				? "default"
-																				: "outline"
-																		}
-																		size="sm"
-																		className="w-fit shrink-0"
-																		disabled={isSendingTest}
-																	>
-																		{isSendingTest ? (
-																			<IconLoader2
-																				className="mr-1.5 size-4 motion-safe:animate-spin"
-																				aria-hidden="true"
-																			/>
-																		) : (
-																			<IconSend className="mr-1.5 size-4" aria-hidden="true" />
-																		)}
-																		{setup.steps.privateTest.status === "failed" ||
-																		setup.steps.privateTest.status === "expired"
-																			? t(
-																					"settings.slack.orgOwned.test.retryPrivateTest",
-																					"Retry private test",
-																				)
-																			: t(
-																					"settings.slack.orgOwned.test.sendPrivateTest",
-																					"Send test DM",
-																				)}
-																	</Button>
-																</div>
-																<TFormMessage field={field} />
-															</TFormItem>
-														);
-													}}
-												</privateTestForm.Field>
-												{privateTestError ? (
-													<p role="alert" className="text-xs text-destructive">
-														{privateTestError}
-													</p>
-												) : null}
-											</form>
-										) : null
-									}
-									t={t}
-								/>
-							</ul>
-
-							{setup.readyForSwitch ? (
-								<div
-									role="status"
-									className="flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm"
-								>
-									<IconShieldCheck
-										className="mt-0.5 size-4 shrink-0 text-primary"
-										aria-hidden="true"
-									/>
-									<p className="break-words text-xs sm:text-sm">
-										{t(
-											"settings.slack.orgOwned.readyBanner",
-											"Your organization-owned Slack app passed identity, signed inbound event, and private test delivery checks. Existing Slack traffic remains on your current connection until you review and confirm a switch.",
-										)}
-									</p>
-								</div>
-							) : null}
-						</section>
+						<VerificationSection {...model} setup={setup} />
 					</>
 				)}
 

@@ -477,6 +477,7 @@ export async function recordDurableDispatchIntent(
 			.orderBy(desc(chatNotificationDispatchAttempt.attemptNumber))
 			.limit(1);
 
+		// react-doctor-disable-next-line react-doctor/server-sequential-independent-await -- Both lookups use the same locked dispatch transaction.
 		const target = await resolveCurrentInstallationTarget(
 			tx,
 			input.organizationId,

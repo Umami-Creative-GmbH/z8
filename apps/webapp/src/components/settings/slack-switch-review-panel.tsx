@@ -2,14 +2,14 @@
 
 import {
 	IconAlertTriangle,
-	IconArrowsExchange,
 	IconCheck,
 	IconClock,
 	IconLoader2,
-	IconRefresh,
 	IconShieldCheck,
 } from "@tabler/icons-react";
-import { useMutation } from "@tanstack/react-query";
+import { SwitchReviewHeader } from "./chat-verification";
+import { chatInstallationQueries } from "@/lib/query/chat-installation-queries";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useRouter } from "next/navigation";
 import { useId, useRef, useState } from "react";
@@ -100,12 +100,13 @@ function MetricTile({ label, value, hint }: { label: string; value: number; hint
 	);
 }
 
-export function SlackSwitchReviewPanel({
+function useSlackSwitchReviewPanel({
 	initialPreview,
 	refreshPreviewAction,
 	confirmSwitchAction,
 }: SlackSwitchReviewPanelProps) {
 	const { t } = useTranslate();
+	const queryClient = useQueryClient();
 	const router = useRouter();
 	const idPrefix = useId();
 	const summaryRef = useRef<HTMLDivElement | null>(null);
@@ -147,6 +148,9 @@ export function SlackSwitchReviewPanel({
 		mutationFn: (input: ConfirmSlackSwitchActionInput) => confirmSwitchAction(input),
 		onSuccess: (result) => {
 			if (result.success) {
+				void queryClient.invalidateQueries(
+					chatInstallationQueries(result.data.preview.organizationId),
+				);
 				setPreview(result.data.preview);
 				setAcknowledgedUnready(false);
 				setImpactChangedNotice(null);
@@ -232,6 +236,196 @@ export function SlackSwitchReviewPanel({
 		});
 	};
 
+	return {
+		t,
+		summaryRef,
+		preview,
+		acknowledgedUnready,
+		setAcknowledgedUnready,
+		impactChangedNotice,
+		announcement,
+		errorMessage,
+		refreshMutation,
+		confirmMutation,
+		candidate,
+		hasRetiring,
+		ackCheckboxId,
+		summaryHeadingId,
+		canSubmitSwitch,
+		handleConfirm,
+	};
+}
+
+type PanelState = NonNullable<ReturnType<typeof useSlackSwitchReviewPanel>>;
+
+function SwitchImpactCard(props: PanelState) {
+	const {
+		t,
+		preview,
+		acknowledgedUnready,
+		setAcknowledgedUnready,
+		errorMessage,
+		refreshMutation,
+		confirmMutation,
+		candidate,
+		ackCheckboxId,
+		canSubmitSwitch,
+		handleConfirm,
+	} = props;
+	return candidate ? (
+		<Card>
+			<SwitchReviewHeader
+				title={t("settings.slackSwitch.title", "Review impact & switch Slack app")}
+				description={t(
+					"settings.slackSwitch.description",
+					"Review employee reachability, open approval cards, and in-flight notifications before activating your verified organization-owned Slack app.",
+				)}
+				enabled={preview.switchControlEnabled}
+				gateLabel={
+					preview.switchControlEnabled
+						? t("settings.slackSwitch.gate.enabled", "Switch enabled")
+						: t("settings.slackSwitch.gate.disabled", "Switch gated")
+				}
+				refreshLabel={t("settings.slackSwitch.refresh", "Refresh impact")}
+				pending={refreshMutation.isPending}
+				onRefresh={() => refreshMutation.mutate()}
+			/>
+
+			<CardContent className="min-w-0 space-y-5">
+				{!preview.switchControlEnabled ? (
+					<div className="rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground">
+						{t(
+							"settings.slackSwitch.gateDisabledNotice",
+							"Organization-owned Slack switching is not yet enabled for this organization. You can prepare, verify, and review impact now; activation unlocks once enabled for your organization.",
+						)}
+					</div>
+				) : null}
+
+				<SwitchImpactSummary {...props} />
+
+				{preview.requiresUnreadyAcknowledgement ? (
+					<div className="flex min-w-0 items-start gap-3 rounded-lg border bg-background p-3">
+						<input
+							id={ackCheckboxId}
+							type="checkbox"
+							checked={acknowledgedUnready}
+							onChange={(event) => setAcknowledgedUnready(event.target.checked)}
+							disabled={confirmMutation.isPending || !preview.canConfirm}
+							className="mt-1 size-4 shrink-0 rounded border-input"
+						/>
+						<Label htmlFor={ackCheckboxId} className="min-w-0 cursor-pointer text-sm leading-snug">
+							{t(
+								"settings.slackSwitch.acknowledgeUnready",
+								"I understand that {count} active employees still need to connect or verify direct messages with the replacement Slack app, and I want to switch now.",
+								{ count: String(preview.employeeImpact.unreadyEmployees) },
+							)}
+						</Label>
+					</div>
+				) : null}
+
+				{errorMessage ? (
+					<p role="alert" className="text-sm text-destructive">
+						{errorMessage}
+					</p>
+				) : null}
+
+				<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+					<p className="text-xs text-muted-foreground">
+						{preview.candidateReady
+							? t(
+									"settings.slackSwitch.readyToConfirmHint",
+									"New Slack notifications, commands, and digests will use your organization-owned Slack app immediately after switching.",
+								)
+							: t(
+									"settings.slackSwitch.completeVerificationFirst",
+									"Complete all candidate verification steps above before confirming the switch.",
+								)}
+					</p>
+					<Button
+						type="button"
+						disabled={!canSubmitSwitch}
+						onClick={handleConfirm}
+						className="w-full shrink-0 sm:w-auto"
+					>
+						{confirmMutation.isPending ? (
+							<IconLoader2 className="mr-2 size-4 motion-safe:animate-spin" aria-hidden="true" />
+						) : (
+							<IconShieldCheck className="mr-2 size-4" aria-hidden="true" />
+						)}
+						{t("settings.slackSwitch.confirmButton", "Confirm switch to verified Slack app")}
+					</Button>
+				</div>
+			</CardContent>
+		</Card>
+	) : null;
+}
+
+function RetiringInstallationsCard(props: PanelState) {
+	const { t, preview, hasRetiring } = props;
+	return hasRetiring ? (
+		<Card>
+			<CardHeader>
+				<CardTitle className="flex items-center gap-2 text-base">
+					<IconClock className="size-4 shrink-0" aria-hidden="true" />
+					{t("settings.slackSwitch.retirement.title", "Retiring Slack installations")}
+				</CardTitle>
+				<CardDescription>
+					{t(
+						"settings.slackSwitch.retirement.description",
+						"Retiring installations continue refreshing their existing approval cards until all open cards settle or the 30-day limit is reached. Pending approvals always remain available in the Z8 inbox.",
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent className="min-w-0 space-y-3">
+				<ul className="space-y-3">
+					{preview.retiringInstallations.map((retiring) => (
+						<li key={retiring.id} className="min-w-0 space-y-2 rounded-lg border bg-background p-3">
+							<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+								<div className="min-w-0">
+									<p className="break-words text-sm font-medium">
+										{retiring.externalSpaceName ??
+											retiring.externalDisplayName ??
+											retiring.externalAppId ??
+											t("settings.slackSwitch.retirement.previousApp", "Previous Slack app")}
+									</p>
+									<p className="text-xs text-muted-foreground">
+										{retiring.retirementDeadlineAt
+											? t(
+													"settings.slackSwitch.retirement.deadline",
+													"Automatic retirement deadline: {deadline}",
+													{ deadline: retiring.retirementDeadlineAt },
+												)
+											: t(
+													"settings.slackSwitch.retirement.noDeadline",
+													"Retiring when open cards settle",
+												)}
+									</p>
+								</div>
+								<Badge variant="outline" className="w-fit shrink-0 gap-1">
+									{retiring.totalOutstandingCardsAndWork === 0 ? (
+										<IconCheck className="size-3.5" aria-hidden="true" />
+									) : (
+										<IconClock className="size-3.5" aria-hidden="true" />
+									)}
+									{t(
+										"settings.slackSwitch.retirement.outstandingCount",
+										"{count} open cards / jobs",
+										{ count: String(retiring.totalOutstandingCardsAndWork) },
+									)}
+								</Badge>
+							</div>
+						</li>
+					))}
+				</ul>
+			</CardContent>
+		</Card>
+	) : null;
+}
+
+export function SlackSwitchReviewPanel(props: SlackSwitchReviewPanelProps) {
+	const model = useSlackSwitchReviewPanel(props);
+	if (!model) return null;
+	const { announcement } = model;
 	return (
 		<div className="min-w-0 space-y-6">
 			{/* Accessible live region for switch impact drift & status announcements */}
@@ -239,280 +433,108 @@ export function SlackSwitchReviewPanel({
 				{announcement}
 			</div>
 
-			{candidate ? (
-				<Card>
-					<CardHeader>
-						<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-							<div className="min-w-0 space-y-1">
-								<CardTitle className="flex items-center gap-2 text-base">
-									<IconArrowsExchange className="size-4 shrink-0" aria-hidden="true" />
-									{t("settings.slackSwitch.title", "Review impact & switch Slack app")}
-								</CardTitle>
-								<CardDescription>
-									{t(
-										"settings.slackSwitch.description",
-										"Review employee reachability, open approval cards, and in-flight notifications before activating your verified organization-owned Slack app.",
-									)}
-								</CardDescription>
-							</div>
-							<div className="flex flex-wrap items-center gap-2">
-								<Badge
-									variant={preview.switchControlEnabled ? "default" : "secondary"}
-									className="w-fit shrink-0"
-								>
-									{preview.switchControlEnabled
-										? t("settings.slackSwitch.gate.enabled", "Switch enabled")
-										: t("settings.slackSwitch.gate.disabled", "Switch gated")}
-								</Badge>
-								<Button
-									type="button"
-									variant="outline"
-									size="sm"
-									disabled={refreshMutation.isPending}
-									onClick={() => refreshMutation.mutate()}
-								>
-									{refreshMutation.isPending ? (
-										<IconLoader2
-											className="mr-1.5 size-4 motion-safe:animate-spin"
-											aria-hidden="true"
-										/>
-									) : (
-										<IconRefresh className="mr-1.5 size-4" aria-hidden="true" />
-									)}
-									{t("settings.slackSwitch.refresh", "Refresh impact")}
-								</Button>
-							</div>
-						</div>
-					</CardHeader>
+			<SwitchImpactCard {...model} />
 
-					<CardContent className="min-w-0 space-y-5">
-						{!preview.switchControlEnabled ? (
-							<div className="rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground">
-								{t(
-									"settings.slackSwitch.gateDisabledNotice",
-									"Organization-owned Slack switching is not yet enabled for this organization. You can prepare, verify, and review impact now; activation unlocks once enabled for your organization.",
-								)}
-							</div>
-						) : null}
+			<RetiringInstallationsCard {...model} />
+		</div>
+	);
+}
 
-						<div
-							ref={summaryRef}
-							tabIndex={-1}
-							aria-labelledby={summaryHeadingId}
-							className="min-w-0 space-y-4 rounded-lg border bg-muted/20 p-4 focus:outline-none focus:ring-2 focus:ring-ring"
-						>
-							<div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-								<h3 id={summaryHeadingId} className="text-sm font-semibold">
-									{t("settings.slackSwitch.summaryHeading", "Switch impact summary")}
-								</h3>
-								<span className="text-xs text-muted-foreground">
-									{t("settings.slackSwitch.generatedAt", "Snapshot: {timestamp}", {
-										timestamp: preview.generatedAt,
-									})}
-								</span>
-							</div>
+function SwitchImpactSummary({
+	t,
+	summaryRef,
+	preview,
+	impactChangedNotice,
+	summaryHeadingId,
+}: Pick<PanelState, "t" | "summaryRef" | "preview" | "impactChangedNotice" | "summaryHeadingId">) {
+	return (
+		<div
+			ref={summaryRef}
+			tabIndex={-1}
+			aria-labelledby={summaryHeadingId}
+			className="min-w-0 space-y-4 rounded-lg border bg-muted/20 p-4 focus:outline-none focus:ring-2 focus:ring-ring"
+		>
+			<div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+				<h3 id={summaryHeadingId} className="text-sm font-semibold">
+					{t("settings.slackSwitch.summaryHeading", "Switch impact summary")}
+				</h3>
+				<span className="text-xs text-muted-foreground">
+					{t("settings.slackSwitch.generatedAt", "Snapshot: {timestamp}", {
+						timestamp: preview.generatedAt,
+					})}
+				</span>
+			</div>
 
-							{impactChangedNotice ? (
-								<div
-									role="alert"
-									className="flex min-w-0 items-start gap-2 rounded-md border border-warning/60 bg-warning/10 p-3 text-sm"
-								>
-									<IconAlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-									<p className="min-w-0 break-words">{impactChangedNotice}</p>
-								</div>
-							) : null}
-
-							<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-								<MetricTile
-									label={t("settings.slackSwitch.metrics.verifiedReachable", "Verified reachable")}
-									value={preview.employeeImpact.verifiedReachableEmployees}
-									hint={t(
-										"settings.slackSwitch.metrics.verifiedReachableHint",
-										"Direct messages confirmed with replacement app",
-									)}
-								/>
-								<MetricTile
-									label={t("settings.slackSwitch.metrics.actionNeeded", "Employee action needed")}
-									value={preview.employeeImpact.actionNeededEmployees}
-									hint={t(
-										"settings.slackSwitch.metrics.actionNeededHint",
-										"Must link or reopen DM in Settings → Notifications",
-									)}
-								/>
-								<MetricTile
-									label={t(
-										"settings.slackSwitch.metrics.unknownReachability",
-										"Unknown reachability",
-									)}
-									value={preview.employeeImpact.unknownReachabilityEmployees}
-									hint={
-										preview.employeeImpact.carryForwardIdentityEmployees > 0
-											? t(
-													"settings.slackSwitch.metrics.carryForwardHint",
-													"{count} same-workspace identities carry forward; DM reachability verified on first use",
-													{
-														count: String(preview.employeeImpact.carryForwardIdentityEmployees),
-													},
-												)
-											: t(
-													"settings.slackSwitch.metrics.unknownReachabilityHint",
-													"Linked identity whose replacement DM has not been verified yet",
-												)
-									}
-								/>
-								<MetricTile
-									label={t(
-										"settings.slackSwitch.metrics.outstandingApprovals",
-										"Outstanding approval cards",
-									)}
-									value={
-										preview.approvalImpact.openCanonicalCards +
-										preview.approvalImpact.openLegacyOwnerCards +
-										preview.approvalImpact.pendingLegacyCards
-									}
-									hint={t(
-										"settings.slackSwitch.metrics.outstandingApprovalsHint",
-										"{refresh} refresh jobs queued; old cards keep their Z8 review links",
-										{ refresh: String(preview.approvalImpact.outstandingRefreshWork) },
-									)}
-								/>
-								<MetricTile
-									label={t(
-										"settings.slackSwitch.metrics.inFlightNotifications",
-										"In-flight notifications",
-									)}
-									value={preview.inFlightNotificationImpact.total}
-									hint={t(
-										"settings.slackSwitch.metrics.inFlightNotificationsHint",
-										"Bound to their original installation without duplicate resends",
-									)}
-								/>
-							</div>
-						</div>
-
-						{preview.requiresUnreadyAcknowledgement ? (
-							<div className="flex min-w-0 items-start gap-3 rounded-lg border bg-background p-3">
-								<input
-									id={ackCheckboxId}
-									type="checkbox"
-									checked={acknowledgedUnready}
-									onChange={(event) => setAcknowledgedUnready(event.target.checked)}
-									disabled={confirmMutation.isPending || !preview.canConfirm}
-									className="mt-1 size-4 shrink-0 rounded border-input"
-								/>
-								<Label
-									htmlFor={ackCheckboxId}
-									className="min-w-0 cursor-pointer text-sm leading-snug"
-								>
-									{t(
-										"settings.slackSwitch.acknowledgeUnready",
-										"I understand that {count} active employees still need to connect or verify direct messages with the replacement Slack app, and I want to switch now.",
-										{ count: String(preview.employeeImpact.unreadyEmployees) },
-									)}
-								</Label>
-							</div>
-						) : null}
-
-						{errorMessage ? (
-							<p role="alert" className="text-sm text-destructive">
-								{errorMessage}
-							</p>
-						) : null}
-
-						<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-							<p className="text-xs text-muted-foreground">
-								{preview.candidateReady
-									? t(
-											"settings.slackSwitch.readyToConfirmHint",
-											"New Slack notifications, commands, and digests will use your organization-owned Slack app immediately after switching.",
-										)
-									: t(
-											"settings.slackSwitch.completeVerificationFirst",
-											"Complete all candidate verification steps above before confirming the switch.",
-										)}
-							</p>
-							<Button
-								type="button"
-								disabled={!canSubmitSwitch}
-								onClick={handleConfirm}
-								className="w-full shrink-0 sm:w-auto"
-							>
-								{confirmMutation.isPending ? (
-									<IconLoader2
-										className="mr-2 size-4 motion-safe:animate-spin"
-										aria-hidden="true"
-									/>
-								) : (
-									<IconShieldCheck className="mr-2 size-4" aria-hidden="true" />
-								)}
-								{t("settings.slackSwitch.confirmButton", "Confirm switch to verified Slack app")}
-							</Button>
-						</div>
-					</CardContent>
-				</Card>
+			{impactChangedNotice ? (
+				<div
+					role="alert"
+					className="flex min-w-0 items-start gap-2 rounded-md border border-warning/60 bg-warning/10 p-3 text-sm"
+				>
+					<IconAlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+					<p className="min-w-0 break-words">{impactChangedNotice}</p>
+				</div>
 			) : null}
 
-			{hasRetiring ? (
-				<Card>
-					<CardHeader>
-						<CardTitle className="flex items-center gap-2 text-base">
-							<IconClock className="size-4 shrink-0" aria-hidden="true" />
-							{t("settings.slackSwitch.retirement.title", "Retiring Slack installations")}
-						</CardTitle>
-						<CardDescription>
-							{t(
-								"settings.slackSwitch.retirement.description",
-								"Retiring installations continue refreshing their existing approval cards until all open cards settle or the 30-day limit is reached. Pending approvals always remain available in the Z8 inbox.",
-							)}
-						</CardDescription>
-					</CardHeader>
-					<CardContent className="min-w-0 space-y-3">
-						<ul className="space-y-3">
-							{preview.retiringInstallations.map((retiring) => (
-								<li
-									key={retiring.id}
-									className="min-w-0 space-y-2 rounded-lg border bg-background p-3"
-								>
-									<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-										<div className="min-w-0">
-											<p className="break-words text-sm font-medium">
-												{retiring.externalSpaceName ??
-													retiring.externalDisplayName ??
-													retiring.externalAppId ??
-													t("settings.slackSwitch.retirement.previousApp", "Previous Slack app")}
-											</p>
-											<p className="text-xs text-muted-foreground">
-												{retiring.retirementDeadlineAt
-													? t(
-															"settings.slackSwitch.retirement.deadline",
-															"Automatic retirement deadline: {deadline}",
-															{ deadline: retiring.retirementDeadlineAt },
-														)
-													: t(
-															"settings.slackSwitch.retirement.noDeadline",
-															"Retiring when open cards settle",
-														)}
-											</p>
-										</div>
-										<Badge variant="outline" className="w-fit shrink-0 gap-1">
-											{retiring.totalOutstandingCardsAndWork === 0 ? (
-												<IconCheck className="size-3.5" aria-hidden="true" />
-											) : (
-												<IconClock className="size-3.5" aria-hidden="true" />
-											)}
-											{t(
-												"settings.slackSwitch.retirement.outstandingCount",
-												"{count} open cards / jobs",
-												{ count: String(retiring.totalOutstandingCardsAndWork) },
-											)}
-										</Badge>
-									</div>
-								</li>
-							))}
-						</ul>
-					</CardContent>
-				</Card>
-			) : null}
+			<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+				<MetricTile
+					label={t("settings.slackSwitch.metrics.verifiedReachable", "Verified reachable")}
+					value={preview.employeeImpact.verifiedReachableEmployees}
+					hint={t(
+						"settings.slackSwitch.metrics.verifiedReachableHint",
+						"Direct messages confirmed with replacement app",
+					)}
+				/>
+				<MetricTile
+					label={t("settings.slackSwitch.metrics.actionNeeded", "Employee action needed")}
+					value={preview.employeeImpact.actionNeededEmployees}
+					hint={t(
+						"settings.slackSwitch.metrics.actionNeededHint",
+						"Must link or reopen DM in Settings → Notifications",
+					)}
+				/>
+				<MetricTile
+					label={t("settings.slackSwitch.metrics.unknownReachability", "Unknown reachability")}
+					value={preview.employeeImpact.unknownReachabilityEmployees}
+					hint={
+						preview.employeeImpact.carryForwardIdentityEmployees > 0
+							? t(
+									"settings.slackSwitch.metrics.carryForwardHint",
+									"{count} same-workspace identities carry forward; DM reachability verified on first use",
+									{
+										count: String(preview.employeeImpact.carryForwardIdentityEmployees),
+									},
+								)
+							: t(
+									"settings.slackSwitch.metrics.unknownReachabilityHint",
+									"Linked identity whose replacement DM has not been verified yet",
+								)
+					}
+				/>
+				<MetricTile
+					label={t(
+						"settings.slackSwitch.metrics.outstandingApprovals",
+						"Outstanding approval cards",
+					)}
+					value={
+						preview.approvalImpact.openCanonicalCards +
+						preview.approvalImpact.openLegacyOwnerCards +
+						preview.approvalImpact.pendingLegacyCards
+					}
+					hint={t(
+						"settings.slackSwitch.metrics.outstandingApprovalsHint",
+						"{refresh} refresh jobs queued; old cards keep their Z8 review links",
+						{ refresh: String(preview.approvalImpact.outstandingRefreshWork) },
+					)}
+				/>
+				<MetricTile
+					label={t("settings.slackSwitch.metrics.inFlightNotifications", "In-flight notifications")}
+					value={preview.inFlightNotificationImpact.total}
+					hint={t(
+						"settings.slackSwitch.metrics.inFlightNotificationsHint",
+						"Bound to their original installation without duplicate resends",
+					)}
+				/>
+			</div>
 		</div>
 	);
 }

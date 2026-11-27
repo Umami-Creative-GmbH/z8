@@ -15,7 +15,8 @@ import {
 	IconShieldOff,
 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
-import { useMutation } from "@tanstack/react-query";
+import { chatInstallationQueries } from "@/lib/query/chat-installation-queries";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useRouter } from "next/navigation";
 import { useId, useRef, useState } from "react";
@@ -192,7 +193,7 @@ function MetricTile({ label, value }: { label: string; value: number }) {
 	);
 }
 
-export function TelegramLifecyclePanel({
+function useTelegramLifecyclePanel({
 	initialState,
 	refreshAction,
 	prepareAction,
@@ -207,6 +208,7 @@ export function TelegramLifecyclePanel({
 	confirmRestoreAction,
 }: TelegramLifecyclePanelProps) {
 	const { t } = useTranslate();
+	const queryClient = useQueryClient();
 	const router = useRouter();
 	const idPrefix = useId();
 	const summaryRef = useRef<HTMLDivElement | null>(null);
@@ -267,6 +269,7 @@ export function TelegramLifecyclePanel({
 		toast.error(message);
 	};
 
+	// react-doctor-disable-next-line react-doctor/query-mutation-missing-invalidation -- Read-only refresh replaces the panel snapshot.
 	const refreshMutation = useMutation({
 		mutationFn: () => refreshAction(),
 		onSuccess: (res) => {
@@ -287,6 +290,9 @@ export function TelegramLifecyclePanel({
 		mutationFn: () => prepareAction(),
 		onSuccess: (res) => {
 			if (res.success) {
+				void queryClient.invalidateQueries(
+					chatInstallationQueries(res.data.switchPreview.organizationId),
+				);
 				applySuccess(
 					res.data,
 					t(
@@ -304,6 +310,9 @@ export function TelegramLifecyclePanel({
 		mutationFn: (input: SaveTelegramCredentialsActionInput) => saveCredentialsAction(input),
 		onSuccess: (res) => {
 			if (res.success) {
+				void queryClient.invalidateQueries(
+					chatInstallationQueries(res.data.switchPreview.organizationId),
+				);
 				candidateCredentialsForm.reset();
 				applySuccess(
 					res.data,
@@ -337,6 +346,9 @@ export function TelegramLifecyclePanel({
 		mutationFn: (installationId: string) => retryWebhookAction({ installationId }),
 		onSuccess: (res) => {
 			if (res.success) {
+				void queryClient.invalidateQueries(
+					chatInstallationQueries(res.data.switchPreview.organizationId),
+				);
 				applySuccess(
 					res.data,
 					t(
@@ -354,6 +366,9 @@ export function TelegramLifecyclePanel({
 		mutationFn: (installationId: string) => retryCommandsAction({ installationId }),
 		onSuccess: (res) => {
 			if (res.success) {
+				void queryClient.invalidateQueries(
+					chatInstallationQueries(res.data.switchPreview.organizationId),
+				);
 				applySuccess(
 					res.data,
 					t(
@@ -371,6 +386,9 @@ export function TelegramLifecyclePanel({
 		mutationFn: (input: SendTelegramPrivateTestActionInput) => sendPrivateTestAction(input),
 		onSuccess: (res) => {
 			if (res.success) {
+				void queryClient.invalidateQueries(
+					chatInstallationQueries(res.data.switchPreview.organizationId),
+				);
 				applySuccess(
 					res.data,
 					t(
@@ -388,6 +406,9 @@ export function TelegramLifecyclePanel({
 		mutationFn: (input: ConfirmTelegramSwitchActionInput) => confirmSwitchAction(input),
 		onSuccess: (res) => {
 			if (res.success) {
+				void queryClient.invalidateQueries(
+					chatInstallationQueries(res.data.switchPreview.organizationId),
+				);
 				setAcknowledgedUnready(false);
 				applySuccess(
 					res.data,
@@ -407,6 +428,9 @@ export function TelegramLifecyclePanel({
 		mutationFn: (input: SaveTelegramCredentialsActionInput) => rotateCredentialsAction(input),
 		onSuccess: (res) => {
 			if (res.success) {
+				void queryClient.invalidateQueries(
+					chatInstallationQueries(res.data.switchPreview.organizationId),
+				);
 				rotateTokenForm.reset();
 				applySuccess(
 					res.data,
@@ -441,6 +465,9 @@ export function TelegramLifecyclePanel({
 		mutationFn: (input: RevokeTelegramInstallationActionInput) => revokeAction(input),
 		onSuccess: (res) => {
 			if (res.success) {
+				void queryClient.invalidateQueries(
+					chatInstallationQueries(res.data.switchPreview.organizationId),
+				);
 				applySuccess(
 					res.data,
 					t(
@@ -459,6 +486,9 @@ export function TelegramLifecyclePanel({
 		mutationFn: (installationId: string) => prepareRestoreAction({ installationId }),
 		onSuccess: (res) => {
 			if (res.success) {
+				void queryClient.invalidateQueries(
+					chatInstallationQueries(res.data.switchPreview.organizationId),
+				);
 				applySuccess(
 					res.data,
 					t(
@@ -477,6 +507,9 @@ export function TelegramLifecyclePanel({
 		mutationFn: (input: ConfirmTelegramSwitchActionInput) => confirmRestoreAction(input),
 		onSuccess: (res) => {
 			if (res.success) {
+				void queryClient.invalidateQueries(
+					chatInstallationQueries(res.data.switchPreview.organizationId),
+				);
 				setAcknowledgedUnready(false);
 				applySuccess(
 					res.data,
@@ -527,6 +560,693 @@ export function TelegramLifecyclePanel({
 		}
 	};
 
+	return {
+		t,
+		summaryRef,
+		testChatId,
+		setTestChatId,
+		acknowledgedUnready,
+		setAcknowledgedUnready,
+		impactChangedNotice,
+		announcement,
+		errorMessage,
+		refreshMutation,
+		prepareMutation,
+		saveCredentialsMutation,
+		candidateCredentialsForm,
+		retryWebhookMutation,
+		retryCommandsMutation,
+		sendTestMutation,
+		confirmSwitchMutation,
+		rotateMutation,
+		rotateTokenForm,
+		revokeMutation,
+		prepareRestoreMutation,
+		confirmRestoreMutation,
+		candidateSetup,
+		switchPreview,
+		recoveryState,
+		candidate,
+		isRestoringCandidate,
+		testChatInputId,
+		ackCheckboxId,
+		canSubmitSwitch,
+		handleConfirmSwitch,
+	};
+}
+
+type PanelState = NonNullable<ReturnType<typeof useTelegramLifecyclePanel>>;
+
+function VerificationSteps(
+	props: PanelState & { candidateSetup: NonNullable<PanelState["candidateSetup"]> },
+) {
+	const {
+		t,
+		testChatId,
+		setTestChatId,
+		retryWebhookMutation,
+		retryCommandsMutation,
+		sendTestMutation,
+		testChatInputId,
+		candidateSetup,
+	} = props;
+	return (
+		<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+			{/* Step 1: Bot Identity */}
+			<div className="min-w-0 space-y-2 rounded-lg border p-3">
+				<div className="flex flex-wrap items-center justify-between gap-2">
+					<p className="text-sm font-medium">
+						{t("settings.telegramLifecycle.steps.identityTitle", "1. Bot identity")}
+					</p>
+					<StepBadge status={candidateSetup.steps.identity.status} />
+				</div>
+				<p className="break-words text-xs text-muted-foreground">
+					{candidateSetup.steps.identity.detail ??
+						t(
+							"settings.telegramLifecycle.steps.identityHint",
+							"Verifies the numeric Telegram bot ID and claims ownership before changing webhook settings.",
+						)}
+				</p>
+			</div>
+
+			{/* Step 2: Authenticated Webhook Receipt */}
+			<div className="min-w-0 space-y-2 rounded-lg border p-3">
+				<div className="flex flex-wrap items-center justify-between gap-2">
+					<p className="text-sm font-medium">
+						{t(
+							"settings.telegramLifecycle.steps.webhookReceiptTitle",
+							"2. Authenticated webhook receipt",
+						)}
+					</p>
+					<StepBadge status={candidateSetup.steps.webhookReceipt.status} />
+				</div>
+				<p className="break-words text-xs text-muted-foreground">
+					{candidateSetup.steps.webhookReceipt.status === "passed"
+						? t(
+								"settings.telegramLifecycle.steps.webhookReceiptPassed",
+								"Confirmed via authenticated inbound Telegram webhook matching this installation and secret.",
+							)
+						: candidateSetup.webhookRegistered
+							? t(
+									"settings.telegramLifecycle.steps.webhookReceiptAwaiting",
+									"Webhook registered. Send /start to your new bot on Telegram to confirm authenticated inbound receipt.",
+								)
+							: t(
+									"settings.telegramLifecycle.steps.webhookReceiptPending",
+									"Registers the installation-scoped webhook and waits for an authenticated Telegram update.",
+								)}
+				</p>
+				{candidateSetup.hasStoredCredentials && (
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						disabled={retryWebhookMutation.isPending}
+						onClick={() => retryWebhookMutation.mutate(candidateSetup.installationId)}
+					>
+						{retryWebhookMutation.isPending && (
+							<IconLoader2 className="mr-1.5 size-4 motion-safe:animate-spin" aria-hidden="true" />
+						)}
+						{t("settings.telegramLifecycle.retryWebhookButton", "Retry webhook registration")}
+					</Button>
+				)}
+			</div>
+
+			{/* Step 3: Command Registration */}
+			<div className="min-w-0 space-y-2 rounded-lg border p-3">
+				<div className="flex flex-wrap items-center justify-between gap-2">
+					<p className="text-sm font-medium">
+						{t("settings.telegramLifecycle.steps.commandsTitle", "3. Command registration")}
+					</p>
+					<StepBadge status={candidateSetup.steps.commandRegistration.status} />
+				</div>
+				<p className="break-words text-xs text-muted-foreground">
+					{candidateSetup.steps.commandRegistration.status === "passed"
+						? t(
+								"settings.telegramLifecycle.steps.commandsPassed",
+								"Registered all 11 Z8 commands in the Telegram bot menu.",
+							)
+						: t(
+								"settings.telegramLifecycle.steps.commandsHint",
+								"Registers the 11 Z8 slash commands independently so failures can be retried without changing credentials.",
+							)}
+				</p>
+				{candidateSetup.hasStoredCredentials && (
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						disabled={retryCommandsMutation.isPending}
+						onClick={() => retryCommandsMutation.mutate(candidateSetup.installationId)}
+					>
+						{retryCommandsMutation.isPending && (
+							<IconLoader2 className="mr-1.5 size-4 motion-safe:animate-spin" aria-hidden="true" />
+						)}
+						{t("settings.telegramLifecycle.retryCommandsButton", "Retry command registration")}
+					</Button>
+				)}
+			</div>
+
+			{/* Step 4: Synthetic Private Delivery */}
+			<div className="min-w-0 space-y-2 rounded-lg border p-3">
+				<div className="flex flex-wrap items-center justify-between gap-2">
+					<p className="text-sm font-medium">
+						{t("settings.telegramLifecycle.steps.privateDeliveryTitle", "4. Private delivery")}
+					</p>
+					<StepBadge status={candidateSetup.steps.privateDelivery.status} />
+				</div>
+				<p className="break-words text-xs text-muted-foreground">
+					{t(
+						"settings.telegramLifecycle.steps.privateDeliveryHint",
+						"Sends a synthetic private test message to your candidate Telegram chat (never production notifications or approvals).",
+					)}
+				</p>
+				{candidateSetup.hasStoredCredentials && (
+					<div className="flex flex-col gap-2 sm:flex-row">
+						<Label htmlFor={testChatInputId} className="sr-only">
+							{t(
+								"settings.telegramLifecycle.testChatIdLabel",
+								"Candidate Telegram chat ID (optional if enrolled)",
+							)}
+						</Label>
+						<Input
+							id={testChatInputId}
+							value={testChatId}
+							onChange={(event) => setTestChatId(event.target.value)}
+							placeholder={t(
+								"settings.telegramLifecycle.testChatIdPlaceholder",
+								"Chat ID (optional if linked)",
+							)}
+							className="min-w-0 flex-1 font-mono text-xs"
+						/>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							disabled={sendTestMutation.isPending}
+							onClick={() =>
+								sendTestMutation.mutate({
+									installationId: candidateSetup.installationId,
+									chatId: testChatId.trim() || undefined,
+								})
+							}
+						>
+							{sendTestMutation.isPending ? (
+								<IconLoader2
+									className="mr-1.5 size-4 motion-safe:animate-spin"
+									aria-hidden="true"
+								/>
+							) : (
+								<IconSend className="mr-1.5 size-4" aria-hidden="true" />
+							)}
+							{t("settings.telegramLifecycle.sendPrivateTestButton", "Send private test")}
+						</Button>
+					</div>
+				)}
+			</div>
+		</div>
+	);
+}
+
+function PreparationCard(props: PanelState) {
+	const {
+		t,
+		refreshMutation,
+		prepareMutation,
+		saveCredentialsMutation,
+		candidateCredentialsForm,
+		candidateSetup,
+	} = props;
+	return (
+		<Card>
+			<CardHeader>
+				<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+					<div className="min-w-0 space-y-1">
+						<CardTitle className="flex items-center gap-2 text-base">
+							<IconBrandTelegram className="size-4 shrink-0" aria-hidden="true" />
+							{t(
+								"settings.telegramLifecycle.prepareTitle",
+								"Prepare & verify replacement Telegram bot",
+							)}
+						</CardTitle>
+						<CardDescription>
+							{t(
+								"settings.telegramLifecycle.prepareDescription",
+								"Stage an organization-owned Telegram bot and verify bot identity, authenticated webhook receipt, command registration, and private delivery while your current bot continues serving open approvals.",
+							)}
+						</CardDescription>
+					</div>
+					<div className="flex shrink-0 flex-wrap items-center gap-2">
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							disabled={refreshMutation.isPending}
+							onClick={() => refreshMutation.mutate()}
+						>
+							<IconRefresh
+								className={
+									refreshMutation.isPending
+										? "mr-1.5 size-4 motion-safe:animate-spin"
+										: "mr-1.5 size-4"
+								}
+								aria-hidden="true"
+							/>
+							{t("settings.telegramLifecycle.refresh", "Refresh")}
+						</Button>
+						{!candidateSetup && (
+							<Button
+								type="button"
+								size="sm"
+								disabled={prepareMutation.isPending}
+								onClick={() => prepareMutation.mutate()}
+							>
+								{prepareMutation.isPending && (
+									<IconLoader2
+										className="mr-1.5 size-4 motion-safe:animate-spin"
+										aria-hidden="true"
+									/>
+								)}
+								{t("settings.telegramLifecycle.prepareButton", "Prepare replacement Telegram bot")}
+							</Button>
+						)}
+					</div>
+				</div>
+			</CardHeader>
+
+			{candidateSetup && (
+				<CardContent className="space-y-4">
+					{/* Write-only BotFather token form */}
+					<form
+						className="space-y-3 rounded-lg border bg-muted/30 p-3"
+						onSubmit={(event) => {
+							event.preventDefault();
+							event.stopPropagation();
+							void candidateCredentialsForm.handleSubmit();
+						}}
+					>
+						<candidateCredentialsForm.Field name="botToken">
+							{(field) => (
+								<TFormItem className="space-y-1.5">
+									<TFormLabel>
+										{t("settings.telegramLifecycle.botTokenLabel", "BotFather Token (write-only)")}
+									</TFormLabel>
+									<div className="flex flex-col gap-2 sm:flex-row">
+										<TFormControl>
+											<Input
+												type="password"
+												autoComplete="off"
+												value={field.state.value}
+												onBlur={field.handleBlur}
+												onChange={(event) => field.handleChange(event.target.value)}
+												placeholder="123456789:ABCdefGHIjklMNOpqrsTUVwxyz"
+												className="min-w-0 flex-1 font-mono text-sm"
+											/>
+										</TFormControl>
+										<Button
+											type="submit"
+											size="sm"
+											disabled={saveCredentialsMutation.isPending || !field.state.value.trim()}
+										>
+											{saveCredentialsMutation.isPending && (
+												<IconLoader2
+													className="mr-1.5 size-4 motion-safe:animate-spin"
+													aria-hidden="true"
+												/>
+											)}
+											{t(
+												"settings.telegramLifecycle.verifyTokenButton",
+												"Verify bot & configure webhook",
+											)}
+										</Button>
+									</div>
+									<p className="break-all text-xs text-muted-foreground">
+										{t(
+											"settings.telegramLifecycle.webhookEndpointLabel",
+											"Dedicated webhook route:",
+										)}{" "}
+										<code className="font-mono">{candidateSetup.webhookUrl}</code>
+									</p>
+								</TFormItem>
+							)}
+						</candidateCredentialsForm.Field>
+					</form>
+
+					{/* 4 Separate, Independently Tracked Verification Steps */}
+					<VerificationSteps {...props} candidateSetup={candidateSetup} />
+				</CardContent>
+			)}
+		</Card>
+	);
+}
+
+function SwitchReviewCard(props: PanelState) {
+	const {
+		t,
+		summaryRef,
+		acknowledgedUnready,
+		setAcknowledgedUnready,
+		impactChangedNotice,
+		confirmSwitchMutation,
+		confirmRestoreMutation,
+		switchPreview,
+		candidate,
+		isRestoringCandidate,
+		ackCheckboxId,
+		canSubmitSwitch,
+		handleConfirmSwitch,
+	} = props;
+	return (
+		candidate && (
+			<Card>
+				<CardHeader>
+					<CardTitle className="flex items-center gap-2 text-base">
+						<IconArrowsExchange className="size-4 shrink-0" aria-hidden="true" />
+						{t("settings.telegramLifecycle.switchTitle", "Review impact & switch Telegram bot")}
+					</CardTitle>
+					<CardDescription>
+						{t(
+							"settings.telegramLifecycle.switchDescription",
+							"Review employee reachability, open approval cards, and in-flight work before switching. Existing open cards stay serviceable on the retiring bot during the 30-day retirement window.",
+						)}
+					</CardDescription>
+				</CardHeader>
+				<CardContent className="space-y-4">
+					{impactChangedNotice && (
+						<div
+							role="alert"
+							className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm"
+						>
+							{impactChangedNotice}
+						</div>
+					)}
+
+					<div
+						ref={summaryRef}
+						tabIndex={-1}
+						className="space-y-3 rounded-lg border bg-muted/20 p-3 focus:outline-none focus:ring-2 focus:ring-ring"
+					>
+						<div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+							<MetricTile
+								label={t("settings.telegramLifecycle.metrics.reachable", "Verified reachable")}
+								value={switchPreview.employeeImpact.verifiedReachableEmployees}
+							/>
+							<MetricTile
+								label={t("settings.telegramLifecycle.metrics.actionNeeded", "Action needed")}
+								value={switchPreview.employeeImpact.actionNeededEmployees}
+							/>
+							<MetricTile
+								label={t("settings.telegramLifecycle.metrics.unknown", "Unknown reachability")}
+								value={switchPreview.employeeImpact.unknownReachabilityEmployees}
+							/>
+							<MetricTile
+								label={t("settings.telegramLifecycle.metrics.openCards", "Open approval cards")}
+								value={
+									switchPreview.approvalImpact.openCanonicalCards +
+									switchPreview.approvalImpact.openLegacyOwnerCards +
+									switchPreview.approvalImpact.pendingLegacyCards
+								}
+							/>
+							<MetricTile
+								label={t("settings.telegramLifecycle.metrics.inFlight", "In-flight work")}
+								value={
+									switchPreview.approvalImpact.outstandingDeliveryWork +
+									switchPreview.inFlightNotificationImpact.intentRecorded
+								}
+							/>
+							<MetricTile
+								label={t("settings.telegramLifecycle.metrics.uncertain", "Needs reconciliation")}
+								value={
+									switchPreview.approvalImpact.uncertainApprovalWork +
+									switchPreview.inFlightNotificationImpact.reconciliationRequired
+								}
+							/>
+						</div>
+					</div>
+
+					{!switchPreview.switchControlEnabled && (
+						<p className="text-xs text-muted-foreground">
+							{t(
+								"settings.telegramLifecycle.switchGateDisabled",
+								"Telegram switching is currently gated off for this organization. Complete verification above so you are ready when enabled.",
+							)}
+						</p>
+					)}
+
+					{switchPreview.requiresUnreadyAcknowledgement && (
+						<div className="flex items-start gap-2 rounded-lg border p-3">
+							<input
+								id={ackCheckboxId}
+								type="checkbox"
+								className="mt-1 size-4"
+								checked={acknowledgedUnready}
+								onChange={(event) => setAcknowledgedUnready(event.target.checked)}
+							/>
+							<Label htmlFor={ackCheckboxId} className="text-sm font-normal">
+								{t(
+									"settings.telegramLifecycle.acknowledgeUnready",
+									"I acknowledge that {count} employees still need to start and link the new Telegram bot in Settings -> Notifications.",
+									{ count: String(switchPreview.employeeImpact.unreadyEmployees) },
+								)}
+							</Label>
+						</div>
+					)}
+
+					<div className="flex flex-wrap items-center gap-2">
+						<Button type="button" disabled={!canSubmitSwitch} onClick={handleConfirmSwitch}>
+							{(confirmSwitchMutation.isPending || confirmRestoreMutation.isPending) && (
+								<IconLoader2
+									className="mr-1.5 size-4 motion-safe:animate-spin"
+									aria-hidden="true"
+								/>
+							)}
+							<IconShieldCheck className="mr-1.5 size-4" aria-hidden="true" />
+							{isRestoringCandidate
+								? t("settings.telegramLifecycle.confirmRestoreButton", "Confirm restore")
+								: t("settings.telegramLifecycle.confirmSwitchButton", "Confirm switch")}
+						</Button>
+					</div>
+				</CardContent>
+			</Card>
+		)
+	);
+}
+
+function RetiringInstallationsCard(props: PanelState) {
+	const { t, switchPreview } = props;
+	return (
+		switchPreview.retiringInstallations.length > 0 && (
+			<Card>
+				<CardHeader>
+					<CardTitle className="text-base">
+						{t("settings.telegramLifecycle.retiringTitle", "Retiring Telegram bots")}
+					</CardTitle>
+					<CardDescription>
+						{t(
+							"settings.telegramLifecycle.retiringDescription",
+							"Retiring bots keep servicing open approval cards they already sent until all open cards settle or the 30-day retirement deadline is reached.",
+						)}
+					</CardDescription>
+				</CardHeader>
+				<CardContent className="space-y-3">
+					{switchPreview.retiringInstallations.map((retiring) => (
+						<div
+							key={retiring.id}
+							className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
+						>
+							<div className="min-w-0 space-y-1">
+								<p className="truncate text-sm font-medium">
+									{retiring.externalDisplayName ?? retiring.id}
+								</p>
+								<p className="text-xs text-muted-foreground">
+									{t(
+										"settings.telegramLifecycle.retiringStats",
+										"Outstanding cards/work: {count}",
+										{ count: String(retiring.totalOutstandingCardsAndWork) },
+									)}
+									{retiring.retirementDeadlineAt
+										? ` · ${t("settings.telegramLifecycle.retiringDeadline", "Deadline: {date}", {
+												date: retiring.retirementDeadlineAt.slice(0, 10),
+											})}`
+										: ""}
+								</p>
+							</div>
+							<Badge variant="outline">
+								{t("settings.telegramLifecycle.retiringBadge", "Retiring")}
+							</Badge>
+						</div>
+					))}
+				</CardContent>
+			</Card>
+		)
+	);
+}
+
+function RecoveryCard(props: PanelState) {
+	const {
+		t,
+		rotateMutation,
+		rotateTokenForm,
+		revokeMutation,
+		prepareRestoreMutation,
+		recoveryState,
+	} = props;
+	return (
+		(recoveryState.activeInstallation || recoveryState.restorableInstallations.length > 0) && (
+			<Card>
+				<CardHeader>
+					<CardTitle className="flex items-center gap-2 text-base">
+						<IconKey className="size-4 shrink-0" aria-hidden="true" />
+						{t(
+							"settings.telegramLifecycle.recoveryTitle",
+							"Credential rotation, revocation & recovery",
+						)}
+					</CardTitle>
+					<CardDescription>{recoveryState.rotationGuidance.summary}</CardDescription>
+				</CardHeader>
+				<CardContent className="space-y-4">
+					{recoveryState.activeInstallation?.canRotate && (
+						<form
+							className="space-y-3 rounded-lg border p-3"
+							onSubmit={(event) => {
+								event.preventDefault();
+								event.stopPropagation();
+								void rotateTokenForm.handleSubmit();
+							}}
+						>
+							<p className="text-sm font-medium">
+								{t(
+									"settings.telegramLifecycle.rotateTitle",
+									"Rotate BotFather token (same bot identity)",
+								)}
+							</p>
+							<p className="text-xs text-muted-foreground">
+								{recoveryState.rotationGuidance.interruptionDetails}
+							</p>
+							<rotateTokenForm.Field name="botToken">
+								{(field) => (
+									<TFormItem>
+										<TFormLabel className="sr-only">
+											{t("settings.telegramLifecycle.rotateTokenLabel", "New BotFather token")}
+										</TFormLabel>
+										<div className="flex flex-col gap-2 sm:flex-row">
+											<TFormControl>
+												<Input
+													type="password"
+													autoComplete="off"
+													value={field.state.value}
+													onBlur={field.handleBlur}
+													onChange={(event) => field.handleChange(event.target.value)}
+													placeholder="123456789:NEWrotatedBotToken..."
+													className="min-w-0 flex-1 font-mono text-sm"
+												/>
+											</TFormControl>
+											<Button
+												type="submit"
+												variant="outline"
+												size="sm"
+												disabled={rotateMutation.isPending || !field.state.value.trim()}
+											>
+												{rotateMutation.isPending && (
+													<IconLoader2
+														className="mr-1.5 size-4 motion-safe:animate-spin"
+														aria-hidden="true"
+													/>
+												)}
+												{t("settings.telegramLifecycle.rotateButton", "Rotate token")}
+											</Button>
+										</div>
+									</TFormItem>
+								)}
+							</rotateTokenForm.Field>
+						</form>
+					)}
+
+					{recoveryState.activeInstallation?.canRevoke && (
+						<div className="flex flex-col gap-2 rounded-lg border border-destructive/30 p-3 sm:flex-row sm:items-center sm:justify-between">
+							<div className="min-w-0 space-y-0.5">
+								<p className="text-sm font-medium">
+									{t("settings.telegramLifecycle.revokeTitle", "Revoke active Telegram bot")}
+								</p>
+								<p className="text-xs text-muted-foreground">
+									{t(
+										"settings.telegramLifecycle.revokeDescription",
+										"Immediately stops local authorization and queues generation-fenced webhook cleanup. Open approvals stay accessible in Z8.",
+									)}
+								</p>
+							</div>
+							<Button
+								type="button"
+								variant="destructive"
+								size="sm"
+								disabled={revokeMutation.isPending}
+								onClick={() =>
+									revokeMutation.mutate({
+										installationId: recoveryState.activeInstallation!.id,
+									})
+								}
+							>
+								<IconShieldOff className="mr-1.5 size-4" aria-hidden="true" />
+								{t("settings.telegramLifecycle.revokeButton", "Revoke access")}
+							</Button>
+						</div>
+					)}
+
+					{recoveryState.restorableInstallations.length > 0 && (
+						<div className="space-y-2">
+							<p className="text-sm font-medium">
+								{t(
+									"settings.telegramLifecycle.restoreListTitle",
+									"Previous organization-owned Telegram bots",
+								)}
+							</p>
+							{recoveryState.restorableInstallations.map((inst) => (
+								<div
+									key={inst.id}
+									className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
+								>
+									<div className="min-w-0 space-y-0.5">
+										<p className="truncate text-sm font-medium">
+											{inst.externalBotUsername
+												? `@${inst.externalBotUsername.replace(/^@/, "")}`
+												: (inst.externalDisplayName ?? inst.id)}
+										</p>
+										<p className="text-xs text-muted-foreground">
+											{t(
+												"settings.telegramLifecycle.restoreMeta",
+												"Status: {status} · Endpoint: {endpointState} · Gen {generation}",
+												{
+													status: inst.status,
+													endpointState: inst.endpointState,
+													generation: String(inst.endpointGeneration),
+												},
+											)}
+										</p>
+									</div>
+									<Button
+										type="button"
+										variant="outline"
+										size="sm"
+										disabled={prepareRestoreMutation.isPending}
+										onClick={() => prepareRestoreMutation.mutate(inst.id)}
+									>
+										<IconRotateClockwise className="mr-1.5 size-4" aria-hidden="true" />
+										{t("settings.telegramLifecycle.restoreButton", "Begin verified restore")}
+									</Button>
+								</div>
+							))}
+						</div>
+					)}
+				</CardContent>
+			</Card>
+		)
+	);
+}
+
+export function TelegramLifecyclePanel(props: TelegramLifecyclePanelProps) {
+	const model = useTelegramLifecyclePanel(props);
+	if (!model) return null;
+	const { announcement, errorMessage } = model;
 	return (
 		<div className="min-w-0 space-y-6">
 			<div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
@@ -543,609 +1263,16 @@ export function TelegramLifecyclePanel({
 			)}
 
 			{/* 1. Prepare & Verify Replacement Telegram Bot */}
-			<Card>
-				<CardHeader>
-					<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-						<div className="min-w-0 space-y-1">
-							<CardTitle className="flex items-center gap-2 text-base">
-								<IconBrandTelegram className="size-4 shrink-0" aria-hidden="true" />
-								{t(
-									"settings.telegramLifecycle.prepareTitle",
-									"Prepare & verify replacement Telegram bot",
-								)}
-							</CardTitle>
-							<CardDescription>
-								{t(
-									"settings.telegramLifecycle.prepareDescription",
-									"Stage an organization-owned Telegram bot and verify bot identity, authenticated webhook receipt, command registration, and private delivery while your current bot continues serving open approvals.",
-								)}
-							</CardDescription>
-						</div>
-						<div className="flex shrink-0 flex-wrap items-center gap-2">
-							<Button
-								type="button"
-								variant="outline"
-								size="sm"
-								disabled={refreshMutation.isPending}
-								onClick={() => refreshMutation.mutate()}
-							>
-								<IconRefresh
-									className={
-										refreshMutation.isPending
-											? "mr-1.5 size-4 motion-safe:animate-spin"
-											: "mr-1.5 size-4"
-									}
-									aria-hidden="true"
-								/>
-								{t("settings.telegramLifecycle.refresh", "Refresh")}
-							</Button>
-							{!candidateSetup && (
-								<Button
-									type="button"
-									size="sm"
-									disabled={prepareMutation.isPending}
-									onClick={() => prepareMutation.mutate()}
-								>
-									{prepareMutation.isPending && (
-										<IconLoader2
-											className="mr-1.5 size-4 motion-safe:animate-spin"
-											aria-hidden="true"
-										/>
-									)}
-									{t(
-										"settings.telegramLifecycle.prepareButton",
-										"Prepare replacement Telegram bot",
-									)}
-								</Button>
-							)}
-						</div>
-					</div>
-				</CardHeader>
-
-				{candidateSetup && (
-					<CardContent className="space-y-4">
-						{/* Write-only BotFather token form */}
-						<form
-							className="space-y-3 rounded-lg border bg-muted/30 p-3"
-							onSubmit={(event) => {
-								event.preventDefault();
-								event.stopPropagation();
-								void candidateCredentialsForm.handleSubmit();
-							}}
-						>
-							<candidateCredentialsForm.Field name="botToken">
-								{(field) => (
-									<TFormItem className="space-y-1.5">
-										<TFormLabel>
-											{t(
-												"settings.telegramLifecycle.botTokenLabel",
-												"BotFather Token (write-only)",
-											)}
-										</TFormLabel>
-										<div className="flex flex-col gap-2 sm:flex-row">
-											<TFormControl>
-												<Input
-													type="password"
-													autoComplete="off"
-													value={field.state.value}
-													onBlur={field.handleBlur}
-													onChange={(event) => field.handleChange(event.target.value)}
-													placeholder="123456789:ABCdefGHIjklMNOpqrsTUVwxyz"
-													className="min-w-0 flex-1 font-mono text-sm"
-												/>
-											</TFormControl>
-											<Button
-												type="submit"
-												size="sm"
-												disabled={saveCredentialsMutation.isPending || !field.state.value.trim()}
-											>
-												{saveCredentialsMutation.isPending && (
-													<IconLoader2
-														className="mr-1.5 size-4 motion-safe:animate-spin"
-														aria-hidden="true"
-													/>
-												)}
-												{t(
-													"settings.telegramLifecycle.verifyTokenButton",
-													"Verify bot & configure webhook",
-												)}
-											</Button>
-										</div>
-										<p className="break-all text-xs text-muted-foreground">
-											{t(
-												"settings.telegramLifecycle.webhookEndpointLabel",
-												"Dedicated webhook route:",
-											)}{" "}
-											<code className="font-mono">{candidateSetup.webhookUrl}</code>
-										</p>
-									</TFormItem>
-								)}
-							</candidateCredentialsForm.Field>
-						</form>
-
-						{/* 4 Separate, Independently Tracked Verification Steps */}
-						<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-							{/* Step 1: Bot Identity */}
-							<div className="min-w-0 space-y-2 rounded-lg border p-3">
-								<div className="flex flex-wrap items-center justify-between gap-2">
-									<p className="text-sm font-medium">
-										{t("settings.telegramLifecycle.steps.identityTitle", "1. Bot identity")}
-									</p>
-									<StepBadge status={candidateSetup.steps.identity.status} />
-								</div>
-								<p className="break-words text-xs text-muted-foreground">
-									{candidateSetup.steps.identity.detail ??
-										t(
-											"settings.telegramLifecycle.steps.identityHint",
-											"Verifies the numeric Telegram bot ID and claims ownership before changing webhook settings.",
-										)}
-								</p>
-							</div>
-
-							{/* Step 2: Authenticated Webhook Receipt */}
-							<div className="min-w-0 space-y-2 rounded-lg border p-3">
-								<div className="flex flex-wrap items-center justify-between gap-2">
-									<p className="text-sm font-medium">
-										{t(
-											"settings.telegramLifecycle.steps.webhookReceiptTitle",
-											"2. Authenticated webhook receipt",
-										)}
-									</p>
-									<StepBadge status={candidateSetup.steps.webhookReceipt.status} />
-								</div>
-								<p className="break-words text-xs text-muted-foreground">
-									{candidateSetup.steps.webhookReceipt.status === "passed"
-										? t(
-												"settings.telegramLifecycle.steps.webhookReceiptPassed",
-												"Confirmed via authenticated inbound Telegram webhook matching this installation and secret.",
-											)
-										: candidateSetup.webhookRegistered
-											? t(
-													"settings.telegramLifecycle.steps.webhookReceiptAwaiting",
-													"Webhook registered. Send /start to your new bot on Telegram to confirm authenticated inbound receipt.",
-												)
-											: t(
-													"settings.telegramLifecycle.steps.webhookReceiptPending",
-													"Registers the installation-scoped webhook and waits for an authenticated Telegram update.",
-												)}
-								</p>
-								{candidateSetup.hasStoredCredentials && (
-									<Button
-										type="button"
-										variant="outline"
-										size="sm"
-										disabled={retryWebhookMutation.isPending}
-										onClick={() => retryWebhookMutation.mutate(candidateSetup.installationId)}
-									>
-										{retryWebhookMutation.isPending && (
-											<IconLoader2
-												className="mr-1.5 size-4 motion-safe:animate-spin"
-												aria-hidden="true"
-											/>
-										)}
-										{t(
-											"settings.telegramLifecycle.retryWebhookButton",
-											"Retry webhook registration",
-										)}
-									</Button>
-								)}
-							</div>
-
-							{/* Step 3: Command Registration */}
-							<div className="min-w-0 space-y-2 rounded-lg border p-3">
-								<div className="flex flex-wrap items-center justify-between gap-2">
-									<p className="text-sm font-medium">
-										{t("settings.telegramLifecycle.steps.commandsTitle", "3. Command registration")}
-									</p>
-									<StepBadge status={candidateSetup.steps.commandRegistration.status} />
-								</div>
-								<p className="break-words text-xs text-muted-foreground">
-									{candidateSetup.steps.commandRegistration.status === "passed"
-										? t(
-												"settings.telegramLifecycle.steps.commandsPassed",
-												"Registered all 11 Z8 commands in the Telegram bot menu.",
-											)
-										: t(
-												"settings.telegramLifecycle.steps.commandsHint",
-												"Registers the 11 Z8 slash commands independently so failures can be retried without changing credentials.",
-											)}
-								</p>
-								{candidateSetup.hasStoredCredentials && (
-									<Button
-										type="button"
-										variant="outline"
-										size="sm"
-										disabled={retryCommandsMutation.isPending}
-										onClick={() => retryCommandsMutation.mutate(candidateSetup.installationId)}
-									>
-										{retryCommandsMutation.isPending && (
-											<IconLoader2
-												className="mr-1.5 size-4 motion-safe:animate-spin"
-												aria-hidden="true"
-											/>
-										)}
-										{t(
-											"settings.telegramLifecycle.retryCommandsButton",
-											"Retry command registration",
-										)}
-									</Button>
-								)}
-							</div>
-
-							{/* Step 4: Synthetic Private Delivery */}
-							<div className="min-w-0 space-y-2 rounded-lg border p-3">
-								<div className="flex flex-wrap items-center justify-between gap-2">
-									<p className="text-sm font-medium">
-										{t(
-											"settings.telegramLifecycle.steps.privateDeliveryTitle",
-											"4. Private delivery",
-										)}
-									</p>
-									<StepBadge status={candidateSetup.steps.privateDelivery.status} />
-								</div>
-								<p className="break-words text-xs text-muted-foreground">
-									{t(
-										"settings.telegramLifecycle.steps.privateDeliveryHint",
-										"Sends a synthetic private test message to your candidate Telegram chat (never production notifications or approvals).",
-									)}
-								</p>
-								{candidateSetup.hasStoredCredentials && (
-									<div className="flex flex-col gap-2 sm:flex-row">
-										<Label htmlFor={testChatInputId} className="sr-only">
-											{t(
-												"settings.telegramLifecycle.testChatIdLabel",
-												"Candidate Telegram chat ID (optional if enrolled)",
-											)}
-										</Label>
-										<Input
-											id={testChatInputId}
-											value={testChatId}
-											onChange={(event) => setTestChatId(event.target.value)}
-											placeholder={t(
-												"settings.telegramLifecycle.testChatIdPlaceholder",
-												"Chat ID (optional if linked)",
-											)}
-											className="min-w-0 flex-1 font-mono text-xs"
-										/>
-										<Button
-											type="button"
-											variant="outline"
-											size="sm"
-											disabled={sendTestMutation.isPending}
-											onClick={() =>
-												sendTestMutation.mutate({
-													installationId: candidateSetup.installationId,
-													chatId: testChatId.trim() || undefined,
-												})
-											}
-										>
-											{sendTestMutation.isPending ? (
-												<IconLoader2
-													className="mr-1.5 size-4 motion-safe:animate-spin"
-													aria-hidden="true"
-												/>
-											) : (
-												<IconSend className="mr-1.5 size-4" aria-hidden="true" />
-											)}
-											{t("settings.telegramLifecycle.sendPrivateTestButton", "Send private test")}
-										</Button>
-									</div>
-								)}
-							</div>
-						</div>
-					</CardContent>
-				)}
-			</Card>
+			<PreparationCard {...model} />
 
 			{/* 2. Switch Impact Review & Confirmation */}
-			{candidate && (
-				<Card>
-					<CardHeader>
-						<CardTitle className="flex items-center gap-2 text-base">
-							<IconArrowsExchange className="size-4 shrink-0" aria-hidden="true" />
-							{t("settings.telegramLifecycle.switchTitle", "Review impact & switch Telegram bot")}
-						</CardTitle>
-						<CardDescription>
-							{t(
-								"settings.telegramLifecycle.switchDescription",
-								"Review employee reachability, open approval cards, and in-flight work before switching. Existing open cards stay serviceable on the retiring bot during the 30-day retirement window.",
-							)}
-						</CardDescription>
-					</CardHeader>
-					<CardContent className="space-y-4">
-						{impactChangedNotice && (
-							<div
-								role="alert"
-								className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm"
-							>
-								{impactChangedNotice}
-							</div>
-						)}
-
-						<div
-							ref={summaryRef}
-							tabIndex={-1}
-							className="space-y-3 rounded-lg border bg-muted/20 p-3 focus:outline-none focus:ring-2 focus:ring-ring"
-						>
-							<div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-								<MetricTile
-									label={t("settings.telegramLifecycle.metrics.reachable", "Verified reachable")}
-									value={switchPreview.employeeImpact.verifiedReachableEmployees}
-								/>
-								<MetricTile
-									label={t("settings.telegramLifecycle.metrics.actionNeeded", "Action needed")}
-									value={switchPreview.employeeImpact.actionNeededEmployees}
-								/>
-								<MetricTile
-									label={t("settings.telegramLifecycle.metrics.unknown", "Unknown reachability")}
-									value={switchPreview.employeeImpact.unknownReachabilityEmployees}
-								/>
-								<MetricTile
-									label={t("settings.telegramLifecycle.metrics.openCards", "Open approval cards")}
-									value={
-										switchPreview.approvalImpact.openCanonicalCards +
-										switchPreview.approvalImpact.openLegacyOwnerCards +
-										switchPreview.approvalImpact.pendingLegacyCards
-									}
-								/>
-								<MetricTile
-									label={t("settings.telegramLifecycle.metrics.inFlight", "In-flight work")}
-									value={
-										switchPreview.approvalImpact.outstandingDeliveryWork +
-										switchPreview.inFlightNotificationImpact.intentRecorded
-									}
-								/>
-								<MetricTile
-									label={t("settings.telegramLifecycle.metrics.uncertain", "Needs reconciliation")}
-									value={
-										switchPreview.approvalImpact.uncertainApprovalWork +
-										switchPreview.inFlightNotificationImpact.reconciliationRequired
-									}
-								/>
-							</div>
-						</div>
-
-						{!switchPreview.switchControlEnabled && (
-							<p className="text-xs text-muted-foreground">
-								{t(
-									"settings.telegramLifecycle.switchGateDisabled",
-									"Telegram switching is currently gated off for this organization. Complete verification above so you are ready when enabled.",
-								)}
-							</p>
-						)}
-
-						{switchPreview.requiresUnreadyAcknowledgement && (
-							<div className="flex items-start gap-2 rounded-lg border p-3">
-								<input
-									id={ackCheckboxId}
-									type="checkbox"
-									className="mt-1 size-4"
-									checked={acknowledgedUnready}
-									onChange={(event) => setAcknowledgedUnready(event.target.checked)}
-								/>
-								<Label htmlFor={ackCheckboxId} className="text-sm font-normal">
-									{t(
-										"settings.telegramLifecycle.acknowledgeUnready",
-										"I acknowledge that {count} employees still need to start and link the new Telegram bot in Settings -> Notifications.",
-										{ count: String(switchPreview.employeeImpact.unreadyEmployees) },
-									)}
-								</Label>
-							</div>
-						)}
-
-						<div className="flex flex-wrap items-center gap-2">
-							<Button type="button" disabled={!canSubmitSwitch} onClick={handleConfirmSwitch}>
-								{(confirmSwitchMutation.isPending || confirmRestoreMutation.isPending) && (
-									<IconLoader2
-										className="mr-1.5 size-4 motion-safe:animate-spin"
-										aria-hidden="true"
-									/>
-								)}
-								<IconShieldCheck className="mr-1.5 size-4" aria-hidden="true" />
-								{isRestoringCandidate
-									? t("settings.telegramLifecycle.confirmRestoreButton", "Confirm restore")
-									: t("settings.telegramLifecycle.confirmSwitchButton", "Confirm switch")}
-							</Button>
-						</div>
-					</CardContent>
-				</Card>
-			)}
+			<SwitchReviewCard {...model} />
 
 			{/* 3. Retiring Installations */}
-			{switchPreview.retiringInstallations.length > 0 && (
-				<Card>
-					<CardHeader>
-						<CardTitle className="text-base">
-							{t("settings.telegramLifecycle.retiringTitle", "Retiring Telegram bots")}
-						</CardTitle>
-						<CardDescription>
-							{t(
-								"settings.telegramLifecycle.retiringDescription",
-								"Retiring bots keep servicing open approval cards they already sent until all open cards settle or the 30-day retirement deadline is reached.",
-							)}
-						</CardDescription>
-					</CardHeader>
-					<CardContent className="space-y-3">
-						{switchPreview.retiringInstallations.map((retiring) => (
-							<div
-								key={retiring.id}
-								className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
-							>
-								<div className="min-w-0 space-y-1">
-									<p className="truncate text-sm font-medium">
-										{retiring.externalDisplayName ?? retiring.id}
-									</p>
-									<p className="text-xs text-muted-foreground">
-										{t(
-											"settings.telegramLifecycle.retiringStats",
-											"Outstanding cards/work: {count}",
-											{ count: String(retiring.totalOutstandingCardsAndWork) },
-										)}
-										{retiring.retirementDeadlineAt
-											? ` · ${t("settings.telegramLifecycle.retiringDeadline", "Deadline: {date}", {
-													date: retiring.retirementDeadlineAt.slice(0, 10),
-												})}`
-											: ""}
-									</p>
-								</div>
-								<Badge variant="outline">
-									{t("settings.telegramLifecycle.retiringBadge", "Retiring")}
-								</Badge>
-							</div>
-						))}
-					</CardContent>
-				</Card>
-			)}
+			<RetiringInstallationsCard {...model} />
 
 			{/* 4. Recovery: Same-Bot Token Rotation, Revoke, & Restore */}
-			{(recoveryState.activeInstallation || recoveryState.restorableInstallations.length > 0) && (
-				<Card>
-					<CardHeader>
-						<CardTitle className="flex items-center gap-2 text-base">
-							<IconKey className="size-4 shrink-0" aria-hidden="true" />
-							{t(
-								"settings.telegramLifecycle.recoveryTitle",
-								"Credential rotation, revocation & recovery",
-							)}
-						</CardTitle>
-						<CardDescription>{recoveryState.rotationGuidance.summary}</CardDescription>
-					</CardHeader>
-					<CardContent className="space-y-4">
-						{recoveryState.activeInstallation?.canRotate && (
-							<form
-								className="space-y-3 rounded-lg border p-3"
-								onSubmit={(event) => {
-									event.preventDefault();
-									event.stopPropagation();
-									void rotateTokenForm.handleSubmit();
-								}}
-							>
-								<p className="text-sm font-medium">
-									{t(
-										"settings.telegramLifecycle.rotateTitle",
-										"Rotate BotFather token (same bot identity)",
-									)}
-								</p>
-								<p className="text-xs text-muted-foreground">
-									{recoveryState.rotationGuidance.interruptionDetails}
-								</p>
-								<rotateTokenForm.Field name="botToken">
-									{(field) => (
-										<TFormItem>
-											<TFormLabel className="sr-only">
-												{t("settings.telegramLifecycle.rotateTokenLabel", "New BotFather token")}
-											</TFormLabel>
-											<div className="flex flex-col gap-2 sm:flex-row">
-												<TFormControl>
-													<Input
-														type="password"
-														autoComplete="off"
-														value={field.state.value}
-														onBlur={field.handleBlur}
-														onChange={(event) => field.handleChange(event.target.value)}
-														placeholder="123456789:NEWrotatedBotToken..."
-														className="min-w-0 flex-1 font-mono text-sm"
-													/>
-												</TFormControl>
-												<Button
-													type="submit"
-													variant="outline"
-													size="sm"
-													disabled={rotateMutation.isPending || !field.state.value.trim()}
-												>
-													{rotateMutation.isPending && (
-														<IconLoader2
-															className="mr-1.5 size-4 motion-safe:animate-spin"
-															aria-hidden="true"
-														/>
-													)}
-													{t("settings.telegramLifecycle.rotateButton", "Rotate token")}
-												</Button>
-											</div>
-										</TFormItem>
-									)}
-								</rotateTokenForm.Field>
-							</form>
-						)}
-
-						{recoveryState.activeInstallation?.canRevoke && (
-							<div className="flex flex-col gap-2 rounded-lg border border-destructive/30 p-3 sm:flex-row sm:items-center sm:justify-between">
-								<div className="min-w-0 space-y-0.5">
-									<p className="text-sm font-medium">
-										{t("settings.telegramLifecycle.revokeTitle", "Revoke active Telegram bot")}
-									</p>
-									<p className="text-xs text-muted-foreground">
-										{t(
-											"settings.telegramLifecycle.revokeDescription",
-											"Immediately stops local authorization and queues generation-fenced webhook cleanup. Open approvals stay accessible in Z8.",
-										)}
-									</p>
-								</div>
-								<Button
-									type="button"
-									variant="destructive"
-									size="sm"
-									disabled={revokeMutation.isPending}
-									onClick={() =>
-										revokeMutation.mutate({
-											installationId: recoveryState.activeInstallation!.id,
-										})
-									}
-								>
-									<IconShieldOff className="mr-1.5 size-4" aria-hidden="true" />
-									{t("settings.telegramLifecycle.revokeButton", "Revoke access")}
-								</Button>
-							</div>
-						)}
-
-						{recoveryState.restorableInstallations.length > 0 && (
-							<div className="space-y-2">
-								<p className="text-sm font-medium">
-									{t(
-										"settings.telegramLifecycle.restoreListTitle",
-										"Previous organization-owned Telegram bots",
-									)}
-								</p>
-								{recoveryState.restorableInstallations.map((inst) => (
-									<div
-										key={inst.id}
-										className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
-									>
-										<div className="min-w-0 space-y-0.5">
-											<p className="truncate text-sm font-medium">
-												{inst.externalBotUsername
-													? `@${inst.externalBotUsername.replace(/^@/, "")}`
-													: (inst.externalDisplayName ?? inst.id)}
-											</p>
-											<p className="text-xs text-muted-foreground">
-												{t(
-													"settings.telegramLifecycle.restoreMeta",
-													"Status: {status} · Endpoint: {endpointState} · Gen {generation}",
-													{
-														status: inst.status,
-														endpointState: inst.endpointState,
-														generation: String(inst.endpointGeneration),
-													},
-												)}
-											</p>
-										</div>
-										<Button
-											type="button"
-											variant="outline"
-											size="sm"
-											disabled={prepareRestoreMutation.isPending}
-											onClick={() => prepareRestoreMutation.mutate(inst.id)}
-										>
-											<IconRotateClockwise className="mr-1.5 size-4" aria-hidden="true" />
-											{t("settings.telegramLifecycle.restoreButton", "Begin verified restore")}
-										</Button>
-									</div>
-								))}
-							</div>
-						)}
-					</CardContent>
-				</Card>
-			)}
+			<RecoveryCard {...model} />
 		</div>
 	);
 }

@@ -69,10 +69,14 @@ interface BotClaimsLike {
 
 function readClaim(identity: BotClaimsLike | undefined, types: readonly string[]): string | null {
 	if (!identity) return null;
+	const claims = new Map<string | undefined, string | undefined>();
+	for (const claim of identity.claims ?? []) {
+		if (!claims.has(claim.type)) claims.set(claim.type, claim.value);
+	}
 	for (const type of types) {
 		const direct = identity.getClaimValue?.(type)?.trim();
 		if (direct) return direct;
-		const fromList = identity.claims?.find((c) => c.type === type)?.value?.trim();
+		const fromList = claims.get(type)?.trim();
 		if (fromList) return fromList;
 	}
 	return null;

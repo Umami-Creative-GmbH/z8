@@ -10,8 +10,7 @@ export async function POST(
 	context: { params: Promise<{ routeId: string }> },
 ) {
 	await connection();
-	const { routeId } = await context.params;
-	const rawBody = await request.text();
+	const [{ routeId }, rawBody] = await Promise.all([context.params, request.text()]);
 	const authorizationHeader = request.headers.get("authorization") ?? "";
 	const contentType = request.headers.get("content-type") ?? "application/json";
 

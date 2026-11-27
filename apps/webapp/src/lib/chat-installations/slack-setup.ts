@@ -39,6 +39,7 @@ import type { ChatInstallationsDb } from "./types";
  */
 export const SLACK_VERIFICATION_FRESHNESS_MS = 24 * 60 * 60 * 1000;
 
+// react-doctor-disable-next-line react-doctor/no-secrets-in-client-code -- This public format prefix validates token input and contains no credential.
 export const SLACK_BOT_TOKEN_PREFIX = "xoxb-";
 
 export type SlackVerificationStepStatus = "passed" | "pending" | "failed" | "expired";

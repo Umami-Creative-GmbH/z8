@@ -178,15 +178,18 @@ export async function isSlackEnabledForOrganization(organizationId: string): Pro
  * unswitched organizations continue using their active legacy workspace config.
  */
 export async function getAllActiveBotConfigs(): Promise<ResolvedSlackBot[]> {
-	const switchedInstallations = await listSwitchedActiveChatInstallationsForProvider("slack");
+	const [switchedInstallations, configs] = await Promise.all([
+		listSwitchedActiveChatInstallationsForProvider("slack"),
+		db.query.slackWorkspaceConfig.findMany({
+			where: eq(slackWorkspaceConfig.setupStatus, "active"),
+		}),
+	]);
 	const switchedOrgIds = new Set(switchedInstallations.map((inst) => inst.organizationId));
-	const switchedBots = await Promise.all(switchedInstallations.map(hydrateSwitchedSlackBot));
-
-	const configs = await db.query.slackWorkspaceConfig.findMany({
-		where: eq(slackWorkspaceConfig.setupStatus, "active"),
-	});
 	const legacyConfigs = configs.filter((config) => !switchedOrgIds.has(config.organizationId));
-	const legacyBots = await Promise.all(legacyConfigs.map(hydrateBot));
+	const [switchedBots, legacyBots] = await Promise.all([
+		Promise.all(switchedInstallations.map(hydrateSwitchedSlackBot)),
+		Promise.all(legacyConfigs.map(hydrateBot)),
+	]);
 
 	return [...switchedBots, ...legacyBots].filter((bot): bot is ResolvedSlackBot => bot !== null);
 }

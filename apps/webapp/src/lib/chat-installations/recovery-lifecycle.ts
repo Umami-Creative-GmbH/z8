@@ -1361,6 +1361,7 @@ export async function revokeChatInstallation(
 		if (installation.credentialSource === "organization_owned") {
 			const revisions = await txRepo.listNonCleanedRevisions(input.organizationId, installation.id);
 			for (const rev of revisions) {
+				// react-doctor-disable-next-line react-doctor/async-await-in-loop -- Each revision is revoked and its cleanup enqueued on the same transaction connection.
 				await txRepo.updateRevisionStatus(
 					input.organizationId,
 					installation.id,
@@ -1502,6 +1503,7 @@ export async function processChatInstallationCleanupJobs(
 	for (const job of dueJobs) {
 		if (job.kind === "credential_revision_cleanup") {
 			if (!job.credentialRevisionId) {
+				// react-doctor-disable-next-line react-doctor/async-await-in-loop -- Jobs can share an installation and endpoint generation. Finish one cleanup before checking the next.
 				await repository.updateCleanupJob(job.id, {
 					status: "completed",
 					completedAt: now,
