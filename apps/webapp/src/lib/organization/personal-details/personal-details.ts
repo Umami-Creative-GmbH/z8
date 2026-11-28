@@ -28,6 +28,7 @@ import {
 } from "./health-insurance";
 import {
 	holdsHealthInsurance,
+	holdsHealthInsuranceForWrite,
 	loadHealthInsuranceHistory,
 	removeHealthInsuranceEntriesAfter,
 	writeHealthInsuranceEntry,
@@ -197,9 +198,12 @@ function invalidInput(fields: NonNullable<PersonalDetailsRefusal["details"]>["fi
 type Transaction = Parameters<Parameters<PersonalDetailsDatabase["transaction"]>[0]>[0];
 type PartScope = { organizationId: string; employeeId: string };
 
-/** An External Contractor has no health insurance to change or end. */
+/**
+ * An External Contractor has no health insurance to change or end. Holds the
+ * employee row until the write commits, so no conversion slips in between.
+ */
 async function refuseUnlessPartHeld(tx: Transaction, part: PersonalDetailsPart, scope: PartScope) {
-	if (part === "health_insurance" && !(await holdsHealthInsurance(tx, scope))) {
+	if (part === "health_insurance" && !(await holdsHealthInsuranceForWrite(tx, scope))) {
 		throw new PersonalDetailsRefusal(
 			"external_contractor",
 			"An External Contractor has no health insurance",

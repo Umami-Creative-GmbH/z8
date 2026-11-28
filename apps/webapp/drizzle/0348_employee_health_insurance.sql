@@ -15,8 +15,8 @@ CREATE TABLE IF NOT EXISTS "employee_health_insurance" (
 	"updated_by" text,
 	CONSTRAINT "employeeHealthInsurance_org_employee_valid_from_unique" UNIQUE("organization_id","employee_id","valid_from"),
 	CONSTRAINT "employeeHealthInsurance_value_check" CHECK (("kind" IS NULL AND "insurer_name" IS NULL AND "insurer_betriebsnummer" IS NULL)
-				OR ("kind" = 'statutory' AND "insurer_name" IS NOT NULL)
-				OR ("kind" = 'private' AND "insurer_name" IS NOT NULL AND "insurer_betriebsnummer" IS NULL)),
+				OR ("kind" IS NOT NULL AND "kind" = 'statutory' AND "insurer_name" IS NOT NULL)
+				OR ("kind" IS NOT NULL AND "kind" = 'private' AND "insurer_name" IS NOT NULL AND "insurer_betriebsnummer" IS NULL)),
 	CONSTRAINT "employeeHealthInsurance_insurer_name_check" CHECK ("insurer_name" IS NULL OR char_length("insurer_name") BETWEEN 1 AND 120),
 	CONSTRAINT "employeeHealthInsurance_betriebsnummer_check" CHECK ("insurer_betriebsnummer" IS NULL OR "insurer_betriebsnummer" ~ '^[0-9]{8}$')
 );

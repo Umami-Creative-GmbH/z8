@@ -304,20 +304,25 @@ describe("health insurance", () => {
 
 	describe("External Contractors", () => {
 		/** Closes the person's open stint and opens one of `kind` from `day`, as a conversion does. */
-		async function convert(person: SeededEmployee, kind: "employee" | "contractor", day: string) {
+		async function convert(
+			person: SeededEmployee,
+			kind: "employee" | "contractor",
+			day: string,
+			client: Pick<typeof fixture.pool, "query"> = fixture.pool,
+		) {
 			const at = `${day}T00:00:00Z`;
-			await fixture.pool.query(
+			await client.query(
 				`update employee_employment_period set status = 'closed', ended_at = $2
 				 where employee_id = $1 and status = 'open'`,
 				[person.employeeId, at],
 			);
-			await fixture.pool.query(
+			await client.query(
 				`insert into employee_employment_period
 				 (organization_id, employee_id, status, started_at, start_provenance, engagement_kind)
 				 values ($1, $2, 'open', $3, 'recorded', $4)`,
 				[organizationId, person.employeeId, at, kind],
 			);
-			await fixture.pool.query("update employee set engagement_kind = $2 where id = $1", [
+			await client.query("update employee set engagement_kind = $2 where id = $1", [
 				person.employeeId,
 				kind,
 			]);
@@ -380,6 +385,84 @@ describe("health insurance", () => {
 				["2026-06-01", BARMER.name],
 				["2026-01-01", TK.name],
 			]);
+		});
+
+		describe("converted while a health insurance write is under way", () => {
+			const pause = `health_insurance_write_pause_${randomUUID().replaceAll("-", "")}`;
+
+			afterAll(async () => {
+				await fixture.pool.query(`drop function if exists ${pause}() cascade`);
+			});
+
+			/** The worker's health insurance rows from 2026-12-01, as `client` sees them. */
+			async function rowsFromDecember(client: Pick<typeof fixture.pool, "query"> = fixture.pool) {
+				const { rows } = await client.query<{ insurer_name: string | null }>(
+					`select insurer_name from employee_health_insurance
+					 where employee_id = $1 and valid_from = '2026-12-01'`,
+					[worker.employeeId],
+				);
+				return rows;
+			}
+
+			/**
+			 * Runs `write` and, while it holds its transaction open after writing, converts
+			 * the worker to contractor in one transaction that, after its update, looks at
+			 * the rows the write is after. Returns the write's outcome, what the conversion
+			 * saw and what is in the table once both are done: run one after the other,
+			 * the conversion sees the write's row exactly when it is there afterwards.
+			 */
+			async function raceWithConversion(write: () => Promise<unknown>) {
+				// The write holds its transaction open after writing its row, so a conversion
+				// it does not wait for commits between the write's check and its commit.
+				await fixture.pool.query(
+					`create or replace function ${pause}() returns trigger language plpgsql as $$
+					begin perform pg_sleep(0.7); return new; end $$`,
+				);
+				await fixture.pool.query(
+					`create trigger ${pause} after insert on employee_health_insurance for each row
+					when (new.employee_id = '${worker.employeeId}') execute function ${pause}()`,
+				);
+				try {
+					const writing = write().then(
+						() => "written",
+						(error: unknown) => `refused: ${(error as { code?: string }).code}`,
+					);
+					await new Promise((resolve) => setTimeout(resolve, 300));
+					const client = await fixture.pool.connect();
+					let seenByConversion: Awaited<ReturnType<typeof rowsFromDecember>>;
+					try {
+						await client.query("begin");
+						await convert(worker, "contractor", "2026-12-01", client);
+						seenByConversion = await rowsFromDecember(client);
+						await client.query("commit");
+					} catch (error) {
+						await client.query("rollback");
+						throw error;
+					} finally {
+						client.release();
+					}
+					const outcome = await writing;
+					return { outcome, seenByConversion, afterwards: await rowsFromDecember() };
+				} finally {
+					await fixture.pool.query(`drop trigger if exists ${pause} on employee_health_insurance`);
+				}
+			}
+
+			it("lets a change commit before the conversion, or refuses it", async () => {
+				const race = await raceWithConversion(() => change(admin, worker, "2026-12-01", PICK_TK));
+
+				expect(["written", "refused: external_contractor"]).toContain(race.outcome);
+				expect(race.afterwards).toEqual(race.seenByConversion);
+			});
+
+			it("lets an end commit before the conversion, or refuses it", async () => {
+				await change(admin, worker, "2026-01-01", PICK_TK);
+
+				const race = await raceWithConversion(() => end(admin, worker, "2026-12-01"));
+
+				expect(["written", "refused: external_contractor"]).toContain(race.outcome);
+				expect(race.afterwards).toEqual(race.seenByConversion);
+			});
 		});
 	});
 
@@ -502,6 +585,27 @@ describe("health insurance", () => {
 			for (const value of ["Techniker", TK.betriebsnummer, "Allianz", "statutory", "private"]) {
 				expect(text).not.toContain(value);
 			}
+		});
+	});
+
+	describe("the table", () => {
+		it("refuses an insurer without a kind", async () => {
+			await expect(
+				fixture.pool.query(
+					`insert into employee_health_insurance
+					 (organization_id, employee_id, valid_from, kind, insurer_name, insurer_betriebsnummer)
+					 values ($1, $2, '2026-12-01', null, 'Techniker Krankenkasse', $3)`,
+					[organizationId, worker.employeeId, TK.betriebsnummer],
+				),
+			).rejects.toMatchObject({ code: "23514" });
+			await expect(
+				fixture.pool.query(
+					`insert into employee_health_insurance
+					 (organization_id, employee_id, valid_from, kind, insurer_name)
+					 values ($1, $2, '2026-12-01', null, 'Techniker Krankenkasse')`,
+					[organizationId, worker.employeeId],
+				),
+			).rejects.toMatchObject({ code: "23514" });
 		});
 	});
 

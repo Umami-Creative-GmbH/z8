@@ -25,15 +25,36 @@ export type StoredHealthInsuranceEntry = {
  * Whether the employee holds a health insurance in the organization: not as an
  * External Contractor (engagement kind contractor, the kind in force today on the
  * employee record, #1995). Their history is kept, only not read or written.
+ * For reading; a write checks with `holdsHealthInsuranceForWrite`.
  */
 export async function holdsHealthInsurance(db: Reader, scope: Scope): Promise<boolean> {
-	const [row] = await db
+	const [row] = await engagementKindOf(db, scope);
+	return isHeldBy(row);
+}
+
+/**
+ * `holdsHealthInsurance` for a write, inside its transaction: it keeps the
+ * employee row share-locked until the transaction ends, so a conversion to
+ * External Contractor waits for the write to commit (or the write sees the
+ * conversion and is refused). Every health insurance write checks with this
+ * (change, end, applying a change request).
+ */
+export async function holdsHealthInsuranceForWrite(tx: Reader, scope: Scope): Promise<boolean> {
+	const [row] = await engagementKindOf(tx, scope).for("share");
+	return isHeldBy(row);
+}
+
+function engagementKindOf(db: Reader, scope: Scope) {
+	return db
 		.select({ engagementKind: employee.engagementKind })
 		.from(employee)
 		.where(
 			and(eq(employee.id, scope.employeeId), eq(employee.organizationId, scope.organizationId)),
 		)
 		.limit(1);
+}
+
+function isHeldBy(row: { engagementKind: EngagementKind } | undefined): boolean {
 	return row !== undefined && row.engagementKind !== ("contractor" satisfies EngagementKind);
 }
 

@@ -207,6 +207,36 @@ describe("PersonalDetailsCard", () => {
 			expect(screen.queryByRole("button", { name: "Change health insurance" })).toBeNull();
 		});
 
+		it("drops the health insurance once showing the IBAN finds an External Contractor, also after hiding it", async () => {
+			const insured: PersonalDetailsView = {
+				...viewOf(ERIKA_IBAN, false),
+				healthInsurance: { current: TK, history: [TK] },
+			};
+			// Made an External Contractor since the page loaded: the reveal's view has no health insurance.
+			revealEmployeePersonalDetails.mockResolvedValueOnce({
+				success: true,
+				data: { ...viewOf(ERIKA_IBAN, true), healthInsurance: null },
+			});
+			render(<PersonalDetailsCard view={insured} />);
+			expect(screen.getByRole("heading", { name: "Health insurance" })).toBeTruthy();
+
+			await act(async () => {
+				fireEvent.click(screen.getByRole("button", { name: "Show IBAN" }));
+			});
+			const expectNoHealthInsurance = () => {
+				expect(screen.queryByRole("heading", { name: "Health insurance" })).toBeNull();
+				expect(screen.queryByText("Techniker Krankenkasse")).toBeNull();
+				expect(screen.queryByRole("button", { name: "Change health insurance" })).toBeNull();
+				expect(screen.queryByRole("button", { name: "End health insurance" })).toBeNull();
+			};
+			expectNoHealthInsurance();
+
+			fireEvent.click(screen.getByRole("button", { name: "Hide IBAN" }));
+			expect(screen.queryByText("DE89 3704 0044 0532 0130 00")).toBeNull();
+			expect(screen.getAllByText("•••• 3000").length).toBeGreaterThan(0);
+			expectNoHealthInsurance();
+		});
+
 		it("records a private insurer by its typed name and refreshes the page", async () => {
 			changeEmployeeHealthInsurance.mockResolvedValueOnce({
 				success: true,

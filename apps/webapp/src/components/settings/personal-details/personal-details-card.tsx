@@ -15,9 +15,14 @@ import { revealEmployeePersonalDetails } from "@/app/[locale]/(app)/settings/emp
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
-import type { PersonalDetailsView } from "@/lib/organization/personal-details/types";
+import type {
+	BankAccountView,
+	PersonalDetailsEntry,
+	PersonalDetailsHistory,
+	PersonalDetailsPart,
+	PersonalDetailsView,
+} from "@/lib/organization/personal-details/types";
 import { BankAccountForm } from "./bank-account-form";
-import type { PersonalDetailsPart } from "@/lib/organization/personal-details/types";
 import { BankAccountHistoryList, CurrentBankAccount } from "./bank-account-history";
 import { EndPersonalDetailsForm } from "./end-personal-details-form";
 import { CurrentHealthInsurance, HealthInsuranceHistoryList } from "./health-insurance-history";
@@ -30,13 +35,15 @@ import { PERSONAL_DETAILS_REFUSALS } from "./personal-details-copy";
  * "show", the health insurance and its history (#2070, not for an External
  * Contractor), and the change and end forms for those who may change them (#2071).
  */
-export function PersonalDetailsCard({ view }: { view: PersonalDetailsView }) {
+export function PersonalDetailsCard({ view: pageView }: { view: PersonalDetailsView }) {
 	const { t } = useTranslate();
 	const router = useRouter();
-	// The revealed copy and the server view it was revealed for.
+	// The view a reveal fetched, the page's view it was fetched over, and whether its
+	// IBANs are shown. Hiding them keeps the fetched view: it is the freshest one.
 	const [reveal, setReveal] = useState<{
 		of: PersonalDetailsView;
 		revealed: PersonalDetailsView;
+		shown: boolean;
 	} | null>(null);
 	const [editing, setEditing] = useState<{
 		part: PersonalDetailsPart;
@@ -46,12 +53,16 @@ export function PersonalDetailsCard({ view }: { view: PersonalDetailsView }) {
 	const [revealing, startReveal] = useTransition();
 	const [refreshing, startRefresh] = useTransition();
 
-	// A revealed copy is only shown for the view it was revealed from: once the page
-	// delivers a newer view (a refresh after anyone's change), it needs a fresh reveal.
-	const revealed = reveal?.of === view ? reveal.revealed : null;
-	const showRevealed = revealed !== null;
-	const current = revealed ?? view;
-	const canReveal = !view.viewer.revealed && view.bankAccount.history.length > 0;
+	// A fetched view only counts over the page's view it was fetched over: once the
+	// page delivers a newer view (a refresh after anyone's change), that one is the
+	// freshest and the IBANs need a fresh reveal. Everything renders from the
+	// freshest view, the health insurance too (gone for an External Contractor).
+	const fetched = reveal?.of === pageView ? reveal : null;
+	const view = fetched?.revealed ?? pageView;
+	const showRevealed = fetched?.shown === true;
+	const bankAccount =
+		fetched && !showRevealed ? withIbansMasked(view.bankAccount) : view.bankAccount;
+	const canReveal = !pageView.viewer.revealed && view.bankAccount.history.length > 0;
 	// Any value on file can be ended, also one that already ended (to correct the
 	// end to an earlier day); the module refuses a day with nothing to end.
 	const canEndBankAccount = view.bankAccount.history.some((entry) => entry.value !== null);
@@ -68,15 +79,15 @@ export function PersonalDetailsCard({ view }: { view: PersonalDetailsView }) {
 
 	const toggleReveal = () => {
 		setError(null);
-		if (showRevealed) {
-			setReveal(null);
+		if (fetched && showRevealed) {
+			setReveal({ ...fetched, shown: false });
 			return;
 		}
-		const of = view;
+		const of = pageView;
 		startReveal(async () => {
 			const result = await revealEmployeePersonalDetails({ employeeId: of.employeeId });
 			if (result.success) {
-				setReveal({ of, revealed: result.data });
+				setReveal({ of, revealed: result.data, shown: true });
 			} else {
 				setError(
 					actionErrorMessage(t, result, PERSONAL_DETAILS_REFUSALS, [
@@ -163,7 +174,7 @@ export function PersonalDetailsCard({ view }: { view: PersonalDetailsView }) {
 						{error}
 					</p>
 				) : null}
-				<CurrentBankAccount bankAccount={current.bankAccount} />
+				<CurrentBankAccount bankAccount={bankAccount} />
 				{isEditing("bank_account", "change") ? (
 					<BankAccountForm
 						employeeId={view.employeeId}
@@ -182,7 +193,7 @@ export function PersonalDetailsCard({ view }: { view: PersonalDetailsView }) {
 					/>
 				) : null}
 				<div aria-busy={refreshing}>
-					<BankAccountHistoryList bankAccount={current.bankAccount} on={view.on} />
+					<BankAccountHistoryList bankAccount={bankAccount} on={view.on} />
 				</div>
 				{view.healthInsurance ? (
 					<section className="space-y-4 border-t pt-4">
@@ -244,4 +255,16 @@ export function PersonalDetailsCard({ view }: { view: PersonalDetailsView }) {
 			</CardContent>
 		</Card>
 	);
+}
+
+/** The bank account as a decider sees it before "show": IBANs by their last four only. */
+function withIbansMasked(
+	bankAccount: PersonalDetailsHistory<BankAccountView>,
+): PersonalDetailsHistory<BankAccountView> {
+	const mask = (entry: PersonalDetailsEntry<BankAccountView>) =>
+		entry.value ? { ...entry, value: { ...entry.value, iban: null } } : entry;
+	return {
+		current: bankAccount.current ? mask(bankAccount.current) : null,
+		history: bankAccount.history.map(mask),
+	};
 }

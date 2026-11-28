@@ -130,11 +130,13 @@ export const employeeHealthInsurance = pgTable(
 			columns: [table.employeeId, table.organizationId],
 			foreignColumns: [employee.id, employee.organizationId],
 		}).onDelete("cascade"),
+		// `kind IS NOT NULL` keeps a branch from being unknown (which a check accepts)
+		// for a row with an insurer but no kind.
 		check(
 			"employeeHealthInsurance_value_check",
 			sql`(${table.kind} IS NULL AND ${table.insurerName} IS NULL AND ${table.insurerBetriebsnummer} IS NULL)
-				OR (${table.kind} = 'statutory' AND ${table.insurerName} IS NOT NULL)
-				OR (${table.kind} = 'private' AND ${table.insurerName} IS NOT NULL AND ${table.insurerBetriebsnummer} IS NULL)`,
+				OR (${table.kind} IS NOT NULL AND ${table.kind} = 'statutory' AND ${table.insurerName} IS NOT NULL)
+				OR (${table.kind} IS NOT NULL AND ${table.kind} = 'private' AND ${table.insurerName} IS NOT NULL AND ${table.insurerBetriebsnummer} IS NULL)`,
 		),
 		check(
 			"employeeHealthInsurance_insurer_name_check",
