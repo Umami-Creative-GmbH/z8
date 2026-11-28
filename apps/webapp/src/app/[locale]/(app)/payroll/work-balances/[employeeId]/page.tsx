@@ -5,6 +5,7 @@ import { EmployeeBalanceWorkspace } from "@/components/payroll/employee-balance-
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getAuthContext } from "@/lib/auth-helpers";
+import { readPersonalDetails } from "@/lib/organization/personal-details/personal-details";
 import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
 
 import { loadPayrollWorkBalanceEmployees } from "../coverage";
@@ -24,12 +25,21 @@ async function PayrollWorkBalanceContent({ params }: PayrollWorkBalancePageProps
 	const [employee] = (await loadPayrollWorkBalanceEmployees(employeeId)) ?? [];
 	const auth = await getAuthContext();
 	if (!employee || !auth?.session.activeOrganizationId) notFound();
+	const organizationId = auth.session.activeOrganizationId;
+	// The personal details module alone decides whether the holder may decide this
+	// employee's personal details (#2071); the link appears only then.
+	const personalDetails = await readPersonalDetails({
+		organizationId,
+		actorUserId: auth.user.id,
+		employeeId: employee.id,
+	});
 
 	return (
 		<EmployeeBalanceWorkspace
 			employee={employee}
-			organizationId={auth.session.activeOrganizationId}
+			organizationId={organizationId}
 			userId={auth.user.id}
+			decidesPersonalDetails={personalDetails?.viewer.mayChange === true}
 		/>
 	);
 }
