@@ -37,6 +37,7 @@
 - **Organization → Personnel File**: a payslip batch matches files to employees by their personnel number, which Organization owns
 - **Absences → Personnel File**: a sick-leave absence can have sick notes, which are employee documents in the personnel file; the absence knows only that they exist, and personnel file access decides who sees them
 - **Public API → Time Tracking**: the Public API reads work records and never writes them in v1
+- **Organization → Approvals**: a personal details change request is an approval kind decided by org admins and the people whose payroll access covers the employee, never by managing them; Organization applies what was approved to the personal details
 - **Absences → Approvals**: an absence request is an approval kind; Approvals decides it, and while an approver is away the deputy named on their absence may decide their approvals as a **deputy decision**
 - **Work policy → Absences**: the schedule of an employee's work policy decides which of their days are working days; Absences reads it to count absence days and never changes it
 - **Personal data export ≠ data export**: an Organization personal data export holds one employee's data in one organization; a data export, scheduled or not, holds the whole organization's data for its admins

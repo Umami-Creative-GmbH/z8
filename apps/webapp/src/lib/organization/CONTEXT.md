@@ -38,7 +38,7 @@ Ending someone's employment at once, without scheduling a departure. It has the 
 _Avoid_: disabling, suspension, archiving an employee
 
 **Employment ending**:
-What ends of everything an employee holds when their employment ends, whatever the cause (a departure taking effect or a deactivation): their equipment responsibility, driving authorizations, officer and verifier grants, open document requests, kiosk badges and fobs, report share links and deputy duties. Each area ends its own part, in a fixed order, and records what it ended, which the reactivation checklist lists for granting again. Ending twice ends nothing more.
+What ends of everything an employee holds when their employment ends, whatever the cause (a departure taking effect or a deactivation): their equipment responsibility, driving authorizations, officer and verifier grants, open document requests, open personal details change requests, kiosk badges and fobs, report share links and deputy duties. Each area ends its own part, in a fixed order, and records what it ended, which the reactivation checklist lists for granting again. Ending twice ends nothing more.
 _Avoid_: access ends, offboarding cleanup, revoking access
 
 **Follow-up deactivation**:
@@ -163,6 +163,24 @@ An immutable, effective-dated snapshot (`work_policy_version`) of a work policy'
 
 **Trust-based balance**:
 A contract balance mode (`trust_based`) under which working days contribute exact `0` delta to work balance (preserving prior accrued balance across mode switches) while retaining full BAG/ArbZG compliance checks and schedule-based absence day counting.
+
+### Personal details
+
+**Personal details**:
+An employee's bank account and health insurance as one organization records them. Each is valid from a date, so the details in force on any day can be read back; an employee of several organizations has separate ones in each. Either can be changed or ended from a date, but only those who may decide a personal details change request can end one. Whoever changes them, the employee is told.
+_Avoid_: master data, Stammdaten, profile, employee info, personal data (that is what a personal data export holds)
+
+**Bank account**:
+The account an employee is paid to: its account holder, IBAN and, optionally, BIC. Only accounts in the SEPA area are accepted. An employee has one bank account at a time; external contractors have one too.
+_Avoid_: bank details, Bankverbindung, payment details
+
+**Health insurance**:
+Whether an employee is insured statutorily or privately, and with which insurer. A statutory insurer is picked from the list of statutory health insurers, or named when it is missing from that list; a private insurer is named. An insurer stays recorded as it was when picked, even after it merges or leaves the list, and one that has left can no longer be picked. External contractors have none; an employee who becomes one keeps their past health insurance, shown again if they become an employee once more.
+_Avoid_: Krankenkasse (that is a statutory insurer), insurer (that is only who insures)
+
+**Personal details change request**:
+An employee's request to change their own bank account or health insurance from today or a later date. It changes nothing until an org admin, or someone whose payroll access covers the employee, approves it as asked or rejects it with a reason; no one decides their own, and managing the employee gives no right to decide it. An employee has at most one open request for each of the two, and may withdraw it while it is open. Changing the details from an earlier date is left to those who may decide requests, who change them directly.
+_Avoid_: change request (on its own; absences have their own), profile update, self-service edit
 
 ### Personal data
 
