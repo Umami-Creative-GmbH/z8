@@ -686,7 +686,7 @@
         "declaration": {
           "saved": "Erklärung gespeichert",
           "title": "Erklärung zum landwirtschaftlichen Betrieb",
-          "edit": "Erklärung ab {date} bearbeiten · {number}",
+          "edit": "Erklärung ab {date} bearbeiten · {number} · Beschäftigung ab {start}",
           "period": "Beschäftigungszeitraum",
           "unknownStart": "Beginn unbekannt",
           "from": "Gültig ab",

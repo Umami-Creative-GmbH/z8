@@ -35,6 +35,8 @@ import {
 import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import type { StatutoryUsageTier } from "@/lib/statutory/finding";
 import type { ShortTermAllowance } from "@/lib/statutory/short-term/judge";
@@ -439,6 +441,12 @@ function AgriculturalDeclarationForm({
 	t: Translate;
 }) {
 	const client = useQueryClient();
+	const locale = useFormattingLocale();
+	const displayDate = (date: string) => formatPlainDate(parsePlainDate(date), locale, "dateMedium");
+	const periodStart = (date: string | null | undefined) =>
+		date
+			? displayDate(date)
+			: t("settings.contracts.shortTerm.declaration.unknownStart", "Unknown start date");
 	const periods = monitor.declarationPeriods ?? [];
 	const form = useForm({
 		defaultValues: {
@@ -486,8 +494,12 @@ function AgriculturalDeclarationForm({
 				>
 					{t(
 						"settings.contracts.shortTerm.declaration.edit",
-						"Edit declaration from {date} · {number}",
-						{ date: row.effectiveFrom, number: row.establishmentNumber },
+						"Edit declaration from {date} · {number} · Employment from {start}",
+						{
+							date: displayDate(row.effectiveFrom),
+							number: row.establishmentNumber,
+							start: periodStart(periods.find((p) => p.id === row.periodId)?.startDate),
+						},
 					)}
 				</Button>
 			))}
@@ -504,11 +516,7 @@ function AgriculturalDeclarationForm({
 							<SelectContent>
 								{periods.map((p) => (
 									<SelectItem key={p.id} value={p.id}>
-										{p.startDate ??
-											t(
-												"settings.contracts.shortTerm.declaration.unknownStart",
-												"Unknown start date",
-											)}
+										{periodStart(p.startDate)}
 									</SelectItem>
 								))}
 							</SelectContent>

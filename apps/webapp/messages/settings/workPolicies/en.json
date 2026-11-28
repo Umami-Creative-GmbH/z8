@@ -686,7 +686,7 @@
         "declaration": {
           "saved": "Declaration saved",
           "title": "Agricultural establishment declaration",
-          "edit": "Edit declaration from {date} · {number}",
+          "edit": "Edit declaration from {date} · {number} · Employment from {start}",
           "period": "Employment period",
           "unknownStart": "Unknown start date",
           "from": "Effective from",
