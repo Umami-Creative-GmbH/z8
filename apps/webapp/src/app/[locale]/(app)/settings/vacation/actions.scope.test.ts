@@ -281,7 +281,11 @@ describe("vacation settings scope actions", () => {
 	it("lets managers read vacation policy definitions", async () => {
 		const result = await getVacationPolicies();
 
-		expect(result).toEqual({ success: true, data: mockState.policyRows });
+		// Unclassified policies list no leave-expiry designation (#2080).
+		expect(result).toEqual({
+			success: true,
+			data: mockState.policyRows.map((row) => ({ ...row, expiryClassification: null })),
+		});
 	});
 
 	describe("vacation policy proration settings (#1109)", () => {

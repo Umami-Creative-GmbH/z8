@@ -1,15 +1,16 @@
 import { eq } from "drizzle-orm";
 import { afterEach, describe, expect, it } from "vitest";
-import { vacationAllowance, vacationPolicyAssignment } from "@/db/schema";
+import {
+	vacationAllowance,
+	vacationPolicyAssignment,
+	vacationPolicyExpiryClassification,
+} from "@/db/schema";
 import {
 	createLifecycleDatabaseFixture,
 	type LifecycleDatabaseFixture,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
 import { getEmployeesWithExpiringCarryover } from "@/lib/query/vacation.queries";
-import {
-	calculateAnnualCarryover,
-	getEnhancedVacationBalance,
-} from "./vacation.service";
+import { calculateAnnualCarryover, getEnhancedVacationBalance } from "./vacation.service";
 
 describe("frozen carryover expiry readers", () => {
 	let fixture: LifecycleDatabaseFixture | undefined;
@@ -19,19 +20,15 @@ describe("frozen carryover expiry readers", () => {
 		await fixture?.close();
 	});
 
-	async function seedPolicies(
-		target: LifecycleDatabaseFixture,
-		noExpiryEmployeeId?: string,
-	) {
+	async function seedPolicies(target: LifecycleDatabaseFixture, noExpiryEmployeeId?: string) {
 		await target.pool.query(
 			"update vacation_policy_rollout set baseline_date=DATE '2026-01-01' where organization_id=$1",
 			[target.organizationId],
 		);
-		await target.pool.query(
-			"update organization set timezone='Europe/Berlin' where id=$1",
-			[target.organizationId],
-		);
-		const [, source, receiving, noExpiry] = await target.db
+		await target.pool.query("update organization set timezone='Europe/Berlin' where id=$1", [
+			target.organizationId,
+		]);
+		const [fallback, source, receiving, noExpiry] = await target.db
 			.insert(vacationAllowance)
 			.values([
 				{
@@ -94,8 +91,7 @@ describe("frozen carryover expiry readers", () => {
 				},
 				{
 					organizationId: target.organizationId,
-					policyId:
-						employeeId === noExpiryEmployeeId ? noExpiry.id : receiving.id,
+					policyId: employeeId === noExpiryEmployeeId ? noExpiry.id : receiving.id,
 					assignmentType: "employee" as const,
 					employeeId,
 					effectiveStartDate: "2027-01-01",
@@ -107,15 +103,22 @@ describe("frozen carryover expiry readers", () => {
 			"update vacation_policy_rollout set calculations_enabled=true where organization_id=$1",
 			[target.organizationId],
 		);
+		// Readers of policies HR designated for their own carryover terms (#2080).
+		await target.db.insert(vacationPolicyExpiryClassification).values(
+			[fallback, source, receiving, noExpiry].map((policy) => ({
+				organizationId: target.organizationId,
+				policyId: policy.id,
+				expiryRules: "policy_terms" as const,
+				classifiedBy: target.ownerUserId,
+			})),
+		);
 		const run = await calculateAnnualCarryover(
 			target.organizationId,
 			2026,
 			target.ownerUserId,
 			"Europe/Berlin",
 		);
-		expect(
-			run.results.find((row) => row.employeeId === target.employeeId),
-		).toMatchObject({
+		expect(run.results.find((row) => row.employeeId === target.employeeId)).toMatchObject({
 			carryoverApplied: 7,
 			expiryDate: new Date("2027-10-31T22:59:59.999Z"),
 		});
@@ -168,20 +171,10 @@ describe("frozen carryover expiry readers", () => {
 			},
 		];
 		expect(
-			await getEmployeesWithExpiringCarryover(
-				fixture.organizationId,
-				2027,
-				30,
-				currentDate,
-			),
+			await getEmployeesWithExpiringCarryover(fixture.organizationId, 2027, 30, currentDate),
 		).toMatchObject(expected);
 		expect(
-			await getEmployeesWithExpiringCarryover(
-				foreign.organizationId,
-				2027,
-				30,
-				currentDate,
-			),
+			await getEmployeesWithExpiringCarryover(foreign.organizationId, 2027, 30, currentDate),
 		).toMatchObject([{ employeeId: foreign.employeeId }]);
 
 		for (const policy of [policies.receiving, policies.noExpiry]) {
@@ -201,12 +194,7 @@ describe("frozen carryover expiry readers", () => {
 			).totalDaysCarriedOver,
 		).toBe(0);
 		expect(
-			await getEmployeesWithExpiringCarryover(
-				fixture.organizationId,
-				2027,
-				30,
-				currentDate,
-			),
+			await getEmployeesWithExpiringCarryover(fixture.organizationId, 2027, 30, currentDate),
 		).toMatchObject(expected);
 		expect(
 			await getEnhancedVacationBalance({

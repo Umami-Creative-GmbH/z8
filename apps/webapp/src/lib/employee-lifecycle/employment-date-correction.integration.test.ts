@@ -117,6 +117,14 @@ describe("reviewed actual employment corrections through public admin actions", 
 			})
 		).balances.get(employeeId);
 	}
+	/** These corrections assume the policies' own carryover cap applies (#2080). */
+	async function designatePolicyTerms() {
+		await fixture.pool.query(
+			"insert into vacation_policy_expiry_classification(organization_id,policy_id,expiry_rules,classified_by) select organization_id,id,'policy_terms',$2 from vacation_allowance where organization_id=$1 on conflict do nothing",
+			[fixture.organizationId, fixture.ownerUserId],
+		);
+	}
+
 	it("refreshes the employee's assigned monthly policy through the reviewed single correction", async () => {
 		vi.setSystemTime(new Date("2027-06-01T10:00:00Z"));
 		await fixture.pool.query("update employee set start_date='2027-05-21' where id=$1", [
@@ -192,6 +200,7 @@ describe("reviewed actual employment corrections through public admin actions", 
 			"update vacation_allowance set allow_carryover=true,max_carryover_days=25 where organization_id=$1",
 			[fixture.organizationId],
 		);
+		await designatePolicyTerms();
 		const allowance = await fixture.pool.query(
 			"insert into employee_vacation_allowance(employee_id,year,custom_carryover_days,updated_at) values ($1,2027,20,'2027-01-01T00:00:00Z') returning id",
 			[employeeId],
@@ -281,6 +290,7 @@ describe("reviewed actual employment corrections through public admin actions", 
 			"update vacation_policy_rollout set calculations_enabled=true where organization_id=$1",
 			[fixture.organizationId],
 		);
+		await designatePolicyTerms();
 		await fixture.pool.query(
 			"insert into employee_vacation_allowance(employee_id,year,custom_carryover_days,updated_at) values ($1,2028,5,'2028-01-01T00:00:00Z')",
 			[employeeId],
@@ -459,6 +469,8 @@ describe("reviewed actual employment corrections through public admin actions", 
 				sql`update vacation_allowance set accrual_type='monthly' where organization_id=${fixture.organizationId}`,
 			);
 		});
+		// The policy is designated for its own terms, so its disallowed carryover stays unread (#2080).
+		await designatePolicyTerms();
 		await fixture.pool.query(
 			"insert into employee_vacation_allowance(employee_id,year,custom_annual_days,custom_carryover_days,updated_at) values ($1,2026,36,4,now())",
 			[employeeId],
@@ -545,6 +557,7 @@ describe("reviewed actual employment corrections through public admin actions", 
 			"update vacation_allowance set allow_carryover=true,max_carryover_days=25 where organization_id=$1",
 			[fixture.organizationId],
 		);
+		await designatePolicyTerms();
 		// The reviewed correction happens in 2027, after the annual job recorded a derived20-day carry.
 		vi.setSystemTime(new Date("2027-02-01T10:00:00Z"));
 		await fixture.pool.query(

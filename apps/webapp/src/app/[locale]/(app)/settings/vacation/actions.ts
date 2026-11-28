@@ -26,6 +26,7 @@ import {
 	isContractorUnavailabilityType,
 } from "@/lib/absences/category-rules";
 import { canRequireDeputy } from "@/lib/absences/deputy";
+import { loadLeaveExpiryClassifications } from "@/lib/absences/earning-year-leave-store";
 import type { VacationBalance, VacationBalanceConfiguration } from "@/lib/absences/types";
 import {
 	loadManualVacationAdjustments,
@@ -740,8 +741,8 @@ export const getVacationPolicies = organizationAction(
 	({ organizationId }) =>
 		Effect.gen(function* () {
 			const dbService = yield* DatabaseService;
-			return yield* dbService.query("getVacationPolicies", () =>
-				dbService.db.query.vacationAllowance.findMany({
+			return yield* dbService.query("getVacationPolicies", async () => {
+				const policies = await dbService.db.query.vacationAllowance.findMany({
 					where: and(
 						eq(vacationAllowance.organizationId, organizationId),
 						eq(vacationAllowance.isActive, true),
@@ -751,8 +752,17 @@ export const getVacationPolicies = organizationAction(
 						descOrder(table.startDate),
 						asc(table.name),
 					],
-				}),
-			);
+				});
+				// Each policy's leave-expiry designation (#2080); null while unclassified.
+				const classifications = await loadLeaveExpiryClassifications(dbService.db, {
+					organizationId,
+					policyIds: policies.map((policy) => policy.id),
+				});
+				return policies.map((policy) => ({
+					...policy,
+					expiryClassification: classifications.get(policy.id) ?? null,
+				}));
+			});
 		}),
 );
 
