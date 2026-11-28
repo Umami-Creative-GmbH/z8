@@ -21,29 +21,34 @@ import { PERSONAL_DETAILS_REFUSALS } from "./personal-details-copy";
 export function PersonalDetailsCard({ view }: { view: PersonalDetailsView }) {
 	const { t } = useTranslate();
 	const router = useRouter();
-	const [revealed, setRevealed] = useState<PersonalDetailsView | null>(null);
-	const [showRevealed, setShowRevealed] = useState(false);
+	// The revealed copy and the server view it was revealed for.
+	const [reveal, setReveal] = useState<{
+		of: PersonalDetailsView;
+		revealed: PersonalDetailsView;
+	} | null>(null);
 	const [editing, setEditing] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [revealing, startReveal] = useTransition();
 	const [refreshing, startRefresh] = useTransition();
 
-	// A revealed copy is only used while it belongs to the view the page rendered.
-	const current = showRevealed && revealed?.on === view.on ? revealed : view;
+	// A revealed copy is only shown for the view it was revealed from: once the page
+	// delivers a newer view (a refresh after anyone's change), it needs a fresh reveal.
+	const revealed = reveal?.of === view ? reveal.revealed : null;
+	const showRevealed = revealed !== null;
+	const current = revealed ?? view;
 	const canReveal = !view.viewer.revealed && view.bankAccount.history.length > 0;
 
 	const toggleReveal = () => {
 		setError(null);
 		if (showRevealed) {
-			setShowRevealed(false);
-			setRevealed(null);
+			setReveal(null);
 			return;
 		}
+		const of = view;
 		startReveal(async () => {
-			const result = await revealEmployeePersonalDetails({ employeeId: view.employeeId });
+			const result = await revealEmployeePersonalDetails({ employeeId: of.employeeId });
 			if (result.success) {
-				setRevealed(result.data);
-				setShowRevealed(true);
+				setReveal({ of, revealed: result.data });
 			} else {
 				setError(
 					actionErrorMessage(t, result, PERSONAL_DETAILS_REFUSALS, [
@@ -122,8 +127,7 @@ export function PersonalDetailsCard({ view }: { view: PersonalDetailsView }) {
 						onCancel={() => setEditing(false)}
 						onSaved={() => {
 							setEditing(false);
-							setShowRevealed(false);
-							setRevealed(null);
+							setReveal(null);
 							startRefresh(() => router.refresh());
 						}}
 					/>
