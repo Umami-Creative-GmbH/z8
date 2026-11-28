@@ -3,6 +3,9 @@ import {
 	check,
 	date,
 	foreignKey,
+	index,
+	integer,
+	jsonb,
 	pgTable,
 	text,
 	timestamp,
@@ -83,3 +86,59 @@ export const employeeBankAccount = pgTable(
 );
 
 export type EmployeeBankAccountRow = typeof employeeBankAccount.$inferSelect;
+
+/**
+ * The email side of the mandatory "personal details changed" notice, recorded in
+ * the change's own transaction so no change commits without it (#2069). One row
+ * per change; it is attempted right after commit and retried by the
+ * `cron:personal-details-changed-emails` sweep until it is sent or no email can
+ * reach the employee. Only the IBAN's last four characters are in `notice`.
+ */
+export const personalDetailsChangedEmail = pgTable(
+	"personal_details_changed_email",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		employeeId: uuid("employee_id").notNull(),
+		recipientUserId: text("recipient_user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		/** The change the email tells about: one email per change, however often it is tried. */
+		changeId: uuid("change_id").notNull(),
+		/** The email's title, message, link and i18n metadata, as the in-app notice has them. */
+		notice: jsonb("notice").$type<PersonalDetailsChangedEmailNotice>().notNull(),
+		/** pending until sent; unavailable when no email can reach the employee (kiosk-only, no transport). */
+		status: text("status").$type<"pending" | "sent" | "unavailable">().default("pending").notNull(),
+		attempts: integer("attempts").default(0).notNull(),
+		/** When the next attempt may start: after a failure's backoff or a running attempt's claim. */
+		availableAt: timestamp("available_at", { withTimezone: true }).notNull(),
+		lastError: text("last_error"),
+		createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+		settledAt: timestamp("settled_at", { withTimezone: true }),
+	},
+	(table) => [
+		unique("personalDetailsChangedEmail_change_unique").on(table.changeId),
+		index("personalDetailsChangedEmail_due_idx")
+			.on(table.availableAt)
+			.where(sql`${table.status} = 'pending'`),
+		foreignKey({
+			name: "personalDetailsChangedEmail_employee_fk",
+			columns: [table.employeeId, table.organizationId],
+			foreignColumns: [employee.id, employee.organizationId],
+		}).onDelete("cascade"),
+		check(
+			"personalDetailsChangedEmail_status_check",
+			sql`${table.status} IN ('pending', 'sent', 'unavailable')`,
+		),
+	],
+);
+
+export type PersonalDetailsChangedEmailNotice = {
+	type: "personal_details_changed";
+	title: string;
+	message: string;
+	actionUrl: string | null;
+	metadata: Record<string, unknown> | null;
+};

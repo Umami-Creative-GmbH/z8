@@ -2423,6 +2423,13 @@
       "when": 1814630400000,
       "tag": "0345_employee_bank_account",
       "breakpoints": true
+    },
+    {
+      "idx": 346,
+      "version": "7",
+      "when": 1814716800000,
+      "tag": "0346_personal_details_changed_email",
+      "breakpoints": true
     }
   ]
 }

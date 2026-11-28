@@ -6,6 +6,7 @@ import { AuditAction } from "@/lib/audit-logger";
 import { withAuditTrail } from "@/lib/audit-trail";
 import { type Clock, plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
+import { createLogger } from "@/lib/logger";
 import { type PersonalDetailsRight, resolvePersonalDetailsRight } from "./access";
 import {
 	loadBankAccountHistory,
@@ -13,9 +14,10 @@ import {
 	writeBankAccountEntry,
 } from "./bank-account-store";
 import {
-	buildPersonalDetailsChangedNotice,
-	emailPersonalDetailsChangedNotice,
+	type ChangedEmailRetryResult,
+	deliverPersonalDetailsChangedEmail,
 	recordPersonalDetailsChangedNotice,
+	retryPersonalDetailsChangedEmails as retryChangedEmails,
 } from "./changed-notice";
 import {
 	type BankAccountView,
@@ -33,10 +35,13 @@ import { ibanLastFour, parseBankAccount, parseValidFrom } from "./validation";
  * history. Its operations are the only way to read or change them; who may see
  * and change is resolved by `resolvePersonalDetailsRight` alone.
  *
- * Every applied change records a value-free audit entry and an in-app notice in
- * its own transaction, then emails the employee: the mandatory "personal details
- * changed" notice, which notification preferences cannot switch off.
+ * Every applied change records a value-free audit entry, an in-app notice and a
+ * pending email in its own transaction, then emails the employee right after
+ * commit, retried until sent: the mandatory "personal details changed" notice,
+ * which notification preferences cannot switch off.
  */
+
+const logger = createLogger("PersonalDetails");
 
 export type PersonalDetailsDatabase = typeof applicationDatabase;
 
@@ -143,6 +148,7 @@ export async function changePersonalDetails(
 	dependencies: PersonalDetailsDependencies = {},
 ): Promise<{ replaced: boolean }> {
 	const database = dependencies.database ?? applicationDatabase;
+	const clock = dependencies.clock ?? systemClock;
 	const validFrom = parseValidFrom(input.validFrom);
 	const value = parseBankAccount(input.value);
 	if (!validFrom.ok || !value.ok) {
@@ -154,7 +160,7 @@ export async function changePersonalDetails(
 		});
 	}
 	const day = validFrom.value.toString();
-	const { notice, replaced } = await withAuditTrail((audit) =>
+	const { email, replaced } = await withAuditTrail((audit) =>
 		database.transaction(async (tx) => {
 			const right = refuseUnlessDecider(await resolvePersonalDetailsRight(tx, input));
 			const { replaced } = await writeBankAccountEntry(tx, {
@@ -174,19 +180,44 @@ export async function changePersonalDetails(
 				// Never the values: the audit log must not hold another copy of them.
 				metadata: { part: input.part, validFrom: day, correction: replaced },
 			});
-			const notice = buildPersonalDetailsChangedNotice({
-				organizationId: input.organizationId,
-				employeeId: input.employeeId,
-				employeeUserId: right.employeeUserId,
-				part: input.part,
-				validFrom: day,
-				ibanLastFour: ibanLastFour(value.value.iban),
-				changeId: randomUUID(),
-			});
-			await recordPersonalDetailsChangedNotice(tx, notice);
-			return { notice, replaced };
+			const email = await recordPersonalDetailsChangedNotice(
+				tx,
+				{
+					organizationId: input.organizationId,
+					employeeId: input.employeeId,
+					employeeUserId: right.employeeUserId,
+					part: input.part,
+					validFrom: day,
+					ibanLastFour: ibanLastFour(value.value.iban),
+					changeId: randomUUID(),
+				},
+				clock.nowInstant(),
+			);
+			return { email, replaced };
 		}),
 	);
-	await emailPersonalDetailsChangedNotice(notice);
+	// The change stands either way: an email that fails now is retried by the sweep.
+	try {
+		await deliverPersonalDetailsChangedEmail(database, email, clock);
+	} catch (error) {
+		logger.error(
+			{ error, organizationId: input.organizationId, deliveryId: email.id },
+			"Failed to attempt the personal details changed email",
+		);
+	}
 	return { replaced };
+}
+
+/**
+ * Retries every "personal details changed" email that is due: failed ones after
+ * their backoff, and ones whose attempt never finished (a crash after commit).
+ * Run by the `cron:personal-details-changed-emails` sweep.
+ */
+export async function retryPersonalDetailsChangedEmails(
+	dependencies: PersonalDetailsDependencies = {},
+): Promise<ChangedEmailRetryResult> {
+	return retryChangedEmails(
+		dependencies.database ?? applicationDatabase,
+		dependencies.clock ?? systemClock,
+	);
 }

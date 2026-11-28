@@ -14,7 +14,11 @@ import {
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
-import { changePersonalDetails, readPersonalDetails } from "./personal-details";
+import {
+	changePersonalDetails,
+	readPersonalDetails,
+	retryPersonalDetailsChangedEmails,
+} from "./personal-details";
 
 const ERIKA = { accountHolder: "Erika Mustermann", iban: "DE89370400440532013000", bic: null };
 const MAX = { accountHolder: "Max Mustermann", iban: "AT611904300234573201", bic: "BKAUATWW" };
@@ -373,6 +377,41 @@ describe("personal details", () => {
 			expect(emailsTo(worker)).toHaveLength(2);
 			expect(await noticesOf(admin)).toEqual([]);
 			expect(await noticesOf(owner)).toEqual([]);
+		});
+
+		it("emails the notice again after a failed delivery, so it is never lost and never sent twice", async () => {
+			vi.mocked(sendEmail).mockResolvedValueOnce({ success: false, error: "smtp_unreachable" });
+
+			await expect(change(admin, worker, "2026-12-01", ERIKA)).resolves.toEqual({
+				replaced: false,
+			});
+			expect(emailsTo(worker)).toHaveLength(1);
+
+			// A failed delivery waits before it is tried again.
+			await retryPersonalDetailsChangedEmails({ clock });
+			expect(emailsTo(worker)).toHaveLength(1);
+
+			const later = { nowInstant: () => parseInstant("2026-11-28T11:00:00Z") };
+			await retryPersonalDetailsChangedEmails({ clock: later });
+			await retryPersonalDetailsChangedEmails({ clock: later });
+
+			const emails = emailsTo(worker);
+			expect(emails).toHaveLength(2);
+			expect(emails[1]?.html).toContain("3000");
+			expect(await noticesOf(worker)).toHaveLength(1);
+			expect((await read(admin, worker))?.bankAccount.history).toHaveLength(1);
+		});
+
+		it("stops trying an employee no email can reach", async () => {
+			vi.mocked(sendEmail).mockResolvedValueOnce({ success: false, unavailable: true });
+
+			await change(admin, worker, "2026-12-01", ERIKA);
+			await retryPersonalDetailsChangedEmails({
+				clock: { nowInstant: () => parseInstant("2026-11-29T10:00:00Z") },
+			});
+
+			expect(emailsTo(worker)).toHaveLength(1);
+			expect(await noticesOf(worker)).toHaveLength(1);
 		});
 
 		it("tells nobody about a refused change", async () => {
