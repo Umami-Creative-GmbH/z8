@@ -4,6 +4,7 @@ import { and, eq, gte, inArray, isNull, lte, or } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
 import { absenceEntry, employee } from "@/db/schema";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
+import { mondayToFriday } from "./absence-days";
 import {
 	type AbsenceDaysDatabase,
 	loadWorkingDaysForEmployees,
@@ -25,7 +26,25 @@ import {
 	type VacationAdjustmentSums,
 	vacationAdjustmentTotal,
 } from "./vacation-adjustments";
-import { calculateVacationBalance } from "./vacation-calculator";
+import {
+	allocateLeaveCharges,
+	type EarningYearLeave,
+	establishesExpiry,
+	establishedExpiry,
+} from "./earning-year-leave";
+import {
+	loadCarriedEarningYearLeave,
+	loadLeaveExpiryClassifications,
+	type StoredEarningYearLeave,
+} from "./earning-year-leave-store";
+import {
+	type CarriedEarningYearLeave,
+	calculateVacationBalance,
+	type OwnYearLeaveTerms,
+	ownYearLeave,
+	startingAllowanceDays,
+	vacationCharges,
+} from "./vacation-calculator";
 import { loadFrozenCarryoverTerms } from "./vacation-carryover-terms";
 import {
 	type EmployeeVacationPolicyPeriod,
@@ -65,6 +84,53 @@ export interface VacationBalances {
 	 * coverage gap is reported for them, and no carry-over leaves or enters the year.
 	 */
 	externalContractors: Set<string>;
+	/**
+	 * Each balance's earning-year leave (#2080): the leave carried in by committed transfers plus
+	 * the year's own leave, and the days of each charged with settled usage (approved and
+	 * historical, not pending). The year-end transfer plans from this.
+	 */
+	yearLeave: Map<
+		string,
+		{
+			carried: CarriedEarningYearLeave[];
+			leave: EarningYearLeave[];
+			/** Charged with approved and pending vacation, as the balance counts it. */
+			used: Map<string, number>;
+			settledUsed: Map<string, number>;
+		}
+	>;
+}
+
+/**
+ * The carried leave a balance counts: the stored rows while the receiving allowance still holds
+ * exactly their days. A later manual amount is final; it is read as one item of the earliest
+ * earning year with the strongest protection among the rows, and the expiry job never touches it.
+ */
+function carriedLeaveForBalance(
+	stored: readonly StoredEarningYearLeave[],
+	liveDays: number,
+): CarriedEarningYearLeave[] {
+	const round2 = (value: number) => Math.round(value * 100) / 100;
+	const storedDays = round2(stored.reduce((sum, row) => sum + row.capacity, 0));
+	if (storedDays === round2(liveDays))
+		return stored.map((row) => ({ ...row, debited: row.expiredAt !== null }));
+	const protectedRow = stored.find((row) => !establishesExpiry(row.protection));
+	const datedExpiry = stored
+		.map((row) => establishedExpiry(row))
+		.filter((expiry) => expiry !== null)
+		.toSorted((a, b) => a.epochMilliseconds - b.epochMilliseconds)[0];
+	const first = stored.toSorted((a, b) => a.earningYear - b.earningYear)[0];
+	return [
+		{
+			...first,
+			key: `manual:${first.transferId}`,
+			portion: "all",
+			protection: protectedRow?.protection ?? "policy_terms",
+			capacity: Math.max(0, round2(liveDays)),
+			configuredExpiry: protectedRow ? first.configuredExpiry : (datedExpiry ?? null),
+			debited: false,
+		},
+	];
 }
 
 /**
@@ -137,6 +203,7 @@ export async function loadVacationBalances(
 			balances: new Map(),
 			adjustments: new Map(),
 			externalContractors,
+			yearLeave: new Map(),
 		};
 	}
 
@@ -204,6 +271,7 @@ export async function loadVacationBalances(
 			balances: new Map(),
 			adjustments: new Map(),
 			externalContractors,
+			yearLeave: new Map(),
 		};
 	const overrides = await loadEmployeeVacationOverrides(database, {
 		organizationId,
@@ -255,6 +323,28 @@ export async function loadVacationBalances(
 		employeeIds,
 		year,
 	});
+	const carriedLeave = await loadCarriedEarningYearLeave(database, {
+		organizationId,
+		employeeIds,
+		receivingYear: year,
+	});
+	// The year's own leave is earned under the policy in effect on its last day.
+	const earningPolicyIds = new Map(
+		[...periods].map(([employeeId, employeePeriods]) => {
+			const last = employeePeriods.findLast((period) => period.endDate >= endOfYear)?.resolution;
+			return [
+				employeeId,
+				last?.status === "resolved" || last?.status === "legacy" ? (last.policy?.id ?? null) : null,
+			];
+		}),
+	);
+	const classifications = await loadLeaveExpiryClassifications(database, {
+		organizationId,
+		policyIds: [...earningPolicyIds.values(), policy?.id],
+	});
+	const legacyCarryoverProtected = policy
+		? classifications.get(policy.id)?.expiryRules !== "policy_terms"
+		: true;
 
 	const effectiveAbsences: AbsenceWithCategory[] = (
 		absences as unknown as AbsenceWithCategory[]
@@ -275,6 +365,7 @@ export async function loadVacationBalances(
 
 	const balances = new Map<string, VacationBalance>();
 	const adjustments = new Map<string, VacationAdjustmentSums>();
+	const yearLeave: VacationBalances["yearLeave"] = new Map();
 	for (const [employeeId, allowance] of allowances) {
 		const employeePolicy = policies.get(employeeId);
 		if (!employeePolicy) continue;
@@ -282,15 +373,66 @@ export async function loadVacationBalances(
 		if (input.accrualDaysOverrides?.has(employeeId))
 			sums.accrual = input.accrualDaysOverrides.get(employeeId) ?? sums.accrual;
 		adjustments.set(employeeId, sums);
+		const frozenCarryover =
+			frozenCarryovers.get(employeeId)?.allowanceId === overrides.get(employeeId)?.allowanceId &&
+			frozenCarryovers.has(employeeId)
+				? frozenCarryovers.get(employeeId)
+				: undefined;
+		const earningPolicyId = earningPolicyIds.get(employeeId) ?? null;
+		const ownYear: OwnYearLeaveTerms = {
+			earningPolicyId,
+			classification: earningPolicyId ? classifications.get(earningPolicyId) : undefined,
+			statutoryRatio:
+				Number(employeePolicy.defaultAnnualDays) > 0
+					? Number(employeePolicy.statutoryMinimumDays) / Number(employeePolicy.defaultAnnualDays)
+					: 1,
+		};
+		// Rows that carried nothing (everything forfeited at year-end) stay history only.
+		const stored = frozenCarryover
+			? (carriedLeave.get(employeeId) ?? []).filter((row) => row.days > 0)
+			: [];
+		const carried = stored.length
+			? carriedLeaveForBalance(stored, Number(overrides.get(employeeId)?.customCarryoverDays ?? 0))
+			: [];
+		const previouslyTakenDays =
+			input.previouslyTakenOverride?.employeeId === employeeId
+				? input.previouslyTakenOverride.days
+				: (sums.previouslyTaken ?? 0);
+		const isWorkingDay = workingDays.get(employeeId);
+		const employeeAbsences = absencesByEmployee.get(employeeId) ?? [];
+		const allowanceDays = startingAllowanceDays({
+			policy: employeePolicy,
+			allowance,
+			employeeAllowance: overrides.get(employeeId) ?? null,
+		});
+		const leave = [
+			...carried,
+			...ownYearLeave(year, allowanceDays + vacationAdjustmentTotal(sums), ownYear),
+		];
+		const chargesOf = (settledOnly: boolean) =>
+			allocateLeaveCharges(
+				leave,
+				vacationCharges({
+					absences: employeeAbsences,
+					year,
+					isWorkingDay: isWorkingDay ?? mondayToFriday,
+					previouslyTakenDays,
+					settledOnly,
+				}),
+				input.timezone,
+			).used;
+		yearLeave.set(employeeId, {
+			carried,
+			leave,
+			used: chargesOf(false),
+			settledUsed: chargesOf(true),
+		});
 		balances.set(
 			employeeId,
 			calculateVacationBalance({
-				frozenCarryover:
-					frozenCarryovers.get(employeeId)?.allowanceId ===
-						overrides.get(employeeId)?.allowanceId &&
-					frozenCarryovers.has(employeeId)
-						? frozenCarryovers.get(employeeId)
-						: undefined,
+				frozenCarryover,
+				earningYearLeave: carried.length ? { carried, ownYear } : undefined,
+				legacyCarryoverProtected,
 				organizationAllowance: {
 					...employeePolicy,
 					allowCarryover: policy?.allowCarryover ?? false,
@@ -298,15 +440,12 @@ export async function loadVacationBalances(
 				},
 				employeeAllowance: overrides.get(employeeId) ?? null,
 				allowance,
-				absences: absencesByEmployee.get(employeeId) ?? [],
-				isWorkingDay: workingDays.get(employeeId),
+				absences: employeeAbsences,
+				isWorkingDay,
 				currentDate,
 				year,
 				adjustmentTotal: vacationAdjustmentTotal(sums),
-				previouslyTakenDays:
-					input.previouslyTakenOverride?.employeeId === employeeId
-						? input.previouslyTakenOverride.days
-						: (sums.previouslyTaken ?? 0),
+				previouslyTakenDays,
 				timezone: input.timezone,
 			}),
 		);
@@ -320,5 +459,6 @@ export async function loadVacationBalances(
 		balances,
 		adjustments,
 		externalContractors,
+		yearLeave,
 	};
 }

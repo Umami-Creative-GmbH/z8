@@ -292,3 +292,116 @@ export const vacationCarryoverTransfer = pgTable(
 		),
 	],
 );
+
+/**
+ * Whether German leave-expiry rules apply to leave earned under a vacation policy (#2080). No row
+ * means unclassified: unused days then stay outstanding until HR classifies the policy.
+ * `policy_terms`: the policy's own carryover permission, cap and expiry apply.
+ */
+export type LeaveExpiryRules = "german" | "policy_terms";
+
+/** HR's final designation of a vacation policy's leave-expiry rules; never updated (0346 trigger). */
+export const vacationPolicyExpiryClassification = pgTable(
+	"vacation_policy_expiry_classification",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		policyId: uuid("policy_id")
+			.notNull()
+			.references(() => vacationAllowance.id, { onDelete: "cascade" }),
+		expiryRules: text("expiry_rules").$type<LeaveExpiryRules>().notNull(),
+		/**
+		 * German policy only: HR explicitly recorded that the extra contractual days follow the
+		 * policy's carryover cap and expiry instead of the statutory protections.
+		 */
+		extraDaysSeparateTerms: boolean("extra_days_separate_terms").default(false).notNull(),
+		/** Where those separate terms are agreed, such as the contract clause. */
+		extraDaysTermsBasis: text("extra_days_terms_basis"),
+		classifiedBy: text("classified_by").references(() => user.id, { onDelete: "set null" }),
+		classifiedAt: timestamp("classified_at", { withTimezone: true }).defaultNow().notNull(),
+	},
+	(table) => [
+		uniqueIndex("vacation_policy_expiry_classification_policy_idx").on(table.policyId),
+		index("vacation_policy_expiry_classification_org_idx").on(table.organizationId),
+		check(
+			"vacation_policy_expiry_classification_separate_terms_check",
+			sql`${table.expiryRules} = 'german' OR NOT ${table.extraDaysSeparateTerms}`,
+		),
+		check(
+			"vacation_policy_expiry_classification_basis_check",
+			sql`NOT ${table.extraDaysSeparateTerms} OR length(btrim(coalesce(${table.extraDaysTermsBasis}, ''))) > 0`,
+		),
+	],
+);
+
+/** `all`: earned without a statutory/extra split; `statutory`/`extra`: split under separate terms. */
+export type EarningYearLeavePortion = "all" | "statutory" | "extra";
+
+/**
+ * The days of one earning year that a committed year-end transfer carried into its receiving year
+ * (#2080). Carrying them again creates a successor row (`carriedFromId`), so earning year and
+ * earning policy survive every year-end. `configuredExpiryDate` is the policy's frozen deadline; it
+ * applies only where the earning policy's classification establishes it.
+ */
+export const vacationEarningYearLeave = pgTable(
+	"vacation_earning_year_leave",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		employeeId: uuid("employee_id").notNull(),
+		transferId: uuid("transfer_id")
+			.notNull()
+			.references(() => vacationCarryoverTransfer.id, { onDelete: "cascade" }),
+		receivingYear: integer("receiving_year").notNull(),
+		earningYear: integer("earning_year").notNull(),
+		earningPolicyId: uuid("earning_policy_id").references(() => vacationAllowance.id, {
+			onDelete: "set null",
+		}),
+		portion: text("portion").$type<EarningYearLeavePortion>().notNull(),
+		days: decimal("days").notNull(),
+		forfeitedDays: decimal("forfeited_days").default("0").notNull(),
+		configuredExpiryDate: timestamp("configured_expiry_date", { withTimezone: true }),
+		timezone: text("timezone").notNull(),
+		carriedFromId: uuid("carried_from_id"),
+		expiredDays: decimal("expired_days").default("0").notNull(),
+		expiredAt: timestamp("expired_at", { withTimezone: true }),
+		expiredBy: text("expired_by"),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+	},
+	(table) => [
+		uniqueIndex("vacation_earning_year_leave_transfer_idx").on(
+			table.transferId,
+			table.earningYear,
+			table.portion,
+		),
+		uniqueIndex("vacation_earning_year_leave_successor_idx")
+			.on(table.carriedFromId)
+			.where(sql`${table.carriedFromId} IS NOT NULL`),
+		index("vacation_earning_year_leave_employee_idx").on(
+			table.organizationId,
+			table.employeeId,
+			table.receivingYear,
+		),
+		foreignKey({
+			columns: [table.carriedFromId],
+			foreignColumns: [table.id],
+		}).onDelete("set null"),
+		foreignKey({
+			columns: [table.employeeId, table.organizationId],
+			foreignColumns: [employee.id, employee.organizationId],
+		}).onDelete("cascade"),
+		check(
+			"vacation_earning_year_leave_portion_check",
+			sql`${table.portion} IN ('all','statutory','extra')`,
+		),
+		check("vacation_earning_year_leave_years_check", sql`${table.earningYear} < ${table.receivingYear}`),
+		check(
+			"vacation_earning_year_leave_expired_check",
+			sql`${table.expiredDays} >= 0 AND ${table.expiredDays} <= ${table.days} AND (${table.expiredAt} IS NULL) = (${table.expiredBy} IS NULL)`,
+		),
+	],
+);

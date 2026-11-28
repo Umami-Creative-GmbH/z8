@@ -2423,6 +2423,13 @@
       "when": 1814630400000,
       "tag": "0345_agricultural_short_term",
       "breakpoints": true
+    },
+    {
+      "idx": 346,
+      "version": "7",
+      "when": 1814716800000,
+      "tag": "0346_vacation_leave_earning_year",
+      "breakpoints": true
     }
   ]
 }

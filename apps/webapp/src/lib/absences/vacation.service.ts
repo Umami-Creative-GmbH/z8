@@ -46,6 +46,7 @@ import {
 	commitAnnualVacationCarryover,
 	expireCommittedVacationCarryover,
 } from "./vacation-carryover";
+import { loadLeaveExpiryClassifications } from "./earning-year-leave-store";
 import { vacationPolicyCalculationsEnabled } from "./vacation-policy-rollout";
 
 const logger = createLogger("vacation-service");
@@ -177,7 +178,16 @@ function enhanceVacationBalance(input: {
 		);
 		const current = Temporal.Instant.from(input.currentDate.toISOString());
 		if (Temporal.Instant.compare(current, expiry) <= 0) {
-			carryoverExpiring = balance.carryoverDays;
+			// Only the unused days of the leave due at that deadline lapse with it (#2080).
+			carryoverExpiring = balance.earningYears
+				? balance.earningYears
+						.filter(
+							(row) =>
+								!row.expired &&
+								row.expiryDate?.getTime() === balance.carryoverExpiryDate?.getTime(),
+						)
+						.reduce((sum, row) => sum + row.remainingDays, 0)
+				: balance.carryoverDays;
 			const expiryTimezone = balance.carryoverExpiryTimezone ?? input.timezone;
 			const from = current.toZonedDateTimeISO(expiryTimezone);
 			carryoverExpiryDaysRemaining = Math.ceil(
@@ -232,7 +242,17 @@ export async function calculateAnnualCarryover(
 		throw new Error(`No vacation policy found for year ${fromYear}`);
 	}
 
-	if (!fromYearPolicy.allowCarryover) {
+	// Unless HR designated the policy for its own terms, unused leave stays outstanding: it carries
+	// in full, without the policy's cap or deadline (#2080).
+	const leaveProtected =
+		(
+			await loadLeaveExpiryClassifications(db, {
+				organizationId,
+				policyIds: [fromYearPolicy.id],
+			})
+		).get(fromYearPolicy.id)?.expiryRules !== "policy_terms";
+
+	if (!fromYearPolicy.allowCarryover && !leaveProtected) {
 		logger.info({ organizationId }, "Carryover not allowed by policy");
 		return {
 			organizationId,
@@ -335,12 +355,12 @@ export async function calculateAnnualCarryover(
 				totalAllowance,
 				usedDays: vacationTaken.totalDays,
 				previouslyTakenDays: adjustmentSums.get(emp.id)?.previouslyTaken ?? 0,
-				maxCarryoverDays: fromYearPolicy.maxCarryoverDays,
+				maxCarryoverDays: leaveProtected ? null : fromYearPolicy.maxCarryoverDays,
 			});
 
 			// Calculate expiry date
 			let expiryDate: Date | null = null;
-			if (toYearPolicy?.carryoverExpiryMonths) {
+			if (toYearPolicy?.carryoverExpiryMonths && !leaveProtected) {
 				const expiryDT = calculateCarryoverExpiryDate(
 					toYear,
 					toYearPolicy.carryoverExpiryMonths,

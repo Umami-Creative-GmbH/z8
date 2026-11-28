@@ -34,6 +34,31 @@ export interface VacationBalance {
 	carryoverExpiryTimezone?: string; // When carryover expires
 	/** The vacation allowance in `totalDays` and why it is prorated or full (#1110). */
 	allowance?: ProratedAllowance;
+	/**
+	 * Leave carried in from earlier years, one entry per earning year and portion, in charge order
+	 * (#2080). Present when committed transfers carry earning-year leave into this year.
+	 */
+	earningYears?: EarningYearBalance[];
+}
+
+/** Carried leave of one earning year (and portion) in a vacation year (#2080). */
+export interface EarningYearBalance {
+	earningYear: number;
+	/** The vacation policy the days were earned under; null when it is no longer known. */
+	earningPolicyId: string | null;
+	portion: "all" | "statutory" | "extra";
+	/** `unclassified`/`german_protection` days stay outstanding; the others follow the policy terms. */
+	protection: "unclassified" | "german_protection" | "policy_terms" | "separate_terms";
+	/** Days carried into this year, after any expiry already applied. */
+	days: number;
+	/** Vacation of this year charged to these days. */
+	usedDays: number;
+	/** Days still available to request from this earning year. */
+	remainingDays: number;
+	/** The established deadline (last valid instant); null when none is established. */
+	expiryDate: Date | null;
+	/** The established deadline has passed; unused days no longer count. */
+	expired: boolean;
 }
 
 export interface AbsenceRequest {
