@@ -3,7 +3,6 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { db as applicationDatabase } from "@/db";
 import { AuditAction } from "@/lib/audit-logger";
-import { withAuditTrail } from "@/lib/audit-trail";
 import { type Clock, plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { createLogger } from "@/lib/logger";
@@ -28,6 +27,7 @@ import {
 	type PersonalDetailsView,
 } from "./types";
 import { ibanLastFour, parseBankAccount, parseValidFrom } from "./validation";
+import { inPersonalDetailsWriteTransaction } from "./write-transaction";
 
 /**
  * The personal details module (spec #2068): an employee's bank account (and,
@@ -36,7 +36,8 @@ import { ibanLastFour, parseBankAccount, parseValidFrom } from "./validation";
  * and change is resolved by `resolvePersonalDetailsRight` alone.
  *
  * Every applied change records a value-free audit entry, an in-app notice and a
- * pending email in its own transaction, then emails the employee right after
+ * pending email in its own transaction (`inPersonalDetailsWriteTransaction`, so a
+ * database failure never carries the values into logs or spans), then emails the employee right after
  * commit, retried until sent: the mandatory "personal details changed" notice,
  * which notification preferences cannot switch off.
  */
@@ -160,8 +161,9 @@ export async function changePersonalDetails(
 		});
 	}
 	const day = validFrom.value.toString();
-	const { email, replaced } = await withAuditTrail((audit) =>
-		database.transaction(async (tx) => {
+	const { email, replaced } = await inPersonalDetailsWriteTransaction(
+		database,
+		async (tx, audit) => {
 			const right = refuseUnlessDecider(await resolvePersonalDetailsRight(tx, input));
 			const { replaced } = await writeBankAccountEntry(tx, {
 				organizationId: input.organizationId,
@@ -194,7 +196,7 @@ export async function changePersonalDetails(
 				clock.nowInstant(),
 			);
 			return { email, replaced };
-		}),
+		},
 	);
 	// The change stands either way: an email that fails now is retried by the sweep.
 	try {

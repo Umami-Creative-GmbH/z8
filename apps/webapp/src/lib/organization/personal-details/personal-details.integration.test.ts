@@ -487,4 +487,56 @@ describe("personal details", () => {
 			expect(await auditOf(worker)).toEqual([]);
 		});
 	});
+
+	describe("a failed write", () => {
+		const trigger = `personal_details_forced_failure_${randomUUID().replaceAll("-", "")}`;
+
+		/** Every string an error carries along its cause chain: what logs and spans could see. */
+		function textOf(error: unknown, seen = new Set<unknown>()): string {
+			if (error === null || typeof error !== "object" || seen.has(error)) return String(error);
+			seen.add(error);
+			return Object.getOwnPropertyNames(error)
+				.map((name) => {
+					const value = (error as Record<string, unknown>)[name];
+					return typeof value === "object" ? textOf(value, seen) : `${name}: ${String(value)}`;
+				})
+				.join("\n");
+		}
+
+		afterAll(async () => {
+			await fixture.pool.query(`drop function if exists ${trigger}() cascade`);
+		});
+
+		it("names none of the bank account's values in the error, whatever the database said", async () => {
+			// The database echoes the row back, as a failing check constraint does.
+			await fixture.pool.query(
+				`create function ${trigger}() returns trigger language plpgsql as $$
+				begin
+					raise exception 'forced failure for %', new.iban
+						using errcode = '23514', detail = format('Failing row contains (%s, %s, %s)', new.account_holder, new.iban, new.bic);
+				end $$`,
+			);
+			await fixture.pool.query(
+				`create trigger ${trigger} before insert on employee_bank_account for each row
+				when (new.employee_id = '${worker.employeeId}') execute function ${trigger}()`,
+			);
+			const holder = "Leaky Holderperson";
+
+			const error = await change(admin, worker, "2026-12-01", {
+				...MAX,
+				accountHolder: holder,
+			}).then(
+				() => null,
+				(failure: unknown) => failure,
+			);
+
+			expect(error).toBeInstanceOf(Error);
+			expect(error).toMatchObject({ code: "23514" });
+			const text = textOf(error);
+			for (const value of [MAX.iban, MAX.bic, holder, "Holderperson"]) {
+				expect(text).not.toContain(value);
+			}
+			expect((await read(admin, worker))?.bankAccount.history).toEqual([]);
+		});
+	});
 });
