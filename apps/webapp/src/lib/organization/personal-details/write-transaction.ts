@@ -1,8 +1,9 @@
 import "server-only";
 
+import { sql } from "drizzle-orm";
 import type { db as applicationDatabase } from "@/db";
 import { type AuditTrail, withAuditTrail } from "@/lib/audit-trail";
-import { PersonalDetailsRefusal } from "./types";
+import { type PersonalDetailsPart, PersonalDetailsRefusal } from "./types";
 
 /**
  * A personal details write the database refused. It names at most the
@@ -39,17 +40,35 @@ function sqlStateOf(error: unknown): string | undefined {
 	return undefined;
 }
 
+/** The one part of one employee's personal details a write changes. */
+export type PersonalDetailsWriteScope = {
+	organizationId: string;
+	employeeId: string;
+	part: PersonalDetailsPart;
+};
+
 /**
  * The one way the module writes personal details: `work` runs in a transaction
  * with an audit trail forwarded after commit. A refusal passes through; any
  * other failure becomes a value-free `PersonalDetailsWriteFailure`.
+ *
+ * Writes to the same part of the same employee run one after the other: the
+ * transaction first takes a lock on `scope`, so `work` reads the part's history
+ * as every earlier write left it (two overlapping ends never both survive).
  */
 export async function inPersonalDetailsWriteTransaction<T>(
 	database: Database,
+	scope: PersonalDetailsWriteScope,
 	work: (tx: Transaction, audit: AuditTrail) => Promise<T>,
 ): Promise<T> {
+	const lockKey = `personal-details:${scope.organizationId}:${scope.employeeId}:${scope.part}`;
 	try {
-		return await withAuditTrail((audit) => database.transaction((tx) => work(tx, audit)));
+		return await withAuditTrail((audit) =>
+			database.transaction(async (tx) => {
+				await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`);
+				return work(tx, audit);
+			}),
+		);
 	} catch (error) {
 		if (error instanceof PersonalDetailsRefusal) throw error;
 		throw new PersonalDetailsWriteFailure(sqlStateOf(error));

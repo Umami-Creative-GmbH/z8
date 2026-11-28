@@ -166,6 +166,7 @@ export async function changePersonalDetails(
 	const day = validFrom.value.toString();
 	const { email, replaced } = await inPersonalDetailsWriteTransaction(
 		database,
+		{ organizationId: input.organizationId, employeeId: input.employeeId, part: input.part },
 		async (tx, audit) => {
 			const right = refuseUnlessDecider(await resolvePersonalDetailsRight(tx, input));
 			const { replaced } = await writeBankAccountEntry(tx, {
@@ -227,6 +228,7 @@ export async function endPersonalDetails(
 	const day = validFrom.value.toString();
 	const { email, replaced } = await inPersonalDetailsWriteTransaction(
 		database,
+		{ organizationId: input.organizationId, employeeId: input.employeeId, part: input.part },
 		async (tx, audit) => {
 			const right = refuseUnlessDecider(await resolvePersonalDetailsRight(tx, input));
 			const history = await loadBankAccountHistory(tx, input);

@@ -312,6 +312,42 @@ describe("personal details", () => {
 			expect(await on("2026-12-01")).toBe("3000");
 		});
 
+		it("serializes overlapping ends, so they come out as if one ran after the other", async () => {
+			await change(admin, worker, "2026-01-01", ERIKA);
+			// Each end holds its transaction open after writing its end row, so two ends
+			// that are not serialized both read the history before either commits.
+			const pause = `personal_details_end_pause_${randomUUID().replaceAll("-", "")}`;
+			await fixture.pool.query(
+				`create function ${pause}() returns trigger language plpgsql as $$
+				begin perform pg_sleep(0.5); return new; end $$`,
+			);
+			await fixture.pool.query(
+				`create trigger ${pause} after insert on employee_bank_account for each row
+				when (new.employee_id = '${worker.employeeId}' and new.iban is null)
+				execute function ${pause}()`,
+			);
+			try {
+				await Promise.allSettled([
+					end(admin, worker, "2026-03-01"),
+					end(admin, worker, "2026-04-01"),
+				]);
+			} finally {
+				await fixture.pool.query(`drop function if exists ${pause}() cascade`);
+			}
+
+			// Mar 1 then Apr 1: nothing is left to end on Apr 1. Apr 1 then Mar 1: the
+			// Mar 1 end removes the later one. Either way one end, from Mar 1.
+			expect(
+				(await read(admin, worker))?.bankAccount.history.map((entry) => [
+					entry.validFrom,
+					entry.value?.ibanLastFour ?? null,
+				]),
+			).toEqual([
+				["2026-03-01", null],
+				["2026-01-01", "3000"],
+			]);
+		});
+
 		it("refuses an invalid end day", async () => {
 			await change(admin, worker, "2026-01-01", ERIKA);
 			await expect(end(admin, worker, "2026-02-30")).rejects.toMatchObject({

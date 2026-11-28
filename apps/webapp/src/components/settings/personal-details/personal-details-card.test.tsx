@@ -114,18 +114,46 @@ describe("PersonalDetailsCard", () => {
 		);
 	});
 
-	it("offers no end when nothing is on file today or later, nor to those who may not change", () => {
+	it("offers an end of an account that already ended, to correct the end to an earlier day", async () => {
+		// Recorded from Jan 1, ended Mar 1; the decider learns it really ended Feb 1.
+		endEmployeeBankAccount.mockResolvedValueOnce({ success: true, data: { replaced: false } });
 		const ended: PersonalDetailsView = {
 			...viewOf(ERIKA_IBAN, false),
+			on: "2026-04-15",
 			bankAccount: {
 				current: null,
 				history: [
-					{ validFrom: "2026-11-15", value: null },
+					{ validFrom: "2026-03-01", value: null },
 					{ validFrom: "2026-01-01", value: account(ERIKA_IBAN, false) },
 				],
 			},
 		};
-		const { rerender } = render(<PersonalDetailsCard view={ended} />);
+		render(<PersonalDetailsCard view={ended} />);
+
+		fireEvent.click(screen.getByRole("button", { name: "End bank account" }));
+		const form = screen.getByRole("form", { name: "End bank account" });
+		fireEvent.change(form.querySelector("input[name=validFrom]") as HTMLInputElement, {
+			target: { value: "2026-02-01" },
+		});
+		await act(async () => {
+			fireEvent.submit(form);
+		});
+
+		expect(endEmployeeBankAccount).toHaveBeenCalledWith({
+			employeeId: ended.employeeId,
+			validFrom: "2026-02-01",
+		});
+	});
+
+	it("offers no end when no bank account was ever on file, nor to those who may not change", () => {
+		const { rerender } = render(
+			<PersonalDetailsCard
+				view={{
+					...viewOf(ERIKA_IBAN, false),
+					bankAccount: { current: null, history: [] },
+				}}
+			/>,
+		);
 		expect(screen.queryByRole("button", { name: "End bank account" })).toBeNull();
 
 		rerender(

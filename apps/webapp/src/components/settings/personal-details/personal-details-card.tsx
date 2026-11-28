@@ -45,10 +45,9 @@ export function PersonalDetailsCard({ view }: { view: PersonalDetailsView }) {
 	const showRevealed = revealed !== null;
 	const current = revealed ?? view;
 	const canReveal = !view.viewer.revealed && view.bankAccount.history.length > 0;
-	// An end needs a bank account in force today or one coming into force later.
-	const canEnd =
-		view.bankAccount.current !== null ||
-		view.bankAccount.history.some((entry) => entry.value !== null && entry.validFrom > view.on);
+	// Any bank account on file can be ended, also one that already ended (to correct
+	// the end to an earlier day); the module refuses a day with nothing to end.
+	const canEnd = view.bankAccount.history.some((entry) => entry.value !== null);
 	const afterWrite = () => {
 		setEditing(null);
 		setReveal(null);
