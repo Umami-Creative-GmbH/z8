@@ -23,6 +23,8 @@ describe("parseIban", () => {
 		["NO", "NO9386011117947"],
 		["MT", "MT84MALT011000012345MTLCAST001S"],
 		["FR", "FR1420041010050500013M02606"],
+		// Serbia joined the SEPA schemes' geographical scope in May 2025.
+		["RS", "RS35260005601001611379"],
 	])("accepts a valid IBAN from the SEPA country %s", (_country, iban) => {
 		expect(parseIban(iban)).toEqual({ ok: true, value: iban });
 	});

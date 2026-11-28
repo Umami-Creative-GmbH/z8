@@ -11,8 +11,8 @@ export type Parsed<T, Code extends string> = { ok: true; value: T } | { ok: fals
  * The IBAN length of every country in the SEPA payment schemes' geographical
  * scope (EPC register of participating countries): the EU and EEA, Switzerland,
  * the United Kingdom (Jersey, Guernsey and the Isle of Man use GB), Andorra,
- * Gibraltar, Monaco, San Marino, Vatican City, and Albania, Moldova, Montenegro
- * and North Macedonia, admitted from 2025. A bank account must be able to
+ * Gibraltar, Monaco, San Marino, Vatican City, and Albania, Moldova, Montenegro,
+ * North Macedonia and Serbia, admitted in 2025. A bank account must be able to
  * receive a SEPA transfer, so no other country is accepted.
  */
 export const SEPA_IBAN_LENGTHS: Readonly<Record<string, number>> = {
@@ -52,6 +52,7 @@ export const SEPA_IBAN_LENGTHS: Readonly<Record<string, number>> = {
 	PL: 28,
 	PT: 25,
 	RO: 24,
+	RS: 22,
 	SE: 24,
 	SI: 19,
 	SK: 24,
