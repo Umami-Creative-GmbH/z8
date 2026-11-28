@@ -1,8 +1,8 @@
 /**
  * The employee page's personal details actions on PostgreSQL (#2071): a member
  * holding a payroll access grant that covers the employee reveals, changes and
- * ends their bank account through the actions, decided by the personal details
- * module alone; an uncovered member is refused.
+ * ends their bank account and health insurance (#2070) through the actions,
+ * decided by the personal details module alone; an uncovered member is refused.
  */
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
@@ -41,8 +41,12 @@ vi.mock("@/lib/auth", () => ({
 	},
 }));
 
-const { changeEmployeeBankAccount, endEmployeeBankAccount, revealEmployeePersonalDetails } =
-	await import("./personal-details-actions");
+const {
+	changeEmployeeBankAccount,
+	changeEmployeeHealthInsurance,
+	endEmployeePersonalDetails,
+	revealEmployeePersonalDetails,
+} = await import("./personal-details-actions");
 
 const ERIKA = { accountHolder: "Erika Mustermann", iban: "DE89370400440532013000", bic: null };
 
@@ -91,7 +95,37 @@ describe("personal details actions for a member payroll access holder", () => {
 		expect(revealed.success && revealed.data.bankAccount.history[0]?.value?.iban).toBe(ERIKA.iban);
 
 		await expect(
-			endEmployeeBankAccount({ employeeId: covered.employeeId, validFrom: "2026-03-01" }),
+			endEmployeePersonalDetails({
+				employeeId: covered.employeeId,
+				part: "bank_account",
+				validFrom: "2026-03-01",
+			}),
+		).resolves.toMatchObject({ success: true, data: { replaced: false } });
+	});
+
+	it("records and ends the covered employee's health insurance", async () => {
+		await expect(
+			changeEmployeeHealthInsurance({
+				employeeId: covered.employeeId,
+				validFrom: "2026-01-01",
+				kind: "statutory",
+				betriebsnummer: "15027365",
+			}),
+		).resolves.toMatchObject({ success: true, data: { replaced: false } });
+
+		const revealed = await revealEmployeePersonalDetails({ employeeId: covered.employeeId });
+		expect(revealed.success && revealed.data.healthInsurance?.current?.value).toEqual({
+			kind: "statutory",
+			insurerName: "Techniker Krankenkasse",
+			betriebsnummer: "15027365",
+		});
+
+		await expect(
+			endEmployeePersonalDetails({
+				employeeId: covered.employeeId,
+				part: "health_insurance",
+				validFrom: "2026-03-01",
+			}),
 		).resolves.toMatchObject({ success: true, data: { replaced: false } });
 	});
 
@@ -103,7 +137,17 @@ describe("personal details actions for a member payroll access holder", () => {
 				...ERIKA,
 			}),
 			await revealEmployeePersonalDetails({ employeeId: uncovered.employeeId }),
-			await endEmployeeBankAccount({ employeeId: uncovered.employeeId, validFrom: "2026-03-01" }),
+			await endEmployeePersonalDetails({
+				employeeId: uncovered.employeeId,
+				part: "bank_account",
+				validFrom: "2026-03-01",
+			}),
+			await changeEmployeeHealthInsurance({
+				employeeId: uncovered.employeeId,
+				validFrom: "2026-01-01",
+				kind: "private",
+				insurerName: "Allianz Private",
+			}),
 		]) {
 			expect(result.success).toBe(false);
 		}

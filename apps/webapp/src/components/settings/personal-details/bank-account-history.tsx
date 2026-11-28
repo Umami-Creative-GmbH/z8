@@ -1,21 +1,12 @@
 "use client";
 
-import { useTolgee, useTranslate } from "@tolgee/react";
-import { Badge } from "@/components/ui/badge";
-import { parsePlainDate } from "@/lib/datetime/temporal-core";
-import { formatPlainDate } from "@/lib/datetime/temporal-format";
+import { useTranslate } from "@tolgee/react";
 import type {
 	BankAccountView,
-	PersonalDetailsEntry,
 	PersonalDetailsHistory,
 } from "@/lib/organization/personal-details/types";
+import { PersonalDetailsHistoryList, useFormatDay } from "./history-list";
 import { formatIban, maskedIban } from "./personal-details-copy";
-
-function useFormatDay() {
-	const tolgee = useTolgee(["language"]);
-	const locale = tolgee.getLanguage() ?? "en";
-	return (day: string) => formatPlainDate(parsePlainDate(day), locale, "dateMedium");
-}
 
 function ibanText(value: BankAccountView) {
 	return value.iban ? formatIban(value.iban) : maskedIban(value.ibanLastFour);
@@ -71,58 +62,6 @@ export function CurrentBankAccount({
 	);
 }
 
-function HistoryEntry({
-	entry,
-	inForce,
-	upcoming,
-}: {
-	entry: PersonalDetailsEntry<BankAccountView>;
-	inForce: boolean;
-	upcoming: boolean;
-}) {
-	const { t } = useTranslate();
-	const formatDay = useFormatDay();
-	return (
-		<li className="flex flex-col gap-1 py-2 text-sm sm:flex-row sm:items-baseline sm:gap-4">
-			<span className="w-32 shrink-0 tabular-nums text-muted-foreground">
-				{t("settings.personalDetails.history.from", "From {date}", {
-					date: formatDay(entry.validFrom),
-				})}
-			</span>
-			{entry.value ? (
-				<span className="min-w-0 flex-1 break-words">
-					{entry.value.accountHolder} ·{" "}
-					<span className="font-mono tabular-nums" translate="no">
-						{ibanText(entry.value)}
-					</span>
-					{entry.value.bic ? (
-						<>
-							{" "}
-							·{" "}
-							<span className="font-mono" translate="no">
-								{entry.value.bic}
-							</span>
-						</>
-					) : null}
-				</span>
-			) : (
-				<span className="flex-1 text-muted-foreground">
-					{t("settings.personalDetails.history.ended", "Ended")}
-				</span>
-			)}
-			{inForce ? (
-				<Badge variant="secondary">
-					{t("settings.personalDetails.history.inForce", "In force")}
-				</Badge>
-			) : upcoming ? (
-				<Badge variant="outline">
-					{t("settings.personalDetails.history.upcoming", "Upcoming")}
-				</Badge>
-			) : null}
-		</li>
-	);
-}
-
 /** Every bank account entry, latest valid-from first. */
 export function BankAccountHistoryList({
 	bankAccount,
@@ -131,23 +70,27 @@ export function BankAccountHistoryList({
 	bankAccount: PersonalDetailsHistory<BankAccountView>;
 	on: string;
 }) {
-	const { t } = useTranslate();
-	if (bankAccount.history.length === 0) return null;
 	return (
-		<div className="space-y-1">
-			<h4 className="text-sm font-medium">
-				{t("settings.personalDetails.history.title", "History")}
-			</h4>
-			<ul className="divide-y">
-				{bankAccount.history.map((entry) => (
-					<HistoryEntry
-						key={entry.validFrom}
-						entry={entry}
-						inForce={bankAccount.current?.validFrom === entry.validFrom}
-						upcoming={entry.validFrom > on}
-					/>
-				))}
-			</ul>
-		</div>
+		<PersonalDetailsHistoryList
+			history={bankAccount}
+			on={on}
+			describe={(value) => (
+				<>
+					{value.accountHolder} ·{" "}
+					<span className="font-mono tabular-nums" translate="no">
+						{ibanText(value)}
+					</span>
+					{value.bic ? (
+						<>
+							{" "}
+							·{" "}
+							<span className="font-mono" translate="no">
+								{value.bic}
+							</span>
+						</>
+					) : null}
+				</>
+			)}
+		/>
 	);
 }

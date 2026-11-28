@@ -15,27 +15,46 @@ import {
 } from "./bank-account-store";
 import {
 	type ChangedEmailRetryResult,
+	type PersonalDetailsChange,
 	deliverPersonalDetailsChangedEmail,
 	type PendingChangedEmail,
 	recordPersonalDetailsChangedNotice,
 	retryPersonalDetailsChangedEmails as retryChangedEmails,
 } from "./changed-notice";
 import {
+	parseHealthInsurance,
+	type HealthInsuranceValue,
+	type StatutoryInsurerList,
+} from "./health-insurance";
+import {
+	holdsHealthInsurance,
+	loadHealthInsuranceHistory,
+	removeHealthInsuranceEntriesAfter,
+	writeHealthInsuranceEntry,
+} from "./health-insurance-store";
+import {
 	type BankAccountView,
 	type PersonalDetailsChangeInput,
 	type PersonalDetailsEndInput,
 	type PersonalDetailsEntry,
 	type PersonalDetailsHistory,
+	type PersonalDetailsPart,
 	PersonalDetailsRefusal,
 	type PersonalDetailsView,
 } from "./types";
-import { ibanLastFour, parseBankAccount, parseValidFrom } from "./validation";
+import {
+	type BankAccountValue,
+	ibanLastFour,
+	parseBankAccount,
+	parseValidFrom,
+} from "./validation";
 import { inPersonalDetailsWriteTransaction } from "./write-transaction";
 
 /**
- * The personal details module (spec #2068): an employee's bank account (and,
- * from #2070, health insurance) in one organization, each a date-effective
- * history. Its operations are the only way to read or change them; who may see
+ * The personal details module (spec #2068): an employee's bank account and
+ * health insurance (#2070) in one organization, each a date-effective history.
+ * An External Contractor has no health insurance: theirs is neither read nor
+ * written, but kept for when they are an employee again. Its operations are the only way to read or change them; who may see
  * and change is resolved by `resolvePersonalDetailsRight` alone.
  *
  * Every applied change records a value-free audit entry, an in-app notice and a
@@ -52,6 +71,8 @@ export type PersonalDetailsDatabase = typeof applicationDatabase;
 export type PersonalDetailsDependencies = {
 	database?: PersonalDetailsDatabase;
 	clock?: Clock;
+	/** The statutory insurers a new pick may choose from; the bundled list by default. */
+	statutoryInsurers?: StatutoryInsurerList;
 };
 
 type Scope = {
@@ -118,6 +139,9 @@ export async function readPersonalDetails(
 	}
 	const revealed = right.kind === "own" || input.reveal === true;
 	const bankAccounts = await loadBankAccountHistory(database, input);
+	const healthInsurance = (await holdsHealthInsurance(database, input))
+		? historyOf(await loadHealthInsuranceHistory(database, input), on)
+		: null;
 	return {
 		employeeId: input.employeeId,
 		on,
@@ -126,6 +150,7 @@ export async function readPersonalDetails(
 			bankAccounts.map((entry) => bankAccountView(entry, revealed)),
 			on,
 		),
+		healthInsurance,
 	};
 }
 
@@ -142,6 +167,57 @@ function refuseUnlessDecider(right: PersonalDetailsRight) {
 	return right;
 }
 
+/** A part's parsed new value, ready to store. */
+type ParsedChange =
+	| { part: "bank_account"; value: BankAccountValue }
+	| { part: "health_insurance"; value: HealthInsuranceValue };
+
+function parseChange(
+	input: PersonalDetailsChangeInput,
+	statutoryInsurers: StatutoryInsurerList | undefined,
+): ParsedChange {
+	const validFrom = parseValidFrom(input.validFrom);
+	const validFromErrors = validFrom.ok ? {} : { validFrom: validFrom.code };
+	if (input.part === "bank_account") {
+		const value = parseBankAccount(input.value);
+		if (value.ok && validFrom.ok) return { part: input.part, value: value.value };
+		throw invalidInput({ ...(value.ok ? {} : value.errors), ...validFromErrors });
+	}
+	const value = parseHealthInsurance(input.value, statutoryInsurers);
+	if (value.ok && validFrom.ok) return { part: input.part, value: value.value };
+	throw invalidInput({ ...(value.ok ? {} : value.errors), ...validFromErrors });
+}
+
+function invalidInput(fields: NonNullable<PersonalDetailsRefusal["details"]>["fields"]) {
+	return new PersonalDetailsRefusal("invalid_input", "The personal details are not valid", {
+		fields,
+	});
+}
+
+type Transaction = Parameters<Parameters<PersonalDetailsDatabase["transaction"]>[0]>[0];
+type PartScope = { organizationId: string; employeeId: string };
+
+/** An External Contractor has no health insurance to change or end. */
+async function refuseUnlessPartHeld(tx: Transaction, part: PersonalDetailsPart, scope: PartScope) {
+	if (part === "health_insurance" && !(await holdsHealthInsurance(tx, scope))) {
+		throw new PersonalDetailsRefusal(
+			"external_contractor",
+			"An External Contractor has no health insurance",
+		);
+	}
+}
+
+/** The part's history, latest valid-from first, values left out: enough to decide an end. */
+async function loadPartHistory(
+	tx: Transaction,
+	part: PersonalDetailsPart,
+	scope: PartScope,
+): Promise<PersonalDetailsEntry<unknown>[]> {
+	return part === "bank_account"
+		? loadBankAccountHistory(tx, scope)
+		: loadHealthInsuranceHistory(tx, scope);
+}
+
 /**
  * A decider changes a part of the employee's personal details from a valid-from
  * day, past days included. The same valid-from as an existing entry replaces it;
@@ -153,29 +229,20 @@ export async function changePersonalDetails(
 ): Promise<{ replaced: boolean }> {
 	const database = dependencies.database ?? applicationDatabase;
 	const clock = dependencies.clock ?? systemClock;
-	const validFrom = parseValidFrom(input.validFrom);
-	const value = parseBankAccount(input.value);
-	if (!validFrom.ok || !value.ok) {
-		throw new PersonalDetailsRefusal("invalid_input", "The personal details are not valid", {
-			fields: {
-				...(value.ok ? {} : value.errors),
-				...(validFrom.ok ? {} : { validFrom: validFrom.code }),
-			},
-		});
-	}
-	const day = validFrom.value.toString();
+	const change = parseChange(input, dependencies.statutoryInsurers);
+	const day = input.validFrom;
+	const scope = { organizationId: input.organizationId, employeeId: input.employeeId };
 	const { email, replaced } = await inPersonalDetailsWriteTransaction(
 		database,
-		{ organizationId: input.organizationId, employeeId: input.employeeId, part: input.part },
+		{ ...scope, part: change.part },
 		async (tx, audit) => {
 			const right = refuseUnlessDecider(await resolvePersonalDetailsRight(tx, input));
-			const { replaced } = await writeBankAccountEntry(tx, {
-				organizationId: input.organizationId,
-				employeeId: input.employeeId,
-				validFrom: day,
-				value: value.value,
-				actorUserId: input.actorUserId,
-			});
+			await refuseUnlessPartHeld(tx, change.part, scope);
+			const entry = { ...scope, validFrom: day, actorUserId: input.actorUserId };
+			const { replaced } =
+				change.part === "bank_account"
+					? await writeBankAccountEntry(tx, { ...entry, value: change.value })
+					: await writeHealthInsuranceEntry(tx, { ...entry, value: change.value });
 			await audit.record(tx, {
 				organizationId: input.organizationId,
 				action: AuditAction.PERSONAL_DETAILS_CHANGED,
@@ -184,26 +251,36 @@ export async function changePersonalDetails(
 				targetId: input.employeeId,
 				employeeId: input.employeeId,
 				// Never the values: the audit log must not hold another copy of them.
-				metadata: { part: input.part, validFrom: day, correction: replaced },
+				metadata: { part: change.part, validFrom: day, correction: replaced },
 			});
-			const email = await recordPersonalDetailsChangedNotice(
-				tx,
-				{
-					organizationId: input.organizationId,
-					employeeId: input.employeeId,
-					employeeUserId: right.employeeUserId,
-					part: input.part,
-					validFrom: day,
-					outcome: { kind: "changed", ibanLastFour: ibanLastFour(value.value.iban) },
-					changeId: randomUUID(),
-				},
-				clock.nowInstant(),
-			);
+			const notice: PersonalDetailsChange =
+				change.part === "bank_account"
+					? {
+							...noticeScope(input, right.employeeUserId, day),
+							part: change.part,
+							outcome: { kind: "changed", ibanLastFour: ibanLastFour(change.value.iban) },
+						}
+					: {
+							...noticeScope(input, right.employeeUserId, day),
+							part: change.part,
+							outcome: { kind: "changed" },
+						};
+			const email = await recordPersonalDetailsChangedNotice(tx, notice, clock.nowInstant());
 			return { email, replaced };
 		},
 	);
 	await attemptChangedEmail(database, email, clock);
 	return { replaced };
+}
+
+function noticeScope(scope: Scope, employeeUserId: string, validFrom: string) {
+	return {
+		organizationId: scope.organizationId,
+		employeeId: scope.employeeId,
+		employeeUserId,
+		validFrom,
+		changeId: randomUUID(),
+	};
 }
 
 /**
@@ -226,27 +303,27 @@ export async function endPersonalDetails(
 		});
 	}
 	const day = validFrom.value.toString();
+	const part = input.part;
+	const scope = { organizationId: input.organizationId, employeeId: input.employeeId };
 	const { email, replaced } = await inPersonalDetailsWriteTransaction(
 		database,
-		{ organizationId: input.organizationId, employeeId: input.employeeId, part: input.part },
+		{ ...scope, part },
 		async (tx, audit) => {
 			const right = refuseUnlessDecider(await resolvePersonalDetailsRight(tx, input));
-			const history = await loadBankAccountHistory(tx, input);
-			if (!endsAValue(history, day)) {
+			await refuseUnlessPartHeld(tx, part, scope);
+			if (!endsAValue(await loadPartHistory(tx, part, scope), day)) {
 				throw new PersonalDetailsRefusal("nothing_to_end", "Nothing is in force to end");
 			}
-			const superseded = await removeBankAccountEntriesAfter(tx, {
-				organizationId: input.organizationId,
-				employeeId: input.employeeId,
-				after: day,
-			});
-			const { replaced } = await writeBankAccountEntry(tx, {
-				organizationId: input.organizationId,
-				employeeId: input.employeeId,
-				validFrom: day,
-				value: null,
-				actorUserId: input.actorUserId,
-			});
+			const after = { ...scope, after: day };
+			const superseded =
+				part === "bank_account"
+					? await removeBankAccountEntriesAfter(tx, after)
+					: await removeHealthInsuranceEntriesAfter(tx, after);
+			const entry = { ...scope, validFrom: day, value: null, actorUserId: input.actorUserId };
+			const { replaced } =
+				part === "bank_account"
+					? await writeBankAccountEntry(tx, entry)
+					: await writeHealthInsuranceEntry(tx, entry);
 			await audit.record(tx, {
 				organizationId: input.organizationId,
 				action: AuditAction.PERSONAL_DETAILS_ENDED,
@@ -254,19 +331,11 @@ export async function endPersonalDetails(
 				targetType: "employee",
 				targetId: input.employeeId,
 				employeeId: input.employeeId,
-				metadata: { part: input.part, validFrom: day, correction: replaced, superseded },
+				metadata: { part, validFrom: day, correction: replaced, superseded },
 			});
 			const email = await recordPersonalDetailsChangedNotice(
 				tx,
-				{
-					organizationId: input.organizationId,
-					employeeId: input.employeeId,
-					employeeUserId: right.employeeUserId,
-					part: input.part,
-					validFrom: day,
-					outcome: { kind: "ended" },
-					changeId: randomUUID(),
-				},
+				{ ...noticeScope(input, right.employeeUserId, day), part, outcome: { kind: "ended" } },
 				clock.nowInstant(),
 			);
 			return { email, replaced };

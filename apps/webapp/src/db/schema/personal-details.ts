@@ -88,6 +88,66 @@ export const employeeBankAccount = pgTable(
 export type EmployeeBankAccountRow = typeof employeeBankAccount.$inferSelect;
 
 /**
+ * An employee's health insurance in one organization as a date-effective history
+ * (spec #2068, #2070), like the bank account: each row is in force from its
+ * valid-from until the next row's; a row without a value ends it. A statutory
+ * insurer picked from the bundled list carries the name and Betriebsnummer it had
+ * when picked, so a later merge or removal from the list never rewrites it.
+ * Not read for an External Contractor, but kept.
+ */
+export const employeeHealthInsurance = pgTable(
+	"employee_health_insurance",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		employeeId: uuid("employee_id").notNull(),
+		/** The plain calendar day the value is in force from. */
+		validFrom: date("valid_from", { mode: "string" }).notNull(),
+		/** statutory or private; null on an ending row, as is the insurer. */
+		kind: text("kind").$type<"statutory" | "private">(),
+		/** The picked insurer's name as the list had it, or the typed name. */
+		insurerName: text("insurer_name"),
+		/** Only for a statutory insurer picked from the list. */
+		insurerBetriebsnummer: text("insurer_betriebsnummer"),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+		createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.defaultNow()
+			.$onUpdate(() => currentTimestamp())
+			.notNull(),
+		updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
+	},
+	(table) => [
+		unique("employeeHealthInsurance_org_employee_valid_from_unique").on(
+			table.organizationId,
+			table.employeeId,
+			table.validFrom,
+		),
+		foreignKey({
+			name: "employeeHealthInsurance_employee_fk",
+			columns: [table.employeeId, table.organizationId],
+			foreignColumns: [employee.id, employee.organizationId],
+		}).onDelete("cascade"),
+		check(
+			"employeeHealthInsurance_value_check",
+			sql`(${table.kind} IS NULL AND ${table.insurerName} IS NULL AND ${table.insurerBetriebsnummer} IS NULL)
+				OR (${table.kind} = 'statutory' AND ${table.insurerName} IS NOT NULL)
+				OR (${table.kind} = 'private' AND ${table.insurerName} IS NOT NULL AND ${table.insurerBetriebsnummer} IS NULL)`,
+		),
+		check(
+			"employeeHealthInsurance_insurer_name_check",
+			sql`${table.insurerName} IS NULL OR char_length(${table.insurerName}) BETWEEN 1 AND 120`,
+		),
+		check(
+			"employeeHealthInsurance_betriebsnummer_check",
+			sql`${table.insurerBetriebsnummer} IS NULL OR ${table.insurerBetriebsnummer} ~ '^[0-9]{8}$'`,
+		),
+	],
+);
+
+/**
  * The email side of the mandatory "personal details changed" notice, recorded in
  * the change's own transaction so no change commits without it (#2069). One row
  * per change; it is attempted right after commit and retried by the

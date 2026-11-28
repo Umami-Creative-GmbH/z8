@@ -17,14 +17,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
 import type { PersonalDetailsView } from "@/lib/organization/personal-details/types";
 import { BankAccountForm } from "./bank-account-form";
+import type { PersonalDetailsPart } from "@/lib/organization/personal-details/types";
 import { BankAccountHistoryList, CurrentBankAccount } from "./bank-account-history";
-import { EndBankAccountForm } from "./end-bank-account-form";
+import { EndPersonalDetailsForm } from "./end-personal-details-form";
+import { CurrentHealthInsurance, HealthInsuranceHistoryList } from "./health-insurance-history";
+import { HealthInsuranceForm } from "./health-insurance-form";
 import { PERSONAL_DETAILS_REFUSALS } from "./personal-details-copy";
 
 /**
  * Personal details on the employee page (#2069), shown only to viewers with a
  * right to them: the bank account in force and its history, IBANs masked until
- * "show", and the change and end forms for those who may change them (#2071).
+ * "show", the health insurance and its history (#2070, not for an External
+ * Contractor), and the change and end forms for those who may change them (#2071).
  */
 export function PersonalDetailsCard({ view }: { view: PersonalDetailsView }) {
 	const { t } = useTranslate();
@@ -34,7 +38,10 @@ export function PersonalDetailsCard({ view }: { view: PersonalDetailsView }) {
 		of: PersonalDetailsView;
 		revealed: PersonalDetailsView;
 	} | null>(null);
-	const [editing, setEditing] = useState<"change" | "end" | null>(null);
+	const [editing, setEditing] = useState<{
+		part: PersonalDetailsPart;
+		mode: "change" | "end";
+	} | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [revealing, startReveal] = useTransition();
 	const [refreshing, startRefresh] = useTransition();
@@ -45,9 +52,14 @@ export function PersonalDetailsCard({ view }: { view: PersonalDetailsView }) {
 	const showRevealed = revealed !== null;
 	const current = revealed ?? view;
 	const canReveal = !view.viewer.revealed && view.bankAccount.history.length > 0;
-	// Any bank account on file can be ended, also one that already ended (to correct
-	// the end to an earlier day); the module refuses a day with nothing to end.
-	const canEnd = view.bankAccount.history.some((entry) => entry.value !== null);
+	// Any value on file can be ended, also one that already ended (to correct the
+	// end to an earlier day); the module refuses a day with nothing to end.
+	const canEndBankAccount = view.bankAccount.history.some((entry) => entry.value !== null);
+	const canEndHealthInsurance =
+		view.healthInsurance?.history.some((entry) => entry.value !== null) ?? false;
+	const mayEdit = view.viewer.mayChange && editing === null;
+	const isEditing = (part: PersonalDetailsPart, mode: "change" | "end") =>
+		view.viewer.mayChange && editing?.part === part && editing.mode === mode;
 	const afterWrite = () => {
 		setEditing(null);
 		setReveal(null);
@@ -91,7 +103,7 @@ export function PersonalDetailsCard({ view }: { view: PersonalDetailsView }) {
 							)
 						: t(
 								"settings.personalDetails.description",
-								"Bank account as this organization records it. The employee is told about every change.",
+								"Bank account and health insurance as this organization records them. The employee is told about every change.",
 							)}
 				</CardDescription>
 			</CardHeader>
@@ -122,19 +134,24 @@ export function PersonalDetailsCard({ view }: { view: PersonalDetailsView }) {
 									: t("settings.personalDetails.showIban", "Show IBAN")}
 							</Button>
 						) : null}
-						{view.viewer.mayChange && editing === null ? (
+						{mayEdit ? (
 							<Button
 								type="button"
 								variant="outline"
 								size="sm"
-								onClick={() => setEditing("change")}
+								onClick={() => setEditing({ part: "bank_account", mode: "change" })}
 							>
 								<IconPencil className="size-4" aria-hidden="true" />
 								{t("settings.personalDetails.bankAccount.change", "Change bank account")}
 							</Button>
 						) : null}
-						{view.viewer.mayChange && editing === null && canEnd ? (
-							<Button type="button" variant="ghost" size="sm" onClick={() => setEditing("end")}>
+						{mayEdit && canEndBankAccount ? (
+							<Button
+								type="button"
+								variant="ghost"
+								size="sm"
+								onClick={() => setEditing({ part: "bank_account", mode: "end" })}
+							>
 								<IconCalendarX className="size-4" aria-hidden="true" />
 								{t("settings.personalDetails.bankAccount.end", "End bank account")}
 							</Button>
@@ -147,7 +164,7 @@ export function PersonalDetailsCard({ view }: { view: PersonalDetailsView }) {
 					</p>
 				) : null}
 				<CurrentBankAccount bankAccount={current.bankAccount} />
-				{view.viewer.mayChange && editing === "change" ? (
+				{isEditing("bank_account", "change") ? (
 					<BankAccountForm
 						employeeId={view.employeeId}
 						today={view.on}
@@ -155,9 +172,10 @@ export function PersonalDetailsCard({ view }: { view: PersonalDetailsView }) {
 						onSaved={afterWrite}
 					/>
 				) : null}
-				{view.viewer.mayChange && editing === "end" ? (
-					<EndBankAccountForm
+				{isEditing("bank_account", "end") ? (
+					<EndPersonalDetailsForm
 						employeeId={view.employeeId}
+						part="bank_account"
 						today={view.on}
 						onCancel={() => setEditing(null)}
 						onEnded={afterWrite}
@@ -166,6 +184,63 @@ export function PersonalDetailsCard({ view }: { view: PersonalDetailsView }) {
 				<div aria-busy={refreshing}>
 					<BankAccountHistoryList bankAccount={current.bankAccount} on={view.on} />
 				</div>
+				{view.healthInsurance ? (
+					<section className="space-y-4 border-t pt-4">
+						<div className="flex flex-wrap items-center justify-between gap-2">
+							<h3 className="text-sm font-semibold">
+								{t("settings.personalDetails.healthInsurance.title", "Health insurance")}
+							</h3>
+							<div className="flex flex-wrap gap-2">
+								{mayEdit ? (
+									<Button
+										type="button"
+										variant="outline"
+										size="sm"
+										onClick={() => setEditing({ part: "health_insurance", mode: "change" })}
+									>
+										<IconPencil className="size-4" aria-hidden="true" />
+										{t(
+											"settings.personalDetails.healthInsurance.change",
+											"Change health insurance",
+										)}
+									</Button>
+								) : null}
+								{mayEdit && canEndHealthInsurance ? (
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										onClick={() => setEditing({ part: "health_insurance", mode: "end" })}
+									>
+										<IconCalendarX className="size-4" aria-hidden="true" />
+										{t("settings.personalDetails.healthInsurance.end", "End health insurance")}
+									</Button>
+								) : null}
+							</div>
+						</div>
+						<CurrentHealthInsurance healthInsurance={view.healthInsurance} />
+						{isEditing("health_insurance", "change") ? (
+							<HealthInsuranceForm
+								employeeId={view.employeeId}
+								today={view.on}
+								onCancel={() => setEditing(null)}
+								onSaved={afterWrite}
+							/>
+						) : null}
+						{isEditing("health_insurance", "end") ? (
+							<EndPersonalDetailsForm
+								employeeId={view.employeeId}
+								part="health_insurance"
+								today={view.on}
+								onCancel={() => setEditing(null)}
+								onEnded={afterWrite}
+							/>
+						) : null}
+						<div aria-busy={refreshing}>
+							<HealthInsuranceHistoryList healthInsurance={view.healthInsurance} on={view.on} />
+						</div>
+					</section>
+				) : null}
 			</CardContent>
 		</Card>
 	);

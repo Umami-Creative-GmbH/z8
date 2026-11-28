@@ -2,10 +2,15 @@
  * The personal details module's public types (spec #2068). Client-safe: the
  * settings UI renders these views and words these refusals.
  */
+import type {
+	HealthInsuranceErrors,
+	HealthInsuranceInput,
+	HealthInsuranceValue,
+} from "./health-insurance";
 import type { BankAccountErrors, BankAccountInput } from "./validation";
 
-/** The parts of an employee's personal details; health insurance follows (#2070). */
-export const PERSONAL_DETAILS_PARTS = ["bank_account"] as const;
+/** The parts of an employee's personal details. */
+export const PERSONAL_DETAILS_PARTS = ["bank_account", "health_insurance"] as const;
 export type PersonalDetailsPart = (typeof PERSONAL_DETAILS_PARTS)[number];
 
 /**
@@ -18,6 +23,13 @@ export type BankAccountView = {
 	ibanLastFour: string;
 	bic: string | null;
 };
+
+/**
+ * Health insurance as a viewer sees it, in full for everyone who sees it: a
+ * statutory insurer picked from the list carries the name and Betriebsnummer it
+ * had when picked; a typed one has no Betriebsnummer.
+ */
+export type HealthInsuranceView = HealthInsuranceValue;
 
 /** One row of a part's history: in force from `validFrom`; no value means ended. */
 export type PersonalDetailsEntry<Value> = {
@@ -49,14 +61,26 @@ export type PersonalDetailsView = {
 	on: string;
 	viewer: PersonalDetailsViewer;
 	bankAccount: PersonalDetailsHistory<BankAccountView>;
+	/**
+	 * Null for an External Contractor, who has no health insurance: an earlier
+	 * history is kept and shows again once they are an employee again.
+	 */
+	healthInsurance: PersonalDetailsHistory<HealthInsuranceView> | null;
 };
 
-export type PersonalDetailsChangeInput = {
-	part: "bank_account";
-	/** A plain calendar day, YYYY-MM-DD; past days correct history. */
-	validFrom: string;
-	value: BankAccountInput;
-};
+export type PersonalDetailsChangeInput =
+	| {
+			part: "bank_account";
+			/** A plain calendar day, YYYY-MM-DD; past days correct history. */
+			validFrom: string;
+			value: BankAccountInput;
+	  }
+	| {
+			part: "health_insurance";
+			/** A plain calendar day, YYYY-MM-DD; past days correct history. */
+			validFrom: string;
+			value: HealthInsuranceInput;
+	  };
 
 export type PersonalDetailsEndInput = {
 	part: PersonalDetailsPart;
@@ -73,11 +97,13 @@ export type PersonalDetailsRefusalCode =
 	| "own_details"
 	/** No value is in force on or after the end day: there is nothing to end. */
 	| "nothing_to_end"
+	/** An External Contractor has no health insurance: it is neither recorded nor ended. */
+	| "external_contractor"
 	/** The input is refused; `details` names each refused field. */
 	| "invalid_input";
 
 export type PersonalDetailsRefusalDetails = {
-	fields?: BankAccountErrors & { validFrom?: "valid_from_invalid" };
+	fields?: BankAccountErrors & HealthInsuranceErrors & { validFrom?: "valid_from_invalid" };
 };
 
 export class PersonalDetailsRefusal extends Error {

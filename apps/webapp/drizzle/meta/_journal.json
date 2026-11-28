@@ -2437,6 +2437,13 @@
       "when": 1814803200000,
       "tag": "0347_personal_details_changed_email",
       "breakpoints": true
+    },
+    {
+      "idx": 348,
+      "version": "7",
+      "when": 1814889600000,
+      "tag": "0348_employee_health_insurance",
+      "breakpoints": true
     }
   ]
 }

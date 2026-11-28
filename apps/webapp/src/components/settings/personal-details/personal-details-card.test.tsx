@@ -8,16 +8,23 @@ import type {
 } from "@/lib/organization/personal-details/types";
 import { PersonalDetailsCard } from "./personal-details-card";
 
-const { revealEmployeePersonalDetails, endEmployeeBankAccount, refresh } = vi.hoisted(() => ({
+const {
+	revealEmployeePersonalDetails,
+	endEmployeePersonalDetails,
+	changeEmployeeHealthInsurance,
+	refresh,
+} = vi.hoisted(() => ({
 	revealEmployeePersonalDetails: vi.fn(),
-	endEmployeeBankAccount: vi.fn(),
+	endEmployeePersonalDetails: vi.fn(),
+	changeEmployeeHealthInsurance: vi.fn(),
 	refresh: vi.fn(),
 }));
 
 vi.mock("@/app/[locale]/(app)/settings/employees/personal-details-actions", () => ({
 	revealEmployeePersonalDetails,
 	changeEmployeeBankAccount: vi.fn(),
-	endEmployeeBankAccount,
+	changeEmployeeHealthInsurance,
+	endEmployeePersonalDetails,
 }));
 
 vi.mock("next/navigation", () => ({
@@ -48,8 +55,18 @@ function viewOf(iban: string, revealed: boolean): PersonalDetailsView {
 		on: "2026-11-28",
 		viewer: { own: false, mayChange: true, revealed },
 		bankAccount: { current: entry, history: [entry] },
+		healthInsurance: { current: null, history: [] },
 	};
 }
+
+const TK = {
+	validFrom: "2026-01-01",
+	value: {
+		kind: "statutory" as const,
+		insurerName: "Techniker Krankenkasse",
+		betriebsnummer: "15027365",
+	},
+};
 
 afterEach(cleanup);
 
@@ -75,7 +92,7 @@ describe("PersonalDetailsCard", () => {
 	});
 
 	it("ends the bank account from the chosen day and refreshes the page", async () => {
-		endEmployeeBankAccount.mockResolvedValueOnce({ success: true, data: { replaced: false } });
+		endEmployeePersonalDetails.mockResolvedValueOnce({ success: true, data: { replaced: false } });
 		render(<PersonalDetailsCard view={viewOf(ERIKA_IBAN, false)} />);
 
 		fireEvent.click(screen.getByRole("button", { name: "End bank account" }));
@@ -87,8 +104,9 @@ describe("PersonalDetailsCard", () => {
 			fireEvent.submit(form);
 		});
 
-		expect(endEmployeeBankAccount).toHaveBeenCalledWith({
+		expect(endEmployeePersonalDetails).toHaveBeenCalledWith({
 			employeeId: viewOf(ERIKA_IBAN, false).employeeId,
+			part: "bank_account",
 			validFrom: "2026-12-01",
 		});
 		expect(refresh).toHaveBeenCalled();
@@ -96,7 +114,7 @@ describe("PersonalDetailsCard", () => {
 	});
 
 	it("words a refused end and keeps the form open", async () => {
-		endEmployeeBankAccount.mockResolvedValueOnce({
+		endEmployeePersonalDetails.mockResolvedValueOnce({
 			success: false,
 			code: "ValidationError",
 			refusal: "nothing_to_end",
@@ -116,7 +134,7 @@ describe("PersonalDetailsCard", () => {
 
 	it("offers an end of an account that already ended, to correct the end to an earlier day", async () => {
 		// Recorded from Jan 1, ended Mar 1; the decider learns it really ended Feb 1.
-		endEmployeeBankAccount.mockResolvedValueOnce({ success: true, data: { replaced: false } });
+		endEmployeePersonalDetails.mockResolvedValueOnce({ success: true, data: { replaced: false } });
 		const ended: PersonalDetailsView = {
 			...viewOf(ERIKA_IBAN, false),
 			on: "2026-04-15",
@@ -139,8 +157,9 @@ describe("PersonalDetailsCard", () => {
 			fireEvent.submit(form);
 		});
 
-		expect(endEmployeeBankAccount).toHaveBeenCalledWith({
+		expect(endEmployeePersonalDetails).toHaveBeenCalledWith({
 			employeeId: ended.employeeId,
+			part: "bank_account",
 			validFrom: "2026-02-01",
 		});
 	});
@@ -165,5 +184,115 @@ describe("PersonalDetailsCard", () => {
 			/>,
 		);
 		expect(screen.queryByRole("button", { name: "End bank account" })).toBeNull();
+	});
+
+	describe("health insurance", () => {
+		it("shows the insurer in force with its Betriebsnummer, and none for an External Contractor", () => {
+			const { rerender } = render(
+				<PersonalDetailsCard
+					view={{
+						...viewOf(ERIKA_IBAN, false),
+						healthInsurance: { current: TK, history: [TK] },
+					}}
+				/>,
+			);
+			expect(screen.getByRole("heading", { name: "Health insurance" })).toBeTruthy();
+			expect(screen.getAllByText("Techniker Krankenkasse").length).toBeGreaterThan(0);
+			expect(screen.getAllByText("15027365").length).toBeGreaterThan(0);
+
+			rerender(
+				<PersonalDetailsCard view={{ ...viewOf(ERIKA_IBAN, false), healthInsurance: null }} />,
+			);
+			expect(screen.queryByRole("heading", { name: "Health insurance" })).toBeNull();
+			expect(screen.queryByRole("button", { name: "Change health insurance" })).toBeNull();
+		});
+
+		it("records a private insurer by its typed name and refreshes the page", async () => {
+			changeEmployeeHealthInsurance.mockResolvedValueOnce({
+				success: true,
+				data: { replaced: false },
+			});
+			render(<PersonalDetailsCard view={viewOf(ERIKA_IBAN, false)} />);
+
+			fireEvent.click(screen.getByRole("button", { name: "Change health insurance" }));
+			const form = screen.getByRole("form", { name: "Change health insurance" });
+			fireEvent.click(screen.getByRole("radio", { name: "Private" }));
+			fireEvent.change(form.querySelector("input[name=insurerName]") as HTMLInputElement, {
+				target: { value: "Allianz Private" },
+			});
+			fireEvent.change(form.querySelector("input[name=validFrom]") as HTMLInputElement, {
+				target: { value: "2026-12-01" },
+			});
+			await act(async () => {
+				fireEvent.submit(form);
+			});
+
+			expect(changeEmployeeHealthInsurance).toHaveBeenCalledWith({
+				employeeId: viewOf(ERIKA_IBAN, false).employeeId,
+				validFrom: "2026-12-01",
+				kind: "private",
+				betriebsnummer: null,
+				insurerName: "Allianz Private",
+			});
+			expect(refresh).toHaveBeenCalled();
+		});
+
+		it("asks for a pick from the list for a statutory insurer, or a typed name when it is missing", async () => {
+			changeEmployeeHealthInsurance.mockResolvedValueOnce({
+				success: true,
+				data: { replaced: false },
+			});
+			render(<PersonalDetailsCard view={viewOf(ERIKA_IBAN, false)} />);
+
+			fireEvent.click(screen.getByRole("button", { name: "Change health insurance" }));
+			const form = screen.getByRole("form", { name: "Change health insurance" });
+			await act(async () => {
+				fireEvent.submit(form);
+			});
+			expect(screen.getByText("Choose the insurer from the list.")).toBeTruthy();
+			expect(changeEmployeeHealthInsurance).not.toHaveBeenCalled();
+
+			fireEvent.click(screen.getByRole("checkbox", { name: "The insurer is not on the list" }));
+			fireEvent.change(form.querySelector("input[name=insurerName]") as HTMLInputElement, {
+				target: { value: "Neue BKK" },
+			});
+			await act(async () => {
+				fireEvent.submit(form);
+			});
+			expect(changeEmployeeHealthInsurance).toHaveBeenCalledWith(
+				expect.objectContaining({
+					kind: "statutory",
+					betriebsnummer: null,
+					insurerName: "Neue BKK",
+				}),
+			);
+		});
+
+		it("ends the health insurance from the chosen day", async () => {
+			endEmployeePersonalDetails.mockResolvedValueOnce({
+				success: true,
+				data: { replaced: false },
+			});
+			render(
+				<PersonalDetailsCard
+					view={{ ...viewOf(ERIKA_IBAN, false), healthInsurance: { current: TK, history: [TK] } }}
+				/>,
+			);
+
+			fireEvent.click(screen.getByRole("button", { name: "End health insurance" }));
+			const form = screen.getByRole("form", { name: "End health insurance" });
+			fireEvent.change(form.querySelector("input[name=validFrom]") as HTMLInputElement, {
+				target: { value: "2026-12-01" },
+			});
+			await act(async () => {
+				fireEvent.submit(form);
+			});
+
+			expect(endEmployeePersonalDetails).toHaveBeenCalledWith({
+				employeeId: viewOf(ERIKA_IBAN, false).employeeId,
+				part: "health_insurance",
+				validFrom: "2026-12-01",
+			});
+		});
 	});
 });

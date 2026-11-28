@@ -10,7 +10,6 @@ import { sendEmailNotification } from "@/lib/notifications/email-notifications";
 import { type NotificationCopy, translatedContent } from "@/lib/notifications/notification-copy";
 import { insertInAppNotification } from "@/lib/notifications/notification-service";
 import type { CreateNotificationParams } from "@/lib/notifications/types";
-import type { PersonalDetailsPart } from "./types";
 
 const logger = createLogger("PersonalDetailsChangedNotice");
 
@@ -34,7 +33,26 @@ const bankAccountEndedCopy = {
 		"Your bank account was ended from {validFrom}. No bank account is on file for you from that day. If you didn't expect this change, contact your HR team right away.",
 } as const satisfies NotificationCopy;
 
-/** What happened to the part: a new value (of which only the IBAN's last four show), or an end. */
+const healthInsuranceChangedCopy = {
+	titleKey: "common:notifications.content.personalDetailsChanged.title",
+	titleDefault: "Your personal details changed",
+	messageKey: "common:notifications.content.personalDetailsChanged.healthInsuranceChanged",
+	messageDefault:
+		"Your health insurance was changed from {validFrom}. You can see it in your profile. If you didn't expect this change, contact your HR team right away.",
+} as const satisfies NotificationCopy;
+
+const healthInsuranceEndedCopy = {
+	titleKey: "common:notifications.content.personalDetailsChanged.title",
+	titleDefault: "Your personal details changed",
+	messageKey: "common:notifications.content.personalDetailsChanged.healthInsuranceEnded",
+	messageDefault:
+		"Your health insurance was ended from {validFrom}. No health insurance is on file for you from that day. If you didn't expect this change, contact your HR team right away.",
+} as const satisfies NotificationCopy;
+
+/**
+ * What happened to the part: a new value or an end. Of a new bank account only
+ * the IBAN's last four show; of a health insurance nothing, not even the insurer.
+ */
 export type PersonalDetailsChangeOutcome =
 	| { kind: "changed"; /** The only part of an IBAN a notice ever shows. */ ibanLastFour: string }
 	| { kind: "ended" };
@@ -45,17 +63,18 @@ export type PersonalDetailsChange = {
 	employeeId: string;
 	/** The employee's user: the notice always goes to them, whoever made the change. */
 	employeeUserId: string;
-	part: PersonalDetailsPart;
 	validFrom: string;
-	outcome: PersonalDetailsChangeOutcome;
 	/** The change's own UUID: one notice and one email per change. */
 	changeId: string;
-};
+} & (
+	| { part: "bank_account"; outcome: PersonalDetailsChangeOutcome }
+	| { part: "health_insurance"; outcome: { kind: "changed" } | { kind: "ended" } }
+);
 
 /**
  * The mandatory "personal details changed" notice (#2069): the safeguard against
- * payroll diversion. Never more of the IBAN than its last four characters. An end
- * (#2071) has its own wording and names no value.
+ * payroll diversion. Never more of the IBAN than its last four characters, and
+ * never the insurer (#2070). An end (#2071) has its own wording and names no value.
  */
 function buildPersonalDetailsChangedNotice(
 	change: PersonalDetailsChange,
@@ -66,12 +85,17 @@ function buildPersonalDetailsChangedNotice(
 		preset: "dateMedium",
 	} as const;
 	const content =
-		change.outcome.kind === "ended"
-			? translatedContent(bankAccountEndedCopy, { validFrom })
-			: translatedContent(bankAccountChangedCopy, {
-					validFrom,
-					lastFour: change.outcome.ibanLastFour,
-				});
+		change.part === "health_insurance"
+			? translatedContent(
+					change.outcome.kind === "ended" ? healthInsuranceEndedCopy : healthInsuranceChangedCopy,
+					{ validFrom },
+				)
+			: change.outcome.kind === "ended"
+				? translatedContent(bankAccountEndedCopy, { validFrom })
+				: translatedContent(bankAccountChangedCopy, {
+						validFrom,
+						lastFour: change.outcome.ibanLastFour,
+					});
 	return {
 		userId: change.employeeUserId,
 		organizationId: change.organizationId,
