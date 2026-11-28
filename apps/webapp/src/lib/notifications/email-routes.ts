@@ -1,8 +1,5 @@
 import type { SecurityEventType } from "@/lib/email/templates/security-alert";
-import {
-	EMPLOYEE_PAGES_PATH,
-	MY_DATA_PATH,
-} from "@/lib/personal-data-export/paths";
+import { EMPLOYEE_PAGES_PATH, MY_DATA_PATH } from "@/lib/personal-data-export/paths";
 import type { NotificationType } from "./types";
 
 /**
@@ -106,10 +103,7 @@ const NOTIFICATION_EMAIL_ROUTES: {
 	personnel_file_document_request_decided: layout("/my-documents"),
 	personnel_file_document_request_reminder: layout("/my-documents"),
 	personnel_file_document_request_submitted: layout("/personnel-files/"),
-	personnel_file_document_request_overdue: layout(
-		"/personnel-files/",
-		"/my-documents",
-	),
+	personnel_file_document_request_overdue: layout("/personnel-files/", "/my-documents"),
 	// The deputy's dashboard, which shows whom they cover (#1013).
 	absence_deputy_assigned: layout("/"),
 	absence_deputy_removed: layout("/"),
@@ -132,6 +126,8 @@ const NOTIFICATION_EMAIL_ROUTES: {
 	// Security settings, where the employee sees and removes their fob (#1507, decision O5);
 	// a kiosk-only employee's managers get the employee's page.
 	kiosk_fob_registered: layout("/settings/security", "/settings/employees/"),
+	// The employee's own settings, where they see their personal details (#2069).
+	personal_details_changed: layout("/settings/profile"),
 	// The page the export was started from; never a file link (#811).
 	personal_data_export_ready: layout(MY_DATA_PATH, EMPLOYEE_PAGES_PATH),
 	// Where the employee can request their own copy (#1166).
@@ -183,9 +179,7 @@ const NOTIFICATION_EMAIL_ROUTES: {
 	time_off_in_lieu_available: NONE,
 };
 
-export function notificationEmailRoute(
-	type: NotificationType,
-): NotificationEmailRoute {
+export function notificationEmailRoute(type: NotificationType): NotificationEmailRoute {
 	return NOTIFICATION_EMAIL_ROUTES[type];
 }
 

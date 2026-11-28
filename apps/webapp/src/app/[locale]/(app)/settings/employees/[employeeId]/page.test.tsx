@@ -12,6 +12,8 @@ const mockState = vi.hoisted(() => ({
 	getEmployee: vi.fn(),
 	loadPersonnelFilePanelCapability: vi.fn(),
 	getEmployeeEquipment: vi.fn(),
+	readPersonalDetails: vi.fn(),
+	employeeDisplayNames: vi.fn(),
 	redirect: vi.fn((path: string) => {
 		throw new Error(`redirect:${path}`);
 	}),
@@ -32,6 +34,17 @@ vi.mock("@/lib/organization/equipment/actions", () => ({
 vi.mock("./employee-detail-page-client", () => ({
 	EmployeeDetailPageClient: "EmployeeDetailPageClient",
 }));
+vi.mock("@/lib/organization/personal-details/personal-details", () => ({
+	readPersonalDetails: mockState.readPersonalDetails,
+}));
+vi.mock("@/lib/statutory/employee-display-names", () => ({
+	employeeDisplayNames: mockState.employeeDisplayNames,
+}));
+vi.mock("@/components/settings/personal-details/personal-details-card", () => ({
+	PersonalDetailsCard: ({ view }: { view: { employeeId: string } }) => (
+		<section aria-label="Personal details card">{view.employeeId}</section>
+	),
+}));
 vi.mock("@/lib/timezone/load-organization-timezone", () => ({
 	loadOrganizationTimezone: vi.fn(async () => "Europe/Berlin"),
 }));
@@ -45,6 +58,7 @@ function getContentElement(page: ReturnType<typeof EmployeeDetailPage>) {
 describe("EmployeeDetailPage viewer settings access", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mockState.readPersonalDetails.mockResolvedValue(null);
 		mockState.getEmployeeEquipment.mockResolvedValue({
 			success: false,
 			code: "AuthorizationError",
@@ -191,5 +205,81 @@ describe("EmployeeDetailPage viewer settings access", () => {
 			"redirect:/en/settings",
 		);
 		expect(mockState.getEmployee).not.toHaveBeenCalled();
+	});
+
+	describe("a member whose payroll access grant covers the employee (#2071)", () => {
+		const member = {
+			userId: "holder-1",
+			organizationId: "org-1",
+			settingsAccess: "member",
+			membershipRole: "member",
+			employee: { id: "holder-employee", role: "employee" },
+		};
+		const deciderView = {
+			employeeId: "employee-1",
+			on: "2026-11-28",
+			viewer: { own: false, mayChange: true, revealed: false },
+			bankAccount: { current: null, history: [] },
+		};
+
+		async function content() {
+			const page = EmployeeDetailPage({ params: Promise.resolve({ employeeId: "employee-1" }) });
+			const contentElement = getContentElement(page);
+			return contentElement.type(contentElement.props);
+		}
+
+		it("sees the employee's personal details and nothing else of the record", async () => {
+			mockState.getCurrentSettingsAccess.mockResolvedValue(member);
+			mockState.readPersonalDetails.mockResolvedValue(deciderView);
+			mockState.employeeDisplayNames.mockResolvedValue(
+				new Map([["employee-1", "Erika Mustermann"]]),
+			);
+
+			render(await content());
+
+			expect(mockState.readPersonalDetails).toHaveBeenCalledWith({
+				organizationId: "org-1",
+				actorUserId: "holder-1",
+				employeeId: "employee-1",
+			});
+			expect(screen.getByRole("heading", { level: 1, name: "Erika Mustermann" })).toBeTruthy();
+			expect(screen.getByRole("region", { name: "Personal details card" }).textContent).toBe(
+				"employee-1",
+			);
+			expect(mockState.getEmployee).not.toHaveBeenCalled();
+			expect(mockState.loadPersonnelFilePanelCapability).not.toHaveBeenCalled();
+			expect(mockState.getEmployeeEquipment).not.toHaveBeenCalled();
+		});
+
+		it("gives a manager outside the employee's scope the personal details their grant covers", async () => {
+			mockState.getCurrentSettingsAccess.mockResolvedValue({
+				...member,
+				settingsAccess: "scopedManager",
+				employee: { id: "holder-employee", role: "manager" },
+			});
+			mockState.getEmployee.mockResolvedValue({ success: false, code: "NotFoundError" });
+			mockState.readPersonalDetails.mockResolvedValue(deciderView);
+			mockState.employeeDisplayNames.mockResolvedValue(new Map());
+
+			render(await content());
+
+			expect(screen.getByRole("heading", { level: 1, name: "Personal details" })).toBeTruthy();
+			expect(screen.getByRole("region", { name: "Personal details card" })).toBeTruthy();
+		});
+
+		it("is sent back to settings when the module grants no decision: uncovered, or their own", async () => {
+			mockState.getCurrentSettingsAccess.mockResolvedValue(member);
+			mockState.readPersonalDetails.mockResolvedValueOnce(null);
+			await expect(content()).rejects.toThrow("redirect:/en/settings");
+
+			mockState.readPersonalDetails.mockResolvedValueOnce({
+				...deciderView,
+				viewer: { own: true, mayChange: false, revealed: true },
+			});
+			await expect(content()).rejects.toThrow("redirect:/en/settings");
+
+			expect(mockState.employeeDisplayNames).not.toHaveBeenCalled();
+			expect(mockState.getEmployee).not.toHaveBeenCalled();
+		});
 	});
 });

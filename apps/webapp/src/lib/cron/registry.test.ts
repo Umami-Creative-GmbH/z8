@@ -114,6 +114,14 @@ vi.mock("@/lib/jobs/durable-chat-dispatch-maintenance", () => {
 	durableChatDispatchMaintenance.imported();
 	return { runDurableChatDispatchMaintenance: durableChatDispatchMaintenance.run };
 });
+const personalDetailsChangedEmails = vi.hoisted(() => ({
+	imported: vi.fn(),
+	run: vi.fn(async () => ({ due: 2, sent: 1, unavailable: 0, failed: 1 })),
+}));
+vi.mock("@/lib/jobs/personal-details-changed-emails", () => {
+	personalDetailsChangedEmails.imported();
+	return { runPersonalDetailsChangedEmailsJob: personalDetailsChangedEmails.run };
+});
 const {
 	calculateTelemetryMetrics,
 	getOrCreateTelemetryIdentity,
@@ -521,5 +529,22 @@ describe("durable chat dispatch maintenance cron (#2044)", () => {
 			ranAt: "2026-11-26T00:00:00.000Z",
 		});
 		expect(durableChatDispatchMaintenance.run).toHaveBeenCalledOnce();
+	});
+});
+
+describe("personal details changed emails cron (#2069)", () => {
+	it("loads the sweep lazily and retries undelivered mandatory emails every five minutes", async () => {
+		expect(personalDetailsChangedEmails.imported).not.toHaveBeenCalled();
+		expect(CRON_JOBS["cron:personal-details-changed-emails"]).toMatchObject({
+			schedule: "*/5 * * * *",
+			defaultJobOptions: { attempts: 2, priority: 7 },
+		});
+
+		expect(
+			await CRON_JOBS["cron:personal-details-changed-emails"].processor({
+				triggeredAt: "2026-11-28T10:05:00Z",
+			}),
+		).toEqual({ due: 2, sent: 1, unavailable: 0, failed: 1 });
+		expect(personalDetailsChangedEmails.run).toHaveBeenCalledOnce();
 	});
 });

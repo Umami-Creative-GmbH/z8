@@ -15,6 +15,8 @@ export default defineConfig({
 		// instantiation depth limit (TS2589 in work-balance/adjustments/store.ts, #1995).
 		"./src/db/schema/contractor-profile.ts",
 		"./src/db/schema/contractor-compensation.ts",
+		// The personal details module's tables (#2069), outside the barrel for the same reason.
+		"./src/db/schema/personal-details.ts",
 	],
 	dialect: "postgresql",
 	dbCredentials: {

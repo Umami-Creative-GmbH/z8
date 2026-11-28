@@ -24,6 +24,7 @@ import type { ContractChangeBatchRecoveryResult } from "@/lib/jobs/contract-chan
 import type { DeputyCoverSummariesJobResult } from "@/lib/jobs/deputy-cover-summaries";
 import type { EmployeeDepartureMaintenanceResult } from "@/lib/jobs/employee-departures";
 import type { PersonalDataExportSweepResult } from "@/lib/jobs/personal-data-export-sweep";
+import type { PersonalDetailsChangedEmailsJobResult } from "@/lib/jobs/personal-details-changed-emails";
 import type { PersonnelFileDocumentRequestRemindersJobResult } from "@/lib/jobs/personnel-file-document-request-reminders";
 import type { PersonnelFileDocumentRequestRetentionJobResult } from "@/lib/jobs/personnel-file-document-request-retention";
 import type { PersonnelFileExpiryRemindersJobResult } from "@/lib/jobs/personnel-file-expiry-reminders";
@@ -828,6 +829,18 @@ export const CRON_JOBS = {
 			return runDurableChatDispatchMaintenance();
 		},
 		defaultJobOptions: { attempts: 2, priority: 8 },
+	},
+
+	"cron:personal-details-changed-emails": {
+		schedule: "*/5 * * * *", // A failed mandatory email is retried soon after its backoff
+		description:
+			"Retry the mandatory personal details changed emails that failed or never finished (each sent once)",
+		processor: async (): Promise<PersonalDetailsChangedEmailsJobResult> => {
+			const { runPersonalDetailsChangedEmailsJob } =
+				await import("@/lib/jobs/personal-details-changed-emails");
+			return runPersonalDetailsChangedEmailsJob();
+		},
+		defaultJobOptions: { attempts: 2, priority: 7 },
 	},
 } as const satisfies Record<string, CronJobDefinition>;
 

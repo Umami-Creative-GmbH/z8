@@ -10,9 +10,11 @@ import type { WorkBalanceDbClient } from "@/lib/work-balance/db-client";
  * (`employee.is_active = false`), so payroll can record a final overtime
  * payout after the last working day.
  *
- * Only balance adjustments use this, and a grant holder's payroll export for
- * the employees who left during or after its dates (#1001,
- * `listDepartedEmployeesCoveredForExport`). The payroll workspace and the
+ * Balance adjustments use this, a grant holder's payroll export for the
+ * employees who left during or after its dates (#1001,
+ * `listDepartedEmployeesCoveredForExport`), and the personal details module's
+ * decider rule (#2071, `findCoveringPayrollAccessGrant`), so payroll still
+ * reaches a former employee's bank account. The payroll workspace and the
  * sidebar keep `resolvePayrollAccessibleEmployeeIds`, which drops employees
  * who have left.
  *
@@ -82,10 +84,10 @@ const grantCoversEmployee = sql`(
 )`;
 
 /**
- * The actor's active payroll access grant when it covers the employee for
- * balance adjustments; otherwise null.
+ * The actor's active payroll access grant when it covers the employee, departed
+ * or not and never the actor's own record; otherwise null.
  */
-export async function findBalanceAdjustmentGrant(
+export async function findCoveringPayrollAccessGrant(
 	client: Reader,
 	input: { organizationId: string; actorUserId: string; employeeId: string },
 ): Promise<{ grantId: string } | null> {
@@ -99,6 +101,17 @@ export async function findBalanceAdjustmentGrant(
 	`);
 	const row = result.rows[0];
 	return row ? { grantId: row.grant_id } : null;
+}
+
+/**
+ * The actor's active payroll access grant when it covers the employee for
+ * balance adjustments; otherwise null.
+ */
+export function findBalanceAdjustmentGrant(
+	client: Reader,
+	input: { organizationId: string; actorUserId: string; employeeId: string },
+): Promise<{ grantId: string } | null> {
+	return findCoveringPayrollAccessGrant(client, input);
 }
 
 /**

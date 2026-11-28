@@ -34,7 +34,9 @@ vi.mock("@tolgee/react", () => ({
 vi.mock("@/hooks/use-display-context", () => ({
 	useDisplayContext: () => ({ locale: "en", timezone: "UTC" }),
 }));
-vi.mock("@/navigation", () => ({ Link: (props: React.ComponentProps<"a">) => <a {...props} /> }));
+vi.mock("@/navigation", () => ({
+	Link: ({ children, ...props }: React.ComponentProps<"a">) => <a {...props}>{children}</a>,
+}));
 
 const employee = {
 	id: "employee",
@@ -59,13 +61,18 @@ const data = {
 	timezone: "Europe/Berlin",
 	canManage: true,
 };
-function mount() {
+function mount(options: { decidesPersonalDetails?: boolean } = {}) {
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
 	return {
 		client,
 		...render(
 			<QueryClientProvider client={client}>
-				<EmployeeBalanceWorkspace employee={employee} organizationId="org" userId="holder" />
+				<EmployeeBalanceWorkspace
+					employee={employee}
+					organizationId="org"
+					userId="holder"
+					{...options}
+				/>
 			</QueryClientProvider>,
 		),
 	};
@@ -289,3 +296,15 @@ it("keeps the authoritative read-only ledger without offering management command
 	expect(screen.queryByRole("button", { name: "Record overtime payout" })).toBeNull();
 	expect(screen.queryByRole("button", { name: "Cancel" })).toBeNull();
 });
+
+it.each([true, false])(
+	"links to the employee's personal details only for a holder who decides them: %s (#2071)",
+	(decidesPersonalDetails) => {
+		mocks.read.mockResolvedValue({ success: true, data });
+		mount({ decidesPersonalDetails });
+		const link = screen.queryByRole("link", { name: "Personal details" });
+		expect(link?.getAttribute("href") ?? null).toBe(
+			decidesPersonalDetails ? "/settings/employees/employee" : null,
+		);
+	},
+);

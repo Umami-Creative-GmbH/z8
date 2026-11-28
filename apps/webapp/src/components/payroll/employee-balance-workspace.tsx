@@ -1,6 +1,6 @@
 "use client";
 
-import { IconArrowLeft, IconRefresh } from "@tabler/icons-react";
+import { IconArrowLeft, IconId, IconRefresh } from "@tabler/icons-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useId, useState } from "react";
@@ -37,7 +37,13 @@ import { Link } from "@/navigation";
 import { EmployeeBalanceLoadingHeading } from "./employee-balance-loading-heading";
 import { EmployeeBalanceProjection } from "./employee-balance-projection";
 
-type Props = { employee: BalanceAdjustmentGrantEmployee; organizationId: string; userId: string };
+type Props = {
+	employee: BalanceAdjustmentGrantEmployee;
+	organizationId: string;
+	userId: string;
+	/** The personal details module lets the holder decide this employee's personal details (#2071). */
+	decidesPersonalDetails?: boolean;
+};
 async function unwrap<T>(action: Promise<BalanceAdjustmentActionResult<T>>) {
 	const result = await action;
 	if (!result.success) {
@@ -153,16 +159,26 @@ function EmployeeBalanceArrival(props: Props) {
 					"Completed work minus required time, together with the opening balance and overtime payouts. Adjustments are never edited: a mistaken one is cancelled.",
 				)}
 				actions={
-					<Button
-						type="button"
-						variant="outline"
-						aria-label={t("payroll.workBalances.refresh", "Refresh work balance")}
-						disabled={section.isFetching}
-						onClick={() => void section.refetch()}
-					>
-						<IconRefresh aria-hidden="true" className="size-4" />
-						{t("common.refresh", "Refresh")}
-					</Button>
+					<>
+						{props.decidesPersonalDetails ? (
+							<Button asChild variant="outline">
+								<Link href={`/settings/employees/${employee.id}`}>
+									<IconId aria-hidden="true" className="size-4" />
+									{t("settings.personalDetails.title", "Personal details")}
+								</Link>
+							</Button>
+						) : null}
+						<Button
+							type="button"
+							variant="outline"
+							aria-label={t("payroll.workBalances.refresh", "Refresh work balance")}
+							disabled={section.isFetching}
+							onClick={() => void section.refetch()}
+						>
+							<IconRefresh aria-hidden="true" className="size-4" />
+							{t("common.refresh", "Refresh")}
+						</Button>
+					</>
 				}
 			/>
 			<EmployeeBalanceFeedback section={section} hasData={!!data} />

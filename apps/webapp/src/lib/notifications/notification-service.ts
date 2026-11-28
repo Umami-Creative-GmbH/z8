@@ -35,7 +35,7 @@ import type {
 	NotificationType,
 	NotificationWithMeta,
 } from "./types";
-import { hasMandatoryInbox, isChannelEnabledByDefault } from "./types";
+import { hasMandatoryEmail, hasMandatoryInbox, isChannelEnabledByDefault } from "./types";
 
 const logger = createLogger("NotificationService");
 
@@ -126,7 +126,7 @@ export async function loadNotificationChannelPreferences(
 	return {
 		in_app: hasMandatoryInbox(type) || enabled("in_app"),
 		push: enabled("push"),
-		email: enabled("email"),
+		email: hasMandatoryEmail(type) || enabled("email"),
 		teams: enabled("teams"),
 		telegram: enabled("telegram"),
 		discord: enabled("discord"),
