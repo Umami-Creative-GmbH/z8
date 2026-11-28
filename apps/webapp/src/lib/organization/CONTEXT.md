@@ -179,7 +179,7 @@ Whether an employee is insured statutorily or privately, and with which insurer.
 _Avoid_: Krankenkasse (that is a statutory insurer), insurer (that is only who insures)
 
 **Personal details change request**:
-An employee's request to change their own bank account or health insurance from today or a later date. It changes nothing until an org admin, or someone whose payroll access covers the employee, approves it as asked or rejects it with a reason; no one decides their own, and managing the employee gives no right to decide it. An employee has at most one open request for each of the two, and may withdraw it while it is open. Changing the details from an earlier date is left to those who may decide requests, who change them directly.
+An employee's request to change their own bank account or health insurance from today or a later date. It changes nothing until an org admin, or someone whose payroll access covers the employee, approves it as asked or rejects it with a reason; no one decides their own, and managing the employee gives no right to decide it. Those who may decide requests change their own details only by request too; when no one else may decide it, their request is approved at once. An employee has at most one open request for each of the two, and may withdraw it while it is open. Changing the details from an earlier date is left to those who may decide requests, who change them directly.
 _Avoid_: change request (on its own; absences have their own), profile update, self-service edit
 
 ### Personal data
