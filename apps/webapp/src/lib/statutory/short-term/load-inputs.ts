@@ -1,5 +1,6 @@
 import { and, eq, gt, gte, inArray, isNull, lt, ne, or, type SQL } from "drizzle-orm";
 import {
+	agriculturalDeclaration,
 	absenceCategory,
 	absenceEntry,
 	employeeEmploymentHistory,
@@ -42,11 +43,14 @@ import { matchWorkToShifts, splitWorkAtShiftStarts } from "./work-shift-matching
 export type ShortTermReader = Pick<DatabaseClient, "select">;
 
 /** Which statutory allowance applies: 70 working days, or 3 months for a ≥ 5-day week. */
-export type ShortTermLimitKind = "work_days" | "months";
+export type ShortTermLimitKind = "work_days" | "months" | "weeks";
 
 export const SHORT_TERM_THRESHOLD_KEYS = [
 	"de_short_term_max_work_days_per_year",
 	"de_short_term_max_months_per_year",
+	"de_short_term_agricultural_work_days",
+	"de_short_term_agricultural_weeks",
+	"de_short_term_agricultural_calendar_days",
 	"de_minijob_monthly_limit_cents",
 ] as const;
 
@@ -150,6 +154,7 @@ export interface ShortTermYearWeek {
  * supersession by later confirmed terms.
  */
 export interface ShortTermEmployment {
+	readonly periodId?: string;
 	/** First day, `YYYY-MM-DD`. */
 	readonly from: string;
 	/**
@@ -188,6 +193,7 @@ export interface ShortTermAgreedWeek {
 }
 
 export interface ShortTermEmployeeInputs {
+	readonly declarations?: readonly { periodId: string; effectiveFrom: string; eligible: boolean }[];
 	readonly employeeId: string;
 	readonly work: readonly ShortTermWorkItem[];
 	readonly planned: readonly ShortTermPlanItem[];
@@ -498,7 +504,13 @@ export function shortTermEmployments(
 			);
 		let current: { from: string; until: string | null } | null = null;
 		const close = () => {
-			if (current) employments.push({ ...current, fixedTermEndsOn, agreedWeeks: [] });
+			if (current)
+				employments.push({
+					...current,
+					...(periodId && { periodId }),
+					fixedTermEndsOn,
+					agreedWeeks: [],
+				});
 			current = null;
 		};
 		for (const [index, row] of ordered.entries()) {
@@ -1117,6 +1129,22 @@ export async function loadShortTermInputs(
 					organizationTimezone: input.timezone,
 					timezoneOverride: input.timezone,
 				});
+	const declarationRows = await db
+		.select({
+			employeeId: agriculturalDeclaration.employeeId,
+			periodId: agriculturalDeclaration.periodId,
+			effectiveFrom: agriculturalDeclaration.effectiveFrom,
+			eligible: agriculturalDeclaration.eligible,
+		})
+		.from(agriculturalDeclaration)
+		.where(
+			and(
+				eq(agriculturalDeclaration.organizationId, input.organizationId),
+				inArray(agriculturalDeclaration.employeeId, candidates),
+				lt(agriculturalDeclaration.effectiveFrom, until),
+			),
+		);
+	const declarationsByEmployee = groupBy(declarationRows, (row) => row.employeeId);
 	const offsetsByEmployee = groupBy(offsetRows, (row) => row.employeeId);
 
 	const employees: ShortTermEmployeeInputs[] = [];
@@ -1208,6 +1236,7 @@ export async function loadShortTermInputs(
 		}
 
 		employees.push({
+			declarations: declarationsByEmployee.get(employeeId) ?? [],
 			employeeId,
 			work,
 			planned,

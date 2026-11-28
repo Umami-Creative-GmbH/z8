@@ -140,6 +140,21 @@ function thresholdLabel(key: StatutoryThresholdKey, t: Translate): string {
 			);
 		case "de_short_term_max_work_days_per_year":
 			return t("settings.contracts.statutory.key.shortTermDays", "Working days per calendar year");
+		case "de_short_term_agricultural_work_days":
+			return t(
+				"settings.contracts.statutory.key.work_daysAgricultural",
+				"Agricultural working-day limit",
+			);
+		case "de_short_term_agricultural_weeks":
+			return t(
+				"settings.contracts.statutory.key.weeksAgricultural",
+				"Agricultural single-stint duration",
+			);
+		case "de_short_term_agricultural_calendar_days":
+			return t(
+				"settings.contracts.statutory.key.calendar_daysAgricultural",
+				"Agricultural combined duration",
+			);
 		case "de_short_term_max_months_per_year":
 			return t("settings.contracts.statutory.key.shortTermMonths", "Months per calendar year");
 		case "de_working_student_weekly_minutes":

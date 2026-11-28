@@ -32,7 +32,10 @@ import type {
 export const SHORT_TERM_LEGAL_REFERENCE = "§ 8 Abs. 1 Nr. 2 SGB IV";
 
 /** Finding kinds of the short-term monitor. */
-export type ShortTermFindingKind = "short_term_work_days" | "short_term_months";
+export type ShortTermFindingKind =
+	| "short_term_work_days"
+	| "short_term_months"
+	| "short_term_weeks";
 
 /** Wage-free state of one calendar year's allowance; planners may see all of it. */
 export interface ShortTermAllowance {
@@ -542,6 +545,8 @@ function countAllowance(input: {
 	readonly employments: readonly ShortTermEmployment[];
 	readonly prior: PriorEmployerTotals;
 	readonly dayLimit: number;
+	readonly weekLimit: number | null;
+	readonly combinedLimit: number | null;
 	readonly monthLimit: number;
 }): AllowanceCount {
 	const { prior, stints, dayLimit, monthLimit } = input;
@@ -575,7 +580,9 @@ function countAllowance(input: {
 		};
 	}
 	const ownLimit = (stint: ShortTermStint) =>
-		timeMonthsDays(parsePlainDate(stint.firstDay), monthLimit);
+		input.weekLimit === null
+			? timeMonthsDays(parsePlainDate(stint.firstDay), monthLimit)
+			: input.weekLimit * 7;
 	const overLimitStint = stints.find(
 		(stint) => stint.agreedEmployment !== null && calendarDays(stint) > ownLimit(stint),
 	);
@@ -589,7 +596,7 @@ function countAllowance(input: {
 	const [only] = stints;
 	if (stints.length === 1 && only && prior.months === 0) {
 		return {
-			limitKind: "months",
+			limitKind: input.weekLimit === null ? "months" : "weeks",
 			limit: ownLimit(only),
 			ownUsed: calendarDays(only),
 			priorEmployerUsed: 0,
@@ -597,14 +604,18 @@ function countAllowance(input: {
 			agreedWorkingDays: [],
 		};
 	}
-	const limit = monthLimit * SHORT_TERM_DAYS_PER_FULL_MONTH;
-	const ownUsed = stints.reduce((sum, stint) => sum + combinedCalendarDays(stint), 0);
+	const limit = input.combinedLimit ?? monthLimit * SHORT_TERM_DAYS_PER_FULL_MONTH;
+	const ownUsed = stints.reduce(
+		(sum, stint) =>
+			sum + (input.weekLimit === null ? combinedCalendarDays(stint) : calendarDays(stint)),
+		0,
+	);
 	const priorEmployerUsed = prior.months * SHORT_TERM_DAYS_PER_FULL_MONTH;
 	if (agreedTermOverLimit && ownUsed + priorEmployerUsed <= limit) {
 		// Full months counted as 30 days can bring the added-up stints under 90 although the agreed
 		// term alone runs past its 3 time months: that term is not short-term on its own.
 		return {
-			limitKind: "months",
+			limitKind: input.weekLimit === null ? "months" : "weeks",
 			limit: ownLimit(agreedTermOverLimit.stint),
 			ownUsed: calendarDays(agreedTermOverLimit.stint),
 			priorEmployerUsed: 0,
@@ -613,7 +624,7 @@ function countAllowance(input: {
 		};
 	}
 	return {
-		limitKind: "months",
+		limitKind: input.weekLimit === null ? "months" : "weeks",
 		limit,
 		ownUsed,
 		priorEmployerUsed,
@@ -680,8 +691,38 @@ export function judgeShortTermYear(input: {
 	const lastDay = days.at(-1) ?? null;
 
 	// The baseline in force on the last counted day (or the year's start) governs the year.
-	const governingDay = lastDay ?? `${year}-01-01`;
-	const dayLimit = thresholds.valueOn("de_short_term_max_work_days_per_year", governingDay);
+	const latestAgreementStart = agreed
+		.map((stint) => stint.firstDay)
+		.sort()
+		.at(-1);
+	const governingDay = [lastDay, latestAgreementStart, `${year}-01-01`]
+		.filter((day): day is string => !!day)
+		.sort()
+		.at(-1)!;
+	const periodId =
+		counted.find((item) => item.date === governingDay)?.employmentPeriodId ??
+		employee.employments.find(
+			(term) =>
+				term.from <= governingDay &&
+				(!term.until || governingDay < term.until) &&
+				(!term.fixedTermEndsOn || governingDay <= term.fixedTermEndsOn),
+		)?.periodId;
+	const eligible = employee.declarations
+		?.filter((row) => row.periodId === periodId && row.effectiveFrom <= governingDay)
+		.sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))[0]?.eligible;
+	const weekLimit = eligible
+		? thresholds.valueOn("de_short_term_agricultural_weeks", governingDay)
+		: null;
+	const combinedLimit =
+		weekLimit === null
+			? null
+			: thresholds.valueOn("de_short_term_agricultural_calendar_days", governingDay);
+	const dayLimit = thresholds.valueOn(
+		weekLimit === null
+			? "de_short_term_max_work_days_per_year"
+			: "de_short_term_agricultural_work_days",
+		governingDay,
+	);
 	const monthLimit = thresholds.valueOn("de_short_term_max_months_per_year", governingDay);
 	if (dayLimit === null || monthLimit === null) {
 		return { employeeId: employee.employeeId, year, allowance: null, findings: [] };
@@ -696,6 +737,8 @@ export function judgeShortTermYear(input: {
 			prior,
 			dayLimit,
 			monthLimit,
+			weekLimit,
+			combinedLimit,
 		});
 	const used = ownUsed + priorEmployerUsed;
 	const { tier, usedPercent } = classifyStatutoryUsage({ used, limit }, preferences);
@@ -718,7 +761,11 @@ export function judgeShortTermYear(input: {
 	const severity = severityOfUsageTier(tier);
 	if (severity) {
 		const kind: ShortTermFindingKind =
-			limitKind === "work_days" ? "short_term_work_days" : "short_term_months";
+			limitKind === "work_days"
+				? "short_term_work_days"
+				: limitKind === "weeks"
+					? "short_term_weeks"
+					: "short_term_months";
 		// Working days for the 70-day limit, calendar days for the 3-month limit (see the kind).
 		const unit = "days";
 		const subjectKey = String(year);

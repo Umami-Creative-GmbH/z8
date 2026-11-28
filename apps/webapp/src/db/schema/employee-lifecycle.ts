@@ -595,3 +595,28 @@ export type EmployeeDeactivation = typeof employeeDeactivation.$inferSelect;
 export type EmployeeDepartureEvent = typeof employeeDepartureEvent.$inferSelect;
 export type EmployeeDepartureTask = typeof employeeDepartureTask.$inferSelect;
 export type EmployeeDepartureReview = typeof employeeDepartureReview.$inferSelect;
+
+export const agriculturalDeclaration = pgTable(
+	"agricultural_declaration",
+	{
+		organizationId: text("organization_id").notNull(),
+		employeeId: uuid("employee_id").notNull(),
+		periodId: uuid("period_id").notNull(),
+		effectiveFrom: date("effective_from").notNull(),
+		establishmentNumber: text("establishment_number").notNull(),
+		eligible: boolean("eligible").notNull(),
+	},
+	(t) => [
+		unique("agricultural_declaration_date").on(t.periodId, t.effectiveFrom),
+		check("agricultural_declaration_number", sql`${t.establishmentNumber} ~ '^[0-9]{8}$'`),
+		foreignKey({
+			name: "agricultural_declaration_period_fk",
+			columns: [t.periodId, t.organizationId, t.employeeId],
+			foreignColumns: [
+				employeeEmploymentPeriod.id,
+				employeeEmploymentPeriod.organizationId,
+				employeeEmploymentPeriod.employeeId,
+			],
+		}).onDelete("cascade"),
+	],
+);

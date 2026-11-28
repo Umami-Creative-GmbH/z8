@@ -13,6 +13,7 @@ import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
+	recordAgriculturalDeclarationAction,
 	getShortTermMonitorAction,
 	recordShortTermPriorEmploymentAction,
 	voidShortTermPriorEmploymentAction,
@@ -117,13 +118,19 @@ function AllowanceSummary({ allowance, t }: { allowance: ShortTermAllowance; t: 
 			<p className="text-muted-foreground text-xs">
 				{allowance.limitKind === "work_days"
 					? t(
-							"settings.contracts.shortTerm.limitDays",
-							"70-working-day limit: fewer than 5 working days a week on average, an irregular pattern, or such work together with 5-day weeks or prior working days. Every stint counts with its working days; a prior employer's month counts as 70 / 3 working days.",
+							"settings.contracts.shortTerm.applicableWorkDayLimit",
+							"Working-day limit ({limit} days): fewer than 5 working days a week on average, an irregular pattern, or such work together with 5-day weeks or prior working days. Every stint counts with its working days; prior employers are included.",
+							{ limit: allowance.limit },
 						)
-					: t(
-							"settings.contracts.shortTerm.limitMonths",
-							"3-month limit: 5 or more working days a week throughout. A single stint counts in calendar days up to 3 months from its first day; several stints, including prior employers, add up to 90 calendar days, a full calendar month counting as 30. Pauses between stints do not count.",
-						)}{" "}
+					: allowance.limitKind === "weeks"
+						? t(
+								"settings.contracts.shortTerm.limitWeeks",
+								"Agricultural duration limit: 15 weeks for a single stint or 105 calendar days for combined stints.",
+							)
+						: t(
+								"settings.contracts.shortTerm.limitMonths",
+								"3-month limit: 5 or more working days a week throughout. A single stint counts in calendar days up to 3 months from its first day; several stints, including prior employers, add up to 90 calendar days, a full calendar month counting as 30. Pauses between stints do not count.",
+							)}{" "}
 				{t(
 					"settings.contracts.shortTerm.breakdown",
 					"Z8 work and planned shifts: {own}; prior employers: {prior}.",
@@ -420,6 +427,116 @@ function PriorEmploymentForm({
 	);
 }
 
+function AgriculturalDeclarationForm({
+	monitor,
+	organizationId,
+	t,
+}: {
+	monitor: ShortTermMonitor;
+	organizationId: string;
+	t: Translate;
+}) {
+	const client = useQueryClient();
+	const periods = monitor.declarationPeriods ?? [];
+	const form = useForm({
+		defaultValues: {
+			periodId: periods.at(-1)?.id ?? "",
+			effectiveFrom: "",
+			establishmentNumber: "",
+			eligible: false,
+		},
+		onSubmit: async ({ value }) => {
+			const result = await recordAgriculturalDeclarationAction({
+				...value,
+				employeeId: monitor.employeeId,
+			});
+			if (!result.success) {
+				toast.error(actionErrorMessage(t, result, {}));
+				return;
+			}
+			await client.invalidateQueries({
+				queryKey: shortTermMonitorQueryKey(organizationId, monitor.employeeId),
+			});
+			toast.success(t("settings.contracts.shortTerm.declaration.saved", "Declaration saved"));
+		},
+	});
+	if (!periods.length) return null;
+	return (
+		<form
+			className="space-y-2"
+			onSubmit={(event) => {
+				event.preventDefault();
+				void form.handleSubmit();
+			}}
+		>
+			<h3>
+				{t(
+					"settings.contracts.shortTerm.declaration.title",
+					"Agricultural establishment declaration",
+				)}
+			</h3>
+			<form.Field name="periodId">
+				{(f) => (
+					<label>
+						{t("settings.contracts.shortTerm.declaration.period", "Employment period")}
+						<select value={f.state.value} onChange={(e) => f.handleChange(e.target.value)}>
+							{periods.map((p) => (
+								<option key={p.id} value={p.id}>
+									{p.startedAt?.toISOString() ?? p.id}
+								</option>
+							))}
+						</select>
+					</label>
+				)}
+			</form.Field>
+			<form.Field name="effectiveFrom">
+				{(f) => (
+					<label>
+						{t("settings.contracts.shortTerm.declaration.from", "Effective from")}
+						<Input
+							type="date"
+							required
+							value={f.state.value}
+							onChange={(e) => f.handleChange(e.target.value)}
+						/>
+					</label>
+				)}
+			</form.Field>
+			<form.Field name="establishmentNumber">
+				{(f) => (
+					<label>
+						{t("settings.contracts.shortTerm.declaration.number", "Betriebsnummer (8 digits)")}
+						<Input
+							required
+							pattern="[0-9]{8}"
+							value={f.state.value}
+							onChange={(e) => f.handleChange(e.target.value)}
+						/>
+					</label>
+				)}
+			</form.Field>
+			<form.Field name="eligible">
+				{(f) => (
+					<label>
+						<input
+							type="checkbox"
+							checked={f.state.value}
+							onChange={(e) => f.handleChange(e.target.checked)}
+						/>
+						{t(
+							"settings.contracts.shortTerm.declaration.eligible",
+							"The establishment qualifies under WZ 2025 groups 01.1–01.6. For mixed establishments, use the activity employing most employees.",
+						)}
+					</label>
+				)}
+			</form.Field>
+			<Button type="submit">
+				{t("settings.contracts.shortTerm.declaration.save", "Save declaration")}
+			</Button>
+		</form>
+	);
+}
+
 function PriorEmploymentSection({
 	organizationId,
 	monitor,
@@ -482,6 +599,7 @@ function PriorEmploymentSection({
 					))}
 				</ul>
 			)}
+			<AgriculturalDeclarationForm monitor={monitor} organizationId={organizationId} t={t} />
 			<PriorEmploymentForm
 				organizationId={organizationId}
 				employeeId={monitor.employeeId}
