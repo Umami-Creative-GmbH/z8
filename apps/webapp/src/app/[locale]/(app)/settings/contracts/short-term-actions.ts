@@ -5,6 +5,7 @@ import { agriculturalDeclaration, employeeEmploymentPeriod } from "@/db/schema";
 import { Effect } from "effect";
 import { z } from "zod";
 import { plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
+import { ValidationError } from "@/lib/effect/errors";
 import { organizationAction } from "@/lib/organization-action/organization-action";
 import { refuseUnless } from "@/lib/organization-action/refuse-unless";
 import { storeStep } from "@/lib/organization-action/store-step";
@@ -174,7 +175,7 @@ export const recordAgriculturalDeclarationAction = organizationAction(
 			eligible: z.boolean(),
 		}),
 	},
-	({ organizationId, input }) =>
+	({ actor, organizationId, input }) =>
 		storeStep("contracts.recordAgriculturalDeclaration", async (db) => {
 			const [period] = await db
 				.select({ id: employeeEmploymentPeriod.id })
@@ -182,17 +183,14 @@ export const recordAgriculturalDeclarationAction = organizationAction(
 				.where(
 					and(
 						eq(employeeEmploymentPeriod.id, input.periodId),
+						eq(employeeEmploymentPeriod.engagementKind, "employee"),
 						eq(employeeEmploymentPeriod.employeeId, input.employeeId),
 						eq(employeeEmploymentPeriod.organizationId, organizationId),
 					),
 				);
-			if (!period) throw new Error("Employment period unavailable");
+			if (!period) throw new ValidationError({ message: "Employment period unavailable" });
 			await db
 				.insert(agriculturalDeclaration)
-				.values({ ...input, organizationId })
-				.onConflictDoUpdate({
-					target: [agriculturalDeclaration.periodId, agriculturalDeclaration.effectiveFrom],
-					set: { eligible: input.eligible, establishmentNumber: input.establishmentNumber },
-				});
+				.values({ ...input, organizationId, recordedBy: actor.userId });
 		}),
 );

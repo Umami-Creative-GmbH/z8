@@ -7,6 +7,7 @@ import {
 	foreignKey,
 	index,
 	integer,
+	serial,
 	pgTable,
 	text,
 	time,
@@ -14,6 +15,7 @@ import {
 	uuid,
 } from "drizzle-orm/pg-core";
 import { organization, user } from "../auth-schema";
+import { employeeEmploymentPeriod } from "./employee-lifecycle";
 import { employee } from "./organization";
 
 // German statutory foundation (#1988, spec #1934). Migration: 0333_statutory_foundation.sql.
@@ -320,3 +322,31 @@ export type OrganizationStatutoryPreference = typeof organizationStatutoryPrefer
 export type EmployeeStatutoryOffset = typeof employeeStatutoryOffset.$inferSelect;
 export type EmployeeStudyPeriod = typeof employeeStudyPeriod.$inferSelect;
 export type EmployeeApprenticeRelease = typeof employeeApprenticeRelease.$inferSelect;
+
+export const agriculturalDeclaration = pgTable(
+	"agricultural_declaration",
+	{
+		organizationId: text("organization_id").notNull(),
+		employeeId: uuid("employee_id").notNull(),
+		periodId: uuid("period_id").notNull(),
+		effectiveFrom: date("effective_from").notNull(),
+		establishmentNumber: text("establishment_number").notNull(),
+		eligible: boolean("eligible").notNull(),
+		id: serial("id").primaryKey(),
+		recordedAt: timestamp("recorded_at", { withTimezone: true }).defaultNow().notNull(),
+		recordedBy: text("recorded_by").references(() => user.id, { onDelete: "set null" }),
+	},
+	(t) => [
+		index("agricultural_declaration_date").on(t.periodId, t.effectiveFrom),
+		check("agricultural_declaration_number", sql`${t.establishmentNumber} ~ '^[0-9]{8}$'`),
+		foreignKey({
+			name: "agricultural_declaration_period_fk",
+			columns: [t.periodId, t.organizationId, t.employeeId],
+			foreignColumns: [
+				employeeEmploymentPeriod.id,
+				employeeEmploymentPeriod.organizationId,
+				employeeEmploymentPeriod.employeeId,
+			],
+		}).onDelete("cascade"),
+	],
+);

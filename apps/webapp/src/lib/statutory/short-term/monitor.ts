@@ -3,9 +3,10 @@
  * monitor card, the Berufsmäßigkeit verification in Settings → Contracts → Reviews & Conflicts,
  * and its audited acknowledgement.
  */
-import { and, asc, eq, gt, inArray, isNull, lt, or } from "drizzle-orm";
+import { desc, and, asc, eq, gt, inArray, isNull, lt, or } from "drizzle-orm";
 import { user } from "@/db/auth-schema";
 import {
+	agriculturalDeclaration,
 	employeeEmploymentPeriod,
 	employee,
 	employeeEmploymentHistory,
@@ -13,7 +14,7 @@ import {
 } from "@/db/schema";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import type { Instant } from "@/lib/datetime/temporal-core";
-import { plainDateAt } from "@/lib/datetime/temporal-core";
+import { instantFromDate, plainDateAt } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import {
@@ -52,7 +53,13 @@ export interface ShortTermPriorEmployment {
 }
 
 export interface ShortTermMonitor {
-	readonly declarationPeriods?: readonly { id: string; startedAt: Date | null }[];
+	readonly declarations?: readonly {
+		periodId: string;
+		effectiveFrom: string;
+		eligible: boolean;
+		establishmentNumber: string;
+	}[];
+	readonly declarationPeriods?: readonly { id: string; startDate: string | null }[];
 	readonly employeeId: string;
 	readonly year: number;
 	readonly audience: StatutoryAudience;
@@ -193,6 +200,28 @@ export async function loadShortTermMonitor(
 					)
 					.orderBy(asc(employeeEmploymentPeriod.startedAt))
 			: [];
+	const declarations =
+		input.audience === "full"
+			? await db
+					.select({
+						periodId: agriculturalDeclaration.periodId,
+						effectiveFrom: agriculturalDeclaration.effectiveFrom,
+						establishmentNumber: agriculturalDeclaration.establishmentNumber,
+						eligible: agriculturalDeclaration.eligible,
+					})
+					.from(agriculturalDeclaration)
+					.where(
+						and(
+							eq(agriculturalDeclaration.organizationId, input.organizationId),
+							eq(agriculturalDeclaration.employeeId, input.employeeId),
+						),
+					)
+					.orderBy(
+						agriculturalDeclaration.periodId,
+						agriculturalDeclaration.effectiveFrom,
+						desc(agriculturalDeclaration.id),
+					)
+			: [];
 	let priorEmployment: ShortTermPriorEmployment[] | null = null;
 	if (input.audience === "full") {
 		const rows = await db
@@ -229,7 +258,17 @@ export async function loadShortTermMonitor(
 		applies: evaluation !== undefined,
 		allowance: evaluation?.allowance ?? null,
 		findings: visible,
-		declarationPeriods,
+		declarations: declarations.filter(
+			(row, index) =>
+				row.periodId !== declarations[index - 1]?.periodId ||
+				row.effectiveFrom !== declarations[index - 1]?.effectiveFrom,
+		),
+		declarationPeriods: declarationPeriods.map((p) => ({
+			id: p.id,
+			startDate: p.startedAt
+				? plainDateAt(instantFromDate(p.startedAt), input.timezone).toString()
+				: null,
+		})),
 		priorEmployment,
 	};
 }

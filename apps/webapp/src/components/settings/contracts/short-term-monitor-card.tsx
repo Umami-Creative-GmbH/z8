@@ -18,6 +18,8 @@ import {
 	recordShortTermPriorEmploymentAction,
 	voidShortTermPriorEmploymentAction,
 } from "@/app/[locale]/(app)/settings/contracts/short-term-actions";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -475,64 +477,98 @@ function AgriculturalDeclarationForm({
 					"Agricultural establishment declaration",
 				)}
 			</h3>
+			{monitor.declarations?.map((row) => (
+				<Button
+					key={row.periodId + row.effectiveFrom}
+					type="button"
+					variant="outline"
+					onClick={() => form.reset({ ...row })}
+				>
+					{t(
+						"settings.contracts.shortTerm.declaration.edit",
+						"Edit declaration from {date} · {number}",
+						{ date: row.effectiveFrom, number: row.establishmentNumber },
+					)}
+				</Button>
+			))}
 			<form.Field name="periodId">
 				{(f) => (
-					<label>
-						{t("settings.contracts.shortTerm.declaration.period", "Employment period")}
-						<select value={f.state.value} onChange={(e) => f.handleChange(e.target.value)}>
-							{periods.map((p) => (
-								<option key={p.id} value={p.id}>
-									{p.startedAt?.toISOString() ?? p.id}
-								</option>
-							))}
-						</select>
-					</label>
+					<TFormItem>
+						<TFormLabel htmlFor={f.name}>
+							{t("settings.contracts.shortTerm.declaration.period", "Employment period")}
+						</TFormLabel>
+						<Select value={f.state.value} onValueChange={f.handleChange}>
+							<SelectTrigger id={f.name}>
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{periods.map((p) => (
+									<SelectItem key={p.id} value={p.id}>
+										{p.startDate ??
+											t(
+												"settings.contracts.shortTerm.declaration.unknownStart",
+												"Unknown start date",
+											)}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</TFormItem>
 				)}
 			</form.Field>
 			<form.Field name="effectiveFrom">
 				{(f) => (
-					<label>
-						{t("settings.contracts.shortTerm.declaration.from", "Effective from")}
+					<TFormItem>
+						<TFormLabel htmlFor={f.name}>
+							{t("settings.contracts.shortTerm.declaration.from", "Effective from")}
+						</TFormLabel>
 						<Input
+							id={f.name}
 							type="date"
 							required
 							value={f.state.value}
 							onChange={(e) => f.handleChange(e.target.value)}
 						/>
-					</label>
+					</TFormItem>
 				)}
 			</form.Field>
 			<form.Field name="establishmentNumber">
 				{(f) => (
-					<label>
-						{t("settings.contracts.shortTerm.declaration.number", "Betriebsnummer (8 digits)")}
+					<TFormItem>
+						<TFormLabel htmlFor={f.name}>
+							{t("settings.contracts.shortTerm.declaration.number", "Betriebsnummer (8 digits)")}
+						</TFormLabel>
 						<Input
+							id={f.name}
 							required
 							pattern="[0-9]{8}"
 							value={f.state.value}
 							onChange={(e) => f.handleChange(e.target.value)}
 						/>
-					</label>
+					</TFormItem>
 				)}
 			</form.Field>
 			<form.Field name="eligible">
 				{(f) => (
-					<label>
-						<input
-							type="checkbox"
+					<Label>
+						<Checkbox
 							checked={f.state.value}
-							onChange={(e) => f.handleChange(e.target.checked)}
+							onCheckedChange={(value) => f.handleChange(value === true)}
 						/>
 						{t(
 							"settings.contracts.shortTerm.declaration.eligible",
 							"The establishment qualifies under WZ 2025 groups 01.1–01.6. For mixed establishments, use the activity employing most employees.",
 						)}
-					</label>
+					</Label>
 				)}
 			</form.Field>
-			<Button type="submit">
-				{t("settings.contracts.shortTerm.declaration.save", "Save declaration")}
-			</Button>
+			<form.Subscribe selector={(state) => state.isSubmitting}>
+				{(pending) => (
+					<Button type="submit" disabled={pending}>
+						{t("settings.contracts.shortTerm.declaration.save", "Save declaration")}
+					</Button>
+				)}
+			</form.Subscribe>
 		</form>
 	);
 }

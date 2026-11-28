@@ -55,6 +55,23 @@ describe("short-term warning text (#1990)", () => {
 		).toBe("Short-term employment (3-month limit): 2 of 92 calendar days left this year");
 	});
 
+	it.each(["warning", "critical", "exceeded"] as const)(
+		"renders agricultural duration in calendar days at %s",
+		(tier) => {
+			const used = tier === "exceeded" ? 106 : tier === "critical" ? 104 : 90;
+			expect(
+				statutoryWarningText(
+					finding("short_term_weeks", {
+						tier,
+						used: { unit: "days", value: used },
+						limit: { unit: "days", value: 105 },
+						remaining: { unit: "days", value: Math.max(0, 105 - used) },
+					}),
+					t,
+				),
+			).toContain("105 calendar days");
+		},
+	);
 	it("says when the 3-month limit is exceeded, in calendar days", () => {
 		expect(
 			statutoryWarningText(

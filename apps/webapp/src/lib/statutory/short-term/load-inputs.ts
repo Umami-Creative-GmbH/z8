@@ -1,4 +1,4 @@
-import { and, eq, gt, gte, inArray, isNull, lt, ne, or, type SQL } from "drizzle-orm";
+import { desc, and, eq, gt, gte, inArray, isNull, lt, ne, or, type SQL } from "drizzle-orm";
 import {
 	agriculturalDeclaration,
 	absenceCategory,
@@ -1143,6 +1143,11 @@ export async function loadShortTermInputs(
 				inArray(agriculturalDeclaration.employeeId, candidates),
 				lt(agriculturalDeclaration.effectiveFrom, until),
 			),
+		)
+		.orderBy(
+			agriculturalDeclaration.periodId,
+			agriculturalDeclaration.effectiveFrom,
+			desc(agriculturalDeclaration.id),
 		);
 	const declarationsByEmployee = groupBy(declarationRows, (row) => row.employeeId);
 	const offsetsByEmployee = groupBy(offsetRows, (row) => row.employeeId);

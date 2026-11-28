@@ -5,11 +5,15 @@ CREATE TABLE IF NOT EXISTS agricultural_declaration (
  effective_from date NOT NULL,
  establishment_number text NOT NULL,
  eligible boolean NOT NULL,
+ id serial PRIMARY KEY,
+ recorded_at timestamptz NOT NULL DEFAULT now(),
+ recorded_by text REFERENCES "user"(id) ON DELETE SET NULL,
  CONSTRAINT agricultural_declaration_number CHECK (establishment_number ~ '^[0-9]{8}$'),
  CONSTRAINT agricultural_declaration_period_fk FOREIGN KEY (period_id, organization_id, employee_id)
- REFERENCES employee_employment_period(id, organization_id, employee_id) ON DELETE CASCADE,
- CONSTRAINT agricultural_declaration_date UNIQUE (period_id, effective_from)
+ REFERENCES employee_employment_period(id, organization_id, employee_id) ON DELETE CASCADE
 );
+--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS agricultural_declaration_date ON agricultural_declaration (period_id,effective_from);
 --> statement-breakpoint
 SELECT set_config('z8.statutory_baseline_maintenance', 'on', true);
 --> statement-breakpoint

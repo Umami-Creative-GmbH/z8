@@ -27,7 +27,6 @@ export function shortTermWarningText(
 						"Short-term employment: {remaining} of {limit} working days left this year",
 						params,
 					);
-		// The 3-month limit is counted in calendar days (one stint's 3 months, or 90 days in total).
 		case "short_term_weeks":
 			return tier === "exceeded"
 				? t(

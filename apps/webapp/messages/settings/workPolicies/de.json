@@ -680,7 +680,20 @@
           "verified": "Geprüft"
         },
         "workDays": "{count, plural, one {# Arbeitstag} other {# Arbeitstage}}",
-        "year": "Kalenderjahr"
+        "year": "Kalenderjahr",
+        "applicableWorkDayLimit": "Arbeitstagegrenze ({limit} Tage) bei unregelmäßiger Arbeit, durchschnittlich weniger als fünf Arbeitstagen pro Woche oder anrechenbaren früheren Arbeitstagen.",
+        "limitWeeks": "Landwirtschaft: 15 Wochen bei einem Einsatz oder 105 Kalendertage für mehrere Einsätze zusammen.",
+        "declaration": {
+          "saved": "Erklärung gespeichert",
+          "title": "Erklärung zum landwirtschaftlichen Betrieb",
+          "edit": "Erklärung ab {date} bearbeiten · {number}",
+          "period": "Beschäftigungszeitraum",
+          "unknownStart": "Beginn unbekannt",
+          "from": "Gültig ab",
+          "number": "Betriebsnummer (8 Ziffern)",
+          "eligible": "Der Betrieb gehört zu den WZ-2025-Gruppen 01.1–01.6. Bei Mischbetrieben zählt der Bereich, in dem die meisten Beschäftigten arbeiten.",
+          "save": "Erklärung speichern"
+        }
       },
       "sources": {
         "employeeOverride": "Mitarbeiterüberschreibung",
@@ -735,7 +748,10 @@
           "youthNightStart": "Nachtruhe beginnt",
           "youthRest": "Tägliche Mindestruhezeit",
           "youthUninterrupted": "Längste Arbeitszeit ohne Pause",
-          "youthWeekly": "Wöchentliche Arbeitszeit"
+          "youthWeekly": "Wöchentliche Arbeitszeit",
+          "agriculturalWorkDays": "Arbeitstagegrenze in der Landwirtschaft",
+          "agriculturalWeeks": "Dauer eines landwirtschaftlichen Einsatzes",
+          "agriculturalCalendarDays": "Gesamtdauer mehrerer landwirtschaftlicher Einsätze"
         },
         "loadFailed": "Die gesetzlichen Vorgaben konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
         "preferences": {
