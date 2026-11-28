@@ -21,10 +21,7 @@ import {
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { Button } from "@/components/ui/button";
 import { getLocalizedNotificationContent } from "@/lib/notifications/localized-notification";
-import type {
-	NotificationType,
-	NotificationWithMeta,
-} from "@/lib/notifications/types";
+import type { NotificationType, NotificationWithMeta } from "@/lib/notifications/types";
 import { cn } from "@/lib/utils";
 import { useRouter } from "@/navigation";
 
@@ -71,7 +68,9 @@ function getNotificationStyle(type: NotificationType): {
 			};
 
 		// A kiosk fob was registered at a kiosk (#1507): a security notice, styled like one.
+		// So is a change to the employee's personal details (#2069).
 		case "kiosk_fob_registered":
+		case "personal_details_changed":
 			return {
 				icon: <IconNfc className="size-4" />,
 				bgColor: "bg-slate-100 dark:bg-slate-900/30",
@@ -303,12 +302,7 @@ export function NotificationItem({
 				{/* Content */}
 				<span className="min-w-0 flex-1">
 					<span className="flex items-start justify-between gap-2">
-						<span
-							className={cn(
-								"text-sm break-words",
-								!notification.isRead && "font-medium",
-							)}
-						>
+						<span className={cn("text-sm break-words", !notification.isRead && "font-medium")}>
 							{localized.title}
 						</span>
 						{!notification.isRead && (
@@ -336,10 +330,7 @@ export function NotificationItem({
 				{!notification.isRead && (
 					<Button
 						disabled={disabled}
-						aria-label={t(
-							"common:notifications.actions.markAsRead",
-							"Mark as read",
-						)}
+						aria-label={t("common:notifications.actions.markAsRead", "Mark as read")}
 						size="icon"
 						variant="ghost"
 						className="size-7"

@@ -139,6 +139,9 @@ export const NOTIFICATION_TYPES = [
 	"former_employee_needs_rehire",
 	// A kiosk fob was registered to the employee at a kiosk; kiosk-only: their managers (#1507)
 	"kiosk_fob_registered",
+	// The employee's personal details changed, whoever changed them (#2069): the
+	// payroll-diversion safeguard, delivered in-app and by email whatever the preferences.
+	"personal_details_changed",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -154,8 +157,18 @@ export function hasMandatoryInbox(type: NotificationType): boolean {
 		type === "kiosk_fob_registered" ||
 		type === "automatic_clock_out" ||
 		type === "driving_licence_reminder" ||
-		type === "driving_authorization_suspended"
+		type === "driving_authorization_suspended" ||
+		type === "personal_details_changed"
 	);
+}
+
+/**
+ * Types always emailed whatever the recipient's preferences: a change to the
+ * employee's personal details (#2069), so a hijacked account cannot redirect a
+ * salary unnoticed by first switching the notice off.
+ */
+export function hasMandatoryEmail(type: NotificationType): boolean {
+	return type === "personal_details_changed";
 }
 
 /** Types delivered only to the inbox until the user turns on another channel. */
@@ -215,8 +228,7 @@ export type Notification = typeof notification.$inferSelect;
 export type NewNotification = typeof notification.$inferInsert;
 
 export type NotificationPreference = typeof notificationPreference.$inferSelect;
-export type NewNotificationPreference =
-	typeof notificationPreference.$inferInsert;
+export type NewNotificationPreference = typeof notificationPreference.$inferInsert;
 
 // API response types
 export interface NotificationWithMeta extends Notification {

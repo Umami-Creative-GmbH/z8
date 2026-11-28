@@ -35,6 +35,7 @@ import type { ChatLinkProofPurpose } from "@/app/[locale]/(app)/settings/notific
 import type { ChatInstallationProvider } from "@/db/schema/chat-installations";
 import type { AbsenceDeputyNotificationType } from "@/lib/absences/deputy-notification-types";
 import {
+	hasMandatoryEmail,
 	hasMandatoryInbox,
 	NOTIFICATION_CHANNELS,
 	type NotificationChannel,
@@ -204,6 +205,7 @@ const NOTIFICATION_CATEGORIES = [
 			"two_factor_enabled",
 			"two_factor_disabled",
 			"kiosk_fob_registered",
+			"personal_details_changed",
 			"personal_data_export_ready",
 			"personal_data_export_admin_exported",
 		] as NotificationType[],
@@ -273,6 +275,7 @@ type StaticallyLabelledType =
 	| "driving_authorization_suspended"
 	| "kiosk_command_refused"
 	| "kiosk_fob_registered"
+	| "personal_details_changed"
 	| "personnel_file_document_requested"
 	| "personnel_file_document_request_reminder"
 	| "personnel_file_document_request_decided"
@@ -602,6 +605,12 @@ function useNotificationSettingsViewModel() {
 				return t(
 					"common:notifications.preferences.types.kiosk_fob_registered",
 					"Kiosk fob registered",
+				);
+			// Your bank account changed, whoever changed it (#2069); cannot be switched off.
+			case "personal_details_changed":
+				return t(
+					"common:notifications.preferences.types.personal_details_changed",
+					"Personal details changed",
 				);
 			case "personnel_file_document_requested":
 				return t(
@@ -1033,6 +1042,16 @@ function NotificationSettingsView({
 													channel === "email",
 											)
 											.map((channel) => {
+												if (hasMandatoryEmail(type) && channel === "email") {
+													return (
+														<span key={channel} className="text-xs text-muted-foreground">
+															{t(
+																"common:notifications.preferences.mandatoryEmail",
+																"Always sent by email",
+															)}
+														</span>
+													);
+												}
 												if (hasMandatoryInbox(type) && channel === "in_app") {
 													return (
 														<span key={channel} className="text-xs text-muted-foreground">
