@@ -81,14 +81,21 @@ export interface OwnYearLeaveTerms {
 const round2 = (value: number) => Math.round(value * 100) / 100;
 
 /** The year's own earned days as earning-year leave, split only under separate terms. */
-export function ownYearLeave(year: number, days: number, terms: OwnYearLeaveTerms): EarningYearLeave[] {
+export function ownYearLeave(
+	year: number,
+	days: number,
+	terms: OwnYearLeaveTerms,
+): EarningYearLeave[] {
 	const own = Math.max(0, round2(days));
 	const base = {
 		earningYear: year,
 		earningPolicyId: terms.earningPolicyId,
 		configuredExpiry: null,
 	};
-	if (terms.classification?.expiryRules === "german" && terms.classification.extraDaysSeparateTerms) {
+	if (
+		terms.classification?.expiryRules === "german" &&
+		terms.classification.extraDaysSeparateTerms
+	) {
 		const statutory = Math.min(own, round2(own * Math.min(1, Math.max(0, terms.statutoryRatio))));
 		return [
 			{

@@ -19,20 +19,12 @@ describe("integrated vacation policy activation", () => {
 	});
 	it("admits new and existing organizations only to the complete reader and posting contract", async () => {
 		fixture = await createLifecycleDatabaseFixture();
-		expect(
-			await vacationPolicyCalculationsEnabled(
-				fixture.db,
-				fixture.organizationId,
-				2027,
-			),
-		).toBe(true);
-		expect(
-			await vacationPolicyCalculationsEnabled(
-				fixture.db,
-				fixture.organizationId,
-				2025,
-			),
-		).toBe(false);
+		expect(await vacationPolicyCalculationsEnabled(fixture.db, fixture.organizationId, 2027)).toBe(
+			true,
+		);
+		expect(await vacationPolicyCalculationsEnabled(fixture.db, fixture.organizationId, 2025)).toBe(
+			false,
+		);
 		const [, assigned] = await fixture.db
 			.insert(vacationAllowance)
 			.values([
@@ -59,6 +51,12 @@ describe("integrated vacation policy activation", () => {
 				},
 			])
 			.returning();
+		// Designated for the policies' own carryover terms; unclassified leave would stay
+		// outstanding without a deadline (#2080).
+		await fixture.pool.query(
+			"insert into vacation_policy_expiry_classification(organization_id,policy_id,expiry_rules,classified_by) select organization_id,id,'policy_terms',$2 from vacation_allowance where organization_id=$1",
+			[fixture.organizationId, fixture.ownerUserId],
+		);
 		await writeVacationPolicyAssignment(fixture.db, {
 			organizationId: fixture.organizationId,
 			policyId: assigned.id,
@@ -90,20 +88,11 @@ describe("integrated vacation policy activation", () => {
 		});
 		expect(
 			(
-				await calculateAnnualCarryover(
-					fixture.organizationId,
-					2027,
-					fixture.ownerUserId,
-					"UTC",
-				)
+				await calculateAnnualCarryover(fixture.organizationId, 2027, fixture.ownerUserId, "UTC")
 			).results.find((row) => row.employeeId === fixture.employeeId),
 		).toMatchObject({ carryoverApplied: 6 });
 		expect(
-			await getCarryoverBalance(
-				fixture.employeeId,
-				2028,
-				new Date("2028-02-01T00:00:00Z"),
-			),
+			await getCarryoverBalance(fixture.employeeId, 2028, new Date("2028-02-01T00:00:00Z")),
 		).toMatchObject({
 			balance: 6,
 			expiresAt: new Date("2028-03-31T23:59:59.999Z"),
@@ -122,13 +111,9 @@ describe("integrated vacation policy activation", () => {
 		).replaceAll("--> statement-breakpoint", "");
 		await fixture.pool.query(activation);
 		await fixture.pool.query(activation);
-		expect(
-			await vacationPolicyCalculationsEnabled(
-				fixture.db,
-				fixture.organizationId,
-				2027,
-			),
-		).toBe(true);
+		expect(await vacationPolicyCalculationsEnabled(fixture.db, fixture.organizationId, 2027)).toBe(
+			true,
+		);
 		expect(
 			(
 				await fixture.pool.query(
@@ -138,14 +123,8 @@ describe("integrated vacation policy activation", () => {
 			).rows,
 		).toEqual(before.rows);
 		expect(
-			(
-				await calculateAnnualCarryover(
-					fixture.organizationId,
-					2027,
-					fixture.ownerUserId,
-					"UTC",
-				)
-			).results,
+			(await calculateAnnualCarryover(fixture.organizationId, 2027, fixture.ownerUserId, "UTC"))
+				.results,
 		).toEqual([]);
 	});
 });

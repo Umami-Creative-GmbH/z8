@@ -1,13 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
-import {
-	afterEach,
-	beforeEach,
-	describe,
-	expect,
-	it,
-	vi,
-} from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	absenceCategory,
 	absenceEntry,
@@ -23,9 +16,7 @@ import {
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
 
 const session = vi.hoisted(() => ({ userId: "", organizationId: "" }));
-vi.mock("next/headers", async () =>
-	(await import("@/test/integration-harness")).nextHeaders(),
-);
+vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
 vi.mock("next/server", async (original) =>
 	(await import("@/test/integration-harness")).nextServer(original),
 );
@@ -59,13 +50,10 @@ vi.mock("@/lib/billing/guard", async () =>
 	(await import("@/test/integration-harness")).billingGuard(),
 );
 
-const { calculateAnnualCarryover, expireCarryoverDays } = await import(
-	"./vacation.service"
-);
+const { calculateAnnualCarryover, expireCarryoverDays } = await import("./vacation.service");
 const { loadVacationBalances } = await import("./vacation-balance-store");
-const { classifyVacationPolicyExpiryRules } = await import(
-	"@/app/[locale]/(app)/settings/vacation/expiry-classification-actions"
-);
+const { classifyVacationPolicyExpiryRules } =
+	await import("@/app/[locale]/(app)/settings/vacation/expiry-classification-actions");
 
 const BERLIN = "Europe/Berlin";
 const LAST_VALID_INSTANT = new Date("2028-06-30T21:59:59.999Z");
@@ -113,12 +101,14 @@ describe("leave keeps its earning year and earning policy (#2080)", () => {
 	});
 
 	/** 24-day 2027 source policy (cap 7, carryover allowed unless overridden) and a 2028 receiving policy. */
-	async function seedPolicies(source: {
-		allowCarryover?: boolean;
-		maxCarryoverDays?: string | null;
-		statutoryMinimumDays?: string;
-		receiving?: { allowCarryover?: boolean };
-	} = {}) {
+	async function seedPolicies(
+		source: {
+			allowCarryover?: boolean;
+			maxCarryoverDays?: string | null;
+			statutoryMinimumDays?: string;
+			receiving?: { allowCarryover?: boolean };
+		} = {},
+	) {
 		const [fallback, sourcePolicy, receiving] = await fixture.db
 			.insert(vacationAllowance)
 			.values([
@@ -141,8 +131,7 @@ describe("leave keeps its earning year and earning policy (#2080)", () => {
 					statutoryMinimumDays: source.statutoryMinimumDays ?? "20",
 					accrualType: "annual" as const,
 					allowCarryover: source.allowCarryover ?? true,
-					maxCarryoverDays:
-						source.maxCarryoverDays === undefined ? "7" : source.maxCarryoverDays,
+					maxCarryoverDays: source.maxCarryoverDays === undefined ? "7" : source.maxCarryoverDays,
 					createdBy: fixture.ownerUserId,
 				},
 				{
@@ -236,7 +225,12 @@ describe("leave keeps its earning year and earning policy (#2080)", () => {
 			expiryDate: null,
 		});
 		expect(
-			await expireCarryoverDays(fixture.organizationId, fixture.ownerUserId, AFTER_DEADLINE, BERLIN),
+			await expireCarryoverDays(
+				fixture.organizationId,
+				fixture.ownerUserId,
+				AFTER_DEADLINE,
+				BERLIN,
+			),
 		).toMatchObject({ employeesAffected: 0, daysExpired: 0 });
 		const balance = await balance2028(AFTER_DEADLINE);
 		expect(balance).toMatchObject({ totalDays: 54, carryoverDays: 24, remainingDays: 54 });
@@ -256,9 +250,8 @@ describe("leave keeps its earning year and earning policy (#2080)", () => {
 		vi.useFakeTimers({ toFake: ["Date"] });
 		vi.setSystemTime(new Date("2028-08-01T08:00:00Z"));
 		session.userId = employeeUserId;
-		const { requestAbsenceEffect } = await import(
-			"@/app/[locale]/(app)/absences/request-absence-effect"
-		);
+		const { requestAbsenceEffect } =
+			await import("@/app/[locale]/(app)/absences/request-absence-effect");
 		const request = await requestAbsenceEffect({
 			categoryId,
 			startDate: "2028-08-01",
@@ -308,7 +301,12 @@ describe("leave keeps its earning year and earning policy (#2080)", () => {
 		expect(await carry2027()).toMatchObject({ carryoverApplied: 7, expiryDate: null });
 		await classify(source.id, "german");
 		expect(
-			await expireCarryoverDays(fixture.organizationId, fixture.ownerUserId, AFTER_DEADLINE, BERLIN),
+			await expireCarryoverDays(
+				fixture.organizationId,
+				fixture.ownerUserId,
+				AFTER_DEADLINE,
+				BERLIN,
+			),
 		).toMatchObject({ daysExpired: 0 });
 		expect(await balance2028(AFTER_DEADLINE)).toMatchObject({ carryoverDays: 7 });
 	});
@@ -324,7 +322,12 @@ describe("leave keeps its earning year and earning policy (#2080)", () => {
 			expiryDate: LAST_VALID_INSTANT,
 		});
 		expect(
-			await expireCarryoverDays(fixture.organizationId, fixture.ownerUserId, LAST_VALID_INSTANT, BERLIN),
+			await expireCarryoverDays(
+				fixture.organizationId,
+				fixture.ownerUserId,
+				LAST_VALID_INSTANT,
+				BERLIN,
+			),
 		).toMatchObject({ employeesAffected: 0 });
 		const runs = await Promise.all(
 			[1, 2].map(() =>
@@ -350,7 +353,9 @@ describe("leave keeps its earning year and earning policy (#2080)", () => {
 
 	it("protects extra contractual days unless HR records separate terms, and then only those follow the cap and deadline", async () => {
 		const { source, receiving } = await seedPolicies({ maxCarryoverDays: "2" });
-		await classify(source.id, "german", { basis: "Employment contract §7: extra days lapse on 30 June" });
+		await classify(source.id, "german", {
+			basis: "Employment contract §7: extra days lapse on 30 June",
+		});
 		await classify(receiving.id, "german");
 		expect(await carry2027()).toMatchObject({
 			previousYearRemaining: 24,
@@ -359,13 +364,26 @@ describe("leave keeps its earning year and earning policy (#2080)", () => {
 			expiryDate: LAST_VALID_INSTANT,
 		});
 		expect(
-			await expireCarryoverDays(fixture.organizationId, fixture.ownerUserId, AFTER_DEADLINE, BERLIN),
+			await expireCarryoverDays(
+				fixture.organizationId,
+				fixture.ownerUserId,
+				AFTER_DEADLINE,
+				BERLIN,
+			),
 		).toMatchObject({ daysExpired: 2 });
 		expect(await balance2028(AFTER_DEADLINE)).toMatchObject({
 			totalDays: 50,
 			earningYears: [
-				expect.objectContaining({ portion: "extra", protection: "separate_terms", remainingDays: 0 }),
-				expect.objectContaining({ portion: "statutory", protection: "german_protection", remainingDays: 20 }),
+				expect.objectContaining({
+					portion: "extra",
+					protection: "separate_terms",
+					remainingDays: 0,
+				}),
+				expect.objectContaining({
+					portion: "statutory",
+					protection: "german_protection",
+					remainingDays: 20,
+				}),
 			],
 		});
 	});
@@ -490,9 +508,7 @@ describe("leave keeps its earning year and earning policy (#2080)", () => {
 			).toMatchObject({ success: false, refusal: "policy_not_found" });
 			expect(
 				await fixture.db.query.vacationPolicyExpiryClassification.findMany({
-					where: and(
-						eq(vacationPolicyExpiryClassification.policyId, foreign.id),
-					),
+					where: and(eq(vacationPolicyExpiryClassification.policyId, foreign.id)),
 				}),
 			).toEqual([]);
 		});

@@ -16,11 +16,7 @@ import {
 	loadEmployeeVacationOverrides,
 	loadProratedVacationAllowances,
 } from "./prorated-allowance-store";
-import type {
-	AbsenceWithCategory,
-	VacationBalance,
-	VacationBalanceConfiguration,
-} from "./types";
+import type { AbsenceWithCategory, VacationBalance, VacationBalanceConfiguration } from "./types";
 import {
 	loadVacationAdjustmentSums,
 	type VacationAdjustmentSums,
@@ -51,10 +47,7 @@ import {
 	loadEmployeeVacationPolicyPeriods,
 } from "./vacation-policy-history";
 import { vacationPolicyCalculationsEnabled } from "./vacation-policy-rollout";
-import {
-	loadCompanyDefaultVacationPolicy,
-	type VacationPolicy,
-} from "./vacation-policy-store";
+import { loadCompanyDefaultVacationPolicy, type VacationPolicy } from "./vacation-policy-store";
 import {
 	resolveWeightedVacationPolicy,
 	type WeightedVacationPolicy,
@@ -292,15 +285,11 @@ export async function loadVacationBalances(
 		year,
 		policies,
 		overrides,
-		employeeEmploymentStartDateOverrides:
-			input.employeeEmploymentStartDateOverrides,
+		employeeEmploymentStartDateOverrides: input.employeeEmploymentStartDateOverrides,
 	});
 	const absences = await database.query.absenceEntry.findMany({
 		where: and(
-			or(
-				isNull(absenceEntry.organizationId),
-				eq(absenceEntry.organizationId, organizationId),
-			),
+			or(isNull(absenceEntry.organizationId), eq(absenceEntry.organizationId, organizationId)),
 			inArray(absenceEntry.employeeId, employeeIds),
 			lte(absenceEntry.startDate, endOfYear),
 			gte(absenceEntry.endDate, startOfYear),
@@ -348,19 +337,9 @@ export async function loadVacationBalances(
 
 	const effectiveAbsences: AbsenceWithCategory[] = (
 		absences as unknown as AbsenceWithCategory[]
-	).filter(
-		(row) =>
-			!input.absenceChanges?.some(
-				(change) => change.existingAbsenceId === row.id,
-			),
-	);
-	effectiveAbsences.push(
-		...(input.absenceChanges?.map((change) => change.absence) ?? []),
-	);
-	const absencesByEmployee = Map.groupBy(
-		effectiveAbsences,
-		(absence) => absence.employeeId,
-	);
+	).filter((row) => !input.absenceChanges?.some((change) => change.existingAbsenceId === row.id));
+	effectiveAbsences.push(...(input.absenceChanges?.map((change) => change.absence) ?? []));
+	const absencesByEmployee = Map.groupBy(effectiveAbsences, (absence) => absence.employeeId);
 	const currentDate = input.currentDate ?? currentTimestamp();
 
 	const balances = new Map<string, VacationBalance>();

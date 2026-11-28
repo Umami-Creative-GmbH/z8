@@ -24,7 +24,11 @@ export interface LeaveExpiryClassification {
  * - `separate_terms`: extra contractual days for which HR recorded separate terms; they follow the
  *   policy's cap, permission and deadline.
  */
-export type LeaveProtection = "unclassified" | "german_protection" | "policy_terms" | "separate_terms";
+export type LeaveProtection =
+	| "unclassified"
+	| "german_protection"
+	| "policy_terms"
+	| "separate_terms";
 
 export function leaveProtection(
 	portion: EarningYearLeavePortion,
@@ -110,7 +114,10 @@ export function allocateLeaveCharges(
 	const lastDay = new Map(
 		ordered.map((item) => {
 			const expiry = establishedExpiry(item);
-			return [item.key, expiry ? expiry.toZonedDateTimeISO(timezone).toPlainDate().toString() : null];
+			return [
+				item.key,
+				expiry ? expiry.toZonedDateTimeISO(timezone).toPlainDate().toString() : null,
+			];
 		}),
 	);
 	const used = new Map<string, number>();
@@ -163,14 +170,12 @@ export function planYearEndCarryover(input: {
 	maxCarryoverDays: number | null;
 	receivingExpiry: Temporal.Instant | null;
 }): { carried: CarriedLeave[]; remaining: number; applied: number; capped: boolean } {
-	const unused = input.leave
-		.toSorted(compareChargeOrder)
-		.flatMap((item) => {
-			const expiry = establishedExpiry(item);
-			if (expiry && Temporal.Instant.compare(expiry, input.yearEnd) <= 0) return [];
-			const days = round2(Math.max(0, item.capacity - (input.used.get(item.key) ?? 0)));
-			return [{ item, days }];
-		});
+	const unused = input.leave.toSorted(compareChargeOrder).flatMap((item) => {
+		const expiry = establishedExpiry(item);
+		if (expiry && Temporal.Instant.compare(expiry, input.yearEnd) <= 0) return [];
+		const days = round2(Math.max(0, item.capacity - (input.used.get(item.key) ?? 0)));
+		return [{ item, days }];
+	});
 	const governed = unused.filter(({ item }) => establishesExpiry(item.protection));
 	const governedDays = governed.reduce((sum, row) => sum + row.days, 0);
 	const keep = !input.allowCarryover
@@ -202,7 +207,10 @@ export function planYearEndCarryover(input: {
 			};
 		})
 		.filter((row) => row.days > 0 || row.forfeitedDays > 0)
-		.toSorted((a, b) => a.earningYear - b.earningYear || PORTION_ORDER[a.portion] - PORTION_ORDER[b.portion]);
+		.toSorted(
+			(a, b) =>
+				a.earningYear - b.earningYear || PORTION_ORDER[a.portion] - PORTION_ORDER[b.portion],
+		);
 	const remaining = round2(unused.reduce((sum, row) => sum + row.days, 0));
 	const applied = round2(carried.reduce((sum, row) => sum + row.days, 0));
 	return {

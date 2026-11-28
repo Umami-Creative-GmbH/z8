@@ -13,11 +13,7 @@ import {
 import { AuditAction } from "@/lib/audit-logger";
 import { createLogger } from "@/lib/logger";
 import type { VacationBalanceConfiguration } from "./types";
-import type {
-	CarryoverResult,
-	CarryoverSummary,
-	ExpiryResult,
-} from "./vacation.service";
+import type { CarryoverResult, CarryoverSummary, ExpiryResult } from "./vacation.service";
 import { outsideVacationInYear } from "./prorated-allowance";
 import { loadEmployeeEmployments } from "./prorated-allowance-store";
 import { dateFromInstant, instantFromDate } from "@/lib/datetime/temporal-core";
@@ -79,12 +75,7 @@ export async function commitAnnualVacationCarryover(
 			.select({ id: employee.id, userId: employee.userId, name: user.name })
 			.from(employee)
 			.innerJoin(user, eq(user.id, employee.userId))
-			.where(
-				and(
-					eq(employee.organizationId, organizationId),
-					eq(employee.isActive, true),
-				),
-			),
+			.where(and(eq(employee.organizationId, organizationId), eq(employee.isActive, true))),
 		db.query.user.findFirst({
 			where: eq(user.id, performedBy),
 			columns: { id: true },
@@ -99,12 +90,7 @@ export async function commitAnnualVacationCarryover(
 				const [target] = await tx
 					.select({ id: employee.id })
 					.from(employee)
-					.where(
-						and(
-							eq(employee.organizationId, organizationId),
-							eq(employee.id, person.id),
-						),
-					)
+					.where(and(eq(employee.organizationId, organizationId), eq(employee.id, person.id)))
 					.for("update");
 				if (!target) return;
 				// No carry-over leaves or enters a year outside vacation, such as one spent entirely
@@ -131,10 +117,7 @@ export async function commitAnnualVacationCarryover(
 						eq(employeeVacationAllowance.employeeId, person.id),
 						eq(employeeVacationAllowance.year, toYear),
 					),
-					orderBy: [
-						desc(employeeVacationAllowance.updatedAt),
-						desc(employeeVacationAllowance.id),
-					],
+					orderBy: [desc(employeeVacationAllowance.updatedAt), desc(employeeVacationAllowance.id)],
 				});
 				// Never infer terms or replace even a zero-valued existing legacy carryover.
 				if (receiving.some((row) => row.customCarryoverDays !== null)) {
@@ -188,8 +171,7 @@ export async function commitAnnualVacationCarryover(
 					date: `${fromYear}-12-31`,
 				});
 				const sourcePolicy =
-					sourceResolution.status === "resolved" ||
-					sourceResolution.status === "legacy"
+					sourceResolution.status === "resolved" || sourceResolution.status === "legacy"
 						? sourceResolution.policy
 						: undefined;
 				if (!sourcePolicy)
@@ -387,10 +369,7 @@ export async function commitAnnualVacationCarryover(
 				);
 			}
 		} catch (error) {
-			logger.error(
-				{ organizationId, employeeId: person.id, error },
-				"Vacation carryover skipped",
-			);
+			logger.error({ organizationId, employeeId: person.id, error }, "Vacation carryover skipped");
 			errors.push({
 				employeeId: person.id,
 				error:
@@ -409,10 +388,7 @@ export async function commitAnnualVacationCarryover(
 		toYear,
 		processedAt: new Date(),
 		employeesProcessed: results.length,
-		totalDaysCarriedOver: results.reduce(
-			(sum, row) => sum + row.carryoverApplied,
-			0,
-		),
+		totalDaysCarriedOver: results.reduce((sum, row) => sum + row.carryoverApplied, 0),
 		results,
 		errors,
 	};
@@ -471,8 +447,7 @@ export async function expireCommittedVacationCarryover(
 			? carryoverExpiryInstant(currentYear, policy.carryoverExpiryMonths, timezone)
 			: null;
 	const legacyDue =
-		legacyExpiry !== null &&
-		Temporal.Instant.compare(instant, instantFromDate(legacyExpiry)) > 0;
+		legacyExpiry !== null && Temporal.Instant.compare(instant, instantFromDate(legacyExpiry)) > 0;
 	const establishedDue = dueLeave.filter((row) =>
 		establishesExpiry(
 			leaveProtectionOf(
@@ -493,99 +468,93 @@ export async function expireCommittedVacationCarryover(
 		].map((year) => ({ person, year })),
 	);
 	for (const { person, year } of targets) {
-		const expired = await db.transaction(async (tx) => {
-			await tx
-				.select({ id: employee.id })
-				.from(employee)
-				.where(
-					and(
-						eq(employee.organizationId, organizationId),
-						eq(employee.id, person.id),
-					),
-				)
-				.for("update");
-			const allowance = await tx.query.employeeVacationAllowance.findFirst({
-				where: and(
-					eq(employeeVacationAllowance.employeeId, person.id),
-					eq(employeeVacationAllowance.year, year),
-				),
-				orderBy: [
-					desc(employeeVacationAllowance.updatedAt),
-					desc(employeeVacationAllowance.id),
-				],
-			});
-			if (!allowance || Number(allowance.customCarryoverDays ?? 0) <= 0) return;
-			const transfer = await tx.query.vacationCarryoverTransfer.findFirst({
-				where: and(
-					eq(vacationCarryoverTransfer.organizationId, organizationId),
-					eq(vacationCarryoverTransfer.employeeId, person.id),
-					eq(vacationCarryoverTransfer.sourceYear, year - 1),
-					eq(vacationCarryoverTransfer.outcome, "generated"),
-				),
-			});
-			const frozen = transfer?.allowanceId === allowance.id ? transfer : undefined;
-			const debit = frozen
-				? await expireEarningYearLeave(tx, {
-						organizationId,
-						employeeId: person.id,
-						year,
-						transferId: frozen.id,
-						instant,
-						currentDate,
-						timezone,
-						performedBy,
-					})
-				: year === currentYear && legacyDue && legacyExpiry
-					? {
-							days: Number(allowance.customCarryoverDays),
-							expiryDate: legacyExpiry,
-							earningYears: [],
-						}
-					: undefined;
-			if (!debit || debit.days <= 0) return;
-			const remainingCarryover =
-				Math.round((Number(allowance.customCarryoverDays) - debit.days) * 100) / 100;
-			const [updated] = await tx
-				.update(employeeVacationAllowance)
-				.set({ customCarryoverDays: String(remainingCarryover), updatedAt: currentDate })
-				.where(
-					and(
-						eq(employeeVacationAllowance.id, allowance.id),
+		const expired = await db
+			.transaction(async (tx) => {
+				await tx
+					.select({ id: employee.id })
+					.from(employee)
+					.where(and(eq(employee.organizationId, organizationId), eq(employee.id, person.id)))
+					.for("update");
+				const allowance = await tx.query.employeeVacationAllowance.findFirst({
+					where: and(
 						eq(employeeVacationAllowance.employeeId, person.id),
 						eq(employeeVacationAllowance.year, year),
-						eq(
-							employeeVacationAllowance.customCarryoverDays,
-							allowance.customCarryoverDays ?? "0",
-						),
-						eq(employeeVacationAllowance.updatedAt, allowance.updatedAt),
 					),
-				)
-				.returning({ id: employeeVacationAllowance.id });
-			// A concurrent writer changed the amount: roll back the row debits and leave it for review.
-			if (!updated) throw new ExpiryRaceLost();
-			if (actor)
-				await tx.insert(auditLog).values({
-					organizationId,
-					entityId: person.id,
-					entityType: "employee",
-					employeeId: person.id,
-					performedBy: actor.id,
-					action: AuditAction.VACATION_CARRYOVER_EXPIRED,
-					timestamp: currentDate,
-					metadata: JSON.stringify({
-						year,
-						daysExpired: debit.days,
-						expiryDate: debit.expiryDate.toISOString(),
-						performedBy,
-						source: frozen ? "earning_year_leave" : "legacy_policy",
-						earningYears: debit.earningYears,
-					}),
+					orderBy: [desc(employeeVacationAllowance.updatedAt), desc(employeeVacationAllowance.id)],
 				});
-			return { employeeId: person.id, employeeName: person.name, daysExpired: debit.days };
-		}).catch((error: unknown) => {
-			if (error instanceof ExpiryRaceLost) return undefined;
-			throw error;
-		});
+				if (!allowance || Number(allowance.customCarryoverDays ?? 0) <= 0) return;
+				const transfer = await tx.query.vacationCarryoverTransfer.findFirst({
+					where: and(
+						eq(vacationCarryoverTransfer.organizationId, organizationId),
+						eq(vacationCarryoverTransfer.employeeId, person.id),
+						eq(vacationCarryoverTransfer.sourceYear, year - 1),
+						eq(vacationCarryoverTransfer.outcome, "generated"),
+					),
+				});
+				const frozen = transfer?.allowanceId === allowance.id ? transfer : undefined;
+				const debit = frozen
+					? await expireEarningYearLeave(tx, {
+							organizationId,
+							employeeId: person.id,
+							year,
+							transferId: frozen.id,
+							instant,
+							currentDate,
+							timezone,
+							performedBy,
+						})
+					: year === currentYear && legacyDue && legacyExpiry
+						? {
+								days: Number(allowance.customCarryoverDays),
+								expiryDate: legacyExpiry,
+								earningYears: [],
+							}
+						: undefined;
+				if (!debit || debit.days <= 0) return;
+				const remainingCarryover =
+					Math.round((Number(allowance.customCarryoverDays) - debit.days) * 100) / 100;
+				const [updated] = await tx
+					.update(employeeVacationAllowance)
+					.set({ customCarryoverDays: String(remainingCarryover), updatedAt: currentDate })
+					.where(
+						and(
+							eq(employeeVacationAllowance.id, allowance.id),
+							eq(employeeVacationAllowance.employeeId, person.id),
+							eq(employeeVacationAllowance.year, year),
+							eq(
+								employeeVacationAllowance.customCarryoverDays,
+								allowance.customCarryoverDays ?? "0",
+							),
+							eq(employeeVacationAllowance.updatedAt, allowance.updatedAt),
+						),
+					)
+					.returning({ id: employeeVacationAllowance.id });
+				// A concurrent writer changed the amount: roll back the row debits and leave it for review.
+				if (!updated) throw new ExpiryRaceLost();
+				if (actor)
+					await tx.insert(auditLog).values({
+						organizationId,
+						entityId: person.id,
+						entityType: "employee",
+						employeeId: person.id,
+						performedBy: actor.id,
+						action: AuditAction.VACATION_CARRYOVER_EXPIRED,
+						timestamp: currentDate,
+						metadata: JSON.stringify({
+							year,
+							daysExpired: debit.days,
+							expiryDate: debit.expiryDate.toISOString(),
+							performedBy,
+							source: frozen ? "earning_year_leave" : "legacy_policy",
+							earningYears: debit.earningYears,
+						}),
+					});
+				return { employeeId: person.id, employeeName: person.name, daysExpired: debit.days };
+			})
+			.catch((error: unknown) => {
+				if (error instanceof ExpiryRaceLost) return undefined;
+				throw error;
+			});
 		if (expired) {
 			details.push(expired);
 			logger.info(
@@ -672,7 +641,11 @@ async function expireEarningYearLeave(
 		days += unused;
 		const expiry = dateFromInstant(establishedExpiry(item) as Temporal.Instant);
 		if (!expiryDate || expiry < expiryDate) expiryDate = expiry;
-		earningYears.push({ earningYear: item.earningYear, portion: item.portion, daysExpired: unused });
+		earningYears.push({
+			earningYear: item.earningYear,
+			portion: item.portion,
+			daysExpired: unused,
+		});
 	}
 	if (!expiryDate) return;
 	const open = await tx

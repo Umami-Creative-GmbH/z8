@@ -2,11 +2,7 @@ import type { ProratedAllowance } from "./prorated-allowance";
 
 // Legacy half-day compatibility period for absence forms and stored requests.
 export type DayPeriod = "full_day" | "am" | "pm";
-export type SickDetail =
-	| "child_sick"
-	| "with_certificate"
-	| "without_certificate"
-	| "other";
+export type SickDetail = "child_sick" | "with_certificate" | "without_certificate" | "other";
 
 export type AbsenceDurationKind = "full_day" | "partial_day";
 

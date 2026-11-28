@@ -22,7 +22,11 @@ const classificationSchema = z.object({
  * admin, and it reaches every earning year of the policy at once.
  */
 export const classifyVacationPolicyExpiryRules = organizationAction(
-	{ name: "vacation.classifyPolicyExpiryRules", requires: "orgAdmin", schema: classificationSchema },
+	{
+		name: "vacation.classifyPolicyExpiryRules",
+		requires: "orgAdmin",
+		schema: classificationSchema,
+	},
 	({ actor, organizationId, input }) =>
 		Effect.gen(function* () {
 			const recorded = yield* storeStep(

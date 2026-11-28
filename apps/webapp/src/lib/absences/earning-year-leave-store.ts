@@ -128,7 +128,10 @@ export type LeaveExpiryClassificationRefusalCode =
 
 /** A designation HR cannot record as given. */
 export class LeaveExpiryClassificationRefused extends Error {
-	constructor(readonly code: LeaveExpiryClassificationRefusalCode, message: string) {
+	constructor(
+		readonly code: LeaveExpiryClassificationRefusalCode,
+		message: string,
+	) {
 		super(message);
 	}
 }

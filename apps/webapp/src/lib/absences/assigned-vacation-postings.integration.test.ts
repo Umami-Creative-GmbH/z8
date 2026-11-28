@@ -10,16 +10,14 @@ import {
 	vacationAllowance,
 	vacationCarryoverTransfer,
 	vacationPolicyAssignment,
+	vacationPolicyExpiryClassification,
 } from "@/db/schema";
 import {
 	createLifecycleDatabaseFixture,
 	type LifecycleDatabaseFixture,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
 import { getCarryoverBalance } from "@/lib/query/vacation.queries";
-import {
-	calculateAnnualCarryover,
-	expireCarryoverDays,
-} from "./vacation.service";
+import { calculateAnnualCarryover, expireCarryoverDays } from "./vacation.service";
 import { accrueVacationPeriods } from "./vacation-accrual";
 import { loadVacationBalances } from "./vacation-balance-store";
 
@@ -95,10 +93,7 @@ describe("assigned vacation postings (#1371)", () => {
 			totalDays: 30,
 		});
 	});
-	async function seedCarryoverPolicies(
-		expiryMonths: number | null = 6,
-		withDefault = true,
-	) {
+	async function seedCarryoverPolicies(expiryMonths: number | null = 6, withDefault = true) {
 		const [fallback, source, receiving] = await fixture.db
 			.insert(vacationAllowance)
 			.values([
@@ -160,6 +155,16 @@ describe("assigned vacation postings (#1371)", () => {
 			"update vacation_policy_rollout set calculations_enabled=true where organization_id=$1",
 			[fixture.organizationId],
 		);
+		// These scenarios describe policies HR designated for their own carryover terms (#2080);
+		// unclassified and German policies keep the days outstanding instead.
+		await fixture.db.insert(vacationPolicyExpiryClassification).values(
+			[fallback, source, receiving].map((policy) => ({
+				organizationId: fixture.organizationId,
+				policyId: policy.id,
+				expiryRules: "policy_terms" as const,
+				classifiedBy: fixture.ownerUserId,
+			})),
+		);
 		return { fallback, source, receiving };
 	}
 	it("carries the source Dec31 assigned cap and freezes receiving Jan1 expiry", async () => {
@@ -170,9 +175,7 @@ describe("assigned vacation postings (#1371)", () => {
 			fixture.ownerUserId,
 			"Europe/Berlin",
 		);
-		expect(
-			run.results.find((row) => row.employeeId === fixture.employeeId),
-		).toMatchObject({
+		expect(run.results.find((row) => row.employeeId === fixture.employeeId)).toMatchObject({
 			carryoverApplied: 7,
 			previousYearRemaining: 24,
 			expiryDate: new Date("2028-06-30T21:59:59.999Z"),
@@ -272,9 +275,7 @@ describe("assigned vacation postings (#1371)", () => {
 				),
 			),
 		);
-		expect(runs.reduce((sum, run) => sum + run.totalDaysCarriedOver, 0)).toBe(
-			7,
-		);
+		expect(runs.reduce((sum, run) => sum + run.totalDaysCarriedOver, 0)).toBe(7);
 		await fixture.db
 			.update(vacationAllowance)
 			.set({ carryoverExpiryMonths: 1 })
@@ -310,8 +311,7 @@ describe("assigned vacation postings (#1371)", () => {
 			"UTC",
 		);
 		expect(
-			first.results.find((row) => row.employeeId === fixture.employeeId)
-				?.carryoverApplied,
+			first.results.find((row) => row.employeeId === fixture.employeeId)?.carryoverApplied,
 		).toBe(0);
 		await fixture.db
 			.update(employeeVacationAllowance)
@@ -323,21 +323,11 @@ describe("assigned vacation postings (#1371)", () => {
 				),
 			);
 		expect(
-			(
-				await calculateAnnualCarryover(
-					fixture.organizationId,
-					2027,
-					fixture.ownerUserId,
-					"UTC",
-				)
-			).results,
+			(await calculateAnnualCarryover(fixture.organizationId, 2027, fixture.ownerUserId, "UTC"))
+				.results,
 		).toEqual([]);
 		expect(
-			await getCarryoverBalance(
-				fixture.employeeId,
-				2028,
-				new Date("2028-02-01T00:00:00Z"),
-			),
+			await getCarryoverBalance(fixture.employeeId, 2028, new Date("2028-02-01T00:00:00Z")),
 		).toMatchObject({ balance: 0 });
 	});
 
@@ -375,15 +365,13 @@ describe("assigned vacation postings (#1371)", () => {
 			),
 		);
 		expect(
-			runs
-				.flatMap((run) => run.results)
-				.filter((row) => row.employeeId === fixture.employeeId),
+			runs.flatMap((run) => run.results).filter((row) => row.employeeId === fixture.employeeId),
 		).toEqual([]);
 		await fixture.pool.query(
-			readFileSync(
-				"drizzle/0266_vacation_carryover_transfer.sql",
-				"utf8",
-			).replaceAll("--> statement-breakpoint", ""),
+			readFileSync("drizzle/0266_vacation_carryover_transfer.sql", "utf8").replaceAll(
+				"--> statement-breakpoint",
+				"",
+			),
 		);
 		const after = await fixture.db.query.employeeVacationAllowance.findMany({
 			where: and(
@@ -478,9 +466,10 @@ describe("assigned vacation postings (#1371)", () => {
 			fixture.ownerUserId,
 			"UTC",
 		);
-		expect(
-			result.results.find((row) => row.employeeId === fixture.employeeId),
-		).toMatchObject({ previousYearRemaining: 23, carryoverApplied: 23 });
+		expect(result.results.find((row) => row.employeeId === fixture.employeeId)).toMatchObject({
+			previousYearRemaining: 23,
+			carryoverApplied: 23,
+		});
 	});
 	it("records system carryover and expiry without attributing automation to a human", async () => {
 		await seedCarryoverPolicies();
@@ -491,17 +480,14 @@ describe("assigned vacation postings (#1371)", () => {
 			"UTC",
 		);
 		expect(
-			posted.results.find((row) => row.employeeId === fixture.employeeId)
-				?.carryoverApplied,
+			posted.results.find((row) => row.employeeId === fixture.employeeId)?.carryoverApplied,
 		).toBe(7);
-		const transfer = await fixture.db.query.vacationCarryoverTransfer.findFirst(
-			{
-				where: and(
-					eq(vacationCarryoverTransfer.employeeId, fixture.employeeId),
-					eq(vacationCarryoverTransfer.sourceYear, 2027),
-				),
-			},
-		);
+		const transfer = await fixture.db.query.vacationCarryoverTransfer.findFirst({
+			where: and(
+				eq(vacationCarryoverTransfer.employeeId, fixture.employeeId),
+				eq(vacationCarryoverTransfer.sourceYear, 2027),
+			),
+		});
 		if (!transfer) throw new Error("Expected committed system transfer");
 		expect(transfer).toMatchObject({
 			performedBy: "system-automation",
@@ -557,21 +543,17 @@ describe("assigned vacation postings (#1371)", () => {
 			fixture.ownerUserId,
 			"UTC",
 		);
-		expect(
-			run.results.map((row) => [row.employeeId, row.carryoverApplied]),
-		).toEqual([[fixture.employeeId, 7]]);
-		expect(
-			run.errors.find((row) => row.employeeId === fixture.ownerEmployeeId),
-		).toMatchObject({
+		expect(run.results.map((row) => [row.employeeId, row.carryoverApplied])).toEqual([
+			[fixture.employeeId, 7],
+		]);
+		expect(run.errors.find((row) => row.employeeId === fixture.ownerEmployeeId)).toMatchObject({
 			configuration: {
 				status: "missing",
 				periods: [{ startDate: "2027-01-01", endDate: "2027-12-31" }],
 			},
 		});
 		expect(
-			run.errors.find(
-				(row) => row.employeeId === missingDestination.employeeId,
-			),
+			run.errors.find((row) => row.employeeId === missingDestination.employeeId),
 		).toMatchObject({
 			configuration: {
 				status: "missing",
@@ -582,12 +564,7 @@ describe("assigned vacation postings (#1371)", () => {
 
 	it("expires a frozen transfer in a later receiving calendar year", async () => {
 		await seedCarryoverPolicies(18);
-		await calculateAnnualCarryover(
-			fixture.organizationId,
-			2027,
-			fixture.ownerUserId,
-			"UTC",
-		);
+		await calculateAnnualCarryover(fixture.organizationId, 2027, fixture.ownerUserId, "UTC");
 		expect(
 			await expireCarryoverDays(
 				fixture.organizationId,

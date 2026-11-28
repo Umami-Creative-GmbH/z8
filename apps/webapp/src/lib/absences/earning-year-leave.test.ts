@@ -133,7 +133,12 @@ describe("year-end keeps each earning year and its earning policy", () => {
 		});
 		expect(plan).toMatchObject({ remaining: 24, applied: 24, capped: false });
 		expect(plan.carried).toEqual([
-			expect.objectContaining({ key: "own", days: 24, forfeitedDays: 0, configuredExpiry: expiry2028 }),
+			expect.objectContaining({
+				key: "own",
+				days: 24,
+				forfeitedDays: 0,
+				configuredExpiry: expiry2028,
+			}),
 		]);
 	});
 
@@ -142,7 +147,12 @@ describe("year-end keeps each earning year and its earning policy", () => {
 			leave: [
 				leave({ key: "older", earningYear: 2026, capacity: 5, protection: "german_protection" }),
 				leave({ key: "extra", portion: "extra", capacity: 6, protection: "separate_terms" }),
-				leave({ key: "statutory", portion: "statutory", capacity: 20, protection: "german_protection" }),
+				leave({
+					key: "statutory",
+					portion: "statutory",
+					capacity: 20,
+					protection: "german_protection",
+				}),
 			],
 			used: new Map([["extra", 2]]),
 			sourceYear: 2027,
