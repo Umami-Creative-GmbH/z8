@@ -249,9 +249,10 @@ export enum AuditAction {
 	PERSONAL_DATA_EXPORT_REQUESTED = "personal_data_export.requested",
 	PERSONAL_DATA_EXPORT_DOWNLOADED = "personal_data_export.downloaded",
 
-	// Personal details (#2069, spec #2068): who changed which part of whose details from
-	// which day, never the values (no IBAN, BIC, account holder or insurer)
+	// Personal details (#2069, spec #2068): who changed or ended which part of whose details
+	// from which day, never the values (no IBAN, BIC, account holder or insurer)
 	PERSONAL_DETAILS_CHANGED = "personal_details.changed",
+	PERSONAL_DETAILS_ENDED = "personal_details.ended",
 
 	// Go-live group (#1513): chosen teams, and go-live exclusions with their reason
 	GO_LIVE_GROUP_TEAMS_CHANGED = "go_live.group_teams_changed",

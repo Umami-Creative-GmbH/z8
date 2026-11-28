@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { employee } from "@/db/schema";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { meetsSettingsAccess } from "@/lib/organization-action/settings-access-level";
+import { findCoveringPayrollAccessGrant } from "@/lib/payroll-access/adjustment-coverage";
 import {
 	loadSettingsAccessFacts,
 	settingsAccessOf,
@@ -19,7 +20,7 @@ export type PersonalDetailsRight =
 	| { kind: "own"; employeeUserId: string }
 	| { kind: "decider"; employeeUserId: string };
 
-type Reader = Pick<DatabaseClient, "select">;
+type Reader = Pick<DatabaseClient, "select" | "execute">;
 
 /**
  * The one rule of who may see and decide an employee's personal details
@@ -28,7 +29,10 @@ type Reader = Pick<DatabaseClient, "select">;
  * - The employee sees their own, and never decides their own: a decider viewing
  *   their own details gets `own` too.
  * - Org admins (owners included) decide for every employee of the organization.
- * - Holders of a payroll access grant covering the employee will decide too (#2071).
+ * - Holders of an active payroll access grant covering the employee decide too
+ *   (#2071): scope `all`, or the employee named or in a named team, the same
+ *   coverage balance adjustments use (`findCoveringPayrollAccessGrant`), so a
+ *   covered employee who has left stays covered.
  * - Managing the employee, workforce admin and personnel file officer give no right.
  * - A former employee, or a user without an approved membership, has no right.
  */
@@ -55,5 +59,11 @@ export async function resolvePersonalDetailsRight(
 	if (meetsSettingsAccess(access, "orgAdmin")) {
 		return { kind: "decider", employeeUserId: target.userId };
 	}
+	const grant = await findCoveringPayrollAccessGrant(db, {
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		employeeId: target.id,
+	});
+	if (grant) return { kind: "decider", employeeUserId: target.userId };
 	return { kind: "none" };
 }

@@ -5,7 +5,7 @@ import type {
 	ValidFromRefusal,
 } from "@/lib/organization/personal-details/validation";
 
-/** How a refused change of personal details is worded (#2069). */
+/** How a refused change or end of personal details is worded (#2069, #2071). */
 export const PERSONAL_DETAILS_REFUSALS = {
 	not_found: [
 		"settings.personalDetails.refusals.notFound",
@@ -18,6 +18,10 @@ export const PERSONAL_DETAILS_REFUSALS = {
 	own_details: [
 		"settings.personalDetails.refusals.ownDetails",
 		"You can't change your own personal details directly.",
+	],
+	nothing_to_end: [
+		"settings.personalDetails.refusals.nothingToEnd",
+		"Nothing is on file from that date, so there is nothing to end.",
 	],
 	invalid_input: [
 		"settings.personalDetails.refusals.invalidInput",

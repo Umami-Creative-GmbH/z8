@@ -9,18 +9,21 @@ import { createLogger } from "@/lib/logger";
 import { type PersonalDetailsRight, resolvePersonalDetailsRight } from "./access";
 import {
 	loadBankAccountHistory,
+	removeBankAccountEntriesAfter,
 	type StoredBankAccountEntry,
 	writeBankAccountEntry,
 } from "./bank-account-store";
 import {
 	type ChangedEmailRetryResult,
 	deliverPersonalDetailsChangedEmail,
+	type PendingChangedEmail,
 	recordPersonalDetailsChangedNotice,
 	retryPersonalDetailsChangedEmails as retryChangedEmails,
 } from "./changed-notice";
 import {
 	type BankAccountView,
 	type PersonalDetailsChangeInput,
+	type PersonalDetailsEndInput,
 	type PersonalDetailsEntry,
 	type PersonalDetailsHistory,
 	PersonalDetailsRefusal,
@@ -190,7 +193,7 @@ export async function changePersonalDetails(
 					employeeUserId: right.employeeUserId,
 					part: input.part,
 					validFrom: day,
-					ibanLastFour: ibanLastFour(value.value.iban),
+					outcome: { kind: "changed", ibanLastFour: ibanLastFour(value.value.iban) },
 					changeId: randomUUID(),
 				},
 				clock.nowInstant(),
@@ -198,16 +201,102 @@ export async function changePersonalDetails(
 			return { email, replaced };
 		},
 	);
-	// The change stands either way: an email that fails now is retried by the sweep.
+	await attemptChangedEmail(database, email, clock);
+	return { replaced };
+}
+
+/**
+ * A decider ends a part of the employee's personal details from a day, past days
+ * included, for example after entering it on the wrong employee: no value is in
+ * force from that day. Earlier history is kept; the same day as an existing
+ * entry replaces it, and later entries are removed so none comes into force
+ * after it (the audit counts them as `superseded`). The employee is always told.
+ */
+export async function endPersonalDetails(
+	input: Scope & PersonalDetailsEndInput,
+	dependencies: PersonalDetailsDependencies = {},
+): Promise<{ replaced: boolean }> {
+	const database = dependencies.database ?? applicationDatabase;
+	const clock = dependencies.clock ?? systemClock;
+	const validFrom = parseValidFrom(input.validFrom);
+	if (!validFrom.ok) {
+		throw new PersonalDetailsRefusal("invalid_input", "The end day is not valid", {
+			fields: { validFrom: validFrom.code },
+		});
+	}
+	const day = validFrom.value.toString();
+	const { email, replaced } = await inPersonalDetailsWriteTransaction(
+		database,
+		async (tx, audit) => {
+			const right = refuseUnlessDecider(await resolvePersonalDetailsRight(tx, input));
+			const history = await loadBankAccountHistory(tx, input);
+			if (!endsAValue(history, day)) {
+				throw new PersonalDetailsRefusal("nothing_to_end", "Nothing is in force to end");
+			}
+			const superseded = await removeBankAccountEntriesAfter(tx, {
+				organizationId: input.organizationId,
+				employeeId: input.employeeId,
+				after: day,
+			});
+			const { replaced } = await writeBankAccountEntry(tx, {
+				organizationId: input.organizationId,
+				employeeId: input.employeeId,
+				validFrom: day,
+				value: null,
+				actorUserId: input.actorUserId,
+			});
+			await audit.record(tx, {
+				organizationId: input.organizationId,
+				action: AuditAction.PERSONAL_DETAILS_ENDED,
+				actorUserId: input.actorUserId,
+				targetType: "employee",
+				targetId: input.employeeId,
+				employeeId: input.employeeId,
+				metadata: { part: input.part, validFrom: day, correction: replaced, superseded },
+			});
+			const email = await recordPersonalDetailsChangedNotice(
+				tx,
+				{
+					organizationId: input.organizationId,
+					employeeId: input.employeeId,
+					employeeUserId: right.employeeUserId,
+					part: input.part,
+					validFrom: day,
+					outcome: { kind: "ended" },
+					changeId: randomUUID(),
+				},
+				clock.nowInstant(),
+			);
+			return { email, replaced };
+		},
+	);
+	await attemptChangedEmail(database, email, clock);
+	return { replaced };
+}
+
+/** Whether a value is in force on `day` or comes into force after it. */
+function endsAValue(history: PersonalDetailsEntry<unknown>[], day: string): boolean {
+	return (
+		inForce(history, day) !== null ||
+		history.some((entry) => entry.validFrom > day && entry.value !== null)
+	);
+}
+
+/** Emails the notice of a committed change; one that fails now is retried by the sweep. */
+async function attemptChangedEmail(
+	database: PersonalDetailsDatabase,
+	email: PendingChangedEmail,
+	clock: Clock,
+) {
+	// The change stands either way.
 	try {
 		await deliverPersonalDetailsChangedEmail(database, email, clock);
 	} catch (error) {
 		logger.error(
-			{ error, organizationId: input.organizationId, deliveryId: email.id },
+			{ error, organizationId: email.organizationId, deliveryId: email.id },
 			"Failed to attempt the personal details changed email",
 		);
 	}
-	return { replaced };
 }
 
 /**

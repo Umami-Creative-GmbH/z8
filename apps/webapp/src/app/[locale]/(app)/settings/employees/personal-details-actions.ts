@@ -6,6 +6,7 @@ import { organizationAction } from "@/lib/organization-action/organization-actio
 import { storeStep } from "@/lib/organization-action/store-step";
 import {
 	changePersonalDetails,
+	endPersonalDetails,
 	readPersonalDetails,
 } from "@/lib/organization/personal-details/personal-details";
 import {
@@ -14,7 +15,7 @@ import {
 } from "@/lib/organization/personal-details/types";
 
 /**
- * Personal details on the employee page (#2069, spec #2068). Any member may
+ * Personal details on the employee page (#2069, #2071, spec #2068). Any member may
  * call these: the personal details module alone decides who sees and changes an
  * employee's personal details, so these actions never widen or narrow it.
  * Refusals carry only their code (`PersonalDetailsRefusal`); the client words them.
@@ -49,6 +50,31 @@ export const changeEmployeeBankAccount = organizationAction(
 						part: "bank_account",
 						validFrom: input.validFrom,
 						value: { accountHolder: input.accountHolder, iban: input.iban, bic: input.bic },
+					},
+					{ database: db },
+				),
+			{ refusal: PersonalDetailsRefusal },
+		),
+);
+
+/** A decider ends the employee's bank account from a day: none is on file from then on. */
+export const endEmployeeBankAccount = organizationAction(
+	{
+		name: "personalDetails.endBankAccount",
+		requires: "member",
+		schema: z.object({ employeeId: employeeIdSchema, validFrom: z.string().max(32) }),
+	},
+	({ actor, organizationId, input }) =>
+		storeStep(
+			"personalDetails.endBankAccount",
+			(db) =>
+				endPersonalDetails(
+					{
+						organizationId,
+						actorUserId: actor.userId,
+						employeeId: input.employeeId,
+						part: "bank_account",
+						validFrom: input.validFrom,
 					},
 					{ database: db },
 				),

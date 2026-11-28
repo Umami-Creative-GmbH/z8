@@ -37,7 +37,7 @@ export type PersonalDetailsHistory<Value> = {
 export type PersonalDetailsViewer = {
 	/** The viewer is the employee: they see their own in full and change only by request. */
 	own: boolean;
-	/** The viewer may change (and later end) the details directly. */
+	/** The viewer may change and end the details directly. */
 	mayChange: boolean;
 	/** Whether IBANs are shown in full in this view. */
 	revealed: boolean;
@@ -58,6 +58,12 @@ export type PersonalDetailsChangeInput = {
 	value: BankAccountInput;
 };
 
+export type PersonalDetailsEndInput = {
+	part: PersonalDetailsPart;
+	/** A plain calendar day, YYYY-MM-DD, from which no value is in force; past days included. */
+	validFrom: string;
+};
+
 export type PersonalDetailsRefusalCode =
 	/** No such employee for this viewer: unknown, another organization's, or no right to see. */
 	| "not_found"
@@ -65,6 +71,8 @@ export type PersonalDetailsRefusalCode =
 	| "not_allowed"
 	/** The viewer's own details: changed only by a personal details change request. */
 	| "own_details"
+	/** No value is in force on or after the end day: there is nothing to end. */
+	| "nothing_to_end"
 	/** The input is refused; `details` names each refused field. */
 	| "invalid_input";
 

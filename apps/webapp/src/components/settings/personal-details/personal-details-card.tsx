@@ -1,6 +1,13 @@
 "use client";
 
-import { IconEye, IconEyeOff, IconLoader2, IconPencil, IconUserShield } from "@tabler/icons-react";
+import {
+	IconCalendarX,
+	IconEye,
+	IconEyeOff,
+	IconLoader2,
+	IconPencil,
+	IconUserShield,
+} from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -11,12 +18,13 @@ import { actionErrorMessage } from "@/lib/organization-action/action-error-messa
 import type { PersonalDetailsView } from "@/lib/organization/personal-details/types";
 import { BankAccountForm } from "./bank-account-form";
 import { BankAccountHistoryList, CurrentBankAccount } from "./bank-account-history";
+import { EndBankAccountForm } from "./end-bank-account-form";
 import { PERSONAL_DETAILS_REFUSALS } from "./personal-details-copy";
 
 /**
  * Personal details on the employee page (#2069), shown only to viewers with a
  * right to them: the bank account in force and its history, IBANs masked until
- * "show", and the change form for those who may change them.
+ * "show", and the change and end forms for those who may change them (#2071).
  */
 export function PersonalDetailsCard({ view }: { view: PersonalDetailsView }) {
 	const { t } = useTranslate();
@@ -26,7 +34,7 @@ export function PersonalDetailsCard({ view }: { view: PersonalDetailsView }) {
 		of: PersonalDetailsView;
 		revealed: PersonalDetailsView;
 	} | null>(null);
-	const [editing, setEditing] = useState(false);
+	const [editing, setEditing] = useState<"change" | "end" | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [revealing, startReveal] = useTransition();
 	const [refreshing, startRefresh] = useTransition();
@@ -37,6 +45,15 @@ export function PersonalDetailsCard({ view }: { view: PersonalDetailsView }) {
 	const showRevealed = revealed !== null;
 	const current = revealed ?? view;
 	const canReveal = !view.viewer.revealed && view.bankAccount.history.length > 0;
+	// An end needs a bank account in force today or one coming into force later.
+	const canEnd =
+		view.bankAccount.current !== null ||
+		view.bankAccount.history.some((entry) => entry.value !== null && entry.validFrom > view.on);
+	const afterWrite = () => {
+		setEditing(null);
+		setReveal(null);
+		startRefresh(() => router.refresh());
+	};
 
 	const toggleReveal = () => {
 		setError(null);
@@ -106,10 +123,21 @@ export function PersonalDetailsCard({ view }: { view: PersonalDetailsView }) {
 									: t("settings.personalDetails.showIban", "Show IBAN")}
 							</Button>
 						) : null}
-						{view.viewer.mayChange && !editing ? (
-							<Button type="button" variant="outline" size="sm" onClick={() => setEditing(true)}>
+						{view.viewer.mayChange && editing === null ? (
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onClick={() => setEditing("change")}
+							>
 								<IconPencil className="size-4" aria-hidden="true" />
 								{t("settings.personalDetails.bankAccount.change", "Change bank account")}
+							</Button>
+						) : null}
+						{view.viewer.mayChange && editing === null && canEnd ? (
+							<Button type="button" variant="ghost" size="sm" onClick={() => setEditing("end")}>
+								<IconCalendarX className="size-4" aria-hidden="true" />
+								{t("settings.personalDetails.bankAccount.end", "End bank account")}
 							</Button>
 						) : null}
 					</div>
@@ -120,16 +148,20 @@ export function PersonalDetailsCard({ view }: { view: PersonalDetailsView }) {
 					</p>
 				) : null}
 				<CurrentBankAccount bankAccount={current.bankAccount} />
-				{view.viewer.mayChange && editing ? (
+				{view.viewer.mayChange && editing === "change" ? (
 					<BankAccountForm
 						employeeId={view.employeeId}
 						today={view.on}
-						onCancel={() => setEditing(false)}
-						onSaved={() => {
-							setEditing(false);
-							setReveal(null);
-							startRefresh(() => router.refresh());
-						}}
+						onCancel={() => setEditing(null)}
+						onSaved={afterWrite}
+					/>
+				) : null}
+				{view.viewer.mayChange && editing === "end" ? (
+					<EndBankAccountForm
+						employeeId={view.employeeId}
+						today={view.on}
+						onCancel={() => setEditing(null)}
+						onEnded={afterWrite}
 					/>
 				) : null}
 				<div aria-busy={refreshing}>

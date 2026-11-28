@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, gt, sql } from "drizzle-orm";
 import { employeeBankAccount } from "@/db/schema/personal-details";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import type { BankAccountValue } from "./validation";
@@ -10,6 +10,7 @@ import type { BankAccountValue } from "./validation";
 
 type Reader = Pick<DatabaseClient, "select">;
 type Writer = Pick<DatabaseClient, "insert">;
+type Deleter = Pick<DatabaseClient, "delete">;
 
 export type StoredBankAccountEntry = {
 	validFrom: string;
@@ -85,4 +86,25 @@ export async function writeBankAccountEntry(
 		// PostgreSQL sets xmax on the row an upsert updated, not on one it inserted.
 		.returning({ inserted: sql<boolean>`(xmax = 0)` });
 	return { replaced: row?.inserted === false };
+}
+
+/**
+ * Removes the entries with a valid-from after `after`: an end supersedes them,
+ * so no value comes into force after it. Returns how many were removed.
+ */
+export async function removeBankAccountEntriesAfter(
+	db: Deleter,
+	scope: { organizationId: string; employeeId: string; after: string },
+): Promise<number> {
+	const removed = await db
+		.delete(employeeBankAccount)
+		.where(
+			and(
+				eq(employeeBankAccount.organizationId, scope.organizationId),
+				eq(employeeBankAccount.employeeId, scope.employeeId),
+				gt(employeeBankAccount.validFrom, scope.after),
+			),
+		)
+		.returning({ validFrom: employeeBankAccount.validFrom });
+	return removed.length;
 }

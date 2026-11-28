@@ -26,6 +26,19 @@ const bankAccountChangedCopy = {
 		"Your bank account was changed from {validFrom}. The IBAN now on file ends in {lastFour}. If you didn't expect this change, contact your HR team right away.",
 } as const satisfies NotificationCopy;
 
+const bankAccountEndedCopy = {
+	titleKey: "common:notifications.content.personalDetailsChanged.title",
+	titleDefault: "Your personal details changed",
+	messageKey: "common:notifications.content.personalDetailsChanged.bankAccountEnded",
+	messageDefault:
+		"Your bank account was ended from {validFrom}. No bank account is on file for you from that day. If you didn't expect this change, contact your HR team right away.",
+} as const satisfies NotificationCopy;
+
+/** What happened to the part: a new value (of which only the IBAN's last four show), or an end. */
+export type PersonalDetailsChangeOutcome =
+	| { kind: "changed"; /** The only part of an IBAN a notice ever shows. */ ibanLastFour: string }
+	| { kind: "ended" };
+
 /** One applied change to an employee's personal details, as the notice tells it. */
 export type PersonalDetailsChange = {
 	organizationId: string;
@@ -34,23 +47,31 @@ export type PersonalDetailsChange = {
 	employeeUserId: string;
 	part: PersonalDetailsPart;
 	validFrom: string;
-	/** The only part of an IBAN a notice ever shows. */
-	ibanLastFour: string;
+	outcome: PersonalDetailsChangeOutcome;
 	/** The change's own UUID: one notice and one email per change. */
 	changeId: string;
 };
 
 /**
  * The mandatory "personal details changed" notice (#2069): the safeguard against
- * payroll diversion. Never more of the IBAN than its last four characters.
+ * payroll diversion. Never more of the IBAN than its last four characters. An end
+ * (#2071) has its own wording and names no value.
  */
 function buildPersonalDetailsChangedNotice(
 	change: PersonalDetailsChange,
 ): CreateNotificationParams {
-	const content = translatedContent(bankAccountChangedCopy, {
-		validFrom: { kind: "plainDate", date: change.validFrom, preset: "dateMedium" },
-		lastFour: change.ibanLastFour,
-	});
+	const validFrom = {
+		kind: "plainDate",
+		date: change.validFrom,
+		preset: "dateMedium",
+	} as const;
+	const content =
+		change.outcome.kind === "ended"
+			? translatedContent(bankAccountEndedCopy, { validFrom })
+			: translatedContent(bankAccountChangedCopy, {
+					validFrom,
+					lastFour: change.outcome.ibanLastFour,
+				});
 	return {
 		userId: change.employeeUserId,
 		organizationId: change.organizationId,
@@ -61,7 +82,7 @@ function buildPersonalDetailsChangedNotice(
 		entityId: change.employeeId,
 		actionUrl: OWN_PERSONAL_DETAILS_PATH,
 		idempotencyKey: `personal-details-changed:${change.changeId}`,
-		metadata: { part: change.part, i18n: content.i18n },
+		metadata: { part: change.part, outcome: change.outcome.kind, i18n: content.i18n },
 	};
 }
 

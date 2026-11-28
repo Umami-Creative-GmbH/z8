@@ -1,6 +1,7 @@
 /**
- * The personal details module on PostgreSQL (#2069, spec #2068): who reads
- * what, the date-effective bank account history, direct changes, the mandatory
+ * The personal details module on PostgreSQL (#2069, #2071, spec #2068): who
+ * reads what (org admins and covering payroll access holders decide), the
+ * date-effective bank account history, direct changes and ends, the mandatory
  * "personal details changed" notice and its value-free audit.
  *
  * Local contract: pnpm --filter webapp test:integration src/lib/organization/personal-details
@@ -16,6 +17,7 @@ import {
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
 import {
 	changePersonalDetails,
+	endPersonalDetails,
 	readPersonalDetails,
 	retryPersonalDetailsChangedEmails,
 } from "./personal-details";
@@ -200,6 +202,279 @@ describe("personal details", () => {
 		expect((await read(owner, worker))?.bankAccount.current?.value?.ibanLastFour).toBe("3000");
 	});
 
+	function end(actor: SeededEmployee, target: SeededEmployee, validFrom: string) {
+		return endPersonalDetails(
+			{
+				organizationId,
+				actorUserId: actor.userId,
+				employeeId: target.employeeId,
+				part: "bank_account",
+				validFrom,
+			},
+			{ clock },
+		);
+	}
+
+	describe("ending", () => {
+		const on = (day: string) =>
+			readPersonalDetails(
+				{ organizationId, actorUserId: admin.userId, employeeId: worker.employeeId, on: day },
+				{ clock },
+			).then((details) => details?.bankAccount.current?.value?.ibanLastFour ?? null);
+
+		it("leaves no bank account in force from the end day and keeps the earlier history", async () => {
+			await change(admin, worker, "2026-01-01", MAX);
+			await change(admin, worker, "2026-06-01", ERIKA);
+
+			await expect(end(admin, worker, "2026-11-15")).resolves.toEqual({ replaced: false });
+
+			expect(await on("2026-11-14")).toBe("3000");
+			expect(await on("2026-11-15")).toBeNull();
+			expect(await on("2027-06-01")).toBeNull();
+			const details = await read(admin, worker);
+			expect(details?.bankAccount.current).toBeNull();
+			expect(
+				details?.bankAccount.history.map((entry) => [
+					entry.validFrom,
+					entry.value?.ibanLastFour ?? null,
+				]),
+			).toEqual([
+				["2026-11-15", null],
+				["2026-06-01", "3000"],
+				["2026-01-01", "3201"],
+			]);
+		});
+
+		it("drops entries later than the end day, so none comes into force after it", async () => {
+			await change(admin, worker, "2026-11-01", ERIKA);
+			await change(admin, worker, "2027-01-01", MAX);
+
+			await end(admin, worker, "2026-12-01");
+
+			expect(await on("2027-02-01")).toBeNull();
+			expect(
+				(await read(admin, worker))?.bankAccount.history.map((entry) => [
+					entry.validFrom,
+					entry.value?.ibanLastFour ?? null,
+				]),
+			).toEqual([
+				["2026-12-01", null],
+				["2026-11-01", "3000"],
+			]);
+		});
+
+		it("replaces the entry of the same day with the end, as for a bank account entered on the wrong employee", async () => {
+			await change(admin, worker, "2026-12-01", ERIKA);
+
+			await expect(end(admin, worker, "2026-12-01")).resolves.toEqual({ replaced: true });
+
+			expect((await read(admin, worker))?.bankAccount.history).toEqual([
+				{ validFrom: "2026-12-01", value: null },
+			]);
+		});
+
+		it.each([
+			["no bank account was ever recorded", async () => {}],
+			[
+				"the bank account already ended before that day",
+				async () => {
+					await change(admin, worker, "2026-01-01", ERIKA);
+					await end(admin, worker, "2026-06-01");
+				},
+			],
+		])("refuses an end when %s, and tells nobody", async (_when, seed) => {
+			await seed();
+			const before = (await read(admin, worker))?.bankAccount.history;
+			vi.mocked(sendEmail).mockClear();
+
+			await expect(end(admin, worker, "2026-11-01")).rejects.toMatchObject({
+				code: "nothing_to_end",
+			});
+			expect((await read(admin, worker))?.bankAccount.history).toEqual(before);
+			expect(vi.mocked(sendEmail)).not.toHaveBeenCalled();
+		});
+
+		it("refuses an end by those who may not change, and of one's own details", async () => {
+			await change(admin, worker, "2026-01-01", ERIKA);
+			const colleague = await fixture.seedEmployee({ organizationId });
+			const owner = await fixture.seedEmployee({ organizationId, role: "owner" });
+			await change(owner, admin, "2026-01-01", MAX);
+
+			await expect(end(colleague, worker, "2026-11-01")).rejects.toMatchObject({
+				code: "not_found",
+			});
+			await expect(end(worker, worker, "2026-11-01")).rejects.toMatchObject({
+				code: "own_details",
+			});
+			await expect(end(admin, admin, "2026-11-01")).rejects.toMatchObject({
+				code: "own_details",
+			});
+			expect(await on("2026-12-01")).toBe("3000");
+		});
+
+		it("refuses an invalid end day", async () => {
+			await change(admin, worker, "2026-01-01", ERIKA);
+			await expect(end(admin, worker, "2026-02-30")).rejects.toMatchObject({
+				code: "invalid_input",
+				details: { fields: { validFrom: "valid_from_invalid" } },
+			});
+		});
+	});
+
+	describe("payroll access holders", () => {
+		/** A member holding an active payroll access grant: everyone, or the named employees and teams. */
+		async function payrollHolder(
+			coverage: "all" | { employees?: SeededEmployee[]; teams?: string[] },
+		) {
+			const holder = await fixture.seedEmployee({ organizationId });
+			const grantId = randomUUID();
+			await fixture.pool.query(
+				`insert into payroll_access_grant (id, organization_id, payroll_employee_id, scope, created_by, updated_at)
+				 values ($1, $2, $3, $4, $5, now())`,
+				[
+					grantId,
+					organizationId,
+					holder.employeeId,
+					coverage === "all" ? "all" : "specific",
+					admin.userId,
+				],
+			);
+			if (coverage !== "all") {
+				for (const employee of coverage.employees ?? []) {
+					await fixture.pool.query(
+						"insert into payroll_access_employee (organization_id, grant_id, employee_id, created_by) values ($1, $2, $3, $4)",
+						[organizationId, grantId, employee.employeeId, admin.userId],
+					);
+				}
+				for (const teamId of coverage.teams ?? []) {
+					await fixture.pool.query(
+						"insert into payroll_access_team (organization_id, grant_id, team_id, created_by) values ($1, $2, $3, $4)",
+						[organizationId, grantId, teamId, admin.userId],
+					);
+				}
+			}
+			return Object.assign(holder, { grantId });
+		}
+
+		it("a holder covering everyone sees masked, reveals and changes like an org admin", async () => {
+			await change(admin, worker, "2026-11-01", ERIKA);
+			const holder = await payrollHolder("all");
+
+			const masked = await read(holder, worker);
+			expect(masked?.viewer).toEqual({ own: false, mayChange: true, revealed: false });
+			expect(masked?.bankAccount.current?.value).toMatchObject({
+				iban: null,
+				ibanLastFour: "3000",
+			});
+			expect((await read(holder, worker, { reveal: true }))?.bankAccount.current?.value?.iban).toBe(
+				ERIKA.iban,
+			);
+			await change(holder, worker, "2026-12-01", MAX);
+			await end(holder, worker, "2027-01-01");
+			expect(
+				(await read(admin, worker))?.bankAccount.history.map((entry) => [
+					entry.validFrom,
+					entry.value?.ibanLastFour ?? null,
+				]),
+			).toEqual([
+				["2027-01-01", null],
+				["2026-12-01", "3201"],
+				["2026-11-01", "3000"],
+			]);
+		});
+
+		async function teamOf(...members: SeededEmployee[]) {
+			const teamId = randomUUID();
+			await fixture.pool.query(
+				"insert into team (id, organization_id, name, updated_at) values ($1, $2, 'Payroll covered', now())",
+				[teamId, organizationId],
+			);
+			for (const member of members) await fixture.placeInTeam(member.employeeId, teamId);
+			return teamId;
+		}
+
+		it.each([
+			["names the employee", async () => payrollHolder({ employees: [worker] })],
+			["names the employee's team", async () => payrollHolder({ teams: [await teamOf(worker)] })],
+			[
+				"names a team the employee is a member of",
+				async () => {
+					const teamId = await teamOf();
+					await fixture.pool.query(
+						"insert into team_membership (organization_id, team_id, employee_id) values ($1, $2, $3)",
+						[organizationId, teamId, worker.employeeId],
+					);
+					return payrollHolder({ teams: [teamId] });
+				},
+			],
+		])("a holder whose grant %s sees and changes them", async (_how, seed) => {
+			await change(admin, worker, "2026-11-01", ERIKA);
+			const holder = await seed();
+
+			expect((await read(holder, worker))?.viewer.mayChange).toBe(true);
+			await expect(change(holder, worker, "2026-12-01", MAX)).resolves.toEqual({
+				replaced: false,
+			});
+			await expect(end(holder, worker, "2027-01-01")).resolves.toEqual({ replaced: false });
+		});
+
+		it.each([
+			["names someone else", async () => payrollHolder({ employees: [admin] })],
+			["names another team", async () => payrollHolder({ teams: [await teamOf(admin)] })],
+			[
+				"was revoked",
+				async () => {
+					const holder = await payrollHolder("all");
+					await fixture.pool.query(
+						"update payroll_access_grant set is_active = false where id = $1",
+						[holder.grantId],
+					);
+					return holder;
+				},
+			],
+		])("a holder whose grant %s sees nothing and changes nothing", async (_how, seed) => {
+			await change(admin, worker, "2026-11-01", ERIKA);
+			const holder = await seed();
+
+			expect(await read(holder, worker, { reveal: true })).toBeNull();
+			await expect(change(holder, worker, "2026-12-01", MAX)).rejects.toMatchObject({
+				code: "not_found",
+			});
+			await expect(end(holder, worker, "2026-12-01")).rejects.toMatchObject({
+				code: "not_found",
+			});
+			expect((await read(admin, worker))?.bankAccount.history).toHaveLength(1);
+		});
+
+		it("a holder covering everyone sees their own only as the employee and changes it only by request", async () => {
+			const holder = await payrollHolder("all");
+			await change(admin, holder, "2026-11-01", ERIKA);
+
+			expect((await read(holder, holder))?.viewer).toEqual({
+				own: true,
+				mayChange: false,
+				revealed: true,
+			});
+			await expect(change(holder, holder, "2026-12-01", MAX)).rejects.toMatchObject({
+				code: "own_details",
+			});
+			await expect(end(holder, holder, "2026-12-01")).rejects.toMatchObject({
+				code: "own_details",
+			});
+		});
+
+		it("a holder still covers an employee who has left", async () => {
+			const holder = await payrollHolder({ employees: [worker] });
+			await change(admin, worker, "2026-11-01", ERIKA);
+			await fixture.pool.query(
+				"update employee set is_active = false, end_date = '2026-02-15' where id = $1",
+				[worker.employeeId],
+			);
+
+			expect((await read(holder, worker))?.bankAccount.current?.value?.ibanLastFour).toBe("3000");
+		});
+	});
+
 	describe("who has no right", () => {
 		async function scopedManagerOf(target: SeededEmployee) {
 			const manager = await fixture.seedEmployee({ organizationId });
@@ -240,6 +515,9 @@ describe("personal details", () => {
 
 			expect(await read(viewer, worker, { reveal: true })).toBeNull();
 			await expect(change(viewer, worker, "2026-12-01", MAX)).rejects.toMatchObject({
+				code: "not_found",
+			});
+			await expect(end(viewer, worker, "2026-12-01")).rejects.toMatchObject({
 				code: "not_found",
 			});
 			expect((await read(admin, worker))?.bankAccount.history).toHaveLength(1);
@@ -414,6 +692,37 @@ describe("personal details", () => {
 			expect(await noticesOf(worker)).toHaveLength(1);
 		});
 
+		it("tells the employee about an end in-app and by email, in its own words and with no value", async () => {
+			await fixture.pool.query(
+				`insert into notification_preference (user_id, notification_type, channel, enabled, updated_at)
+				 values ($1, 'personal_details_changed', 'email', false, now())`,
+				[worker.userId],
+			);
+			await change(admin, worker, "2026-01-01", ERIKA);
+
+			await end(admin, worker, "2026-12-01");
+
+			const notices = await noticesOf(worker);
+			expect(notices).toHaveLength(2);
+			const ended = notices.find((notice) => notice.message.includes("ended"));
+			expect(ended).toMatchObject({
+				type: "personal_details_changed",
+				action_url: "/settings/profile",
+			});
+			expect(JSON.parse(ended?.metadata ?? "{}")).toMatchObject({
+				part: "bank_account",
+				outcome: "ended",
+				i18n: {
+					messageKey: "common:notifications.content.personalDetailsChanged.bankAccountEnded",
+					params: { validFrom: { kind: "plainDate", date: "2026-12-01" } },
+				},
+			});
+			expect(ended?.message).not.toContain("3000");
+			const emails = emailsTo(worker);
+			expect(emails).toHaveLength(2);
+			expect(emails.some((email) => email.html.includes("ended"))).toBe(true);
+		});
+
 		it("tells nobody about a refused change", async () => {
 			const colleague = await fixture.seedEmployee({ organizationId });
 			await expect(change(colleague, worker, "2026-12-01", ERIKA)).rejects.toThrow();
@@ -478,6 +787,37 @@ describe("personal details", () => {
 				"3000",
 				"3201",
 			]) {
+				expect(text).not.toContain(value);
+			}
+		});
+
+		it("records an end with actor, part and day, never the ended values", async () => {
+			await change(admin, worker, "2026-01-01", ERIKA);
+			await change(admin, worker, "2027-01-01", MAX);
+
+			await end(admin, worker, "2026-12-01");
+
+			const entries = await auditOf(worker);
+			const ended = entries.filter((entry) => entry.action === "personal_details.ended");
+			expect(
+				ended.map((entry) => ({ ...entry, metadata: JSON.parse(entry.metadata ?? "{}") })),
+			).toEqual([
+				{
+					action: "personal_details.ended",
+					performed_by: admin.userId,
+					entity_type: "employee",
+					entity_id: worker.employeeId,
+					metadata: {
+						part: "bank_account",
+						validFrom: "2026-12-01",
+						correction: false,
+						superseded: 1,
+					},
+					changes: null,
+				},
+			]);
+			const text = JSON.stringify(ended);
+			for (const value of [ERIKA.iban, MAX.iban, "Mustermann", "3000", "3201"]) {
 				expect(text).not.toContain(value);
 			}
 		});
