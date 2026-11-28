@@ -113,8 +113,12 @@ A signed number of vacation days added to one employee's balance for one year. A
 _Avoid_: correction, bonus days
 
 **Carryover**:
-The unused vacation transferred from one year to the next. The policy effective on 31 December of the source year supplies permission and the cap; the policy effective on 1 January of the receiving year supplies expiry. A newly committed transfer keeps its amount and expiry through later policy or assignment changes, including a committed zero transfer or an explicit absence of expiry. Earlier stored carryover retains its prior expiry treatment unless explicitly reviewed.
+The unused vacation transferred from one year to the next. The policy effective on 31 December of the source year supplies permission and the cap; the policy effective on 1 January of the receiving year supplies expiry. A newly committed transfer keeps its amount and expiry through later policy or assignment changes, including a committed zero transfer or an explicit absence of expiry. Earlier stored carryover retains its prior expiry treatment unless explicitly reviewed. Carryover keeps each earning year and its earning policy as separate **earning-year leave**; the policy's cap and deadline apply only to leave whose earning policy is designated for the policy's own terms, or to extra contractual days with separately recorded terms. See [ADR 0006](docs/adr/0006-leave-keeps-its-earning-year-and-earning-policy.md).
 _Avoid_: recalculated carryover, current-policy carryover
+
+**Earning-year leave**:
+The unused days of one leave year that a year-end transfer carried into a later year, with the vacation policy they were earned under. Carrying them again keeps the same earning year and policy.
+_Avoid_: carryover bucket, pooled carryover
 
 **Posting configuration problem**:
 Missing or conflicting vacation policies for dates needed to calculate an automatic accrual or carryover. The affected employee is skipped with the dates and configuration state visible for review; correctly configured colleagues still process. An unknown allowance is never a zero-day posting.

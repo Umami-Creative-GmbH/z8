@@ -2,6 +2,7 @@
 
 import {
 	IconDots,
+	IconGavel,
 	IconPencil,
 	IconPlus,
 	IconRefresh,
@@ -38,6 +39,11 @@ import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { queryKeys } from "@/lib/query";
 import { useVacationPolicyHistoryContext } from "./use-vacation-policy-history-context";
+import {
+	VacationPolicyExpiryBadge,
+	VacationPolicyExpiryClassificationPanel,
+	type VacationPolicyExpiryClassificationValue,
+} from "./vacation-policy-expiry-classification";
 import { VacationPolicyForm } from "./vacation-policy-form";
 import { isPolicySuperseded, organizationToday } from "./vacation-policy-status";
 
@@ -56,6 +62,8 @@ interface VacationPolicy {
 	carryoverExpiryMonths: number | null;
 	prorateInStartAndExitYear: boolean;
 	statutoryMinimumDays: string;
+	/** Whether German leave-expiry rules apply to leave earned under it; null while unclassified. */
+	expiryClassification?: VacationPolicyExpiryClassificationValue | null;
 	creator?: {
 		name: string;
 	} | null;
@@ -109,6 +117,7 @@ export function VacationPoliciesTable({
 	const [deleteError, setDeleteError] = useState<string | null>(null);
 	const [editingPolicy, setEditingPolicy] = useState<VacationPolicy | null>(null);
 	const [createFormOpen, setCreateFormOpen] = useState(false);
+	const [classifyingPolicy, setClassifyingPolicy] = useState<VacationPolicy | null>(null);
 	// "Superseded" compares against the organization's calendar day (its timezone), not the
 	// viewer's or UTC's day; until the timezone is known no policy is marked superseded.
 	const historyContext = useVacationPolicyHistoryContext(organizationId);
@@ -269,6 +278,13 @@ export function VacationPoliciesTable({
 				),
 		},
 		{
+			id: "expiryRules",
+			header: t("vacation.policies.header.expiry-rules", "Leave expiry"),
+			cell: ({ row }) => (
+				<VacationPolicyExpiryBadge classification={row.original.expiryClassification} />
+			),
+		},
+		{
 			accessorKey: "status",
 			header: t("vacation.policies.header.status", "Status"),
 			cell: ({ row }) => {
@@ -312,6 +328,12 @@ export function VacationPoliciesTable({
 										<IconPencil className="mr-2 size-4" />
 										{t("common.edit", "Edit")}
 									</DropdownMenuItem>
+									{row.original.expiryClassification ? null : (
+										<DropdownMenuItem onClick={() => setClassifyingPolicy(row.original)}>
+											<IconGavel className="mr-2 size-4" />
+											{t("vacation.policies.classify-expiry", "Designate leave-expiry rules")}
+										</DropdownMenuItem>
+									)}
 									<DropdownMenuSeparator />
 									<DropdownMenuItem
 										className="text-destructive"
@@ -339,7 +361,7 @@ export function VacationPoliciesTable({
 						</Button>
 					</div>
 				) : null}
-				<DataTableSkeleton columnCount={8} rowCount={5} />
+				<DataTableSkeleton columnCount={9} rowCount={5} />
 			</div>
 		);
 	}
@@ -422,6 +444,21 @@ export function VacationPoliciesTable({
 					onOpenChange={handleFormClose}
 					organizationId={organizationId}
 					existingPolicy={editingPolicy}
+				/>
+			)}
+
+			{canManagePolicies && classifyingPolicy && (
+				<VacationPolicyExpiryClassificationPanel
+					open={!!classifyingPolicy}
+					onOpenChange={(open) => {
+						if (!open) setClassifyingPolicy(null);
+					}}
+					policy={classifyingPolicy}
+					onClassified={() =>
+						queryClient.invalidateQueries({
+							queryKey: queryKeys.vacationPolicies.list(organizationId),
+						})
+					}
 				/>
 			)}
 
