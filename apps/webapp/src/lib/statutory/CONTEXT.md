@@ -296,6 +296,8 @@ release credit and the release-conflict warning in Staffing and Reviews & Confli
 
 ## Short-term employment
 
+Agricultural declarations identify the employing period and its Betriebsnummer. Each change has an effective date and an admin author. A same-date correction appends a revision. The latest revision for that date governs. The annual monitor reports cumulative usage against the limit for the employment on the assessment day (last counted day or agreed start). Earlier effective dates keep their declarations. From 1 January 2026 an eligible employment uses 90 working days, 15 consecutive weeks for one stint, or 105 actual calendar days for combined stints. Prior-employer offsets entered in months keep their existing 30-calendar-day or general working-day equivalent because they do not identify an agricultural establishment.
+
 § 8 Abs. 1 Nr. 2 SGB IV (*kurzfristige Beschäftigung*), judged per calendar year in the
 organization's calendar timezone.
 

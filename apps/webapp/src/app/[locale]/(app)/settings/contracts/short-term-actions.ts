@@ -1,8 +1,11 @@
 "use server";
 
+import { and, eq } from "drizzle-orm";
+import { agriculturalDeclaration, employeeEmploymentPeriod } from "@/db/schema";
 import { Effect } from "effect";
 import { z } from "zod";
 import { plainDateAt, systemClock } from "@/lib/datetime/temporal-core";
+import { ValidationError } from "@/lib/effect/errors";
 import { organizationAction } from "@/lib/organization-action/organization-action";
 import { refuseUnless } from "@/lib/organization-action/refuse-unless";
 import { storeStep } from "@/lib/organization-action/store-step";
@@ -158,4 +161,36 @@ export const listShortTermBerufsmaessigkeitReviewsAction = organizationAction(
 				includeResolved: input.includeResolved ?? false,
 			}),
 		),
+);
+
+export const recordAgriculturalDeclarationAction = organizationAction(
+	{
+		name: "contracts.recordAgriculturalDeclaration",
+		requires: "orgAdmin",
+		schema: z.strictObject({
+			employeeId: uuidSchema,
+			periodId: uuidSchema,
+			effectiveFrom: z.iso.date(),
+			establishmentNumber: z.string().regex(/^\d{8}$/),
+			eligible: z.boolean(),
+		}),
+	},
+	({ actor, organizationId, input }) =>
+		storeStep("contracts.recordAgriculturalDeclaration", async (db) => {
+			const [period] = await db
+				.select({ id: employeeEmploymentPeriod.id })
+				.from(employeeEmploymentPeriod)
+				.where(
+					and(
+						eq(employeeEmploymentPeriod.id, input.periodId),
+						eq(employeeEmploymentPeriod.engagementKind, "employee"),
+						eq(employeeEmploymentPeriod.employeeId, input.employeeId),
+						eq(employeeEmploymentPeriod.organizationId, organizationId),
+					),
+				);
+			if (!period) throw new ValidationError({ message: "Employment period unavailable" });
+			await db
+				.insert(agriculturalDeclaration)
+				.values({ ...input, organizationId, recordedBy: actor.userId });
+		}),
 );

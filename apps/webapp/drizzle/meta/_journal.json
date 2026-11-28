@@ -2416,6 +2416,13 @@
       "when": 1814544000000,
       "tag": "0344_telegram_digest_installation_dispatch",
       "breakpoints": true
+    },
+    {
+      "idx": 345,
+      "version": "7",
+      "when": 1814630400000,
+      "tag": "0345_agricultural_short_term",
+      "breakpoints": true
     }
   ]
 }

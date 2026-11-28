@@ -63,6 +63,82 @@ describe("short-term employment evaluator (PostgreSQL)", () => {
 		expect(evaluation?.findings).toEqual([]);
 	});
 
+	it("switches only the declared employment at the statutory start", async () => {
+		const org = await fx.organization("a");
+		const farm = await fx.employee(org, "farm", { contractType: "hourly" });
+		const shop = await fx.employee(org, "shop", { contractType: "hourly" });
+		for (const worker of [farm, shop]) {
+			await st.terms(worker, { from: "2025-12-01" });
+			await st.work(org, worker, "2025-12-31");
+			await st.work(org, worker, "2026-01-01");
+			await admin.query(
+				"INSERT INTO agricultural_declaration (organization_id,employee_id,period_id,effective_from,establishment_number,eligible) SELECT organization_id,employee_id,id,'2025-12-01',$3,$4 FROM employee_employment_period WHERE organization_id=$1 AND employee_id=$2",
+				[org.id, worker.employeeId, worker === farm ? "12345678" : "01234567", worker === farm],
+			);
+		}
+		const results = await evaluate(org, [farm.employeeId, shop.employeeId], {
+			years: [2025, 2026],
+		});
+		expect(results.map((r) => [r.employeeId, r.year, r.allowance?.limit])).toEqual(
+			expect.arrayContaining([
+				[farm.employeeId, 2025, 70],
+				[farm.employeeId, 2026, 90],
+				[shop.employeeId, 2025, 70],
+				[shop.employeeId, 2026, 70],
+			]),
+		);
+	});
+	it.each([90, 91])("counts %i agricultural working days against 90", async (used) => {
+		const org = await fx.organization("a");
+		const worker = await fx.employee(org, "seasonal", { contractType: "hourly" });
+		await st.terms(worker, { from: "2026-01-01" });
+		await admin.query(
+			"INSERT INTO agricultural_declaration (organization_id,employee_id,period_id,effective_from,establishment_number,eligible) SELECT organization_id,employee_id,id,'2026-01-01','12345678',true FROM employee_employment_period WHERE organization_id=$1 AND employee_id=$2",
+			[org.id, worker.employeeId],
+		);
+		await st.work(org, worker, "2026-01-05");
+		await st.priorShortTerm(worker, "prior_short_term_work_days", 2026, used - 1);
+		const [result] = await evaluate(org, [worker.employeeId]);
+		expect(result?.allowance).toMatchObject({
+			used,
+			limit: 90,
+			tier: used === 90 ? "critical" : "exceeded",
+		});
+	});
+	it.each([
+		[105, 0],
+		[106, 0],
+		[75, 1],
+		[76, 1],
+	])(
+		"counts %i calendar days plus %i prior months against the agricultural duration",
+		async (days, months) => {
+			const org = await fx.organization("a");
+			const worker = await fx.employee(org, "seasonal", { contractType: "hourly" });
+			const from = "2026-01-01";
+			await st.terms(worker, { from, workPolicyId: await st.weekdayPolicy(org) });
+			await st.fixedTermAgreement(
+				worker,
+				from,
+				Temporal.PlainDate.from(from)
+					.add({ days: days - 1 })
+					.toString(),
+			);
+			await admin.query(
+				"INSERT INTO agricultural_declaration (organization_id,employee_id,period_id,effective_from,establishment_number,eligible) SELECT organization_id,employee_id,id,'2026-01-01','12345678',true FROM employee_employment_period WHERE organization_id=$1 AND employee_id=$2",
+				[org.id, worker.employeeId],
+			);
+			if (months) await st.priorShortTerm(worker, "prior_short_term_months", 2026, months);
+			const [result] = await evaluate(org, [worker.employeeId]);
+			const used = days + months * 30;
+			expect(result?.allowance).toMatchObject({
+				used,
+				limit: 105,
+				limitKind: "weeks",
+				tier: used === 105 ? "critical" : "exceeded",
+			});
+		},
+	);
 	function evaluate(
 		org: { id: string; timezone: string },
 		employeeIds: string[],

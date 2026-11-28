@@ -292,7 +292,9 @@
         "calendarDaysExceeded": "3-Monats-Grenze für kurzfristige Beschäftigung überschritten: {used} von {limit} Kalendertagen in diesem Jahr",
         "calendarDaysRemaining": "Kurzfristige Beschäftigung (3-Monats-Grenze): noch {remaining} von {limit} Kalendertagen in diesem Jahr übrig",
         "daysExceeded": "Tagesgrenze für kurzfristige Beschäftigung überschritten: {used} von {limit} Arbeitstagen in diesem Jahr",
-        "daysRemaining": "Kurzfristige Beschäftigung: noch {remaining} von {limit} Arbeitstagen in diesem Jahr übrig"
+        "daysRemaining": "Kurzfristige Beschäftigung: noch {remaining} von {limit} Arbeitstagen in diesem Jahr übrig",
+        "weeksExceeded": "Landwirtschaftliche Zeitgrenze überschritten: {used} von {limit} Kalendertagen",
+        "weeksRemaining": "Kurzfristige landwirtschaftliche Beschäftigung: {remaining} von {limit} Kalendertagen übrig"
       },
       "warning": "{area}: Gesetzliche Grenze gefährdet",
       "warningApproaching": "{area}: Annäherung an gesetzliche Grenze",

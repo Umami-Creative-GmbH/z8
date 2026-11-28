@@ -27,7 +27,18 @@ export function shortTermWarningText(
 						"Short-term employment: {remaining} of {limit} working days left this year",
 						params,
 					);
-		// The 3-month limit is counted in calendar days (one stint's 3 months, or 90 days in total).
+		case "short_term_weeks":
+			return tier === "exceeded"
+				? t(
+						"scheduling:scheduling.statutory.shortTerm.weeksExceeded",
+						"Agricultural short-term limit exceeded: {used} of {limit} calendar days",
+						params,
+					)
+				: t(
+						"scheduling:scheduling.statutory.shortTerm.weeksRemaining",
+						"Agricultural short-term employment: {remaining} of {limit} calendar days left",
+						params,
+					);
 		case "short_term_months":
 			return tier === "exceeded"
 				? t(
