@@ -35,8 +35,34 @@ The absence days an employee may take as vacation in a year, before carryover an
 _Avoid_: vacation entitlement, annual hours
 
 **Vacation policy period**:
-The organization-local calendar dates during which the same vacation policy applies to an employee. Their direct assignment takes precedence over their applicable teams, then an organization assignment, then the company default. Matching team policies count once; differing team policies are a configuration conflict.
+The organization-local calendar dates during which the same vacation policy applies to an employee. Their direct assignment takes precedence over their applicable teams, then an organization assignment, then the company default. Matching team policies count once; differing team policies are a configuration conflict. Leave earned during a policy period keeps that policy’s designation of whether German leave-expiry rules apply, including after the employee moves to another policy. If the earning policy has no designation, unused days remain visible as outstanding until HR classifies it.
 _Avoid_: current team policy, latest policy
+
+**Extra contractual days**:
+Vacation days granted above the statutory minimum. Under a vacation policy designated for German leave-expiry rules, these days have the same expiry protections as the statutory days unless HR explicitly records separate terms for them. A general carryover cap or expiry date alone does not establish separate terms.
+
+When an employee takes vacation, days with the earliest established expiry date are used first. Days with no established expiry are used after dated days. When expiry dates match, or neither balance has an established expiry, the older leave year is used first.
+
+**Z8 leave notice**:
+In the first release, Z8 prepares the notice with the employee’s outstanding days and proposed deadline. HR reviews it and chooses when to send it. Before sending a German leave notice, HR confirms the expiry date and records why it applies to the covered days. Confirmed delivery to the employee establishes that the notice was given. Z8 retains the exact notice and delivery time. Employee acknowledgement is optional. Queued, failed, and unknown delivery states leave the notice unconfirmed.
+
+**External leave notice**:
+A notice given outside Z8 and recorded through a dated HR attestation. HR identifies the employee, when and how the notice was given, the leave year, days covered, and deadline. HR confirms that the notice asked the employee to take those days and warned that unused days could lapse. Supporting documents are optional.
+
+If a delivered notice gave the wrong deadline, Z8 retains the original notice and suspends expiry for the affected days. HR confirms the corrected deadline, gives the employee a corrected notice, and documents their opportunity to take the days by that date before expiry can resume. If HR confirms the error after expiry, Z8 immediately restores the days debited under that notice to their original leave year. They are available to request again, and the balance history shows both the expiry and its reversal.
+
+**Opportunity to take leave**:
+For expiry based on an employee notice, HR’s documented finding that the employee could actually take the outstanding days covered by that notice before its deadline. Those days remain outstanding until HR records the basis for that finding. Days added after the notice remain outstanding until a new notice covers them and HR documents the employee’s opportunity to take those additional days.
+
+**Continuous incapacity for leave expiry**:
+For the German 15-month rule, HR confirms that the employee was unable to work throughout the leave year and remained so through the deadline 15 months after the end of that year. If the employee worked part of the year or the evidence has a gap, the days remain outstanding for individual review.
+
+A vacation request submitted by the expiry deadline protects the requested days that fall on or before that deadline while approval is pending. Approval charges those days to the original balance. A denial after the deadline returns them to HR for individual review. If approved vacation is cancelled after its original expiry deadline, the returned days are restored to their original leave year and are available to request while HR reviews the circumstances.
+
+After the deadline has passed and HR has documented that the applicable expiry conditions are met, Z8 automatically expires the eligible unused days. Days protected by a timely pending request remain outstanding.
+
+**Historical leave loss review**:
+An HR review of identifiable unused days lost before the earning policy was classified. It shows the affected year, number of days, and reason for the loss. HR can restore the days or document why the expiry stands. Previously lost days become available to request once HR restores them. Days still outstanding during an expiry review remain available through the usual vacation request and approval process.
 
 **Vacation team eligibility**:
 The dates during which an employee belongs to a team for vacation policy selection. Leaving a team preserves its earlier eligibility; today's team does not establish unknown earlier membership.
