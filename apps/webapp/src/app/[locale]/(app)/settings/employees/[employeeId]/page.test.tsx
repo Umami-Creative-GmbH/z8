@@ -32,6 +32,9 @@ vi.mock("@/lib/organization/equipment/actions", () => ({
 vi.mock("./employee-detail-page-client", () => ({
 	EmployeeDetailPageClient: "EmployeeDetailPageClient",
 }));
+vi.mock("@/lib/organization/personal-details/personal-details", () => ({
+	readPersonalDetails: vi.fn(async () => null),
+}));
 vi.mock("@/lib/timezone/load-organization-timezone", () => ({
 	loadOrganizationTimezone: vi.fn(async () => "Europe/Berlin"),
 }));

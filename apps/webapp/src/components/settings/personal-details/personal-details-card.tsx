@@ -1,0 +1,137 @@
+"use client";
+
+import { IconEye, IconEyeOff, IconLoader2, IconPencil, IconUserShield } from "@tabler/icons-react";
+import { useTranslate } from "@tolgee/react";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
+import { revealEmployeePersonalDetails } from "@/app/[locale]/(app)/settings/employees/personal-details-actions";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { actionErrorMessage } from "@/lib/organization-action/action-error-message";
+import type { PersonalDetailsView } from "@/lib/organization/personal-details/types";
+import { BankAccountForm } from "./bank-account-form";
+import { BankAccountHistoryList, CurrentBankAccount } from "./bank-account-history";
+import { PERSONAL_DETAILS_REFUSALS } from "./personal-details-copy";
+
+/**
+ * Personal details on the employee page (#2069), shown only to viewers with a
+ * right to them: the bank account in force and its history, IBANs masked until
+ * "show", and the change form for those who may change them.
+ */
+export function PersonalDetailsCard({ view }: { view: PersonalDetailsView }) {
+	const { t } = useTranslate();
+	const router = useRouter();
+	const [revealed, setRevealed] = useState<PersonalDetailsView | null>(null);
+	const [showRevealed, setShowRevealed] = useState(false);
+	const [editing, setEditing] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+	const [revealing, startReveal] = useTransition();
+	const [refreshing, startRefresh] = useTransition();
+
+	// A revealed copy is only used while it belongs to the view the page rendered.
+	const current = showRevealed && revealed?.on === view.on ? revealed : view;
+	const canReveal = !view.viewer.revealed && view.bankAccount.history.length > 0;
+
+	const toggleReveal = () => {
+		setError(null);
+		if (showRevealed) {
+			setShowRevealed(false);
+			setRevealed(null);
+			return;
+		}
+		startReveal(async () => {
+			const result = await revealEmployeePersonalDetails({ employeeId: view.employeeId });
+			if (result.success) {
+				setRevealed(result.data);
+				setShowRevealed(true);
+			} else {
+				setError(
+					actionErrorMessage(t, result, PERSONAL_DETAILS_REFUSALS, [
+						"settings.personalDetails.revealFailed",
+						"Could not show the IBAN. Try again.",
+					]),
+				);
+			}
+		});
+	};
+
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle className="flex items-center gap-2">
+					<IconUserShield className="size-5 text-primary" aria-hidden="true" />
+					{t("settings.personalDetails.title", "Personal details")}
+				</CardTitle>
+				<CardDescription>
+					{view.viewer.own
+						? t(
+								"settings.personalDetails.ownDescription",
+								"Your own personal details. They are changed by a request that someone else decides.",
+							)
+						: t(
+								"settings.personalDetails.description",
+								"Bank account as this organization records it. The employee is told about every change.",
+							)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent className="space-y-4">
+				<div className="flex flex-wrap items-center justify-between gap-2">
+					<h3 className="text-sm font-semibold">
+						{t("settings.personalDetails.bankAccount.title", "Bank account")}
+					</h3>
+					<div className="flex flex-wrap gap-2">
+						{canReveal ? (
+							<Button
+								type="button"
+								variant="ghost"
+								size="sm"
+								onClick={toggleReveal}
+								disabled={revealing}
+								aria-pressed={showRevealed}
+							>
+								{revealing ? (
+									<IconLoader2 className="size-4 animate-spin" aria-hidden="true" />
+								) : showRevealed ? (
+									<IconEyeOff className="size-4" aria-hidden="true" />
+								) : (
+									<IconEye className="size-4" aria-hidden="true" />
+								)}
+								{showRevealed
+									? t("settings.personalDetails.hideIban", "Hide IBAN")
+									: t("settings.personalDetails.showIban", "Show IBAN")}
+							</Button>
+						) : null}
+						{view.viewer.mayChange && !editing ? (
+							<Button type="button" variant="outline" size="sm" onClick={() => setEditing(true)}>
+								<IconPencil className="size-4" aria-hidden="true" />
+								{t("settings.personalDetails.bankAccount.change", "Change bank account")}
+							</Button>
+						) : null}
+					</div>
+				</div>
+				{error ? (
+					<p role="alert" className="text-sm text-destructive">
+						{error}
+					</p>
+				) : null}
+				<CurrentBankAccount bankAccount={current.bankAccount} />
+				{view.viewer.mayChange && editing ? (
+					<BankAccountForm
+						employeeId={view.employeeId}
+						today={view.on}
+						onCancel={() => setEditing(false)}
+						onSaved={() => {
+							setEditing(false);
+							setShowRevealed(false);
+							setRevealed(null);
+							startRefresh(() => router.refresh());
+						}}
+					/>
+				) : null}
+				<div aria-busy={refreshing}>
+					<BankAccountHistoryList bankAccount={current.bankAccount} on={view.on} />
+				</div>
+			</CardContent>
+		</Card>
+	);
+}

@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { BillableRateSeries } from "@/components/billable-time/billable-rate-series";
 import { CostRateSeries } from "@/components/billable-time/cost-rate-series";
 import { EmployeeEquipment } from "@/components/equipment/equipment-workspace";
+import { PersonalDetailsCard } from "@/components/settings/personal-details/personal-details-card";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { EmployeeLifecycleActions } from "@/components/organization/employee-lifecycle-actions";
 import { ReactivationChecklistCard } from "@/components/organization/reactivation-checklist";
@@ -56,6 +57,7 @@ import {
 } from "@/lib/organization-action/settings-access-level";
 import type { EmployeeReadSnapshot } from "@/lib/organization/employee-read-types";
 import type { EquipmentView } from "@/lib/organization/equipment/contracts";
+import type { PersonalDetailsView } from "@/lib/organization/personal-details/types";
 import type { PersonnelFilePanelCapability } from "@/lib/personnel-file/panel";
 import { queryKeys } from "@/lib/query";
 import { type EmployeeDetail, useEmployee } from "@/lib/query/use-employee";
@@ -189,6 +191,7 @@ export function EmployeeDetailPageClient({
 	highlightedReviewId = null,
 	personnelFile = null,
 	equipment = null,
+	personalDetails = null,
 }: {
 	params: Promise<{ employeeId: string }>;
 	currentUserId: string;
@@ -201,6 +204,8 @@ export function EmployeeDetailPageClient({
 	/** Decided on the server by the personnel file access resolver (#865). */
 	personnelFile?: PersonnelFilePanelCapability | null;
 	equipment?: EquipmentView | null;
+	/** The viewer's view of the employee's personal details; null without a right to them. */
+	personalDetails?: PersonalDetailsView | null;
 }) {
 	const { employeeId } = use(params);
 	const { t } = useTranslate();
@@ -405,6 +410,12 @@ export function EmployeeDetailPageClient({
 								<EmployeeOverviewCard employee={employee} schedule={employeeData.schedule} t={t} />
 								{canEditDraftDetails && editForm}
 							</div>
+							{personalDetails ? (
+								<PersonalDetailsCard
+									key={`${organizationId}:${employeeId}`}
+									view={personalDetails}
+								/>
+							) : null}
 							{isOrgAdmin && <ReactivationChecklistCard employeeId={employeeId} />}
 							{equipment ? (
 								<EmployeeEquipment

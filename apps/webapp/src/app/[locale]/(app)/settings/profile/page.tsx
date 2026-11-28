@@ -3,6 +3,7 @@ import { OwnCustomFieldsCard } from "@/components/settings/custom-fields/own-cus
 import { ApprenticeReleaseCard } from "@/components/settings/employees/apprentice-release-card";
 import { OwnSkillsCard } from "@/components/settings/own-skills-card";
 import { OwnWorkingStudentCard } from "@/components/settings/own-working-student-card";
+import { OwnPersonalDetailsCard } from "@/components/settings/personal-details/own-personal-details-card";
 import { ProfileForm } from "@/components/settings/profile-form";
 import { TimeFormatSettings } from "@/components/settings/time-format-settings";
 import { TimezoneSettings } from "@/components/settings/timezone-settings";
@@ -13,6 +14,7 @@ import { db } from "@/db";
 import { userSettings } from "@/db/schema";
 import { requireUser } from "@/lib/auth-helpers";
 import { systemClock } from "@/lib/datetime/temporal-core";
+import { readPersonalDetails } from "@/lib/organization/personal-details/personal-details";
 import { loadOwnSkills } from "@/lib/scheduling/own-skills";
 import { loadOwnWorkingStudentStatus } from "@/lib/statutory/working-student/views";
 import { getTranslate } from "@/tolgee/server";
@@ -38,7 +40,7 @@ export default async function ProfilePage() {
 			getOwnCustomFieldValues(),
 		]);
 	const ownEmployee = authContext.employee;
-	const [settings, ownSkills, ownWorkingStudent] = await Promise.all([
+	const [settings, ownSkills, ownWorkingStudent, ownPersonalDetails] = await Promise.all([
 		db.query.userSettings.findFirst({
 			where: eq(userSettings.userId, authContext.user.id),
 			columns: { helpImproveProduct: true },
@@ -57,6 +59,14 @@ export default async function ProfilePage() {
 					organizationId: ownEmployee.organizationId,
 					employeeId: ownEmployee.id,
 					now: systemClock.nowInstant(),
+				})
+			: null,
+		// Their own bank account, in full and read-only (#2069).
+		ownEmployee
+			? readPersonalDetails({
+					organizationId: ownEmployee.organizationId,
+					actorUserId: authContext.user.id,
+					employeeId: ownEmployee.id,
 				})
 			: null,
 	]);
@@ -79,6 +89,10 @@ export default async function ProfilePage() {
 				<ProfileForm user={user} />
 
 				{ownCustomFields.success ? <OwnCustomFieldsCard section={ownCustomFields.data} /> : null}
+
+				{ownPersonalDetails?.viewer.own ? (
+					<OwnPersonalDetailsCard view={ownPersonalDetails} />
+				) : null}
 
 				{ownSkills && ownSkills.skills.length > 0 ? <OwnSkillsCard ownSkills={ownSkills} /> : null}
 
