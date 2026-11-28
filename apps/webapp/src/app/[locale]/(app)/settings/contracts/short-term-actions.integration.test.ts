@@ -34,6 +34,7 @@ vi.mock("@/lib/effect/runtime", async () => {
 });
 
 const {
+	recordAgriculturalDeclarationAction,
 	acknowledgeShortTermBerufsmaessigkeitAction,
 	getShortTermMonitorAction,
 	listShortTermBerufsmaessigkeitReviewsAction,
@@ -112,6 +113,79 @@ describe("short-term employment actions (PostgreSQL)", () => {
 		});
 	}
 
+	it("scopes agricultural declarations to the employment, effective date and org admin", async () => {
+		const { org, owner, worker, manager } = await seed();
+		const other = await fx.organization("other");
+		await st.priorShortTerm(worker, "prior_short_term_work_days", YEAR, 1);
+		const {
+			rows: [period],
+		} = await admin.query(
+			"SELECT id FROM employee_employment_period WHERE organization_id=$1 AND employee_id=$2",
+			[org.id, worker.employeeId],
+		);
+		const declaration = {
+			periodId: period.id,
+			employeeId: worker.employeeId,
+			effectiveFrom: JANUARY + "-01",
+			establishmentNumber: "01234567",
+			eligible: true,
+		};
+		signInAsManager(org, manager);
+		expect((await recordAgriculturalDeclarationAction(declaration)).success).toBe(false);
+		signInAsOwner(other, owner);
+		expect((await recordAgriculturalDeclarationAction(declaration)).success).toBe(false);
+		signInAsOwner(org, owner);
+		expect(
+			(
+				await recordAgriculturalDeclarationAction({
+					...declaration,
+					employeeId: manager.employeeId,
+				})
+			).success,
+		).toBe(false);
+		expect((await recordAgriculturalDeclarationAction(declaration)).success).toBe(true);
+		expect(
+			(
+				await recordAgriculturalDeclarationAction({
+					...declaration,
+					effectiveFrom: JANUARY + "-13",
+					eligible: false,
+				})
+			).success,
+		).toBe(true);
+		const read = () => getShortTermMonitorAction({ employeeId: worker.employeeId, year: YEAR });
+		expect(await read()).toMatchObject({ success: true, data: { allowance: { limit: 90 } } });
+		await st.work(org, worker, JANUARY + "-13");
+		expect(await read()).toMatchObject({ success: true, data: { allowance: { limit: 70 } } });
+		const correction = {
+			...declaration,
+			effectiveFrom: JANUARY + "-13",
+			establishmentNumber: "99999999",
+		};
+		expect((await recordAgriculturalDeclarationAction(correction)).success).toBe(true);
+		expect(await read()).toMatchObject({
+			success: true,
+			data: {
+				allowance: { limit: 90 },
+				declarations: [
+					{ effectiveFrom: declaration.effectiveFrom, eligible: true },
+					{
+						effectiveFrom: correction.effectiveFrom,
+						eligible: true,
+						establishmentNumber: "99999999",
+					},
+				],
+			},
+		});
+		const audit = await admin.query(
+			"SELECT eligible, recorded_by FROM agricultural_declaration WHERE organization_id=$1 AND period_id=$2 AND effective_from=$3 ORDER BY id",
+			[org.id, period.id, correction.effectiveFrom],
+		);
+		expect(audit.rows).toEqual([
+			{ eligible: false, recorded_by: owner.userId },
+			{ eligible: true, recorded_by: owner.userId },
+		]);
+	});
 	it("shows org admins the allowance, prior employers and the Berufsmäßigkeit prompt", async () => {
 		const { org, owner, worker } = await seed();
 		signInAsOwner(org, owner);

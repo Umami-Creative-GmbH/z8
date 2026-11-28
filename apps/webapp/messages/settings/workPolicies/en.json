@@ -680,7 +680,20 @@
           "verified": "Verified"
         },
         "workDays": "{count, plural, one {# working day} other {# working days}}",
-        "year": "Calendar year"
+        "year": "Calendar year",
+        "applicableWorkDayLimit": "Working-day limit ({limit} days): fewer than 5 working days a week on average, an irregular pattern, or such work together with 5-day weeks or prior working days. Every stint counts with its working days; prior employers are included.",
+        "limitWeeks": "Agricultural duration limit: 15 weeks for a single stint or 105 calendar days for combined stints.",
+        "declaration": {
+          "saved": "Declaration saved",
+          "title": "Agricultural establishment declaration",
+          "edit": "Edit declaration from {date} · {number} · Employment from {start}",
+          "period": "Employment period",
+          "unknownStart": "Unknown start date",
+          "from": "Effective from",
+          "number": "Betriebsnummer (8 digits)",
+          "eligible": "The establishment qualifies under WZ 2025 groups 01.1–01.6. For mixed establishments, use the activity employing most employees.",
+          "save": "Save declaration"
+        }
       },
       "sources": {
         "employeeOverride": "Employee Override",
@@ -735,7 +748,10 @@
           "youthNightStart": "Night rest starts",
           "youthRest": "Minimum daily rest",
           "youthUninterrupted": "Longest work without a break",
-          "youthWeekly": "Weekly working time"
+          "youthWeekly": "Weekly working time",
+          "agriculturalWorkDays": "Agricultural working-day limit",
+          "agriculturalWeeks": "Agricultural single-stint duration",
+          "agriculturalCalendarDays": "Agricultural combined duration"
         },
         "loadFailed": "Could not load the statutory baselines. Try again.",
         "preferences": {

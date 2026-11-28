@@ -124,6 +124,7 @@ export async function evaluateShortTermEmployment(
 				employee: entry.employee,
 				year,
 				thresholds: entry.thresholds,
+				scopeDates: request.scopeDates,
 				preferences,
 			});
 			return evaluation ? [evaluation] : [];

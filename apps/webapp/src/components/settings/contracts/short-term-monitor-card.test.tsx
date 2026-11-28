@@ -5,6 +5,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+	recordAgriculturalDeclarationAction: vi.fn(),
 	getShortTermMonitorAction: vi.fn(),
 }));
 
@@ -29,6 +30,7 @@ vi.mock("@/navigation", () => ({
 
 vi.mock("@/app/[locale]/(app)/settings/contracts/short-term-actions", () => ({
 	getShortTermMonitorAction: mocks.getShortTermMonitorAction,
+	recordAgriculturalDeclarationAction: mocks.recordAgriculturalDeclarationAction,
 	recordShortTermPriorEmploymentAction: vi.fn(),
 	voidShortTermPriorEmploymentAction: vi.fn(),
 }));
@@ -60,11 +62,11 @@ function monitorOf(year: number) {
 	};
 }
 
-function renderCard() {
+function renderCard(isOrgAdmin = false) {
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	return render(
 		<QueryClientProvider client={client}>
-			<ShortTermMonitorCard organizationId="org-1" employeeId="emp-1" isOrgAdmin={false} />
+			<ShortTermMonitorCard organizationId="org-1" employeeId="emp-1" isOrgAdmin={isOrgAdmin} />
 		</QueryClientProvider>,
 	);
 }
@@ -76,6 +78,38 @@ describe("ShortTermMonitorCard (#1990)", () => {
 		vi.clearAllMocks();
 	});
 
+	it("loads an existing agricultural declaration for correction and shows the weekly allowance", async () => {
+		const row = {
+			periodId: "period",
+			effectiveFrom: "2026-01-01",
+			establishmentNumber: "01234567",
+			eligible: true,
+		};
+		const monitor = monitorOf(2026);
+		mocks.getShortTermMonitorAction.mockResolvedValue({
+			success: true,
+			data: {
+				...monitor,
+				audience: "full",
+				priorEmployment: [],
+				allowance: { ...monitor.allowance, limitKind: "weeks", limit: 105 },
+				declarationPeriods: [{ id: "period", startDate: "2025-12-01" }],
+				declarations: [row],
+			},
+		});
+		mocks.recordAgriculturalDeclarationAction.mockResolvedValue({ success: true });
+		renderCard(true);
+		fireEvent.click(await screen.findByRole("button", { name: /Edit declaration/ }));
+		expect(screen.getByDisplayValue("01234567")).toBeTruthy();
+		expect(screen.getByText(/Agricultural duration limit/)).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Save declaration" }));
+		await waitFor(() =>
+			expect(mocks.recordAgriculturalDeclarationAction).toHaveBeenCalledWith({
+				...row,
+				employeeId: "emp-1",
+			}),
+		);
+	});
 	it("stays on screen with the year selector while another year loads", async () => {
 		mocks.getShortTermMonitorAction.mockImplementation(({ year }: { year?: number }) =>
 			year === undefined
