@@ -175,6 +175,8 @@ export * from "./travel-expense-settlement";
 export * from "./types";
 export * from "./user-settings";
 export * from "./vacation";
+// External leave notices and the opportunity to take leave (#2082, spec #2057)
+export * from "./vacation-leave-notice";
 export * from "./vacation-policy-history";
 export * from "./vacation-reconciliation";
 // Organization vehicles and their assigned drivers (#1118, spec #807)

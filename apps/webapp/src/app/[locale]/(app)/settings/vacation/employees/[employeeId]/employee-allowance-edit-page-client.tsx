@@ -14,6 +14,7 @@ import {
 import { VacationPolicyConfigurationMessage } from "@/components/absences/vacation-policy-configuration-message";
 import { useViewRefresh } from "@/components/providers/view-refresh-provider";
 import { SettingsLoadError } from "@/components/settings/settings-load-error";
+import { EmployeeLeaveNoticesCard } from "@/components/settings/vacation/employee-leave-notices";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -570,6 +571,9 @@ export function EmployeeAllowanceEditPageClient({
 						/>
 					</div>
 				)}
+				<div className="min-w-0 lg:col-span-3">
+					<EmployeeLeaveNoticesCard employeeId={employeeId} />
+				</div>
 			</div>
 			</div>
 		</div>

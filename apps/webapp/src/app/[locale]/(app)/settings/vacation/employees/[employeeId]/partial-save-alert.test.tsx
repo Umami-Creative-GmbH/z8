@@ -21,6 +21,7 @@ vi.mock("../../actions", () => ({}));
 vi.mock("../../assignment-actions", () => ({}));
 vi.mock("@/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock("@/components/absences/historical-vacation-usage-card", () => ({}));
+vi.mock("@/components/settings/vacation/employee-leave-notices", () => ({}));
 vi.mock("@/components/providers/view-refresh-provider", () => ({ useViewRefresh: vi.fn() }));
 
 const { PartialSaveAlert } = await import("./employee-allowance-edit-page-client");
